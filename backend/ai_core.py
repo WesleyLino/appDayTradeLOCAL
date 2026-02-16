@@ -5,6 +5,7 @@ import numpy as np
 import asyncio
 import json
 from backend.microstructure import MicrostructureAnalyzer # HFT v2.0
+from backend.news_collector import NewsCollector # Plano Diretor 2.0
 from backend.meta_learner import MetaLearner # HFT v2.0 Meta-Learner
 from sklearn.cluster import KMeans # Keep KMeans for regime_model
 from dotenv import load_dotenv
@@ -44,6 +45,7 @@ class AICore:
         self.last_news_update = 0
         self.micro_analyzer = MicrostructureAnalyzer()
         self.meta_learner = MetaLearner() # Inicializa Meta-Learner
+        self.news_collector = NewsCollector(max_age_minutes=30) # Plano Diretor 2.0
 
     def fetch_latest_news(self):
         """
@@ -64,49 +66,72 @@ class AICore:
         return "Mercado aguardando novos dados. Sem notícias relevantes no momento."
 
     async def update_sentiment(self):
-        """Consulta o Gemini para obter o score de sentimento (-1 a 1)."""
+        """
+        Consulta o Gemini para obter o score de sentimento (-1 a 1) com reliability scoring.
+        Versão Plano Diretor 2.0: Multi-fonte + Filtros de Relevância.
+        """
         if not self.model:
             return 0.0
             
-        now = asyncio.get_event_loop().time() # Use asyncio.get_event_loop().time() for async context
+        now = asyncio.get_event_loop().time()
         # Atualizar apenas a cada 5 minutos para otimizar API
         if now - self.last_news_update < 300 and self.latest_sentiment_score != 0:
             return self.latest_sentiment_score
 
-        news_headlines = self.fetch_latest_news()
+        # [PLANO DIRETOR 2.0] Usar NewsCollector ao invés de news_feed.txt
+        news_headlines = await self.news_collector.get_pulse_async()
         
-        # [FASE 2] Prompt Blindado Anti-Alucinação
+        # Se nenhuma notícia fresca/relevante, retornar neutro
+        if not news_headlines:
+            logging.info("📰 Sem notícias frescas/relevantes. Mantendo NEUTRO.")
+            self.latest_sentiment_score = 0.0
+            self.last_news_update = now
+            return 0.0
+        
+        # [FASE 2] Prompt com Reliability Scoring
         prompt = f"""
-ATUE COMO UM ALGORITMO DE CLASSIFICAÇÃO FINANCEIRA DE ALTA PRECISÃO.
+ATUE COMO UM ALGORITMO DE GESTÃO DE RISCO PARA HFT.
 
-TAREFA: Analise as manchetes abaixo quanto ao impacto imediato no índice Bovespa (WIN).
-DADOS:
+FONTE DE DADOS:
 {news_headlines}
 
-REGRAS RÍGIDAS:
-1. Ignore qualquer conhecimento externo. Baseie-se APENAS no texto acima.
-2. Se as notícias forem antigas (>1 hora) ou irrelevantes, retorne 0.
-3. Classifique de -1.0 (Pânico/Venda Extrema) a 1.0 (Euforia/Compra Extrema).
-4. NÃO explique. Retorne APENAS um objeto JSON.
+PROTOCOLO DE ANÁLISE:
+1. Identifique se há FACTOS CONCRETOS de alto impacto (ex: "Selic subiu", "Lucro recorde").
+2. Ignore opiniões, rumores ou "expectativas".
+3. Calcule o sentimento matemático (-1.0 a +1.0).
+4. Avalie a CONFIABILIDADE da informação:
+   - "high": Facto concreto com dados oficiais
+   - "medium": Facto provável mas não confirmado
+   - "low": Opinião, rumor ou expectativa vaga
 
-FORMATO DE SAÍDA ESPERADO:
-{{"sentiment_score": 0.0, "reason": "resumo curto"}}
+SAÍDA OBRIGATÓRIA (JSON):
+{{"score": 0.0, "reliability": "high/medium/low", "fact_check": "resumo do facto"}}
 """
         
         try:
             response = await asyncio.to_thread(self.model.generate_content, prompt)
             
-            # Parsing JSON ao invés de float direto
+            # Parsing JSON
             data = json.loads(response.text)
-            score = float(data.get("sentiment_score", 0.0))
+            score = float(data.get("score", 0.0))
+            reliability = data.get("reliability", "low")
+            fact_check = data.get("fact_check", "N/A")
+            
+            # [FILTRO DE ROBUSTEZ] Se IA não tem certeza, ignorar
+            if reliability == "low":
+                logging.warning(f"⚠️ IA descartada (Baixa Confiabilidade): {fact_check}")
+                self.latest_sentiment_score = 0.0
+                self.last_news_update = now
+                return 0.0
             
             # Clamp de segurança (garantir [-1, 1])
             score = max(-1.0, min(1.0, score))
             
             self.latest_sentiment_score = score
             self.last_news_update = now
-            logging.info(f"✅ Sentiment Analysis: {score:.2f} | Reason: {data.get('reason', 'N/A')}")
+            logging.info(f"✅ Sentiment: {score:.2f} | Reliability: {reliability} | {fact_check[:50]}...")
             return score
+            
         except Exception as e:
             logging.error(f"❌ Erro na IA (Falha de Grounding): {e}")
             return 0.0  # Neutro em caso de erro (segurança)
