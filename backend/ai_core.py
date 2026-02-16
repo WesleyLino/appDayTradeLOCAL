@@ -1,10 +1,13 @@
 import google.generativeai as genai
 import os
 import logging
-import torch
-import torch.nn as nn
-from sklearn.cluster import KMeans
 import numpy as np
+import asyncio
+from backend.inference import InferenceEngine
+from backend.sentiment import SentimentAnalyzer
+from backend.microstructure import MicrostructureAnalyzer # HFT v2.0
+from backend.meta_learner import MetaLearner # HFT v2.0 Meta-Learner
+from sklearn.cluster import KMeans # Keep KMeans for regime_model
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,6 +31,11 @@ class AICore:
         self.prev_book = None
         self.toxic_flow_score = 0.0
         self.last_news_update = 0
+        self.model_path = "backend/models/patchtst_v1.pth" # Placeholder
+        self.inference_engine = InferenceEngine(self.model_path)
+        self.sentiment_analyzer = SentimentAnalyzer()
+        self.micro_analyzer = MicrostructureAnalyzer()
+        self.meta_learner = MetaLearner() # Inicializa Meta-Learner
 
     def fetch_latest_news(self):
         """
@@ -52,7 +60,7 @@ class AICore:
         if not self.model:
             return 0.0
             
-        now = time.time()
+        now = asyncio.get_event_loop().time() # Use asyncio.get_event_loop().time() for async context
         # Atualizar apenas a cada 5 minutos para otimizar API
         if now - self.last_news_update < 300 and self.latest_sentiment_score != 0:
             return self.latest_sentiment_score
@@ -137,7 +145,7 @@ class AICore:
         except:
             return 0
 
-    def calculate_decision(self, obi, sentiment, patchtst_score):
+    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0):
         """
         Calcula a decisão final de trading baseada em múltiplos fatores ponderados.
         
@@ -145,6 +153,10 @@ class AICore:
             obi: Order Book Imbalance (-1.0 a 1.0)
             sentiment: Análise de Notícias (-1.0 a 1.0)
             patchtst_score: Predição de Preço (0.0 a 1.0, onde >0.5 é Alta)
+            regime: Regime de mercado (0: Baixa Vol, 1: Tendência, 2: Ruído)
+            atr: Average True Range (para Meta-Learner)
+            volatility: Volatilidade (para Meta-Learner)
+            hour: Hora do dia (para Meta-Learner)
             
         Returns:
             dict: {
@@ -161,21 +173,46 @@ class AICore:
         # Ex: 0.8 -> 0.6 (Alta), 0.2 -> -0.6 (Baixa)
         norm_patchtst = (patchtst_score - 0.5) * 2 
         
-        # 2. Pesos (Conforme Master Plan)
-        w_obi = 0.40      # 40% Microestrutura (Fluxo Imediato)
-        w_patchtst = 0.40 # 40% Preditivo (Tendência Futura)
-        w_sent = 0.20     # 20% Sentimento (Contexto Macro)
+        # 2. Pesos Dinâmicos (Regime Adaptativo - HFT v2.0)
+        # Default (Neutro/Indefinido)
+        w_obi = 0.40
+        w_patchtst = 0.40
+        w_sent = 0.20
+
+        if regime == 0: # Consolidação / Ruído -> Foco em Fluxo (Scalping)
+            w_obi = 0.60
+            w_patchtst = 0.20
+            w_sent = 0.20
+        elif regime == 1: # Tendência Clara -> Foco em Modelo Preditivo
+            w_obi = 0.20
+            w_patchtst = 0.60
+            w_sent = 0.20
         
-        # 3. Cálculo do Sinal Composto
+        # 3. Cálculo do Sinal Composto (AI_Score Bruto)
         composite_signal = (obi * w_obi) + (norm_patchtst * w_patchtst) + (sentiment * w_sent)
         
         # 4. Score Final (Magnitude Absoluta 0-100)
-        final_score = abs(composite_signal) * 100
+        # Convert composite_signal (-1 to 1) to a 0-100 scale
+        ai_score_raw = (composite_signal + 1) * 50
+        ai_score_raw = max(0.0, min(100.0, ai_score_raw))
+
+        # --- HFT v2.0: Meta-Learner (XGBoost) para refinar a decisão ---
+        # Features esperadas: [ATR, OBI, Sentiment, Volatility, Hour, AI_Score_Raw]
+        meta_features = [atr, obi, sentiment, volatility, hour, ai_score_raw]
+        meta_proba = self.meta_learner.predict_proba(meta_features) # Returns probability 0.0-1.0
+        
+        # Converter probabilidade para score (0-100)
+        meta_score = meta_proba * 100.0
+
+        # A decisão final é baseada no meta_score
+        final_score = meta_score
         
         # 5. Direção
         direction = "NEUTRAL"
-        if final_score > 10: # Banda morta mínima para evitar ruído zero
-            direction = "BUY" if composite_signal > 0 else "SELL"
+        if final_score > 55: # Limiar para BUY (ajustável)
+            direction = "BUY"
+        elif final_score < 45: # Limiar para SELL (ajustável)
+            direction = "SELL"
             
         return {
             "score": final_score,
@@ -184,7 +221,9 @@ class AICore:
                 "obi_contribution": obi * w_obi,
                 "patchtst_contribution": norm_patchtst * w_patchtst,
                 "sentiment_contribution": sentiment * w_sent,
-                "raw_signal": composite_signal
+                "raw_signal": composite_signal,
+                "ai_score_raw": ai_score_raw,
+                "meta_score": meta_score
             }
         }
         

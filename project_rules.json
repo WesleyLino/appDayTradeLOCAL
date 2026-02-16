@@ -30,7 +30,7 @@
   "trading_rules": {
     "execution_mode": "Netting (Padrão Day Trade B3)",
     "order_types": {
-      "entry": "LIMIT Orders with Deviation (Evitar Market Orders puras)",
+      "entry": "Híbrido: LIMIT (Padrão) vs MARKET (Se Score > 90 - Alta Convicção)",
       "exit": "OCO (One-Cancels-Other) obrigatório para Stop Loss & Gain"
     },
     "risk_management": {

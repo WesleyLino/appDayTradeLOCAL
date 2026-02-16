@@ -18,6 +18,7 @@ class MT5Bridge:
     def __init__(self):
         self.connected = False
         self.broker = "Genial Investimentos"
+        self.mt5 = mt5 # Expor módulo para acesso externo (HFT)
         
     def connect(self):
         """Estabelece conexão com o MetaTrader 5 local."""
@@ -98,6 +99,79 @@ class MT5Bridge:
             return None
             
         df = pd.DataFrame(rates)
+
+    def get_macro_data(self):
+        """
+        Coleta variação percentual do S&P 500 para filtro Macro.
+        Tenta símbolos comuns: WSP (Micro B3), US500, SPX, ISP.
+        """
+        if not self.connected:
+            return 0.0
+
+        candidates = ["WSP", "US500", "SPX", "ISP", "SP500"]
+        macro_symbol = None
+        
+        # Tenta encontrar um símbolo válido
+        for sym in candidates:
+            # Tenta pegar info (checa existência)
+            info = mt5.symbol_info(sym) # type: ignore
+            # Pode ser que precise de prefixo/sufixo dependendo da corretora, 
+            # mas WSP geralmente é padrão na B3.
+            # Se não achar exato, tenta com wildcard (lógica simplificada aqui)
+            if info is not None:
+                macro_symbol = sym
+                break
+        
+        # Se não achou nenhum exato, tenta buscar nos símbolos disponíveis que contêm 'SP' ou '500'
+        # (Fallback custoso, evitar em loop rápido, fazer cache se possível)
+        if macro_symbol is None:
+             # Tenta achar o atual (ex: WSPH24)
+             wsp_futures = self.get_current_symbol(base="WSP")
+             if wsp_futures:
+                 macro_symbol = wsp_futures
+
+        if macro_symbol is None:
+            # logging.warning("Macro Monitor: Nenhum símbolo do S&P 500 encontrado.")
+            return 0.0
+            
+        # Pega variação diária
+        # Preço de fechamento ontem vs atual
+        rates = mt5.copy_rates_from_pos(macro_symbol, mt5.TIMEFRAME_D1, 0, 2)
+        if rates is None or len(rates) < 2:
+            return 0.0
+            
+        close_yesterday = rates[0]['close']
+        current_price = rates[1]['close'] # Ou 'close' do candle D1 atual que é o preço corrente
+        
+        if close_yesterday == 0:
+            return 0.0
+            
+        if close_yesterday == 0:
+            return 0.0
+            
+        change_pct = ((current_price - close_yesterday) / close_yesterday) * 100
+        return change_pct
+
+    def get_bulk_ticks(self, symbol, n=1000):
+        """
+        Coleta os últimos N ticks para análise de microestrutura (CVD).
+        Retorna DataFrame com flags de agressão.
+        """
+        if not self.connected:
+            return None
+            
+        # copy_ticks_from(symbol, from_date, count, flags)
+        # Usamos time.time() * 1000 se fosse data, mas copy_ticks_from pede data datetime ou timestamp?
+        # Melhor usar copy_ticks_from com data futura (pra pegar os últimos) ou copy_ticks_range?
+        # mt5.copy_ticks_from(symbol, datetime.now(), n, mt5.COPY_TICKS_ALL) pega DO PASSADO a partir da data.
+        # Então datetime.now() pega os últimos N.
+        
+        ticks = mt5.copy_ticks_from(symbol, datetime.now(), n, mt5.COPY_TICKS_ALL)
+        if ticks is None:
+            logging.error(f"Erro ao obter ticks para {symbol}: {mt5.last_error()}")
+            return None
+            
+        df = pd.DataFrame(ticks)
         df['time'] = pd.to_datetime(df['time'], unit='s')
         return df
 

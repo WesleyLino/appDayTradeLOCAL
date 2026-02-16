@@ -59,6 +59,24 @@ class RiskManager:
 
         return {"allowed": True, "reason": "Market Condition OK"}
 
+    def check_macro_filter(self, side, macro_change_pct):
+        """
+        Filtro Macro (HFT Impact):
+        Bloqueia COMPRA se S&P500 cair > 0.5% (Bearish Global).
+        Bloqueia VENDA se S&P500 subir > 0.5% (Bullish Global).
+        """
+        # Se macro_change_pct for 0.0 (não detectado), ignora o filtro
+        if macro_change_pct == 0.0:
+            return True, "Neutro (N/A)"
+
+        if side == "buy" and macro_change_pct < -0.5:
+             return False, f"Macro Bearish (S&P500 {macro_change_pct:.2f}%)"
+             
+        if side == "sell" and macro_change_pct > 0.5:
+             return False, f"Macro Bullish (S&P500 {macro_change_pct:.2f}%)"
+             
+        return True, "Macro OK"
+
     def check_daily_loss(self, current_balance, start_balance):
         loss = start_balance - current_balance
         if loss >= self.max_daily_loss:

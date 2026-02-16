@@ -3,9 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 import json
 from .mt5_bridge import MT5Bridge
-from .risk_manager import RiskManager
-from .ai_core import AICore, InferenceEngine
-from .persistence import PersistenceManager
+from backend.risk_manager import RiskManager
+from backend.ai_core import AICore, InferenceEngine
+from backend.persistence import PersistenceManager
+from backend.rl_agent import PPOAgent # HFT v2.0
+from backend.microstructure import MicrostructureAnalyzer # HFT v2.0
+import numpy as np
 from .data_collector import DataCollector
 import time as time_module
 import logging
@@ -91,6 +94,14 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     logging.info("Frontend conectado via WebSocket.")
     
+    # Inicialização do Agente RL (Shadow Mode)
+    # State: [ATR, OBI, Sentiment, PatchTST_Score, Volatility]
+    rl_agent = PPOAgent(input_dim=5, n_actions=3) 
+    micro_analyzer = MicrostructureAnalyzer() # Inicializa Microestrutura
+    logging.info("RL Agent (PPO) inicializado em Shadow Mode.")
+    logging.info("Microestrutura (CVD) inicializada.")
+
+    # Loop Principal
     last_cleanup_time = 0
     
     try:
@@ -130,20 +141,60 @@ async def websocket_endpoint(websocket: WebSocket):
                     obi = ai.detect_spoofing(book, tns)
                     ai_confidence = await inference.predict(data_60)
                     
-                    # Score Final (0-100) e Direção
-                    decision = ai.calculate_decision(obi, ai.latest_sentiment_score, ai_confidence)
+                    # Validação de Condição de Mercado (Estágio 2)
+                    volatility = data_60['close'].std() if data_60 is not None else 0
+                    regime = ai.detect_regime(volatility, obi)
+                    macro_change = await asyncio.to_thread(bridge.get_macro_data) # HFT v2.0 Macro Monitor
+                    
+                    # HFT v2.0: Meta-Learner - Preparar features extras
+                    from datetime import datetime
+                    current_hour = datetime.now().hour
+                    
+                    # Score Final (0-100) e Direção (Com Regime Adaptativo + Meta-Learner)
+                    decision = ai.calculate_decision(
+                        obi, 
+                        ai.latest_sentiment_score, 
+                        ai_confidence, 
+                        regime,
+                        atr=current_atr,
+                        volatility=volatility,
+                        hour=current_hour
+                    )
                     ai_total_score = decision["score"]
                     ai_direction = decision["direction"]
+
+                    # --- HFT v2.0: CVD Turbo ---
+                    # Coleta Ticks e Calcula CVD
+                    ticks_df = await asyncio.to_thread(bridge.get_bulk_ticks, symbol, n=1000)
+                    cvd_val = micro_analyzer.calculate_cvd(ticks_df)
                     
-                    # 3. Validações de Risco
-                    time_allowed = risk.is_time_allowed()
-                    daily_profit = account.get('profit', 0)
-                    risk_ok, risk_msg = risk.check_daily_loss(daily_profit, risk.max_daily_loss)
+                    # Ajuste Fino do Score (Turbo)
+                    # WIN: > 500 contratos é relevante
+                    # WDO: > 50 contratos é relevante
+                    cvd_threshold = 50.0 if "WDO" in symbol or "DOL" in symbol else 500.0
                     
-                    # Validação de Condição de Mercado (Estágio 2)
-                    regime = ai.detect_regime(data_60['close'].std() if data_60 is not None else 0, obi)
+                    if cvd_val > cvd_threshold and ai_direction == "BUY":
+                        ai_total_score = min(100.0, ai_total_score + 5.0)
+                        logging.info(f"CVD TRIGGER (+5.0): Fluxo Comprador Forte ({cvd_val:.0f})")
+                    elif cvd_val < -cvd_threshold and ai_direction == "SELL":
+                        ai_total_score = min(100.0, ai_total_score + 5.0)
+                        logging.info(f"CVD TRIGGER (+5.0): Fluxo Vendedor Forte ({cvd_val:.0f})")
+                    # ---------------------------
+
                     market_condition = risk.validate_market_condition(symbol, regime, current_atr, avg_atr)
                     market_ok = market_condition["allowed"]
+                    
+                    # --- RL SHAWDOW MODE (HFT v2.0) ---
+                    # Coleta estado atual para o agente
+                    try:
+                        rl_state = [current_atr, obi, ai.latest_sentiment_score, ai_confidence, volatility]
+                        action, _ = rl_agent.select_action(rl_state)
+                        # Apenas loga, não executa (Shadow)
+                        rl_action_str = ["HOLD", "BUY", "SELL"][action]
+                        # logging.info(f"[RL SHADOW] Action: {rl_action_str} | State: {rl_state}") 
+                    except Exception as e:
+                        logging.error(f"Erro RL Shadow: {e}")
+                    # ----------------------------------
 
                     if risk.should_force_close():
                          # Executar Panic em Thread separada para não bloquear
@@ -153,9 +204,22 @@ async def websocket_endpoint(websocket: WebSocket):
                     if risk.allow_autonomous and ai_total_score >= 85 and risk_ok and market_ok and time_allowed:
                         if ai_direction in ["BUY", "SELL"]:
                             side = "buy" if ai_direction == "BUY" else "sell"
+                            
+                            # HFT v2.0: Filtro Macro (S&P500)
+                            macro_ok, macro_msg = risk.check_macro_filter(side, macro_change)
+                            if not macro_ok:
+                                logging.warning(f"AUTÔNOMO BLOQUEADO: {macro_msg}")
+                                continue
+
                             logging.info(f"AUTÔNOMO: Disparando {side.upper()} via Score {ai_total_score:.1f}")
                             
-                            order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
+                            # HFT v2.0: Gestão de Ordens Híbrida
+                            if ai_total_score > 90:
+                                order_type = bridge.mt5.ORDER_TYPE_BUY if side == "buy" else bridge.mt5.ORDER_TYPE_SELL
+                                logging.info(f"ALTA CONVICÇÃO (Score {ai_total_score:.1f}): Executando MARKET ORDER")
+                            else:
+                                order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
+                                logging.info(f"ENTRADA PADRÃO (Score {ai_total_score:.1f}): Executando LIMIT ORDER")
                             
                             # Obter Tick Info (Async)
                             tick_info = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
