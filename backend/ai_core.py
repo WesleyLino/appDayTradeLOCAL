@@ -3,8 +3,7 @@ import os
 import logging
 import numpy as np
 import asyncio
-from backend.inference import InferenceEngine
-from backend.sentiment import SentimentAnalyzer
+import json
 from backend.microstructure import MicrostructureAnalyzer # HFT v2.0
 from backend.meta_learner import MetaLearner # HFT v2.0 Meta-Learner
 from sklearn.cluster import KMeans # Keep KMeans for regime_model
@@ -21,7 +20,19 @@ else:
 
 class AICore:
     def __init__(self):
-        self.model = genai.GenerativeModel('gemini-1.5-pro') if api_key else None
+        # [FASE 1] Gemini 2.5 Flash com Zero-Hallucination Config
+        if api_key:
+            generation_config = {
+                "temperature": 0.0,        # Zero criatividade (determinístico)
+                "top_p": 0.1,             # Apenas respostas mais prováveis
+                "response_mime_type": "application/json"  # Força saída JSON
+            }
+            self.model = genai.GenerativeModel(
+                'gemini-2.5-flash',
+                generation_config=generation_config
+            )
+        else:
+            self.model = None
         self.latest_sentiment_score = 0.0
         self.obi_ema = 0.5 # Valor inicial neutro
         self.ema_alpha = 0.2 # Fator de suavização (aproximadamente 1s em loops de 100ms)
@@ -31,9 +42,6 @@ class AICore:
         self.prev_book = None
         self.toxic_flow_score = 0.0
         self.last_news_update = 0
-        self.model_path = "backend/models/patchtst_v1.pth" # Placeholder
-        self.inference_engine = InferenceEngine(self.model_path)
-        self.sentiment_analyzer = SentimentAnalyzer()
         self.micro_analyzer = MicrostructureAnalyzer()
         self.meta_learner = MetaLearner() # Inicializa Meta-Learner
 
@@ -66,21 +74,42 @@ class AICore:
             return self.latest_sentiment_score
 
         news_headlines = self.fetch_latest_news()
-        prompt = (
-            f"Analise o sentimento destas manchetes para o mercado financeiro B3. "
-            f"Responda apenas com um número entre -1 (extremo pânico/queda) e 1 (extrema euforia/alta). "
-            f"Manchetes: {news_headlines}"
-        )
+        
+        # [FASE 2] Prompt Blindado Anti-Alucinação
+        prompt = f"""
+ATUE COMO UM ALGORITMO DE CLASSIFICAÇÃO FINANCEIRA DE ALTA PRECISÃO.
+
+TAREFA: Analise as manchetes abaixo quanto ao impacto imediato no índice Bovespa (WIN).
+DADOS:
+{news_headlines}
+
+REGRAS RÍGIDAS:
+1. Ignore qualquer conhecimento externo. Baseie-se APENAS no texto acima.
+2. Se as notícias forem antigas (>1 hora) ou irrelevantes, retorne 0.
+3. Classifique de -1.0 (Pânico/Venda Extrema) a 1.0 (Euforia/Compra Extrema).
+4. NÃO explique. Retorne APENAS um objeto JSON.
+
+FORMATO DE SAÍDA ESPERADO:
+{{"sentiment_score": 0.0, "reason": "resumo curto"}}
+"""
         
         try:
             response = await asyncio.to_thread(self.model.generate_content, prompt)
-            score = float(response.text.strip())
+            
+            # Parsing JSON ao invés de float direto
+            data = json.loads(response.text)
+            score = float(data.get("sentiment_score", 0.0))
+            
+            # Clamp de segurança (garantir [-1, 1])
+            score = max(-1.0, min(1.0, score))
+            
             self.latest_sentiment_score = score
             self.last_news_update = now
+            logging.info(f"✅ Sentiment Analysis: {score:.2f} | Reason: {data.get('reason', 'N/A')}")
             return score
         except Exception as e:
-            logging.error(f"Erro ao consultar Gemini: {e}")
-            return self.latest_sentiment_score
+            logging.error(f"❌ Erro na IA (Falha de Grounding): {e}")
+            return 0.0  # Neutro em caso de erro (segurança)
 
     def detect_spoofing(self, order_book, time_sales):
         """

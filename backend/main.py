@@ -181,6 +181,28 @@ async def websocket_endpoint(websocket: WebSocket):
                         logging.info(f"CVD TRIGGER (+5.0): Fluxo Vendedor Forte ({cvd_val:.0f})")
                     # ---------------------------
 
+                    # --- FASE 3: HARD VETO (Anti-Alucinação) ---
+                    # Bloqueia trades quando IA e mercado real divergem
+                    veto_active = False
+                    veto_reason = ""
+                    
+                    # Regra 1: IA otimista, mas Fluxo Real é Venda Pesada
+                    if ai_direction == "BUY" and cvd_val < -cvd_threshold:
+                        veto_active = True
+                        veto_reason = f"DIVERGÊNCIA: IA sugere COMPRA, mas CVD mostra Venda Agressiva ({cvd_val:.0f})"
+                    
+                    # Regra 2: IA pessimista, mas Fluxo Real é Compra Pesada
+                    elif ai_direction == "SELL" and cvd_val > cvd_threshold:
+                        veto_active = True
+                        veto_reason = f"DIVERGÊNCIA: IA sugere VENDA, mas CVD mostra Compra Agressiva ({cvd_val:.0f})"
+                    
+                    # Aplicar Veto
+                    if veto_active:
+                        logging.warning(f"🛑 SINAL IA BLOQUEADO: {veto_reason}")
+                        ai_total_score = 50.0  # Reset para neutro
+                        ai_direction = "NEUTRAL"
+                    # -------------------------------------------
+
                     market_condition = risk.validate_market_condition(symbol, regime, current_atr, avg_atr)
                     market_ok = market_condition["allowed"]
                     
