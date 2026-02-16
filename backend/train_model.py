@@ -12,7 +12,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from backend.data_collector import DataCollector
-from backend.ai_core import PatchTST
+from backend.models import PatchTST, PointQuantileLoss
 
 # Configuração de Logs
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -32,21 +32,7 @@ class TradingDataset(Dataset):
         # Retornamos x e y. y[0] é o próximo candle (fechamento)
         return torch.tensor(x, dtype=torch.float32).unsqueeze(-1), torch.tensor(y[0], dtype=torch.float32)
 
-class QuantileLoss(nn.Module):
-    """Implementa Point-Quantile Loss para gerar cones de incerteza."""
-    def __init__(self, quantiles=[0.1, 0.5, 0.9]):
-        super().__init__()
-        self.quantiles = quantiles
 
-    def forward(self, preds, target):
-        losses = []
-        for i, q in enumerate(self.quantiles):
-            # Preds deve ter shape [batch, len(quantiles)]
-            # O target precisa ser broadcasted ou ter dimensões compatíveis
-            # Aqui ajustamos para simplificar
-            errors = target.unsqueeze(-1) - preds[:, i].unsqueeze(-1) # Ajuste dimensional simples
-            losses.append(torch.max((q - 1) * errors, q * errors))
-        return torch.mean(torch.stack(losses).mean())
 
 def generate_synthetic_data(n_samples=1000):
     """Gera dados de senoide com ruído para cold-start."""
@@ -91,7 +77,7 @@ def train():
     
     # Modelo e Otimização
     model = PatchTST(seq_len=60, d_model=128, n_heads=4, num_layers=2)
-    criterion = QuantileLoss()
+    criterion = PointQuantileLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     
     # Loop de Treinamento Rápido (Cold Start)

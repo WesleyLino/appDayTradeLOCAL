@@ -39,6 +39,16 @@ inference = InferenceEngine(weights_path)
 async def startup_event():
     bridge.connect()
     # Atalho Global de Pânico: Ctrl+Q para zerar tudo
+    
+    # Verificar recursos críticos
+    missing_resources = inference.check_resources()
+    if missing_resources:
+        logging.critical(f"RECURSOS FALTANDO: {', '.join(missing_resources)}")
+        # Poderíamos travar o startup, mas melhor avisar e rodar em modo degradado
+    
+    # Injeção de Dependência (opcional, já que passamos no loop, mas boa prática)
+    ai.inference_engine = inference
+    
     keyboard.add_hotkey('ctrl+q', lambda: panic_close_all())
     logging.info("Kill Switch ativo: Pressione Ctrl+Q para ZERAR TUDO.")
 
@@ -81,18 +91,26 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     logging.info("Frontend conectado via WebSocket.")
     
+    last_cleanup_time = 0
+    
     try:
         while True:
             if bridge.connected:
                 start_time = time_module.perf_counter()
-                symbol = bridge.get_current_symbol("WIN")
+                
+                # 0. Obter Símbolo (Async Wrapper)
+                symbol = await asyncio.to_thread(bridge.get_current_symbol, "WIN")
+                
                 if symbol:
-                    # 1. Obter Dados de Mercado (Janela de 60 para IA)
-                    data_60 = bridge.get_market_data(symbol, n_candles=60)
-                    book = bridge.get_order_book(symbol)
-                    tns = bridge.get_time_and_sales(symbol, n_ticks=100)
+                    # 1. Obter Dados de Mercado em Paralelo (Async)
+                    # Executamos as chamadas pesadas de I/O do MT5 em threads separadas
+                    data_60, book, tns, account_info = await asyncio.gather(
+                        asyncio.to_thread(bridge.get_market_data, symbol, n_candles=60),
+                        asyncio.to_thread(bridge.get_order_book, symbol),
+                        asyncio.to_thread(bridge.get_time_and_sales, symbol, n_ticks=100),
+                        asyncio.to_thread(bridge.mt5.account_info)
+                    )
                     
-                    account_info = bridge.mt5.account_info()
                     account = account_info._asdict() if account_info else {}
                     
                     latency_ms = (time_module.perf_counter() - start_time) * 1000
@@ -128,7 +146,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     market_ok = market_condition["allowed"]
 
                     if risk.should_force_close():
-                        panic_close_all()
+                         # Executar Panic em Thread separada para não bloquear
+                        await asyncio.to_thread(panic_close_all)
                         logging.warning("Execução compulsória 17:50 acionada.")
 
                     if risk.allow_autonomous and ai_total_score >= 85 and risk_ok and market_ok and time_allowed:
@@ -137,10 +156,14 @@ async def websocket_endpoint(websocket: WebSocket):
                             logging.info(f"AUTÔNOMO: Disparando {side.upper()} via Score {ai_total_score:.1f}")
                             
                             order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
-                            current_price = bridge.mt5.symbol_info_tick(symbol).ask if side == "buy" else bridge.mt5.symbol_info_tick(symbol).bid
                             
-                            # Validação Compliance Pre-Trade
-                            valid_comp, reason_comp = bridge.validate_order_compliance(symbol, current_price)
+                            # Obter Tick Info (Async)
+                            tick_info = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
+                            current_price = tick_info.ask if side == "buy" else tick_info.bid
+                            
+                            # Validação Compliance Pre-Trade (Async)
+                            valid_comp, reason_comp = await asyncio.to_thread(bridge.validate_order_compliance, symbol, current_price)
+                            
                             if not valid_comp:
                                  logging.warning(f"AUTÔNOMO BLOQUEADO: Compliance - {reason_comp}")
                             else:
@@ -148,7 +171,9 @@ async def websocket_endpoint(websocket: WebSocket):
                                 params["symbol"] = symbol
                                 params["comment"] = "AUTO-EXEC SCORE >= 85"
                                 
-                                result = bridge.mt5.order_send(params)
+                                # Enviar Ordem (Async)
+                                result = await asyncio.to_thread(bridge.mt5.order_send, params)
+                                
                                 if result.retcode == bridge.mt5.TRADE_RETCODE_DONE:
                                     persistence.save_trade(symbol, side, current_price, 1, "AUTO_DONE")
                                     persistence.save_state("last_auto_trade", f"{side} at {current_price}")
@@ -161,8 +186,8 @@ async def websocket_endpoint(websocket: WebSocket):
                          elif not risk_ok:
                              logging.info(f"SINAL DE ALTA CONFIANÇA BLOQUEADO POR PERDA DIÁRIA: {risk_msg}")
 
-                    # 4. Dados de Compliance (Limites)
-                    info = bridge.mt5.symbol_info(symbol)
+                    # 4. Dados de Compliance (Limites) - Async Wrapper
+                    info = await asyncio.to_thread(bridge.mt5.symbol_info, symbol)
                     session_limits = {
                         "lower": info.session_price_limit_min if info else 0,
                         "upper": info.session_price_limit_max if info else 0,
@@ -170,40 +195,59 @@ async def websocket_endpoint(websocket: WebSocket):
                     }
 
                     # 5. Enviar Pacote ao Frontend
+                    
+                    # 5. Enviar Pacote ao Frontend (Manter Contrato Original)
                     packet = {
                         "symbol": symbol,
                         "price": data_60.iloc[-1]['close'] if data_60 is not None and not data_60.empty else 0,
                         "obi": obi,
-                        "book": book, # Enviando Order Book (L2) para Heatmap
+                        "book": book, 
                         "sentiment": ai.latest_sentiment_score,
                         "ai_confidence": ai_confidence,
-                        "regime": ai.detect_regime(data_60['close'].std() if data_60 is not None else 0, obi),
+                        "regime": regime,
                         "latency_ms": latency_ms,
                         "risk_status": {
                             "time_ok": time_allowed,
-                            "loss_ok": risk_ok and volatility_ok,
+                            "loss_ok": risk_ok and risk.check_daily_loss(daily_profit, risk.max_daily_loss)[0],
                             "profit_day": daily_profit,
                             "atr": current_atr,
                             "ai_score": ai_total_score,
                             "ai_direction": ai_direction,
                             "limits": session_limits
                         },
-                        "account": {
-                            "balance": account.get('balance', 0),
-                            "equity": account.get('equity', 0)
-                        },
+                        "account": account,
                         "timestamp": asyncio.get_event_loop().time()
                     }
                     await websocket.send_json(packet)
                     
                     persistence.save_state("last_obi", obi)
                     persistence.save_state("latency_ms", latency_ms)
+
+            # 6. Limpeza de Ordens Pendentes (Hanging Orders)
+            if time_module.time() - last_cleanup_time > 10: 
+                last_cleanup_time = time_module.time()
+                orders = await asyncio.to_thread(bridge.mt5.orders_get, symbol=symbol)
+                if orders:
+                    now_ts = time_module.time()
+                    for order in orders:
+                        if (now_ts - order.time_setup) > 60: # 60 segundos de tolerância
+                             # Apenas cancelar Limit/Stop, não ordens a mercado (que não ficam pendentes assim)
+                            req = {
+                                "action": bridge.mt5.TRADE_ACTION_REMOVE,
+                                "order": order.ticket,
+                                "symbol": symbol,
+                            }
+                            await asyncio.to_thread(bridge.mt5.order_send, req)
+                            logging.info(f"Cleanup: Cancelando ordem pendente {order.ticket}")
+
+            # Loop control (100ms)
+            await asyncio.sleep(0.01)
             
-            await asyncio.sleep(0.1) # Loop de 100ms
     except WebSocketDisconnect:
-        logging.info("Frontend desconectado.")
+        logging.info("WebSocket desconectado.")
     except Exception as e:
-        logging.error(f"Erro no loop WebSocket: {e}")
+        logging.error(f"Erro no loop principal: {e}")
+        await websocket.close()
 
 @app.post("/config/autonomous")
 async def toggle_autonomous(enabled: bool):

@@ -41,13 +41,14 @@
     }
   },
   "ai_logic": {
-    "price_model": "Local PatchTST (Transformer) treinado em candles de 1min",
-    "sentiment_model": "Google Gemini 1.5 Pro (Score -1 a +1 via Notícias)",
+    "price_model": "Local PatchTST (Transformer) via backend/models.py",
+    "sentiment_model": "Google Gemini 1.5 Pro (Score -1 a +1 via Notícias) - AsyncIO Non-Blocking",
     "microstructure": "Order Book Imbalance (OBI) + Detecção de Spoofing (Heurística)",
     "decision_matrix": "Entrada se Score > 85/100 (Soma ponderada de OBI, IA e SENT)",
     "advanced_methodology": {
         "labeling": "Triple Barrier Method (Profit/Loss/Time)",
-        "loss_function": "Point-Quantile Loss (q10, q50, q90) para Cone de Incerteza",
+        "loss_function": "Point-Quantile Loss (q10, q50, q90) em backend/models.py",
+        "uncertainty": "Conformal Prediction (Calibração Alpha=0.1)",
         "validation": "Probabilistic Sharpe Ratio (PSR) > 0.95"
     }
   },
