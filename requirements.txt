@@ -1,0 +1,13 @@
+MetaTrader5
+fastapi
+uvicorn
+pandas
+numpy
+torch
+google-generativeai
+scikit-learn
+python-dotenv
+keyboard
+pydantic
+websockets
+xgboost

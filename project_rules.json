@@ -1,0 +1,60 @@
+{
+  "project_profile": {
+    "name": "QuantumTrade_B3_Local",
+    "description": "Estação de Trading Quantitativo de Baixa Latência (Monolito Local) para B3",
+    "architecture": "Local Monolith (Windows 10/11 nativo)",
+    "ide": "Google Antigravity",
+    "target_market": "B3 Futures (WIN/WDO)",
+    "broker": "Genial Investimentos"
+  },
+  "tech_stack": {
+    "backend": "Python 3.11+",
+    "backend_framework": "FastAPI (Gerenciamento de WebSocket e Rotas)",
+    "backend_libs": [
+      "MetaTrader5 (Conexão Oficial B3)",
+      "Pandas (Manipulação de Dados)",
+      "Numpy (Cálculo Numérico)",
+      "PyTorch (IA Local - PatchTST/LSTM)",
+      "Google-GenerativeAI (Gemini 1.5 Pro API para Sentimento)",
+      "Scikit-learn (Clustering de Regime de Mercado)"
+    ],
+    "frontend": "Next.js 15 (App Router)",
+    "frontend_libs": [
+      "TailwindCSS (Estilização)",
+      "Shadcn/UI (Componentes Visuais)",
+      "Lightweight-charts (Gráficos de Alta Performance)",
+      "Lucide-React (Ícones)",
+      "Zustand (Gerenciamento de Estado)"
+    ]
+  },
+  "trading_rules": {
+    "execution_mode": "Netting (Padrão Day Trade B3)",
+    "order_types": {
+      "entry": "LIMIT Orders with Deviation (Evitar Market Orders puras)",
+      "exit": "OCO (One-Cancels-Other) obrigatório para Stop Loss & Gain"
+    },
+    "risk_management": {
+      "max_daily_loss_brl": 200.0,
+      "forbidden_hours": ["08:55-09:05", "12:00-13:00", "16:55-18:00"],
+      "circuit_breaker": "Parar se volatilidade > 3x ATR (Average True Range)",
+      "latency_alert_ms": 50
+    }
+  },
+  "ai_logic": {
+    "price_model": "Local PatchTST (Transformer) treinado em candles de 1min",
+    "sentiment_model": "Google Gemini 1.5 Pro (Score -1 a +1 via Notícias)",
+    "microstructure": "Order Book Imbalance (OBI) + Detecção de Spoofing (Heurística)",
+    "decision_matrix": "Entrada se Score > 85/100 (Soma ponderada de OBI, IA e SENT)",
+    "advanced_methodology": {
+        "labeling": "Triple Barrier Method (Profit/Loss/Time)",
+        "loss_function": "Point-Quantile Loss (q10, q50, q90) para Cone de Incerteza",
+        "validation": "Probabilistic Sharpe Ratio (PSR) > 0.95"
+    }
+  },
+  "development_guidelines": {
+    "language": "Português (Brasil)",
+    "comments": "Explicações detalhadas em cada função",
+    "error_handling": "Logs robustos para queda de conexão MT5 ou Socket",
+    "latency_check": "Alertar se latência interna > 50ms"
+  }
+}

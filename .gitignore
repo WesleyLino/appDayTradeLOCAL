@@ -1,0 +1,39 @@
+# Systems
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+*.log
+
+# Node / JS
+node_modules/
+.next/
+dist/
+build/
+coverage/
+.npm/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Project Specific
+backend/patchtst_weights.pth
+backend/news_feed.txt
+trading_state.db
+*.db
+*.sqlite3
+
+# Large/Generated Files
+extracted_rules.txt
+rules_utf8.txt
