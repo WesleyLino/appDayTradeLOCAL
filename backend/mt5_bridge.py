@@ -15,10 +15,11 @@ logging.basicConfig(
 )
 
 class MT5Bridge:
+    def __init__(self):
         self.mt5 = mt5 # Expor módulo para acesso externo (HFT)
+        self.connected = False
         self._macro_symbol_cache = None # [HFT v2.1] Cache para evitar busca repetitiva
-        
-    def connect(self):
+
         """Estabelece conexão com o MetaTrader 5 local."""
         if not mt5.initialize():
             logging.error(f"Falha ao inicializar MT5: {mt5.last_error()}")
@@ -382,19 +383,6 @@ class MT5Bridge:
         # Ordenação padrão:
         # Bids: Maior preço primeiro (Topo do book)
         bids.sort(key=lambda x: x['price'], reverse=True)
-        # Asks: Menor preço primeiro (Topo do book)
-        asks.sort(key=lambda x: x['price'])
-        
-        return {"bids": bids, "asks": asks}
-
-    def get_time_and_sales(self, symbol, n_ticks=100):
-        """Retorna os últimos negócios realizados (agressão)."""
-        ticks = mt5.copy_ticks_from_pos(symbol, datetime.now(), n_ticks, mt5.COPY_TICKS_ALL)
-        if ticks is None:
-            return None
-        return pd.DataFrame(ticks)
-
-    def update_sltp(self, ticket, sl, tp):
         """Modifica SL/TP de uma posição existente."""
         if not self.connected: return False
 

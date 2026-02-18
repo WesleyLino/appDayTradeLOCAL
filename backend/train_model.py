@@ -13,6 +13,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from backend.data_collector import DataCollector
 from backend.models import PatchTST, PointQuantileLoss
+from backend.ai_optimization import export_to_onnx
 
 # Configuração de Logs
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -76,7 +77,14 @@ def train():
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
     
     # Modelo e Otimização
-    model = PatchTST(seq_len=60, d_model=128, n_heads=4, num_layers=2)
+    model = PatchTST(
+        c_in=1, # Apenas 'Close' no treinamento simplificado
+        context_window=60, 
+        target_window=5,
+        d_model=128, 
+        n_heads=4, 
+        n_layers=2
+    )
     criterion = PointQuantileLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     
@@ -88,11 +96,27 @@ def train():
         total_loss = 0
         for x, y in dataloader:
             optimizer.zero_grad()
-            outputs = model(x)
+            outputs = model(x) # [Batch, Target_Window, Channels]
             
-            # O output do modelo é [batch, 3] (3 quantis)
-            # O target y é [batch] (valor real)
-            loss = criterion(outputs, y)
+            # Selecionar apenas o canal 'Close' (índice 3 assumido) e o último passo de tempo
+            # outputs: [Batch, Target_Window, 7] -> Queremos [Batch, 1] (Close do último step)
+            # Mas y é [Batch].
+            # Ajustando para comparar:
+            
+            # Assumindo que queremos prever o Close do próximo step (Target_Window=1 no dataset?)
+            # O Dataset retorna y como o valor do Close.
+            
+            # Pegamos o output do Close (idx 3)
+            # Se model.target_window > 1, pegamos o último? Ou treinamos todos?
+            # Dataset retorna 1 valor `y`. Então pegamos o último do target window ou o primeiro?
+            # TradingDataset: y = data[idx + seq_len : idx + seq_len + pred_len] -> y[0]
+            # Então target é 1 step ahead e apenas 1 valor.
+            
+            pred_close = outputs[:, -1, 0].unsqueeze(-1) # [Batch, 1]
+            target = y.unsqueeze(-1) # [Batch, 1]
+            
+            # Loss (PointQuantileLoss vai usar MSE já que temos apenas 1 canal de predição)
+            loss = criterion(pred_close, target)
             
             loss.backward()
             optimizer.step()
@@ -104,6 +128,13 @@ def train():
     save_path = "backend/patchtst_weights.pth"
     torch.save(model.state_dict(), save_path)
     logging.info(f"Modelo salvo com sucesso em: {save_path}")
+    
+    # [AMD Aceleração] Exportar para ONNX automaticamente
+    logging.info("Iniciando exportação automática para ONNX (DirectML)...")
+    if export_to_onnx(model_path=save_path, c_in=1, context_window=60):
+        logging.info("✅ Exportação ONNX concluída com sucesso!")
+    else:
+        logging.error("❌ Falha na exportação ONNX.")
 
 if __name__ == "__main__":
     import sys

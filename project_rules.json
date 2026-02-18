@@ -41,7 +41,14 @@
     }
   },
   "ai_logic": {
-    "price_model": "Local PatchTST (Transformer) via backend/models.py",
+    "ai_acceleration": {
+      "framework": "ONNX Runtime",
+      "execution_provider": "DmlExecutionProvider",
+      "fallback": "CPUExecutionProvider",
+      "precision": "FP16 (Half Precision)",
+      "note": "FORCE AMD COMPATIBILITY. Do not use torch.cuda."
+    },
+    "price_model": "Local PatchTST (Transformer) converted to ONNX (DirectML)",
     "sentiment_model": "Google Gemini 1.5 Pro (Score -1 a +1 via Notícias) - AsyncIO Non-Blocking",
     "microstructure": "Order Book Imbalance (OBI) + Detecção de Spoofing (Heurística)",
     "decision_matrix": "Entrada se Score > 85/100 (Soma ponderada de OBI, IA e SENT)",

@@ -59,6 +59,60 @@ class MicrostructureAnalyzer:
             
         self.prev_book_levels = current_book
         return ofi_sum
+
+    def calculate_wen_ofi(self, current_book: dict, levels: int = 5) -> float:
+        """
+        [SOTA] Calcula o Weighted Order Flow Imbalance (OFI) Ponderado.
+        Atribui peso decrescente aos níveis do book (L1=1.0, L2=0.8, ...)
+        Detecta pressão institucional real vs spoofing profundo.
+        """
+        if not current_book or self.prev_book_levels is None:
+            self.prev_book_levels = current_book
+            return 0.0
+            
+        ofi_weighted_sum = 0.0
+        
+        # Pesos Decrescentes (Linear Decay)
+        # L1=1.0, L2=0.8, L3=0.6, L4=0.4, L5=0.2
+        weights = [max(0.2, 1.0 - (i * 0.2)) for i in range(levels)]
+        
+        # Bids & Asks
+        curr_bids = current_book.get('bids', [])[:levels]
+        prev_bids = self.prev_book_levels.get('bids', [])[:levels]
+        curr_asks = current_book.get('asks', [])[:levels]
+        prev_asks = self.prev_book_levels.get('asks', [])[:levels]
+        
+        limit = min(levels, len(curr_bids), len(prev_bids), len(curr_asks), len(prev_asks))
+        
+        for i in range(limit):
+            w = weights[i]
+            ofi_layer = 0.0
+            
+            # --- Lado Compra (Bid) ---
+            try:
+                cb_p, cb_v = curr_bids[i].get('p', 0), curr_bids[i].get('v', 0)
+                pb_p, pb_v = prev_bids[i].get('p', 0), prev_bids[i].get('v', 0)
+                
+                if cb_p > pb_p: ofi_layer += cb_v
+                elif cb_p < pb_p: ofi_layer -= pb_v
+                elif cb_p > 0: ofi_layer += (cb_v - pb_v)
+            except: pass
+            
+            # --- Lado Venda (Ask) ---
+            try:
+                ca_p, ca_v = curr_asks[i].get('p', 0), curr_asks[i].get('v', 0)
+                pa_p, pa_v = prev_asks[i].get('p', 0), prev_asks[i].get('v', 0)
+                
+                if ca_p < pa_p: ofi_layer -= ca_v
+                elif ca_p > pa_p: ofi_layer += pa_v
+                elif ca_p > 0: ofi_layer -= (ca_v - pa_v)
+            except: pass
+            
+            ofi_weighted_sum += (ofi_layer * w)
+            
+        self.prev_book_levels = current_book
+        return ofi_weighted_sum
+
         """
         Calcula o Cumulative Volume Delta (CVD) a partir de um DataFrame de ticks.
         Retorna o valor final do CVD e a tendência (inclinação).

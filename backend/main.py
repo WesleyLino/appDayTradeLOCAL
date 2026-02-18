@@ -7,7 +7,7 @@ from backend.risk_manager import RiskManager
 from backend.ai_core import AICore, InferenceEngine
 from backend.persistence import PersistenceManager
 from backend.rl_agent import PPOAgent # HFT v2.0
-from backend.microstructure import MicrostructureAnalyzer # HFT v2.0
+from backend.microstructure_analyzer import MicrostructureAnalyzer # HFT v2.0
 import numpy as np
 from .data_collector import DataCollector
 import time as time_module
@@ -219,12 +219,14 @@ async def websocket_endpoint(websocket: WebSocket):
                     ai_total_score = decision["score"]
                     ai_direction = decision["direction"]
 
-                    # --- ALPHA-X: OFI Level 2 ---
-                    ofi_val = micro_analyzer.calculate_ofi_level2(book)
-                    if ofi_val > 500 and ai_direction == "BUY":
-                        ai_total_score = min(100.0, ai_total_score + 3.0)
-                    elif ofi_val < -500 and ai_direction == "SELL":
-                        ai_total_score = min(100.0, ai_total_score + 3.0)
+                    # --- ALPHA-X: OFI Ponderado (SOTA) ---
+                    # Substituindo Level 2 simples por Weighted OFI
+                    wen_ofi_val = micro_analyzer.calculate_wen_ofi(book)
+                    
+                    if wen_ofi_val > 500 and ai_direction == "BUY":
+                        ai_total_score = min(100.0, ai_total_score + 4.0) # Peso ajustado para SOTA
+                    elif wen_ofi_val < -500 and ai_direction == "SELL":
+                        ai_total_score = min(100.0, ai_total_score + 4.0)
 
                     # --- ALPHA-X: PSR RELIABILITY VETO ---
                     if not reliability_ok and len(returns_history) >= 30:
@@ -436,7 +438,16 @@ async def websocket_endpoint(websocket: WebSocket):
                                 if not valid_comp:
                                      logging.warning(f"BLOCK Compliance: {reason_comp}")
                                 else:
-                                    params = risk.get_order_params(symbol, order_type, current_order_price, 1)
+                                    # [SOTA] Volatility Sizing
+                                    # Calcula lotes baseados na volatilidade atual
+                                    point_value = 10.0 if "WDO" in symbol or "DOL" in symbol else 0.20
+                                    sota_lots = risk.calculate_volatility_sizing(account['balance'], current_atr, point_value)
+                                    # Arredondar para inteiro (MT5 stocks) ou step mínimo (futuros é 1)
+                                    final_lots = max(1, int(sota_lots))
+                                    
+                                    logging.info(f"[SOTA] Volatility Sizing: {final_lots} lotes (ATR: {current_atr:.1f})")
+
+                                    params = risk.get_order_params(symbol, order_type, current_order_price, final_lots)
                                     params["symbol"] = symbol
                                     params["comment"] = "AUTO-RESILIENTE SCORE >= 75"
                                     
@@ -444,7 +455,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                     result = await asyncio.to_thread(bridge.place_resilient_order, params)
                                     
                                     if result and result.retcode == bridge.mt5.TRADE_RETCODE_DONE:
-                                        persistence.save_trade(symbol, side, current_order_price, 1, "AUTO_DONE")
+                                        persistence.save_trade(symbol, side, current_order_price, final_lots, "AUTO_DONE")
                                         persistence.save_state("last_auto_trade", f"{side} at {current_order_price}")
                                         # Log de Slippage: Preço Executado vs Preço Solicitado
                                         slippage = abs(result.price - current_order_price)
@@ -489,6 +500,13 @@ async def websocket_endpoint(websocket: WebSocket):
                             "ai_score": ai_total_score,
                             "ai_direction": ai_direction,
                             "limits": session_limits
+                        },
+                        "sota": {
+                           "forecast": ai_predict_data.get("forecast", last_price) if isinstance(ai_predict_data, dict) else last_price,
+                           "confidence": ai_confidence,
+                           "uncertainty_range": ai_predict_data.get("uncertainty", 0.0) if isinstance(ai_predict_data, dict) else 0.0,
+                           "weighted_ofi": wen_ofi_val,
+                           "regime": regime
                         },
                         "account": account,
                         "timestamp": asyncio.get_event_loop().time()

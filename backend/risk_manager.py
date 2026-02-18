@@ -149,6 +149,42 @@ class RiskManager:
              return False
         return True
 
+    def calculate_volatility_sizing(self, balance: float, current_atr: float, point_value: float = 0.20, risk_pct: float = 0.01) -> float:
+        """
+        [SOTA] Calcula o tamanho do lote baseado na volatilidade (Volatility Sizing).
+        Objetivo: Equalizar o risco financeiro ($ em risco) independente da volatilidade.
+        
+        Fórmula: Lotes = (Saldo * Risco%) / (ATR * Valor_Ponto)
+        
+        Exemplo WIN: 
+          Saldo=1000, Risco=1% ($10), ATR=100pts, ValorPonto=$0.20
+          Stop Financeiro Oculto ≈ 1 ATR
+          Lotes = 10 / (100 * 0.20) = 10 / 20 = 0.5 (Arredonda para 1 min)
+          
+        Args:
+            balance: Saldo atual da conta.
+            current_atr: Volatilidade atual (em pontos).
+            point_value: Valor financeiro por ponto (WIN=0.20, WDO=10.0).
+            risk_pct: % do saldo a arriscar por trade (Default 1%).
+            
+        Returns:
+            float: Quantidade de lotes sugerida (não arredondada inteira, tratar no caller).
+        """
+        if current_atr <= 0 or point_value <= 0:
+            return 1.0 # Fallback conservador
+            
+        risk_amount = balance * risk_pct
+        volatility_cost = current_atr * point_value
+        
+        if volatility_cost == 0: return 1.0
+        
+        suggested_lots = risk_amount / volatility_cost
+        
+        # Clip de segurança (Ex: não operar menos que 1 lote nem mais que alavancagem excessiva)
+        # Aqui retornamos o valor bruto para decisão superior
+        return max(0.1, suggested_lots)
+
+
     def get_order_params(self, symbol, type, price, volume):
         """
         Retorna parâmetros calculados para envio de ordem OCO (One Cancels Other).
