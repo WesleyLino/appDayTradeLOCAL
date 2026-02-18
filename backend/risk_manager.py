@@ -218,6 +218,11 @@ class RiskManager:
             else:
                 side = "neutral"
 
+            # --- HFT DEFENSIVE MATH: QUANTIZAR PREÇO (B3 TICK SIZE) ---
+            sl = self._quantize_price(symbol, sl)
+            tp = self._quantize_price(symbol, tp)
+            # ----------------------------------------------------------
+
             # --- HFT ANTI-VIOLINADA (FASE 5b) ---
             # Ajuste fino para não deixar pedra em número redondo
             sl = self._apply_anti_violinada(symbol, sl, side)
@@ -238,6 +243,23 @@ class RiskManager:
             "type_time": mt5.ORDER_TIME_DAY, # Ordem válida até o final do dia (Day Trade)
             "type_filling": mt5.ORDER_FILLING_RETURN, # Permite execução parcial (Limit Orders na B3)
         }
+    def _quantize_price(self, symbol, price):
+        """
+        Garante que o preço seja um múltiplo do tick size (B3).
+        WIN: 5 pontos | WDO: 0.5 pontos
+        """
+        if price <= 0: return 0.0
+        
+        if "WDO" in symbol or "DOL" in symbol:
+            tick_size = 0.5
+        elif "WIN" in symbol or "IND" in symbol:
+            tick_size = 5.0
+        else:
+            return price # Outros ativos
+
+        # Arredonda para o múltiplo mais próximo
+        return round(price / tick_size) * tick_size
+
     def _apply_anti_violinada(self, symbol, price, side):
         """
         Ajusta o preço de Stop/TP para evitar números redondos (Violinada).
@@ -275,6 +297,9 @@ class RiskManager:
                     new_price = price + offset
                 else:
                     new_price = price
+                
+                # Garantir que após o offset, o preço continue quantizado (IMPORTANTÍSSIMO)
+                new_price = self._quantize_price(symbol, new_price)
                 
                 logging.info(f"🛡️ ANTI-VIOLINADA: Ajustando {price} -> {new_price} ({symbol})")
                 return new_price

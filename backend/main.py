@@ -62,26 +62,8 @@ def panic_close_all():
         mt5 = bridge.mt5
         positions = mt5.positions_get()
         if positions:
-            for pos in positions:
-                # B3 Netting: Enviar ordem oposta para zerar
-                order_type = mt5.ORDER_TYPE_SELL if pos.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
-                price = mt5.symbol_info_tick(pos.symbol).bid if order_type == mt5.ORDER_TYPE_SELL else mt5.symbol_info_tick(pos.symbol).ask
-                
-                request = {
-                    "action": mt5.TRADE_ACTION_DEAL,
-                    "symbol": pos.symbol,
-                    "volume": pos.volume,
-                    "type": order_type,
-                    "price": price,
-                    "deviation": 10,
-                    "magic": 123456,
-                    "comment": "PANIC CLOSE",
-                    "type_time": mt5.ORDER_TIME_GTC,
-                    "type_filling": mt5.ORDER_FILLING_FOK,
-                }
-                result = mt5.order_send(request)
-                if result.retcode != mt5.TRADE_RETCODE_DONE:
-                    logging.error(f"Falha ao zerar posição {pos.ticket}: {result.comment}")
+                # B3 Netting: Enviar ordem oposta via close_position (Centralizado)
+                bridge.close_position(pos.ticket)
         
         persistence.save_state("panic_status", "CLOSED_ALL")
 
@@ -370,7 +352,15 @@ async def websocket_endpoint(websocket: WebSocket):
                         try:
                             positions = await asyncio.to_thread(bridge.mt5.positions_get, symbol=symbol)
                             if positions:
-                                for pos in positions:
+                                    # --- ALPHA-X: TRIPLE BARRIER (TIME EXIT) ---
+                                    # Se a posição estiver aberta há mais de 15 minutos e não atingiu SL/TP, fechamos.
+                                    # Pos.time é em segundos (timestamp)
+                                    pos_age_min = (time_module.time() - pos.time) / 60
+                                    if pos_age_min > 15.0:
+                                        logging.warning(f"ALPHA-X TIME EXIT: Posição {pos.ticket} aberta há {pos_age_min:.1f} min. Fechando a mercado.")
+                                        await asyncio.to_thread(bridge.close_position, pos.ticket)
+                                        continue
+                                    
                                     is_wdo = "WDO" in symbol or "DOL" in symbol
                                     # Configuração Trailing (Poderia vir do Config/Risk)
                                     trigger_pts = 5.0 if is_wdo else 100.0 # Gatilho para iniciar
@@ -399,14 +389,14 @@ async def websocket_endpoint(websocket: WebSocket):
                                                 await asyncio.to_thread(bridge.update_sltp, pos.ticket, new_sl, pos.tp)
                                                 logging.info(f"TRAILING STOP (SELL): SL movido para {new_sl}")
                         except Exception as e:
-                            logging.error(f"Erro no Trailing Stop: {e}")
+                            logging.error(f"Erro no Trailing/Time Stop: {e}")
 
                     if risk.should_force_close():
                         await asyncio.to_thread(panic_close_all)
                         logging.warning("Check Force Close: 17:50 atingido.")
 
                     # --- LÓGICA DE DECISÃO DE TRADE ---
-                    if risk.allow_autonomous and ai_total_score >= 75 and risk_ok and market_ok and time_allowed:
+                    if risk.allow_autonomous and ai_total_score >= 85 and risk_ok and market_ok and time_allowed:
                         if ai_direction in ["BUY", "SELL"]:
                             side = "buy" if ai_direction == "BUY" else "sell"
                             
@@ -499,17 +489,22 @@ async def websocket_endpoint(websocket: WebSocket):
                             "atr": current_atr,
                             "ai_score": ai_total_score,
                             "ai_direction": ai_direction,
-                            "limits": session_limits
+                            "limits": session_limits,
+                            "psr": current_psr
                         },
                         "sota": {
                            "forecast": ai_predict_data.get("forecast", last_price) if isinstance(ai_predict_data, dict) else last_price,
                            "confidence": ai_confidence,
                            "uncertainty_range": ai_predict_data.get("uncertainty", 0.0) if isinstance(ai_predict_data, dict) else 0.0,
+                           "lower_bound": ai_predict_data.get("lower_bound", last_price) if isinstance(ai_predict_data, dict) else last_price,
+                           "upper_bound": ai_predict_data.get("upper_bound", last_price) if isinstance(ai_predict_data, dict) else last_price,
                            "weighted_ofi": wen_ofi_val,
+                           "synthetic_index": synthetic_idx,
+                           "psr": current_psr,
                            "regime": regime
                         },
                         "account": account,
-                        "timestamp": asyncio.get_event_loop().time()
+                        "timestamp": time.time()
                     }
                     await websocket.send_json(packet)
                     

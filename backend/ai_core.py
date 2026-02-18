@@ -421,8 +421,13 @@ class InferenceEngine:
         # 1. Tentar carregar ONNX (AMD GPU Acceleration)
         if self.onnx_path and os.path.exists(self.onnx_path):
             try:
+                # Configurações de Otimização para AMD RX 6650 XT
+                options = ort.SessionOptions()
+                options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+                options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL # Mais estável DirectML
+                
                 providers = ['DmlExecutionProvider', 'CPUExecutionProvider']
-                self.ort_session = ort.InferenceSession(self.onnx_path, providers=providers)
+                self.ort_session = ort.InferenceSession(self.onnx_path, sess_options=options, providers=providers)
                 self.use_onnx = True
                 active_provider = self.ort_session.get_providers()[0]
                 logging.info(f"🚀 INFERENCE ENGINE: ONNX Runtime Ativo | Provider: {active_provider}")
@@ -474,11 +479,18 @@ class InferenceEngine:
             # 1. Pre-processing (Igual para ambos)
             data = dataframe['close'].values[-60:]
             mean = data.mean()
-            std = data.std() + 1e-8
+            std = data.std()
+            
+            # [FILTRO DE ROBUSTEZ] Evitar divisão por zero se o preço estiver parado
+            if std < 1e-9:
+                std = 1e-4 # Valor mínimo de desvio
+                
             norm_data = (data - mean) / std
             
             # Input Shape: [Batch=1, Seq=60, Channels=1]
-            input_tensor = norm_data[np.newaxis, :, np.newaxis].astype(np.float32)
+            # [AMD OPTIMIZATION] Cast para float16 se estiver usando ONNX FP16
+            dtype = np.float16 if self.use_onnx else np.float32
+            input_tensor = norm_data[np.newaxis, :, np.newaxis].astype(dtype)
             
             # Check for NaNs before inference
             if np.isnan(input_tensor).any():
@@ -489,23 +501,33 @@ class InferenceEngine:
             if self.use_onnx:
                 # ONNX Runtime
                 input_name = self.ort_session.get_inputs()[0].name
-                preds = self.ort_session.run(None, {input_name: input_tensor})[0] # [1, 5, 1]
-                preds = preds[0] # [5, 1] - Remove batch
+                raw_preds = self.ort_session.run(None, {input_name: input_tensor})[0] # [1, 5, C]
+                preds = raw_preds[0] # [5, C] - Remove batch
                 
-                # Assume-se output determinístico (Single Value per step)
-                # Usamos heurística de incerteza (2%) já que o modelo atual não exporta quantis nativos
-                val = preds[-1, 0] # Last step, 1st channel
-                q10, q50, q90 = val * 0.99, val, val * 1.01
+                # [SOTA] Detecção de Quantis nativos (Point-Quantile Loss)
+                # Se C == 3, mapeamos [0:q10, 1:q50, 2:q90]
+                # Se C == 1, usamos heurística defensiva
+                if preds.shape[1] == 3:
+                    q10, q50, q90 = preds[-1, 0], preds[-1, 1], preds[-1, 2]
+                    logging.debug("🧠 SOTA: Usando quantis nativos do modelo.")
+                else:
+                    val = preds[-1, 0]
+                    q10, q50, q90 = val * 0.99, val, val * 1.01
+                    logging.debug("🧠 SOTA: Usando heurística de incerteza (Single Channel).")
                 
             else:
                 # PyTorch Legacy
                 x = torch.tensor(input_tensor)
                 with torch.no_grad():
-                    out = self.model(x) # [1, 5, 1]
-                    val = out[0, -1, 0].item()
-                    q10, q50, q90 = val * 0.99, val, val * 1.01
+                    out = self.model(x) # [1, 5, C]
+                    preds = out[0].numpy()
+                    if preds.shape[1] == 3:
+                        q10, q50, q90 = preds[-1, 0], preds[-1, 1], preds[-1, 2]
+                    else:
+                        val = preds[-1, 0]
+                        q10, q50, q90 = val * 0.99, val, val * 1.01
 
-            # Post-processing (Heurística de Incerteza)
+            # 3. Post-processing (Conformal Calibration Space)
             forecast_price = (q50 * std) + mean
             lower_bound = (q10 * std) + mean
             upper_bound = (q90 * std) + mean

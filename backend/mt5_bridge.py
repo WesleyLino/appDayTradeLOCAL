@@ -383,22 +383,62 @@ class MT5Bridge:
         # Ordenação padrão:
         # Bids: Maior preço primeiro (Topo do book)
         bids.sort(key=lambda x: x['price'], reverse=True)
+    def update_sltp(self, ticket, sl, tp):
         """Modifica SL/TP de uma posição existente."""
         if not self.connected: return False
 
         request = {
-            "action": self.mt5.TRADE_ACTION_SLTP,
+            "action": mt5.TRADE_ACTION_SLTP,
             "position": ticket,
             "sl": float(sl),
             "tp": float(tp),
-            "magic": 123456,
         }
         
-        result = self.mt5.order_send(request)
-        if result.retcode != self.mt5.TRADE_RETCODE_DONE:
+        result = mt5.order_send(request)
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
             logging.error(f"Falha ao atualizar SL/TP (Ticket {ticket}): {result.comment}")
             return False
             
+        return True
+
+    def close_position(self, ticket):
+        """
+        Encerra uma posição aberta (B3 Netting).
+        Informa o ticket e envia ordem oposta para zeragem.
+        """
+        if not self.connected: return False
+
+        positions = mt5.positions_get(ticket=ticket)
+        if not positions:
+            logging.warning(f"Fechar Posição: Ticket {ticket} não encontrado.")
+            return False
+        
+        pos = positions[0]
+        symbol = pos.symbol
+        volume = pos.volume
+        order_type = mt5.ORDER_TYPE_SELL if pos.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
+        price = mt5.symbol_info_tick(symbol).ask if order_type == mt5.ORDER_TYPE_BUY else mt5.symbol_info_tick(symbol).bid
+
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": float(volume),
+            "type": order_type,
+            "position": ticket,
+            "price": price,
+            "deviation": 5,
+            "magic": 123456,
+            "comment": "ZEZERAGEM SOTA (EXIT)",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_RETURN,
+        }
+
+        result = mt5.order_send(request)
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            logging.error(f"Falha ao fechar posição {ticket}: {result.comment}")
+            return False
+            
+        logging.info(f"POSIÇÃO ENCERRADA: Ticket {ticket} ({symbol})")
         return True
 
     def validate_order_compliance(self, symbol, price):

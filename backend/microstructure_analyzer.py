@@ -8,6 +8,23 @@ class MicrostructureAnalyzer:
         self.last_cvd = 0.0
         self.prev_book_levels = None
 
+    def analyze(self, current_book, ticks_df=None):
+        """
+        [SOTA] Interface unificada para análise de microestrutura.
+        Agrega Weighted OFI e detecção de Divergência/Absorção.
+        """
+        # 1. OFI Ponderado (SOTA)
+        ofi = self.calculate_wen_ofi(current_book)
+        
+        # 2. CVD do batch atual
+        cvd = self.calculate_cvd(ticks_df) if ticks_df is not None else 0.0
+        
+        # 3. Normalização simples do OFI para range (-1, 1) relativo
+        # Heurística: 1000 contratos de desequilíbrio é sinal forte
+        signal = np.tanh(ofi / 500.0) 
+        
+        return signal
+
     def calculate_ofi_level2(self, current_book: dict, levels: int = 5) -> float:
         """
         Calcula o Order Flow Imbalance (OFI) multínivel (Level 2).
@@ -90,8 +107,8 @@ class MicrostructureAnalyzer:
             
             # --- Lado Compra (Bid) ---
             try:
-                cb_p, cb_v = curr_bids[i].get('p', 0), curr_bids[i].get('v', 0)
-                pb_p, pb_v = prev_bids[i].get('p', 0), prev_bids[i].get('v', 0)
+                cb_p, cb_v = curr_bids[i].get('price', 0), curr_bids[i].get('volume', 0)
+                pb_p, pb_v = prev_bids[i].get('price', 0), prev_bids[i].get('volume', 0)
                 
                 if cb_p > pb_p: ofi_layer += cb_v
                 elif cb_p < pb_p: ofi_layer -= pb_v
@@ -100,8 +117,8 @@ class MicrostructureAnalyzer:
             
             # --- Lado Venda (Ask) ---
             try:
-                ca_p, ca_v = curr_asks[i].get('p', 0), curr_asks[i].get('v', 0)
-                pa_p, pa_v = prev_asks[i].get('p', 0), prev_asks[i].get('v', 0)
+                ca_p, ca_v = curr_asks[i].get('price', 0), curr_asks[i].get('volume', 0)
+                pa_p, pa_v = prev_asks[i].get('price', 0), prev_asks[i].get('volume', 0)
                 
                 if ca_p < pa_p: ofi_layer -= ca_v
                 elif ca_p > pa_p: ofi_layer += pa_v

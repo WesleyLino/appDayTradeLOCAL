@@ -37,6 +37,7 @@
       "max_daily_loss_brl": 200.0,
       "forbidden_hours": ["08:55-09:05", "12:00-13:00", "16:55-18:00"],
       "circuit_breaker": "Parar se volatilidade > 3x ATR (Average True Range)",
+      "exit_strategy": "Triple Barrier Method (Profit/Loss/Time Barrier 15min)",
       "latency_alert_ms": 50
     }
   },
