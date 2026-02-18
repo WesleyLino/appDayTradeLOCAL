@@ -162,8 +162,9 @@ SAÍDA OBRIGATÓRIA (JSON):
         
         # 2. Detecção de Toxic Flow (Remoção Súbita vs Execução Real)
         if self.prev_book is not None:
-            prev_bid = sum(item['volume'] for item in self.prev_book if item['type'] == 0)
-            prev_ask = sum(item['volume'] for item in self.prev_book if item['type'] == 1)
+            # Cálculo correto com base na estrutura dict {"bids": [], "asks": []}
+            prev_bid = sum(item['volume'] for item in self.prev_book.get('bids', []))
+            prev_ask = sum(item['volume'] for item in self.prev_book.get('asks', []))
             
             # Cálculo exato de agressão (Volume Executado por Lado)
             # time_sales deve ser filtrado se possível, ou usar heurística
@@ -174,39 +175,40 @@ SAÍDA OBRIGATÓRIA (JSON):
             buy_aggression_vol = 0 # Agressão de Compra (consome Ask)
             
             if time_sales is not None and not time_sales.empty:
-                # Heurística rápida se flags não estiverem prontas:
-                # Preço == Bid -> Sell Aggression / Preço == Ask -> Buy Aggression
-                # Para robustez, assumimos volume total dividido (pior caso) ou zero se vazio.
-                real_volume = time_sales['volume'].sum() # Fallback
+                # Na B3, TICK_FLAG_BUY (agressão compra) e TICK_FLAG_SELL (agressão venda)
+                # 0x100: BUY, 0x200: SELL (Flags MT5)
+                buy_aggression_vol = time_sales[time_sales['flags'] & 0x100]['volume'].sum() if 'flags' in time_sales.columns else 0
+                sell_aggression_vol = time_sales[time_sales['flags'] & 0x200]['volume'].sum() if 'flags' in time_sales.columns else 0
+                real_volume = buy_aggression_vol + sell_aggression_vol
             else:
                 real_volume = 0
             
-            # --- LÓGICA DINÂMICA HFT ---
-            delta_bid = prev_bid - total_bid
-            delta_ask = prev_ask - total_ask
+            # --- LÓGICA ALPHA-X: CANCELLATION RATE ---
+            # Comparamos quanto do volume sumiu (delta) vs quanto foi de fato executado (aggression)
+            delta_bid = max(0, prev_bid - total_bid)
+            delta_ask = max(0, prev_ask - total_ask)
             
-            # Limite Dinâmico: 10% do volume total do lado do book
-            # Isso evita que o sistema ignore spoofing em momentos de baixa liquidez
-            # ou seja enganado por "lote de 100" em momentos de alta liquidez.
+            # Cancellation Rate: Proporção do volume removido que NÃO foi trade
+            # Se sumiu 1000 e trade foi 100, 900 foram cancelados -> CR = 0.9
+            cr_bid = (delta_bid - sell_aggression_vol) / delta_bid if delta_bid > 0 else 0
+            cr_ask = (delta_ask - buy_aggression_vol) / delta_ask if delta_ask > 0 else 0
+
+            # Thresholds Dinâmicos (HFT v2.1)
             threshold_bid = max(20, total_bid * 0.1)
             threshold_ask = max(20, total_ask * 0.1)
             
-            # Limite de Agressão: 2% do volume do book (muito pouco trade para sumir tanto lote)
-            agg_threshold_bid = max(5, total_bid * 0.02)
-            agg_threshold_ask = max(5, total_ask * 0.02)
-            
-            # SPOOFING DE COMPRA: Bid some MAS houve pouca agressão de venda
-            if delta_bid > threshold_bid and real_volume < agg_threshold_bid:
-                self.toxic_flow_score = -0.8
-                logging.info(f"SPOOFING ALERT (DYNAMIC): Bid sumiu ({delta_bid:.0f} > {threshold_bid:.0f}) sem trade.")
+            # [SPOOFING DE COMPRA]: Lotes sumindo no Bid sem agressão correspondente
+            if delta_bid > threshold_bid and cr_bid > 0.8:
+                self.toxic_flow_score = -0.9
+                logging.warning(f"🔥 ALPHA-X SPOOFING: Compra sumiu por cancelamento (CR: {cr_bid:.2f})")
 
-            # SPOOFING DE VENDA: Ask some MAS houve pouca agressão de compra
-            elif delta_ask > threshold_ask and real_volume < agg_threshold_ask: 
-                self.toxic_flow_score = 0.8
-                logging.info(f"SPOOFING ALERT (DYNAMIC): Ask sumiu ({delta_ask:.0f} > {threshold_ask:.0f}) sem trade.")
+            # [SPOOFING DE VENDA]: Lotes sumindo no Ask sem agressão correspondente
+            elif delta_ask > threshold_ask and cr_ask > 0.8:
+                self.toxic_flow_score = 0.9
+                logging.warning(f"🔥 ALPHA-X SPOOFING: Venda sumiu por cancelamento (CR: {cr_ask:.2f})")
                 
             else:
-                self.toxic_flow_score *= 0.8 # Decaimento gradual do alerta
+                self.toxic_flow_score *= 0.8 # Decaimento
                 
         self.prev_book = order_book
         
@@ -267,27 +269,26 @@ SAÍDA OBRIGATÓRIA (JSON):
         else:
             norm_patchtst = (patchtst_score - 0.5) * 2 
         
-        # 2. Pesos Dinâmicos (Regime Adaptativo - HFT v2.0)
-        # Default (Neutro/Indefinido)
-        w_obi = 0.40
-        w_patchtst = 0.40
+        # 2. Pesos Dinâmicos (HFT v2.1: AlphaX - Transformer First)
+        # O modelo Transformer (PatchTST) é o âncora contextual principal.
+        w_patchtst = 0.50
+        w_obi = 0.30
         w_sent = 0.20
 
         # [VETO POR INCERTEZA] Se PatchTST estiver muito incerto, anular peso
-        # Se largura do intervalo > 0.15 (arbitrário, calibrar), consideramos 'cego'
         if uncertainty_width > 0.15:
-            logging.warning(f"CONFORMAL VETO: PatchTST incerto ({uncertainty_width:.4f}). ZERANDO peso.")
+            logging.warning(f"CONFORMAL VETO: PatchTST incerto ({uncertainty_width:.4f}).")
             w_patchtst = 0.0
-            w_obi = 0.60
-            w_sent = 0.40
-        elif regime == 0: # Consolidação / Ruído -> Foco em Fluxo (Scalping)
-            w_obi = 0.60
-            w_patchtst = 0.20
+            w_obi = 0.70 # Backup para Microestrutura (OBI)
+            w_sent = 0.30
+        elif regime == 0: # Consolidação / Ruído -> Equilíbrio Fluxo/Predição
+            w_obi = 0.50
+            w_patchtst = 0.30
             w_sent = 0.20
-        elif regime == 1: # Tendência Clara -> Foco em Modelo Preditivo
+        elif regime == 1: # Tendência Clara -> Maximizar Transformer
             w_obi = 0.20
-            w_patchtst = 0.60
-            w_sent = 0.20
+            w_patchtst = 0.70
+            w_sent = 0.10
         
         # 3. Cálculo do Sinal Composto (AI_Score Bruto)
         composite_signal = (obi * w_obi) + (norm_patchtst * w_patchtst) + (sentiment * w_sent)
@@ -300,6 +301,9 @@ SAÍDA OBRIGATÓRIA (JSON):
         # --- HFT v2.0: Meta-Learner (XGBoost) para refinar a decisão ---
         # Features esperadas: [ATR, OBI, Sentiment, Volatility, Hour, AI_Score_Raw]
         meta_features = [atr, obi, sentiment, volatility, hour, ai_score_raw]
+        
+        # [HFT v2.1] Sanitize inputs: substituir NaN ou Inf por 0.0 para evitar crash no XGBoost
+        meta_features = [x if np.isfinite(x) else 0.0 for x in meta_features]
         
         # [HFT v2.1] Fallback se o modelo não estiver treinado/carregado
         try:

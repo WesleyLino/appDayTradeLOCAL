@@ -6,8 +6,59 @@ import MetaTrader5 as mt5
 class MicrostructureAnalyzer:
     def __init__(self):
         self.last_cvd = 0.0
+        self.prev_book_levels = None
 
-    def calculate_cvd(self, ticks_df):
+    def calculate_ofi_level2(self, current_book: dict, levels: int = 5) -> float:
+        """
+        Calcula o Order Flow Imbalance (OFI) multínivel (Level 2).
+        OFI ajuda a identificar pressão de ordens passivas antes do trade ocorrer.
+        """
+        if not current_book or self.prev_book_levels is None:
+            self.prev_book_levels = current_book
+            return 0.0
+            
+        ofi_sum = 0.0
+        
+        # Bids
+        curr_bids = current_book.get('bids', [])[:levels]
+        prev_bids = self.prev_book_levels.get('bids', [])[:levels]
+        
+        # Asks
+        curr_asks = current_book.get('asks', [])[:levels]
+        prev_asks = self.prev_book_levels.get('asks', [])[:levels]
+        
+        # Processar Bids (Lado Compra)
+        for i in range(min(len(curr_bids), len(prev_bids))):
+            try:
+                c_p, c_v = curr_bids[i].get('price', 0), curr_bids[i].get('volume', 0)
+                p_p, p_v = prev_bids[i].get('price', 0), prev_bids[i].get('volume', 0)
+                
+                if c_p > p_p: 
+                    ofi_sum += c_v
+                elif c_p < p_p: 
+                    ofi_sum -= p_v
+                elif c_p > 0: # Preços iguais
+                    ofi_sum += (c_v - p_v)
+            except (KeyError, IndexError):
+                continue
+            
+        # Processar Asks (Lado Venda)
+        for i in range(min(len(curr_asks), len(prev_asks))):
+            try:
+                c_p, c_v = curr_asks[i].get('price', 0), curr_asks[i].get('volume', 0)
+                p_p, p_v = prev_asks[i].get('price', 0), prev_asks[i].get('volume', 0)
+                
+                if c_p < p_p: 
+                    ofi_sum -= c_v
+                elif c_p > p_p: 
+                    ofi_sum += p_v
+                elif c_p > 0: # Preços iguais
+                    ofi_sum -= (c_v - p_v)
+            except (KeyError, IndexError):
+                continue
+            
+        self.prev_book_levels = current_book
+        return ofi_sum
         """
         Calcula o Cumulative Volume Delta (CVD) a partir de um DataFrame de ticks.
         Retorna o valor final do CVD e a tendência (inclinação).

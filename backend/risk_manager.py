@@ -1,5 +1,7 @@
 from datetime import datetime, time
 import logging
+import math
+import numpy as np
 
 class RiskManager:
     def __init__(self, max_daily_loss=200.00):
@@ -18,6 +20,53 @@ class RiskManager:
             if start <= now <= end:
                 return False
         return True
+
+    def calculate_psr(self, returns_list, benchmark_sr=0.0):
+        """
+        Calcula o Probabilistic Sharpe Ratio (PSR).
+        Determina se a performance observada é estatisticamente significativa.
+        """
+        n = len(returns_list)
+        if n < 30: # Amostra mínima conforme econometria para convergência
+            return 1.0 # Neutro
+            
+        returns = np.array(returns_list)
+        mean_ret = np.mean(returns)
+        std_ret = np.std(returns)
+        
+        if std_ret == 0: return 0.0
+        
+        sr = mean_ret / std_ret
+        
+        # Momentos (Skewness e Kurtosis)
+        diffs = returns - mean_ret
+        m2 = np.mean(diffs**2)
+        m3 = np.mean(diffs**3)
+        m4 = np.mean(diffs**4)
+        
+        skew = m3 / (m2**1.5) if m2 > 0 else 0
+        kurt = m4 / (m2**2) - 3 if m2 > 0 else 0 # Excess Kurtosis
+        
+        # Fórmula de Bailey and López de Prado
+        v = (1 - skew * sr + (kurt / 4) * (sr**2))
+        if v <= 0: return 0.0
+        
+        z = (sr - benchmark_sr) * math.sqrt(n - 1) / math.sqrt(v)
+        
+        # CDF Normal Aproximada (ERF)
+        psr = 0.5 * (1 + math.erf(z / math.sqrt(2)))
+        return psr
+
+    def validate_reliability(self, returns_list):
+        """
+        Veto AlphaX: Bloqueia se a confiabilidade estatística (PSR) for < 95%.
+        """
+        if not returns_list: return True, 1.0
+        
+        psr = self.calculate_psr(returns_list)
+        if psr < 0.95:
+            return False, psr
+        return True, psr
 
     def should_force_close(self):
         """Verifica se passou das 17:50 para encerramento compulsório."""

@@ -108,6 +108,9 @@ async def websocket_endpoint(websocket: WebSocket):
     
     # Variáveis de Estado Persistentes no Loop
     symbol = "WIN$" # Inicial
+    returns_history = []
+    prev_total_profit = 0.0
+    current_day = datetime.now().day
     
     try:
         while True:
@@ -142,12 +145,35 @@ async def websocket_endpoint(websocket: WebSocket):
                     )
                     
                     # 1.1 Processamento de Conta e Risco (CRÍTICO: Definir variáveis antes do uso)
-                    account = account_info._asdict() if account_info else {}
-                    floating_profit = account_info.profit if account_info else 0.0
+                    if account_info is None:
+                        logging.warning(f"WAIT: account_info indisponível para {symbol}. Retrying...")
+                        await asyncio.sleep(1)
+                        continue
+                        
+                    account = account_info._asdict()
+                    floating_profit = account_info.profit
                     total_daily_profit = daily_realized + floating_profit
-                    
                     # Validação de Risco Diário
                     risk_ok, risk_msg = risk.check_daily_loss(total_daily_profit)
+                    
+                    # Validação de Dados de Mercado (Fail-Safe)
+                    if data_60 is None or data_60.empty:
+                        logging.warning(f"WAIT: Dados Históricos indisponíveis para {symbol}. Ignorando iteração.")
+                        await asyncio.sleep(1)
+                        continue
+                    
+                    # --- ALPHA-X: PSR & RELIABILITY ---
+                    # Usamos um epsilon de 0.01 (B3 Tick Min) para evitar ruído estatístico
+                    pnl_diff = total_daily_profit - prev_total_profit
+                    if abs(pnl_diff) > 0.01:
+                        returns_history.append(pnl_diff)
+                        prev_total_profit = total_daily_profit
+                    
+                    # Manter histórico manejável (últimos 1000 retornos)
+                    if len(returns_history) > 1000: returns_history.pop(0)
+                    
+                    reliability_ok, current_psr = risk.validate_reliability(returns_history)
+                    # ----------------------------------
                     
                     # Validação de Horário
                     time_allowed = risk.is_time_allowed()
@@ -193,6 +219,19 @@ async def websocket_endpoint(websocket: WebSocket):
                     ai_total_score = decision["score"]
                     ai_direction = decision["direction"]
 
+                    # --- ALPHA-X: OFI Level 2 ---
+                    ofi_val = micro_analyzer.calculate_ofi_level2(book)
+                    if ofi_val > 500 and ai_direction == "BUY":
+                        ai_total_score = min(100.0, ai_total_score + 3.0)
+                    elif ofi_val < -500 and ai_direction == "SELL":
+                        ai_total_score = min(100.0, ai_total_score + 3.0)
+
+                    # --- ALPHA-X: PSR RELIABILITY VETO ---
+                    if not reliability_ok and len(returns_history) >= 30:
+                        logging.warning(f"ALPHA-X HARD VETO: PSR insuficiente ({current_psr:.4f})")
+                        ai_total_score = 50.0
+                        ai_direction = "NEUTRAL"
+                    
                     # --- HFT v2.0: CVD Turbo ---
                     ticks_df = await asyncio.to_thread(bridge.get_bulk_ticks, symbol, n=1000)
                     cvd_val = micro_analyzer.calculate_cvd(ticks_df)
