@@ -95,40 +95,73 @@ async def websocket_endpoint(websocket: WebSocket):
     logging.info("Frontend conectado via WebSocket.")
     
     # Inicialização do Agente RL (Shadow Mode)
-    # State: [ATR, OBI, Sentiment, PatchTST_Score, Volatility]
-    rl_agent = PPOAgent(input_dim=5, n_actions=3) 
+    # State: [ATR, OBI, Sentiment, PatchTST_Score, Volatility, CVD, Synthetic_Index]
+    rl_agent = PPOAgent(input_dim=7, n_actions=3) 
     micro_analyzer = MicrostructureAnalyzer() # Inicializa Microestrutura
     logging.info("RL Agent (PPO) inicializado em Shadow Mode.")
     logging.info("Microestrutura (CVD) inicializada.")
 
     # Loop Principal
     last_cleanup_time = 0
+    last_trailing_check = 0
+    last_heartbeat = time_module.time()
+    
+    # Variáveis de Estado Persistentes no Loop
+    symbol = "WIN$" # Inicial
     
     try:
         while True:
-            if bridge.connected:
-                start_time = time_module.perf_counter()
-                
+            # --- 0. CHECK CONEXÃO MT5 ---
+            if not bridge.check_connection():
+                if time_module.time() - last_heartbeat > 30.0:
+                    logging.error("Conexão MT5 perdida ou Terminal instável. Pausando execução...")
+                await asyncio.sleep(5) 
+                last_heartbeat = time_module.time()
+                continue
+
+            try: # [HFT v2.1] Iteration-level error handling
                 # 0. Obter Símbolo (Async Wrapper)
-                symbol = await asyncio.to_thread(bridge.get_current_symbol, "WIN")
-                
-                if symbol:
-                    # 1. Obter Dados de Mercado em Paralelo (Async)
+                current_symbol = await asyncio.to_thread(bridge.get_current_symbol, "WIN")
+                if current_symbol:
+                    symbol = current_symbol
+
+                # Se ainda não temos símbolo válido, espera e tenta de novo
+                if not symbol or "$" in symbol:
+                    await asyncio.sleep(1)
+                    continue
+
+                # 1. Obter Dados de Mercado em Paralelo (Async)
                     # Executamos as chamadas pesadas de I/O do MT5 em threads separadas
-                    data_60, book, tns, account_info = await asyncio.gather(
+                    # Adicionamos get_daily_realized_profit para cálculo exato de PnL
+                    data_60, book, tns, account_info, daily_realized = await asyncio.gather(
                         asyncio.to_thread(bridge.get_market_data, symbol, n_candles=60),
                         asyncio.to_thread(bridge.get_order_book, symbol),
                         asyncio.to_thread(bridge.get_time_and_sales, symbol, n_ticks=100),
-                        asyncio.to_thread(bridge.mt5.account_info)
+                        asyncio.to_thread(bridge.mt5.account_info),
+                        asyncio.to_thread(bridge.get_daily_realized_profit)
                     )
                     
+                    # 1.1 Processamento de Conta e Risco (CRÍTICO: Definir variáveis antes do uso)
                     account = account_info._asdict() if account_info else {}
+                    floating_profit = account_info.profit if account_info else 0.0
+                    total_daily_profit = daily_realized + floating_profit
+                    
+                    # Validação de Risco Diário
+                    risk_ok, risk_msg = risk.check_daily_loss(total_daily_profit)
+                    
+                    # Validação de Horário
+                    time_allowed = risk.is_time_allowed()
                     
                     latency_ms = (time_module.perf_counter() - start_time) * 1000
-                    if latency_ms > 50:
-                        logging.warning(f"HIGH LATENCY ALERT: {latency_ms:.2f}ms")
+                    if latency_ms > 200: # Tolerância maior em Python puro
+                        logging.warning(f"HIGH LATENCY: {latency_ms:.2f}ms")
                     
-                    # 1.1 Calcular ATR (Average True Range - Provisório Local)
+                    # Heartbeat Log (1 min)
+                    if time_module.time() - last_heartbeat > 60:
+                        logging.info(f"HEARTBEAT: {symbol} | PnL Dia: {total_daily_profit:.2f} | Risco: {'OK' if risk_ok else 'TRAVADO'} | Latency: {latency_ms:.1f}ms")
+                        last_heartbeat = time_module.time()
+
+                    # 1.2 Calcular ATR (Average True Range)
                     current_atr = 0.0
                     avg_atr = 0.0
                     if data_60 is not None and len(data_60) >= 28:
@@ -139,22 +172,19 @@ async def websocket_endpoint(websocket: WebSocket):
                     # 2. Processar Lógica de IA e Risco
                     await ai.update_sentiment()
                     obi = ai.detect_spoofing(book, tns)
-                    ai_confidence = await inference.predict(data_60)
+                    ai_predict_data = await inference.predict(data_60)
+                    ai_confidence = ai_predict_data.get("score", 0.5) if isinstance(ai_predict_data, dict) else ai_predict_data
                     
                     # Validação de Condição de Mercado (Estágio 2)
                     volatility = data_60['close'].std() if data_60 is not None else 0
                     regime = ai.detect_regime(volatility, obi)
-                    macro_change = await asyncio.to_thread(bridge.get_macro_data) # HFT v2.0 Macro Monitor
+                    macro_change = await asyncio.to_thread(bridge.get_macro_data) 
                     
-                    # HFT v2.0: Meta-Learner - Preparar features extras
-                    from datetime import datetime
-                    current_hour = datetime.now().hour
-                    
-                    # Score Final (0-100) e Direção (Com Regime Adaptativo + Meta-Learner)
+                     # Score Final (0-100) e Direção
                     decision = ai.calculate_decision(
                         obi, 
                         ai.latest_sentiment_score, 
-                        ai_confidence, 
+                        ai_predict_data, # Passamos o dict completo para o veto de incerteza
                         regime,
                         atr=current_atr,
                         volatility=volatility,
@@ -164,115 +194,236 @@ async def websocket_endpoint(websocket: WebSocket):
                     ai_direction = decision["direction"]
 
                     # --- HFT v2.0: CVD Turbo ---
-                    # Coleta Ticks e Calcula CVD
                     ticks_df = await asyncio.to_thread(bridge.get_bulk_ticks, symbol, n=1000)
                     cvd_val = micro_analyzer.calculate_cvd(ticks_df)
                     
-                    # Ajuste Fino do Score (Turbo)
-                    # WIN: > 500 contratos é relevante
-                    # WDO: > 50 contratos é relevante
                     cvd_threshold = 50.0 if "WDO" in symbol or "DOL" in symbol else 500.0
                     
                     if cvd_val > cvd_threshold and ai_direction == "BUY":
                         ai_total_score = min(100.0, ai_total_score + 5.0)
-                        logging.info(f"CVD TRIGGER (+5.0): Fluxo Comprador Forte ({cvd_val:.0f})")
+                        if ai_total_score > 80: logging.info(f"CVD TRIGGER (+5.0): Fluxo Comprador Forte ({cvd_val:.0f})")
                     elif cvd_val < -cvd_threshold and ai_direction == "SELL":
                         ai_total_score = min(100.0, ai_total_score + 5.0)
-                        logging.info(f"CVD TRIGGER (+5.0): Fluxo Vendedor Forte ({cvd_val:.0f})")
-                    # ---------------------------
+                        if ai_total_score > 80: logging.info(f"CVD TRIGGER (+5.0): Fluxo Vendedor Forte ({cvd_val:.0f})")
+                    
+                    # --- FASE 5: SUITE DE MICROESTRUTURA HFT B3 ---
+                    current_hhmm = datetime.now().strftime("%H:%M")
+                    
+                    # 5.1 Bloqueio de Leilão
+                    auction_block = False
+                    if "09:55" <= current_hhmm <= "10:10":
+                        auction_block = True
+                        ai_total_score = 50.0 
+                        ai_direction = "NEUTRAL"
+
+                    # 5.2 NY Open Boost
+                    if "10:30" <= current_hhmm <= "11:30" and not auction_block:
+                         ai_total_score = min(100.0, ai_total_score + 5.0)
+
+                    # 5.3 Defesa de Ajuste (Settlement Trap)
+                    settlement_price = await asyncio.to_thread(bridge.get_settlement_price, symbol)
+                    
+                    # Obter preço atual do TICK para precisão (não candle anterior)
+                    tick_info = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
+                    last_price = tick_info.last if tick_info else (data_60.iloc[-1]['close'] if data_60 is not None else 0)
+                    
+                    safe_dist = 3.0 if "WDO" in symbol or "DOL" in symbol else 50.0
+                    
+                    if settlement_price > 0 and not auction_block and last_price > 0:
+                        dist = last_price - settlement_price
+                        
+                        settlement_veto = False
+                        settlement_msg = ""
+                        # Veto COMPRA: Preço logo abaixo do ajuste (Resistência)
+                        if ai_direction == "BUY" and -safe_dist < dist < 0:
+                            settlement_veto = True
+                            settlement_msg = f"Ajuste funcionando como Resistência (Dist: {dist:.1f})"
+                        # Veto VENDA: Preço logo acima do ajuste (Suporte)
+                        elif ai_direction == "SELL" and 0 < dist < safe_dist:
+                            settlement_veto = True
+                            settlement_msg = f"Ajuste funcionando como Suporte (Dist: {dist:.1f})"
+                            
+                        if settlement_veto:
+                            logging.warning(f"HFT DEFENSE: Veto de Ajuste ({settlement_price}). {settlement_msg}")
+                            ai_total_score = 50.0
+                            ai_direction = "NEUTRAL"
+                    
+                    # 5b.1 Pinning (Opções)
+                    today_dt = datetime.now()
+                    if today_dt.weekday() == 4 and 15 <= today_dt.day <= 21:
+                        if "10:00" <= current_hhmm <= "16:00" and regime == 0:
+                            logging.info("PINNING ALERT: Vencimento Opções.")
+                            ai_total_score = max(40.0, min(60.0, ai_total_score))
+
+                    # 5b.2 Gap Trap Protection
+                    try:
+                        # Reutilizar dailys se possível ou buscar leve
+                        daily_rates = await asyncio.to_thread(bridge.mt5.copy_rates_from_pos, symbol, bridge.mt5.TIMEFRAME_D1, 0, 2)
+                        if daily_rates is not None and len(daily_rates) == 2:
+                            prev_close = daily_rates[0]['close']
+                            today_open = daily_rates[1]['open']
+                            gap_pct = ((today_open - prev_close) / prev_close) * 100 if prev_close > 0 else 0
+                            
+                            if gap_pct > 0.5 and cvd_val > 0 and ai_direction == "SELL":
+                                logging.warning(f"GAP TRAP VETO: Alta ({gap_pct:.2f}%) + Fluxo Comprador.")
+                                ai_total_score = 50.0
+                                ai_direction = "NEUTRAL"
+                            elif gap_pct < -0.5 and cvd_val < 0 and ai_direction == "BUY":
+                                logging.warning(f"GAP TRAP VETO: Baixa ({gap_pct:.2f}%) + Fluxo Vendedor.")
+                                ai_total_score = 50.0
+                                ai_direction = "NEUTRAL"
+                    except Exception as gap_e:
+                        logging.error(f"Erro Gap Trap: {gap_e}")
 
                     # --- FASE 3: HARD VETO (Anti-Alucinação) ---
-                    # Bloqueia trades quando IA e mercado real divergem
                     veto_active = False
                     veto_reason = ""
                     
-                    # Regra 1: IA otimista, mas Fluxo Real é Venda Pesada
                     if ai_direction == "BUY" and cvd_val < -cvd_threshold:
                         veto_active = True
-                        veto_reason = f"DIVERGÊNCIA: IA sugere COMPRA, mas CVD mostra Venda Agressiva ({cvd_val:.0f})"
-                    
-                    # Regra 2: IA pessimista, mas Fluxo Real é Compra Pesada
+                        veto_reason = f"DIVERGÊNCIA: IA Compra vs CVD Venda ({cvd_val:.0f})"
                     elif ai_direction == "SELL" and cvd_val > cvd_threshold:
                         veto_active = True
-                        veto_reason = f"DIVERGÊNCIA: IA sugere VENDA, mas CVD mostra Compra Agressiva ({cvd_val:.0f})"
+                        veto_reason = f"DIVERGÊNCIA: IA Venda vs CVD Compra ({cvd_val:.0f})"
                     
-                    # Aplicar Veto
+                    # Blue Chips Soft Veto & Influence
+                    bluechips = await asyncio.to_thread(bridge.get_bluechips_data)
+                    synthetic_idx = micro_analyzer.calculate_synthetic_index(bluechips)
+                    
+                    # Se Blue Chips estão fortemente contra, reduz o score
+                    if ai_direction == "BUY" and synthetic_idx < -0.05:
+                        penalty = abs(synthetic_idx) * 100 # ex: 0.1% contra -> -10 pontos
+                        ai_total_score = max(50.0, ai_total_score - penalty)
+                        if synthetic_idx < -0.2: # Hard Veto se queda for > 0.2%
+                             veto_active = True
+                             veto_reason = f"VETO QUANT EXTREMO: Blue Chips Caindo Forte ({synthetic_idx:.2f}%)"
+                    elif ai_direction == "SELL" and synthetic_idx > 0.05:
+                        penalty = abs(synthetic_idx) * 100
+                        ai_total_score = max(50.0, ai_total_score - penalty)
+                        if synthetic_idx > 0.2: # Hard Veto se alta for > 0.2%
+                             veto_active = True
+                             veto_reason = f"VETO QUANT EXTREMO: Blue Chips Subindo Forte ({synthetic_idx:.2f}%)"
+                    
                     if veto_active:
-                        logging.warning(f"🛑 SINAL IA BLOQUEADO: {veto_reason}")
-                        ai_total_score = 50.0  # Reset para neutro
+                        logging.warning(f"🛑 {veto_reason}")
+                        ai_total_score = 50.0
                         ai_direction = "NEUTRAL"
-                    # -------------------------------------------
 
                     market_condition = risk.validate_market_condition(symbol, regime, current_atr, avg_atr)
                     market_ok = market_condition["allowed"]
                     
-                    # --- RL SHAWDOW MODE (HFT v2.0) ---
-                    # Coleta estado atual para o agente
+                    # --- RL SHADOW MODE ---
                     try:
-                        rl_state = [current_atr, obi, ai.latest_sentiment_score, ai_confidence, volatility]
-                        action, _ = rl_agent.select_action(rl_state)
-                        # Apenas loga, não executa (Shadow)
-                        rl_action_str = ["HOLD", "BUY", "SELL"][action]
-                        # logging.info(f"[RL SHADOW] Action: {rl_action_str} | State: {rl_state}") 
-                    except Exception as e:
-                        logging.error(f"Erro RL Shadow: {e}")
-                    # ----------------------------------
+                        rl_state = [current_atr, obi, ai.latest_sentiment_score, ai_confidence, volatility, cvd_val, synthetic_idx]
+                        action, log_prob = rl_agent.select_action(rl_state)
+                        actions_map = {0: "BUY", 1: "SELL", 2: "HOLD"}
+                        suggested = actions_map.get(action, "UNKNOWN")
+                        if ai_total_score > 70:
+                            logging.info(f"🤖 [RL SHADOW] Sugestão: {suggested} | Decisão Atual: {ai_direction}")
+                    except Exception as rl_e: 
+                        logging.debug(f"Erro RL Shadow: {rl_e}")
+
+                    # --- TRAILING STOP (1s Check) ---
+                    if time_module.time() - last_trailing_check > 1.0:
+                        last_trailing_check = time_module.time()
+                        try:
+                            positions = await asyncio.to_thread(bridge.mt5.positions_get, symbol=symbol)
+                            if positions:
+                                for pos in positions:
+                                    is_wdo = "WDO" in symbol or "DOL" in symbol
+                                    # Configuração Trailing (Poderia vir do Config/Risk)
+                                    trigger_pts = 5.0 if is_wdo else 100.0 # Gatilho para iniciar
+                                    step_pts = 2.0 if is_wdo else 50.0 # Passo do trailing
+                                    
+                                    current_price = last_price
+                                    if pos.type == bridge.mt5.POSITION_TYPE_BUY:
+                                        profit_pts = current_price - pos.price_open
+                                        if profit_pts >= trigger_pts:
+                                            new_sl = current_price - step_pts
+                                            # Se novo SL for maior que o atual (subir o stop)
+                                            if new_sl > pos.sl:
+                                                # Anti-Violinada no SL Dinâmico
+                                                new_sl = risk._apply_anti_violinada(symbol, new_sl, "buy")
+                                                await asyncio.to_thread(bridge.update_sltp, pos.ticket, new_sl, pos.tp)
+                                                logging.info(f"TRAILING STOP (BUY): SL movido para {new_sl}")
+                                                
+                                    elif pos.type == bridge.mt5.POSITION_TYPE_SELL:
+                                        profit_pts = pos.price_open - current_price
+                                        if profit_pts >= trigger_pts:
+                                            new_sl = current_price + step_pts
+                                            # Se novo SL for menor que o atual (descer o stop)
+                                            if pos.sl == 0 or new_sl < pos.sl:
+                                                 # Anti-Violinada no SL Dinâmico
+                                                new_sl = risk._apply_anti_violinada(symbol, new_sl, "sell")
+                                                await asyncio.to_thread(bridge.update_sltp, pos.ticket, new_sl, pos.tp)
+                                                logging.info(f"TRAILING STOP (SELL): SL movido para {new_sl}")
+                        except Exception as e:
+                            logging.error(f"Erro no Trailing Stop: {e}")
 
                     if risk.should_force_close():
-                         # Executar Panic em Thread separada para não bloquear
                         await asyncio.to_thread(panic_close_all)
-                        logging.warning("Execução compulsória 17:50 acionada.")
+                        logging.warning("Check Force Close: 17:50 atingido.")
 
-                    if risk.allow_autonomous and ai_total_score >= 85 and risk_ok and market_ok and time_allowed:
+                    # --- LÓGICA DE DECISÃO DE TRADE ---
+                    if risk.allow_autonomous and ai_total_score >= 75 and risk_ok and market_ok and time_allowed:
                         if ai_direction in ["BUY", "SELL"]:
                             side = "buy" if ai_direction == "BUY" else "sell"
                             
-                            # HFT v2.0: Filtro Macro (S&P500)
                             macro_ok, macro_msg = risk.check_macro_filter(side, macro_change)
                             if not macro_ok:
                                 logging.warning(f"AUTÔNOMO BLOQUEADO: {macro_msg}")
-                                continue
-
-                            logging.info(f"AUTÔNOMO: Disparando {side.upper()} via Score {ai_total_score:.1f}")
-                            
-                            # HFT v2.0: Gestão de Ordens Híbrida
-                            if ai_total_score > 90:
-                                order_type = bridge.mt5.ORDER_TYPE_BUY if side == "buy" else bridge.mt5.ORDER_TYPE_SELL
-                                logging.info(f"ALTA CONVICÇÃO (Score {ai_total_score:.1f}): Executando MARKET ORDER")
                             else:
-                                order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
-                                logging.info(f"ENTRADA PADRÃO (Score {ai_total_score:.1f}): Executando LIMIT ORDER")
-                            
-                            # Obter Tick Info (Async)
-                            tick_info = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
-                            current_price = tick_info.ask if side == "buy" else tick_info.bid
-                            
-                            # Validação Compliance Pre-Trade (Async)
-                            valid_comp, reason_comp = await asyncio.to_thread(bridge.validate_order_compliance, symbol, current_price)
-                            
-                            if not valid_comp:
-                                 logging.warning(f"AUTÔNOMO BLOQUEADO: Compliance - {reason_comp}")
-                            else:
-                                params = risk.get_order_params(symbol, order_type, current_price, 1) # Default 1 contrato
-                                params["symbol"] = symbol
-                                params["comment"] = "AUTO-EXEC SCORE >= 85"
+                                # EXECUÇÃO AUTORIZADA
+                                logging.info(f"AUTÔNOMO: Disparando {side.upper()} via Score {ai_total_score:.1f}")
                                 
-                                # Enviar Ordem (Async)
-                                result = await asyncio.to_thread(bridge.mt5.order_send, params)
+                                is_sniper = False
+                                if ai_total_score > 90:
+                                    if (side == "buy" and cvd_val >= 300) or (side == "sell" and cvd_val <= -300):
+                                        is_sniper = True
                                 
-                                if result.retcode == bridge.mt5.TRADE_RETCODE_DONE:
-                                    persistence.save_trade(symbol, side, current_price, 1, "AUTO_DONE")
-                                    persistence.save_state("last_auto_trade", f"{side} at {current_price}")
+                                if is_sniper:
+                                    order_type = bridge.mt5.ORDER_TYPE_BUY if side == "buy" else bridge.mt5.ORDER_TYPE_SELL
+                                    logging.info("🎯 SNIPER MODE: MARKET ORDER")
                                 else:
-                                    logging.error(f"Erro no disparo automático: {result.comment}")
-                    elif risk.allow_autonomous and ai_total_score >= 85:
-                         # Logar motivo do bloqueio se score for alto mas risco impedir
+                                    order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
+                                    logging.info("🛡️ PASSIVE ENTRY: LIMIT ORDER")
+                                
+                                # Obter Tick Fresco para a ordem
+                                tick_info = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
+                                current_order_price = tick_info.ask if side == "buy" else tick_info.bid
+                                
+                                valid_comp, reason_comp = await asyncio.to_thread(bridge.validate_order_compliance, symbol, current_order_price)
+                                
+                                if not valid_comp:
+                                     logging.warning(f"BLOCK Compliance: {reason_comp}")
+                                else:
+                                    params = risk.get_order_params(symbol, order_type, current_order_price, 1)
+                                    params["symbol"] = symbol
+                                    params["comment"] = "AUTO-RESILIENTE SCORE >= 75"
+                                    
+                                    # Execução Resiliente (Trata Requotes)
+                                    result = await asyncio.to_thread(bridge.place_resilient_order, params)
+                                    
+                                    if result and result.retcode == bridge.mt5.TRADE_RETCODE_DONE:
+                                        persistence.save_trade(symbol, side, current_order_price, 1, "AUTO_DONE")
+                                        persistence.save_state("last_auto_trade", f"{side} at {current_order_price}")
+                                        # Log de Slippage: Preço Executado vs Preço Solicitado
+                                        slippage = abs(result.price - current_order_price)
+                                        logging.info(f"TRADE SUCCESS: Slippage {slippage:.1f} pts")
+                                    else:
+                                        msg = result.comment if result else "Timeout/None"
+                                        logging.error(f"Falha Crítica na Execução: {msg}")
+                    
+                    # LOG DE BLOQUEIO ALTA CONFIANÇA
+                    elif risk.allow_autonomous and ai_total_score >= 75:
                          if not market_ok:
-                             logging.info(f"SINAL DE ALTA CONFIANÇA BLOQUEADO POR RISCO: {market_condition['reason']}")
+                             logging.info(f"SINAL FORTE BLOQUEADO (RISCO MERCADO): {market_condition['reason']}")
                          elif not risk_ok:
-                             logging.info(f"SINAL DE ALTA CONFIANÇA BLOQUEADO POR PERDA DIÁRIA: {risk_msg}")
+                             logging.info(f"SINAL FORTE BLOQUEADO (MONEY MANAGEMENT): {risk_msg}")
+                         elif not time_allowed:
+                             pass # Horário bloqueado é comum, não poluir log
 
-                    # 4. Dados de Compliance (Limites) - Async Wrapper
+                    # 4. Dados de Compliance (Limites)
                     info = await asyncio.to_thread(bridge.mt5.symbol_info, symbol)
                     session_limits = {
                         "lower": info.session_price_limit_min if info else 0,
@@ -281,21 +432,20 @@ async def websocket_endpoint(websocket: WebSocket):
                     }
 
                     # 5. Enviar Pacote ao Frontend
-                    
-                    # 5. Enviar Pacote ao Frontend (Manter Contrato Original)
                     packet = {
                         "symbol": symbol,
-                        "price": data_60.iloc[-1]['close'] if data_60 is not None and not data_60.empty else 0,
+                        "price": last_price,
                         "obi": obi,
                         "book": book, 
                         "sentiment": ai.latest_sentiment_score,
                         "ai_confidence": ai_confidence,
+                        "synthetic_index": synthetic_idx,
                         "regime": regime,
                         "latency_ms": latency_ms,
                         "risk_status": {
                             "time_ok": time_allowed,
-                            "loss_ok": risk_ok and risk.check_daily_loss(daily_profit, risk.max_daily_loss)[0],
-                            "profit_day": daily_profit,
+                            "loss_ok": risk_ok,
+                            "profit_day": total_daily_profit,
                             "atr": current_atr,
                             "ai_score": ai_total_score,
                             "ai_direction": ai_direction,
@@ -309,30 +459,47 @@ async def websocket_endpoint(websocket: WebSocket):
                     persistence.save_state("last_obi", obi)
                     persistence.save_state("latency_ms", latency_ms)
 
-            # 6. Limpeza de Ordens Pendentes (Hanging Orders)
-            if time_module.time() - last_cleanup_time > 10: 
-                last_cleanup_time = time_module.time()
-                orders = await asyncio.to_thread(bridge.mt5.orders_get, symbol=symbol)
-                if orders:
-                    now_ts = time_module.time()
-                    for order in orders:
-                        if (now_ts - order.time_setup) > 60: # 60 segundos de tolerância
-                             # Apenas cancelar Limit/Stop, não ordens a mercado (que não ficam pendentes assim)
-                            req = {
-                                "action": bridge.mt5.TRADE_ACTION_REMOVE,
-                                "order": order.ticket,
-                                "symbol": symbol,
-                            }
-                            await asyncio.to_thread(bridge.mt5.order_send, req)
-                            logging.info(f"Cleanup: Cancelando ordem pendente {order.ticket}")
+                # 6. Housekeeping (10s)
+                if time_module.time() - last_cleanup_time > 10: 
+                    last_cleanup_time = time_module.time()
+                    
+                    try:
+                        base_asset = "WDO" if "WDO" in symbol or "DOL" in symbol else "WIN"
+                        new_symbol = bridge.get_current_symbol(base_asset)
+                        if new_symbol and new_symbol != symbol and "$" not in new_symbol:
+                            logging.warning(f"🔄 ROLLOVER: {symbol} -> {new_symbol}")
+                            symbol = new_symbol
+                            await asyncio.to_thread(panic_close_all) 
+                            continue
+                    except Exception as e:
+                        logging.error(f"Erro Auto-Rollover: {e}")
 
-            # Loop control (100ms)
-            await asyncio.sleep(0.01)
+                    orders = await asyncio.to_thread(bridge.mt5.orders_get, symbol=symbol)
+                    if orders:
+                        now_ts = time_module.time()
+                        for order in orders:
+                            if (now_ts - order.time_setup) > 60:
+                                req = {
+                                    "action": bridge.mt5.TRADE_ACTION_REMOVE,
+                                    "order": order.ticket,
+                                    "symbol": symbol,
+                                }
+                                await asyncio.to_thread(bridge.mt5.order_send, req)
+                                logging.info(f"Cleanup: Cancelando ordem velha {order.ticket}")
+
+                # Loop control
+                await asyncio.sleep(0.01)
+            
+            except asyncio.CancelledError:
+                raise # Respeitar shutdown
+            except Exception as e:
+                logging.error(f"Erro (recuperável) no loop principal: {e}")
+                await asyncio.sleep(1) # Backoff para não floodar logs
             
     except WebSocketDisconnect:
         logging.info("WebSocket desconectado.")
     except Exception as e:
-        logging.error(f"Erro no loop principal: {e}")
+        logging.critical(f"Erro fatal no loop principal: {e}")
         await websocket.close()
 
 @app.post("/config/autonomous")

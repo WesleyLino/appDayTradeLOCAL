@@ -77,10 +77,14 @@ class RiskManager:
              
         return True, "Macro OK"
 
-    def check_daily_loss(self, current_balance, start_balance):
-        loss = start_balance - current_balance
-        if loss >= self.max_daily_loss:
-            return False, f"Daily loss limit reached: {loss} >= {self.max_daily_loss}"
+    def check_daily_loss(self, total_profit):
+        """
+        Verifica se o limite de perda diária foi atingido.
+        total_profit: Soma do Lucro Realizado + Flutuante.
+        """
+        # Se total_profit for negativo e maior (em magnitude) que o limite
+        if total_profit <= -self.max_daily_loss:
+            return False, f"Daily loss limit reached: {total_profit:.2f} <= -{self.max_daily_loss:.2f}"
         return True, "OK"
 
     def validate_volatility(self, current_atr, avg_atr):
@@ -119,11 +123,21 @@ class RiskManager:
         
         if sl_points > 0:
             if type in (mt5.ORDER_TYPE_BUY, mt5.ORDER_TYPE_BUY_LIMIT, mt5.ORDER_TYPE_BUY_STOP):
+                side = "buy"
                 sl = price - sl_points
                 tp = price + tp_points
             elif type in (mt5.ORDER_TYPE_SELL, mt5.ORDER_TYPE_SELL_LIMIT, mt5.ORDER_TYPE_SELL_STOP):
+                side = "sell"
                 sl = price + sl_points
                 tp = price - tp_points
+            else:
+                side = "neutral"
+
+            # --- HFT ANTI-VIOLINADA (FASE 5b) ---
+            # Ajuste fino para não deixar pedra em número redondo
+            sl = self._apply_anti_violinada(symbol, sl, side)
+            tp = self._apply_anti_violinada(symbol, tp, side)
+            # ------------------------------------
 
         return {
             "action": mt5.TRADE_ACTION_PENDING, # Usar ordens LIMIT conforme Master Plan
@@ -139,3 +153,48 @@ class RiskManager:
             "type_time": mt5.ORDER_TIME_DAY, # Ordem válida até o final do dia (Day Trade)
             "type_filling": mt5.ORDER_FILLING_RETURN, # Permite execução parcial (Limit Orders na B3)
         }
+    def _apply_anti_violinada(self, symbol, price, side):
+        """
+        Ajusta o preço de Stop/TP para evitar números redondos (Violinada).
+        Evita colocar ordens exatas em 'XX.000' ou 'XX.500'.
+        Desloca 5 pts (WIN) ou 0.5 pts (WDO) para 'esconder' a ordem.
+        """
+        if price <= 0: return price
+        
+        try:
+            is_wdo = "WDO" in symbol or "DOL" in symbol
+            
+            # Parâmetros de arredondamento (HFT v2.1: Defensive Math)
+            if is_wdo:
+                round_interval = 10.0
+                offset = 0.5
+            else:
+                round_interval = 100.0
+                offset = 15.0
+            
+            # PROTEÇÃO: Se por algum motivo o preço for muito pequeno para o intervalo
+            if price < round_interval:
+                return price
+
+            # Verificar proximidade com número redondo
+            remainder = price % round_interval
+            
+            # Margem de "ZONA DE PERIGO" (10% do intervalo)
+            danger_zone = round_interval * 0.1
+            
+            if remainder == 0 or remainder < danger_zone or remainder > (round_interval - danger_zone):
+                # Deslocar para longe (Anti-Violinada)
+                if side == "buy": # SL abaixo, afastar para baixo
+                    new_price = price - offset
+                elif side == "sell": # SL acima, afastar para cima
+                    new_price = price + offset
+                else:
+                    new_price = price
+                
+                logging.info(f"🛡️ ANTI-VIOLINADA: Ajustando {price} -> {new_price} ({symbol})")
+                return new_price
+            
+            return price
+        except Exception as e:
+            logging.error(f"Erro Crítico Anti-Violinada: {e}")
+            return price

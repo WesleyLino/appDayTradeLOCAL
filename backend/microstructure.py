@@ -42,14 +42,74 @@ class MicrostructureAnalyzer:
         
         return current_cvd
 
+    def calculate_synthetic_index(self, bluechips_data: dict) -> float:
+        """
+        Calcula um Índice Sintético ponderado baseado nas Blue Chips.
+        Retorna um valor float que representa a 'força' do IBOV subjacente.
+        Valores > 0.5 indicam força compradora nas ações.
+        Valores < -0.5 indicam força vendedora nas ações.
+        """
+        if not bluechips_data:
+            return 0.0
+            
+        # Pesos aproximados (simplificados para Day Trade)
+        weights = {
+            "VALE3": 0.14, # Plano Mestre 2.0
+            "PETR4": 0.12, # Plano Mestre 2.0
+            "ITUB4": 0.10,
+            "BBDC4": 0.10,
+            "ELET3": 0.05
+        }
+        
+        weighted_sum = 0.0
+        total_weight = 0.0
+        
+        for ticker, variation in bluechips_data.items():
+            weight = weights.get(ticker, 0.05)
+            weighted_sum += variation * weight
+            total_weight += weight
+            
+        if total_weight == 0:
+            return 0.0
+            
+        synthetic_index = weighted_sum / total_weight
+        return synthetic_index
+
     def detect_divergence(self, price_arr, cvd_arr):
         """
         Detecta divergência entre Preço e CVD (Absorção).
-        Ex: Preço caindo (Lower Lows) mas CVD subindo (Higher Lows) -> Absorção de Venda (Bullish).
+        Retorna:
+        1.0: Bullish Divergence (Preço Cai/Lateral, CVD Sobe) - Absorção Venda
+        -1.0: Bearish Divergence (Preço Sobe/Lateral, CVD Cai) - Absorção Compra
+        0.0: Convergência (Normal)
         """
-        # Complexidade de HFT: Requer janela de tempo.
-        # Placeholder para v2.0
-        pass
+        if len(price_arr) < 10 or len(cvd_arr) < 10:
+            return 0.0
+
+        # Normalização simples (Slope)
+        try:
+            # Inclinação do Preço (últimos n pontos)
+            x = np.arange(len(price_arr))
+            # slope_price, _, _, _, _ = stats.linregress(x, price_arr) 
+            slope_price = np.polyfit(x, price_arr, 1)[0]
+            
+            # Inclinação do CVD
+            # slope_cvd, _, _, _, _ = stats.linregress(x, cvd_arr)
+            slope_cvd = np.polyfit(x, cvd_arr, 1)[0]
+            
+            # Limiares de inclinação (ajustar conforme ativo)
+            # Divergência de Alta: Preço caindo/flat, CVD subindo forte
+            if slope_price <= 0 and slope_cvd > 5: # CVD subindo forte
+                return 1.0
+                
+            # Divergência de Baixa: Preço subindo/flat, CVD caindo forte
+            if slope_price >= 0 and slope_cvd < -5:
+                return -1.0
+                
+            return 0.0
+        except Exception as e:
+            # logging.error(f"Erro Divergencia: {e}") # Opcional
+            return 0.0
 
     def evaluate_pressure(self, net_flow, threshold=500):
         """

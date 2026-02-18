@@ -9,6 +9,7 @@ from backend.news_collector import NewsCollector # Plano Diretor 2.0
 from backend.meta_learner import MetaLearner # HFT v2.0 Meta-Learner
 from sklearn.cluster import KMeans # Keep KMeans for regime_model
 from dotenv import load_dotenv
+import torch # Import necessário para InferenceEngine
 
 load_dotenv()
 
@@ -68,14 +69,14 @@ class AICore:
     async def update_sentiment(self):
         """
         Consulta o Gemini para obter o score de sentimento (-1 a 1) com reliability scoring.
-        Versão Plano Diretor 2.0: Multi-fonte + Filtros de Relevância.
+        Versão Full-Stack Quant: Persona Engenheiro de Risco + Refresh 30s.
         """
         if not self.model:
             return 0.0
             
         now = asyncio.get_event_loop().time()
-        # Atualizar apenas a cada 5 minutos para otimizar API
-        if now - self.last_news_update < 300 and self.latest_sentiment_score != 0:
+        # [MODO SNIPER] Atualizar a cada 30 segundos (antes era 300)
+        if now - self.last_news_update < 30 and self.latest_sentiment_score != 0:
             return self.latest_sentiment_score
 
         # [PLANO DIRETOR 2.0] Usar NewsCollector ao invés de news_feed.txt
@@ -83,29 +84,33 @@ class AICore:
         
         # Se nenhuma notícia fresca/relevante, retornar neutro
         if not news_headlines:
-            logging.info("📰 Sem notícias frescas/relevantes. Mantendo NEUTRO.")
+            logging.debug("📰 Sem notícias frescas/relevantes. Mantendo NEUTRO.")
             self.latest_sentiment_score = 0.0
             self.last_news_update = now
             return 0.0
         
-        # [FASE 2] Prompt com Reliability Scoring
+        # [FASE 3] Prompt 'Engenheiro de Risco'
         prompt = f"""
-ATUE COMO UM ALGORITMO DE GESTÃO DE RISCO PARA HFT.
+ATUE COMO UM ENGENHEIRO DE RISCO SÊNIOR PARA UMA MESA DE HFT.
+
+OBJETIVO: Detectar ASSIMETRIAS DE RISCO baseadas em FATOS.
+Sua missão NÃO é prever o futuro, mas sim classificar o RISCO IMEDIATO.
 
 FONTE DE DADOS:
 {news_headlines}
 
-PROTOCOLO DE ANÁLISE:
-1. Identifique se há FACTOS CONCRETOS de alto impacto (ex: "Selic subiu", "Lucro recorde").
-2. Ignore opiniões, rumores ou "expectativas".
-3. Calcule o sentimento matemático (-1.0 a +1.0).
-4. Avalie a CONFIABILIDADE da informação:
-   - "high": Facto concreto com dados oficiais
-   - "medium": Facto provável mas não confirmado
-   - "low": Opinião, rumor ou expectativa vaga
+PROTOCOLO DE ANÁLISE (RIGOR MILITAR):
+1. SEPARAÇÃO FATO vs RUÍDO: Ignore opiniões de analistas. Foque em DADOS (Payroll, IPCA, Selic, Fusões).
+2. CLASSIFICAÇÃO DE RISCO:
+   - "EXTREME": Evento sistêmico (ex: Guerra, Quebra de Banco, Circuit Breaker).
+   - "HIGH": Dado macro muito acima/abaixo do esperado, mudança de juros não precificada.
+   - "MEDIUM": Notícia corporativa relevante (Blue Chips), falas de Banco Central.
+   - "LOW": Ruído normal de mercado.
+3. SENTIMENTO MATEMÁTICO:
+   - -1.0 (Pânico/Venda) a +1.0 (Euforia/Compra).
 
 SAÍDA OBRIGATÓRIA (JSON):
-{{"score": 0.0, "reliability": "high/medium/low", "fact_check": "resumo do facto"}}
+{{ "score": 0.0, "reliability": "high/medium/low", "risk_classification": "EXTREME/HIGH/MEDIUM/LOW", "fact_check": "resumo do fato" }}
 """
         
         try:
@@ -115,21 +120,21 @@ SAÍDA OBRIGATÓRIA (JSON):
             data = json.loads(response.text)
             score = float(data.get("score", 0.0))
             reliability = data.get("reliability", "low")
+            risk_class = data.get("risk_classification", "LOW")
             fact_check = data.get("fact_check", "N/A")
             
-            # [FILTRO DE ROBUSTEZ] Se IA não tem certeza, ignorar
+            # [FILTRO DE ROBUSTEZ] Se IA não tem certeza ou risco é baixo demais para trade de notícia, moderar score
             if reliability == "low":
-                logging.warning(f"⚠️ IA descartada (Baixa Confiabilidade): {fact_check}")
                 self.latest_sentiment_score = 0.0
                 self.last_news_update = now
                 return 0.0
             
-            # Clamp de segurança (garantir [-1, 1])
+            # Clamp de segurança
             score = max(-1.0, min(1.0, score))
             
             self.latest_sentiment_score = score
             self.last_news_update = now
-            logging.info(f"✅ Sentiment: {score:.2f} | Reliability: {reliability} | {fact_check[:50]}...")
+            logging.info(f"✅ Risk Engine: {score:.2f} | Class: {risk_class} | {fact_check[:60]}...")
             return score
             
         except Exception as e:
@@ -141,12 +146,12 @@ SAÍDA OBRIGATÓRIA (JSON):
         Detecta spoofing comparando volume do book com histórico recente.
         Implementa a regra de 'Toxic Flow': sumiço de ordens grandes sem trade.
         """
-        if not order_book:
+        if not order_book or (not order_book.get('bids') and not order_book.get('asks')):
             return 0.5
             
         # 1. OBI (Order Book Imbalance) básico
-        total_bid = sum(item['volume'] for item in order_book if item['type'] == 0)
-        total_ask = sum(item['volume'] for item in order_book if item['type'] == 1)
+        total_bid = sum(item['volume'] for item in order_book.get('bids', []))
+        total_ask = sum(item['volume'] for item in order_book.get('asks', []))
         
         current_obi = 0.5
         if total_bid + total_ask > 0:
@@ -155,20 +160,51 @@ SAÍDA OBRIGATÓRIA (JSON):
         # Suavização EMA
         self.obi_ema = (current_obi * self.ema_alpha) + (self.obi_ema * (1 - self.ema_alpha))
         
-        # 2. Detecção de Toxic Flow (Remoção Súbita)
+        # 2. Detecção de Toxic Flow (Remoção Súbita vs Execução Real)
         if self.prev_book is not None:
             prev_bid = sum(item['volume'] for item in self.prev_book if item['type'] == 0)
             prev_ask = sum(item['volume'] for item in self.prev_book if item['type'] == 1)
             
-            # Se sumiu mais de 50 lotes de um lado e o volume real não subiu proporcionalmente
-            real_volume = time_sales['volume'].sum() if time_sales is not None and not time_sales.empty else 0
+            # Cálculo exato de agressão (Volume Executado por Lado)
+            # time_sales deve ser filtrado se possível, ou usar heurística
+            # Assumindo que DataCollector entrega 'real_volume' e 'flags'
+            # Se não tiver flags, usamos volume total como proxy conservador
             
-            # Queda súbita no BID sem agressão de venda proporcional -> Spoofing de Compra
-            if (prev_bid - total_bid) > 50 and real_volume < 20:
-                self.toxic_flow_score = -0.5 # Sinal de "pressão falsa" na compra
-            # Queda súbita no ASK sem agressão de compra proporcional -> Spoofing de Venda
-            elif (prev_ask - total_ask) > 50 and real_volume < 20:
-                self.toxic_flow_score = 0.5 # Sinal de "pressão falsa" na venda
+            sell_aggression_vol = 0 # Agressão de Venda (consome Bid)
+            buy_aggression_vol = 0 # Agressão de Compra (consome Ask)
+            
+            if time_sales is not None and not time_sales.empty:
+                # Heurística rápida se flags não estiverem prontas:
+                # Preço == Bid -> Sell Aggression / Preço == Ask -> Buy Aggression
+                # Para robustez, assumimos volume total dividido (pior caso) ou zero se vazio.
+                real_volume = time_sales['volume'].sum() # Fallback
+            else:
+                real_volume = 0
+            
+            # --- LÓGICA DINÂMICA HFT ---
+            delta_bid = prev_bid - total_bid
+            delta_ask = prev_ask - total_ask
+            
+            # Limite Dinâmico: 10% do volume total do lado do book
+            # Isso evita que o sistema ignore spoofing em momentos de baixa liquidez
+            # ou seja enganado por "lote de 100" em momentos de alta liquidez.
+            threshold_bid = max(20, total_bid * 0.1)
+            threshold_ask = max(20, total_ask * 0.1)
+            
+            # Limite de Agressão: 2% do volume do book (muito pouco trade para sumir tanto lote)
+            agg_threshold_bid = max(5, total_bid * 0.02)
+            agg_threshold_ask = max(5, total_ask * 0.02)
+            
+            # SPOOFING DE COMPRA: Bid some MAS houve pouca agressão de venda
+            if delta_bid > threshold_bid and real_volume < agg_threshold_bid:
+                self.toxic_flow_score = -0.8
+                logging.info(f"SPOOFING ALERT (DYNAMIC): Bid sumiu ({delta_bid:.0f} > {threshold_bid:.0f}) sem trade.")
+
+            # SPOOFING DE VENDA: Ask some MAS houve pouca agressão de compra
+            elif delta_ask > threshold_ask and real_volume < agg_threshold_ask: 
+                self.toxic_flow_score = 0.8
+                logging.info(f"SPOOFING ALERT (DYNAMIC): Ask sumiu ({delta_ask:.0f} > {threshold_ask:.0f}) sem trade.")
+                
             else:
                 self.toxic_flow_score *= 0.8 # Decaimento gradual do alerta
                 
@@ -223,9 +259,13 @@ SAÍDA OBRIGATÓRIA (JSON):
         # OBI já é -1 a 1
         # Sentiment já é -1 a 1
         
-        # PatchTST vem 0.0 a 1.0 (0.5 é neutro). Converter para -1 a 1.
-        # Ex: 0.8 -> 0.6 (Alta), 0.2 -> -0.6 (Baixa)
-        norm_patchtst = (patchtst_score - 0.5) * 2 
+        # PatchTST vem 0.0 a 1.0 (0.5 é neutro).
+        uncertainty_width = 0.0
+        if isinstance(patchtst_score, dict):
+            uncertainty_width = patchtst_score.get("uncertainty", 0.0)
+            norm_patchtst = (patchtst_score.get("score", 0.5) - 0.5) * 2
+        else:
+            norm_patchtst = (patchtst_score - 0.5) * 2 
         
         # 2. Pesos Dinâmicos (Regime Adaptativo - HFT v2.0)
         # Default (Neutro/Indefinido)
@@ -233,7 +273,14 @@ SAÍDA OBRIGATÓRIA (JSON):
         w_patchtst = 0.40
         w_sent = 0.20
 
-        if regime == 0: # Consolidação / Ruído -> Foco em Fluxo (Scalping)
+        # [VETO POR INCERTEZA] Se PatchTST estiver muito incerto, anular peso
+        # Se largura do intervalo > 0.15 (arbitrário, calibrar), consideramos 'cego'
+        if uncertainty_width > 0.15:
+            logging.warning(f"CONFORMAL VETO: PatchTST incerto ({uncertainty_width:.4f}). ZERANDO peso.")
+            w_patchtst = 0.0
+            w_obi = 0.60
+            w_sent = 0.40
+        elif regime == 0: # Consolidação / Ruído -> Foco em Fluxo (Scalping)
             w_obi = 0.60
             w_patchtst = 0.20
             w_sent = 0.20
@@ -253,7 +300,13 @@ SAÍDA OBRIGATÓRIA (JSON):
         # --- HFT v2.0: Meta-Learner (XGBoost) para refinar a decisão ---
         # Features esperadas: [ATR, OBI, Sentiment, Volatility, Hour, AI_Score_Raw]
         meta_features = [atr, obi, sentiment, volatility, hour, ai_score_raw]
-        meta_proba = self.meta_learner.predict_proba(meta_features) # Returns probability 0.0-1.0
+        
+        # [HFT v2.1] Fallback se o modelo não estiver treinado/carregado
+        try:
+            meta_proba = self.meta_learner.predict_proba(meta_features) # Returns probability 0.0-1.0
+        except Exception as e:
+            logging.warning(f"Meta-Learner fallback: Usando raw signal (Motive: {e})")
+            meta_proba = ai_score_raw / 100.0
         
         # Converter probabilidade para score (0-100)
         meta_score = meta_proba * 100.0
@@ -373,24 +426,14 @@ class InferenceEngine:
             # Se Confiança = 0.0 -> final = 0.5
             final_score = 0.5 + (trend_score - 0.5) * confidence
             
+            return {
+                "score": float(final_score),
+                "uncertainty": float(uncertainty_width)
+            }
+            
             return max(0.0, min(1.0, final_score))
             
         except Exception as e:
             logging.error(f"Erro na inferência PatchTST: {e}")
             return 0.5
 
-    def detect_spoofing(self, order_book, time_and_sales):
-        """
-        Detecção Heurística de Spoofing (Phase 6 - Microestrutura Avançada).
-        Identifica ordens grandes que são canceladas antes de execução.
-        
-        Args:
-            order_book: dict {'bids': [], 'asks': []}
-            time_and_sales: list [{'price':, 'volume':, 'type':}]
-            
-        Returns:
-            float: Score de Spoofing (0.0 a 1.0). > 0.7 indica alta probabilidade de manipulação.
-        """
-        # Placeholder para implementação futura com dados de L2 reais
-        # Lógica: Monitorar delta de volume no Book vs Volume executado no T&S
-        return 0.0

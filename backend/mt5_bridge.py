@@ -1,6 +1,6 @@
 import MetaTrader5 as mt5
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import time
 
@@ -15,10 +15,8 @@ logging.basicConfig(
 )
 
 class MT5Bridge:
-    def __init__(self):
-        self.connected = False
-        self.broker = "Genial Investimentos"
         self.mt5 = mt5 # Expor módulo para acesso externo (HFT)
+        self._macro_symbol_cache = None # [HFT v2.1] Cache para evitar busca repetitiva
         
     def connect(self):
         """Estabelece conexão com o MetaTrader 5 local."""
@@ -51,54 +49,247 @@ class MT5Bridge:
         self.connected = False
         logging.info("Conexão MT5 encerrada.")
 
+    def check_connection(self):
+        """Verifica se o terminal está ativo e conectado à corretora."""
+        if not self.connected: 
+            return False
+            
+        terminal_info = mt5.terminal_info()
+        if terminal_info is None:
+            self.connected = False
+            return False
+            
+        # Verifica se está conectado à rede (trade_allowed)
+        if not terminal_info.connected:
+            return False
+            
+        return True
+
+    def place_resilient_order(self, params, max_retries=3):
+        """
+        Envia ordem com lógica de retentativa para Requotes (10004) e Price Change (10006).
+        Específico para B3 HFT.
+        """
+        if not self.connected: return None
+        
+        attempt = 0
+        last_result = None
+        
+        while attempt < max_retries:
+            start_time = time.time()
+            result = mt5.order_send(params)
+            latency = (time.time() - start_time) * 1000
+            
+            if result is None:
+                logging.error(f"MT5 order_send retornou None inesperadamente.")
+                break
+
+            if result.retcode == mt5.TRADE_RETCODE_DONE:
+                logging.info(f"ORDEM EXECUTADA: {result.retcode} (Latência: {latency:.1f}ms)")
+                return result
+            
+            # 10004: REQUOTE, 10006: PRICE_CHANGED
+            if result.retcode in [10004, 10006]:
+                attempt += 1
+                logging.warning(f"REQUOTE/PRICE_OFF ({result.retcode}): Tentativa {attempt}/{max_retries}. Ajustando preço...")
+                
+                # Obter preço atualizado instantaneamente
+                tick = mt5.symbol_info_tick(params['symbol'])
+                if tick:
+                    # Ajustar preço mantendo a direção
+                    new_price = tick.ask if params['type'] in [mt5.ORDER_TYPE_BUY, mt5.ORDER_TYPE_BUY_LIMIT] else tick.bid
+                    
+                    # Se for LIMIT, talvez queiramos ser um pouco mais agressivos na retentativa
+                    # mas para este escopo, apenas atualizamos para o novo preço de mercado
+                    params['price'] = new_price
+                    # Recalcular SL/TP se necessário (geralmente mantemos o offset original se for relativo)
+                    # No RiskManager, SL/TP são absolutos, então precisamos deslocar junto com o preço
+                    diff = new_price - result.request.price
+                    if params['sl'] > 0: params['sl'] += diff
+                    if params['tp'] > 0: params['tp'] += diff
+                
+                continue # Próxima tentativa no loop
+            
+            # Se for outro erro (ex: Limites Rejeitados 10014, Saldo Insuficiente 10019...)
+            logging.error(f"Erro Crítico MT5 ({result.retcode}): {result.comment}")
+            return result
+            
+        return result
+
     def get_current_symbol(self, base="WIN"):
         """
-        Detecta automaticamente o símbolo atual do Mini Índice ou Mini Dólar.
-        Implementação simplificada para B3 (WIN / WDO).
+        Retorna o símbolo ATUAL do WIN com base na regra B3 de liquidez.
+        Regra de Série: G(Fev), J(Abr), M(Jun), Q(Ago), V(Out), Z(Dez).
+        Vencimento Oficial: 4ª feira mais próxima do dia 15.
+        Rollover HFT: Troca se Vol(Prox) > Vol(Atual) + 20%.
         """
-        logging.info(f"Buscando símbolo atual para base: {base}")
-        
-        # Obter todos os símbolos que começam com a base
-        symbols = mt5.symbols_get(group=f"*{base}*")
-        
-        if not symbols:
-            logging.warning(f"Nenhum símbolo encontrado para base {base}")
-            return None
+        if base not in ["WIN", "WDO"]:
+             return f"{base}$"
 
-        # Filtra símbolos que começam com a base e têm tamanho 6 (ex: WING24, WDOJ24)
-        # Ignora opções ou outros derivativos complexos por enquanto
-        futures = [s for s in symbols if s.name.startswith(base) and len(s.name) == 6]
-        
-        if not futures:
-            logging.warning("Nenhum contrato futuro específico encontrado. Tentando retornar o primeiro da lista geral.")
-            return symbols[0].name if symbols else None
+        try:
+            now = datetime.now()
+            year_short = str(now.year)[2:]
+            expiry_map = { 2: 'G', 4: 'J', 6: 'M', 8: 'Q', 10: 'V', 12: 'Z' }
             
-        # Ordena por data de expiração (mais próxima/atual)
-        # O contrato atual geralmente é o que tem expiração futura mais próxima, mas maior que hoje
-        futures.sort(key=lambda x: x.expiration_time)
-        
-        # Pega o primeiro contrato com expiração futura (ou o último da lista se todos expiraram - edge case)
-        now = datetime.now().timestamp()
-        valid_futures = [s for s in futures if s.expiration_time > now]
-        
-        chosen_symbol = valid_futures[0].name if valid_futures else futures[-1].name
-        
-        logging.info(f"Símbolo selecionado: {chosen_symbol}")
-        
-        # Garante que o símbolo esteja visível no Market Watch para receber dados
-        if not mt5.symbol_select(chosen_symbol, True):
-             logging.error(f"Falha ao selecionar símbolo {chosen_symbol} no Market Watch")
-             
-        return chosen_symbol
+            # --- 1. Calcular Vencimento Oficial do Mês Corrente/Próximo ---
+            def get_expiry_date(y, m):
+                # Regra B3: Quarta-feira mais próxima do dia 15
+                base = datetime(y, m, 15)
+                wd = base.weekday() # 0=Seg, 2=Qua, 6=Dom
+                
+                # Se for Domingo (6), a próxima 4ª (dist 3) é mais perto que a anterior (dist 4)
+                if wd == 6:
+                    return base + timedelta(days=3)
+                
+                # Para Seg(0), Ter(1): Avança para Qua(2)
+                elif wd < 2:
+                    return base + timedelta(days=(2 - wd))
+                
+                # Para Qui(3), Sex(4), Sab(5): Recua para Qua(2)
+                elif wd > 2:
+                    return base - timedelta(days=(wd - 2))
+                    
+                return base
+
+            # Determinar mês par de referência
+            candidate_month = now.month
+            if candidate_month % 2 != 0:
+                candidate_month += 1
+            
+            # Ajuste de ano para Dezembro
+            year_calc = now.year
+            if now.month == 12 and candidate_month == 2:
+                year_short = str(year_calc + 1)[2:]
+                year_calc += 1
+            elif candidate_month > 12:
+                candidate_month = 2
+                year_short = str(year_calc + 1)[2:]
+                year_calc += 1
+
+            expiry_date = get_expiry_date(year_calc, candidate_month)
+
+            # --- 2. Verificar se já venceu (com margem de segurança pós-pregão 18h) ---
+            # Se hoje > vencimento, pegar o PRÓXIMO
+            if now > expiry_date + timedelta(hours=18):
+                candidate_month += 2
+                if candidate_month > 12:
+                    candidate_month = 2
+                    year_short = str(int(year_short) + 1)[-2:]
+                
+            current_letter = expiry_map[candidate_month]
+            current_symbol = f"{base}{current_letter}{year_short}"
+            
+            # --- 3. Checagem de Liquidez (HFT Rollover) ---
+            # Verificar contrato SEGUINTE para ver se a liquidez já migrou
+            next_month = candidate_month + 2
+            next_year_s = year_short
+            if next_month > 12:
+                next_month = 2
+                next_year_s = str(int(year_short) + 1)[-2:]
+            
+            next_letter = expiry_map[next_month]
+            next_symbol = f"{base}{next_letter}{next_year_s}"
+            
+            # Só verifica volume se estivermos na semana do vencimento (7 dias antes)
+            days_to_expiry = (expiry_date - now).days
+            if -2 <= days_to_expiry <= 7:
+                if self.connected:
+                    vol_curr = self.get_daily_volume(current_symbol)
+                    vol_next = self.get_daily_volume(next_symbol)
+                    
+                    if vol_next > (vol_curr * 1.2): # 20% mais volume no novo
+                        logging.warning(f"ROLLOVER DETECTADO: Migrando {current_symbol} -> {next_symbol} (Vol: {vol_next} vs {vol_curr})")
+                        return next_symbol
+            
+            return current_symbol
+
+        except Exception as e:
+            logging.error(f"Erro ao calcular simbolo WIN: {e}")
+            return f"{base}$" # Fallback genérico
     
-    def get_market_data(self, symbol, timeframe=mt5.TIMEFRAME_M1, n_candles=60):
-        """Retorna os últimos n candles para o símbolo especificado."""
-        rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, n_candles)
-        if rates is None:
-            logging.error(f"Erro ao obter rates para {symbol}: {mt5.last_error()}")
-            return None
+    def get_daily_volume(self, symbol):
+        """Helper para pegar volume do dia."""
+        try:
+            rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, 1)
+            if rates is not None and len(rates) > 0:
+                return rates[0]['tick_volume']
+            return 0
+        except:
+            return 0
+
+    def get_daily_realized_profit(self):
+        """Calcula o lucro realizado no dia (00:00 até agora)."""
+        if not self.connected: return 0.0
+        try:
+            now = datetime.now()
+            start_of_day = datetime(now.year, now.month, now.day)
+            deals = mt5.history_deals_get(start_of_day, now)
             
-        df = pd.DataFrame(rates)
+            if deals is None or len(deals) == 0:
+                return 0.0
+                
+            total_profit = 0.0
+            for deal in deals:
+                # Filtrar deals de entrada/saída, ignorar depósitos se houver
+                if deal.type in [mt5.DEAL_TYPE_BUY, mt5.DEAL_TYPE_SELL]:
+                    total_profit += deal.profit + deal.swap + deal.commission
+                    
+            return total_profit
+        except Exception as e:
+            logging.error(f"Erro ao calcular lucro diário: {e}")
+            return 0.0
+
+    def get_settlement_price(self, symbol):
+        """Retorna o preço de ajuste (Settlement) do dia anterior."""
+        if not self.connected: return 0.0
+        
+        info = mt5.symbol_info(symbol)
+        if not info: return 0.0
+        
+        # Tenta pegar do session_price_ref (geralmente é o ajuste na B3)
+        # Se for zero, tenta pegar o prev_close
+        settlement = info.session_price_ref
+        if settlement <= 0:
+             settlement = info.prev_close
+             
+        return settlement
+
+    def get_bluechips_data(self):
+        """
+        Lê a variação percentual intradiária das Blue Chips.
+        Usa Candle D1 Open para precisão máxima.
+        """
+        if not self.connected:
+            return {}
+        
+        tickers = ["VALE3", "PETR4", "ITUB4", "BBDC4", "ELET3"]
+        data = {}
+
+        for symbol in tickers:
+            try:
+                if not mt5.symbol_select(symbol, True):
+                    continue
+
+                tick = mt5.symbol_info_tick(symbol)
+                # Pegar candle D1 do dia atual (índice 0 com data especifica ou from_pos)
+                # copy_rates_from_pos(msg, timeframe, start_pos, count)
+                rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, 1)
+
+                if tick and rates is not None and len(rates) > 0:
+                    open_price = rates[0]['open']
+                    current_price = tick.last
+                    
+                    if open_price > 0:
+                        variation = ((current_price - open_price) / open_price) * 100
+                        data[symbol] = round(variation, 2)
+                    else:
+                        data[symbol] = 0.0
+                else:
+                    data[symbol] = 0.0
+            except Exception:
+                data[symbol] = 0.0
+        
+        return data
 
     def get_macro_data(self):
         """
@@ -112,23 +303,22 @@ class MT5Bridge:
         macro_symbol = None
         
         # Tenta encontrar um símbolo válido
-        for sym in candidates:
-            # Tenta pegar info (checa existência)
-            info = mt5.symbol_info(sym) # type: ignore
-            # Pode ser que precise de prefixo/sufixo dependendo da corretora, 
-            # mas WSP geralmente é padrão na B3.
-            # Se não achar exato, tenta com wildcard (lógica simplificada aqui)
-            if info is not None:
-                macro_symbol = sym
-                break
-        
-        # Se não achou nenhum exato, tenta buscar nos símbolos disponíveis que contêm 'SP' ou '500'
-        # (Fallback custoso, evitar em loop rápido, fazer cache se possível)
-        if macro_symbol is None:
-             # Tenta achar o atual (ex: WSPH24)
-             wsp_futures = self.get_current_symbol(base="WSP")
-             if wsp_futures:
-                 macro_symbol = wsp_futures
+        if self._macro_symbol_cache:
+            macro_symbol = self._macro_symbol_cache
+        else:
+            # Tenta encontrar um símbolo válido
+            for sym in candidates:
+                info = mt5.symbol_info(sym)
+                if info is not None:
+                    macro_symbol = sym
+                    self._macro_symbol_cache = sym
+                    break
+            
+            if macro_symbol is None:
+                wsp_futures = self.get_current_symbol(base="WSP")
+                if wsp_futures:
+                    macro_symbol = wsp_futures
+                    self._macro_symbol_cache = wsp_futures
 
         if macro_symbol is None:
             # logging.warning("Macro Monitor: Nenhum símbolo do S&P 500 encontrado.")
@@ -143,9 +333,6 @@ class MT5Bridge:
         close_yesterday = rates[0]['close']
         current_price = rates[1]['close'] # Ou 'close' do candle D1 atual que é o preço corrente
         
-        if close_yesterday == 0:
-            return 0.0
-            
         if close_yesterday == 0:
             return 0.0
             
@@ -206,6 +393,25 @@ class MT5Bridge:
         if ticks is None:
             return None
         return pd.DataFrame(ticks)
+
+    def update_sltp(self, ticket, sl, tp):
+        """Modifica SL/TP de uma posição existente."""
+        if not self.connected: return False
+
+        request = {
+            "action": self.mt5.TRADE_ACTION_SLTP,
+            "position": ticket,
+            "sl": float(sl),
+            "tp": float(tp),
+            "magic": 123456,
+        }
+        
+        result = self.mt5.order_send(request)
+        if result.retcode != self.mt5.TRADE_RETCODE_DONE:
+            logging.error(f"Falha ao atualizar SL/TP (Ticket {ticket}): {result.comment}")
+            return False
+            
+        return True
 
     def validate_order_compliance(self, symbol, price):
         """

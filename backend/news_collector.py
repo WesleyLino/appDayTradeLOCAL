@@ -20,7 +20,8 @@ HIGH_IMPACT_KEYWORDS = [
     "ipca", "selic", "copom", "payroll", "fomc", "fed", "pib", 
     "petrobras", "vale", "banco central", "inflação", "inflacao", "discurso",
     "ibovespa", "dólar", "dolar", "commodities", "juros", "taxa",
-    "dividendos", "lucro", "prejuízo", "prejuizo", "desemprego"
+    "dividendos", "lucro", "prejuízo", "prejuizo", "desemprego",
+    "fiscal", "arcabouço", "meta", "superávit", "déficit", "fazenda", "haddad"
 ]
 
 class NewsCollector:
