@@ -1,0 +1,160 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { useTradingStore } from "@/hooks/use-trading-ws";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
+interface OrderLevel {
+  price: number;
+  volume: number;
+}
+
+interface OrderBook {
+  bids: OrderLevel[];
+  asks: OrderLevel[];
+}
+
+export function OrderBookHeatmap() {
+  const { data, connected } = useTradingStore();
+  const [book, setBook] = useState<OrderBook>({ bids: [], asks: [] });
+  const [maxVol, setMaxVol] = useState(1);
+  const [isSimulated, setIsSimulated] = useState(true);
+
+  useEffect(() => {
+    // Se tiver dados reais do book e estiver conectado
+    if (
+      connected &&
+      data?.book &&
+      (data.book.bids.length > 0 || data.book.asks.length > 0)
+    ) {
+      setIsSimulated(false);
+
+      // Limitar a 10 níveis para visualização limpa
+      const limitedBids = data.book.bids.slice(0, 10);
+      const limitedAsks = data.book.asks.slice(0, 10);
+
+      setBook({ bids: limitedBids, asks: limitedAsks });
+
+      const maxV = Math.max(
+        ...limitedBids.map((b) => b.volume),
+        ...limitedAsks.map((a) => a.volume),
+        10, // Evitar div por zero
+      );
+      setMaxVol(maxV);
+      return;
+    }
+
+    // Fallback: Simulação se não houver conexão MT5
+    setIsSimulated(true);
+    const interval = setInterval(() => {
+      const basePrice = data?.price || 115000; // Usa preço real como base se tiver, senão fixo
+      const newBids = Array.from({ length: 10 }).map((_, i) => ({
+        price: basePrice - i * 5,
+        volume: Math.floor(Math.random() * 100) + 10,
+      }));
+      const newAsks = Array.from({ length: 10 }).map((_, i) => ({
+        price: basePrice + (i + 1) * 5,
+        volume: Math.floor(Math.random() * 100) + 10,
+      }));
+
+      const maxV = Math.max(
+        ...newBids.map((b) => b.volume),
+        ...newAsks.map((a) => a.volume),
+      );
+
+      setBook({ bids: newBids, asks: newAsks });
+      setMaxVol(maxV);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [data, connected]);
+
+  const getIntensity = (vol: number) => {
+    const opacity = 0.2 + (vol / maxVol) * 0.8;
+    return opacity;
+  };
+
+  return (
+    <Card className="border-white/5 bg-black/20 backdrop-blur-xl shadow-2xl">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-zinc-400 flex justify-between items-center">
+          Order Book Heatmap (L2)
+          {isSimulated ? (
+            <Badge variant="outline" className="text-xs bg-zinc-950/50">
+              Simulado (MT5 Off)
+            </Badge>
+          ) : (
+            <Badge
+              variant="default"
+              className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/50"
+            >
+              Live Data
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-4">
+          {/* Lado da Compra (Bids) - Verde */}
+          <div className="flex-1 flex flex-col gap-0.5">
+            <div className="text-xs text-center text-emerald-500 mb-1 font-bold">
+              COMPRA
+            </div>
+            {book.bids.map((level, i) => (
+              <div
+                key={`bid-${i}`}
+                className="flex justify-between text-xs px-2 py-1 rounded relative overflow-hidden"
+              >
+                {/* Barra de Fundo (Heatmap) */}
+                <div
+                  className="absolute inset-0 bg-emerald-500/30 z-0 transition-all duration-300"
+                  style={{
+                    width: `${(level.volume / maxVol) * 100}%`,
+                    opacity: getIntensity(level.volume),
+                  }}
+                />
+
+                <span className="z-10 font-mono text-zinc-300">
+                  {level.volume}
+                </span>
+                <span className="z-10 font-mono text-emerald-400 font-bold">
+                  {level.price}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Lado da Venda (Asks) - Vermelho */}
+          <div className="flex-1 flex flex-col gap-0.5">
+            <div className="text-xs text-center text-rose-500 mb-1 font-bold">
+              VENDA
+            </div>
+            {book.asks.map((level, i) => (
+              <div
+                key={`ask-${i}`}
+                className="flex justify-between text-xs px-2 py-1 rounded relative overflow-hidden"
+              >
+                {/* Barra de Fundo (Heatmap) */}
+                <div
+                  className="absolute inset-0 bg-rose-500/30 z-0 transition-all duration-300 left-0"
+                  style={{
+                    width: `${(level.volume / maxVol) * 100}%`,
+                    opacity: getIntensity(level.volume),
+                  }}
+                />
+
+                <span className="z-10 font-mono text-rose-400 font-bold">
+                  {level.price}
+                </span>
+                <span className="z-10 font-mono text-zinc-300 text-right w-full">
+                  {level.volume}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
