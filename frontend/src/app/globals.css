@@ -34,8 +34,12 @@
   --radius-sm: calc(var(--radius) - 4px);
 
   --color-profit: #10b981;
-  --color-loss: #ef4444;
+  --color-loss: #f43f5e;
   --color-neutral: #71717a;
+
+  --font-sans:
+    var(--font-outfit), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 @layer base {
@@ -63,23 +67,31 @@
   }
 
   .dark {
-    /* PREMIUM ZINC PALETTE (Deep Dark) */
-    --background: #09090b; /* Zinc 950 - Neutral Black */
+    /* PREMIUM ZINC PALETTE (Deep Dark - Zinc 950 Base) */
+    --background: #09090b; /* Zinc 950 */
     --foreground: #fafafa; /* Zinc 50 */
-    --card: #18181b; /* Zinc 900 - Subtle Surface */
+
+    --card: #121215; /* Slightly lighter than bg */
     --card-foreground: #fafafa;
-    --popover: #18181b;
+
+    --popover: #121215;
     --popover-foreground: #fafafa;
+
     --primary: #fafafa;
     --primary-foreground: #18181b;
+
     --secondary: #27272a; /* Zinc 800 */
     --secondary-foreground: #fafafa;
+
     --muted: #27272a;
     --muted-foreground: #a1a1aa; /* Zinc 400 */
+
     --accent: #27272a;
     --accent-foreground: #fafafa;
-    --destructive: #7f1d1d;
+
+    --destructive: #be123c; /* Rose 700 */
     --destructive-foreground: #fafafa;
+
     --border: #27272a; /* Zinc 800 */
     --input: #27272a;
     --ring: #d4d4d8; /* Zinc 300 */
@@ -98,7 +110,7 @@
       height: 6px;
     }
     &::-webkit-scrollbar-track {
-      @apply bg-background;
+      @apply bg-zinc-950;
     }
     &::-webkit-scrollbar-thumb {
       @apply bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors;
@@ -108,5 +120,27 @@
   /* Selection Highlighting */
   ::selection {
     @apply bg-emerald-500/20 text-emerald-400;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-zinc-900/40 backdrop-blur-md border border-white/5;
+  }
+
+  .glass-heavy {
+    @apply bg-zinc-900/60 backdrop-blur-xl border border-white/10;
+  }
+
+  .text-shadow-glow-green {
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .text-shadow-glow-red {
+    text-shadow: 0 0 20px rgba(244, 63, 94, 0.4);
+  }
+
+  .text-shadow-glow-blue {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
   }
 }

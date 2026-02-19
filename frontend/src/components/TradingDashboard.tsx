@@ -76,14 +76,14 @@ export function TradingDashboard() {
   // ... (resto do código)
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-7xl mx-auto p-4 md:p-6 animate-in fade-in duration-1000">
+    <div className="flex flex-col gap-3 w-full max-w-[1600px] mx-auto p-2 md:p-4 animate-in fade-in duration-1000">
       {/* ... (High Latency Alert) ... */}
 
       {/* Header / StatusBar */}
       {/* ... */}
 
       {/* Grid Layout Principal */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Coluna Esquerda: Métricas SOTA & Ticks */}
         <div className="space-y-6 lg:col-span-1">
           <SotaMetrics {...sotaData} />
@@ -107,7 +107,7 @@ export function TradingDashboard() {
       )}
 
       {/* Header / StatusBar */}
-      <div className="flex items-center justify-between bg-card/40 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-2xl">
+      <div className="flex items-center justify-between glass p-4 rounded-2xl shadow-2xl">
         <div className="flex items-center gap-6">
           <div
             className={cn(
@@ -193,7 +193,7 @@ export function TradingDashboard() {
           <TradingChart />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-5 bg-card/40 backdrop-blur-md rounded-2xl border border-white/5 shadow-lg flex flex-col gap-2">
+            <div className="p-4 glass rounded-2xl shadow-lg flex flex-col gap-2">
               <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
                 Sentimento (Gemini)
               </span>
@@ -213,7 +213,7 @@ export function TradingDashboard() {
             </div>
 
             {/* Termômetro Blue Chips (New Quant Feature) */}
-            <div className="p-5 bg-card/40 backdrop-blur-md rounded-2xl border border-white/5 shadow-lg flex flex-col gap-2">
+            <div className="p-4 glass rounded-2xl shadow-lg flex flex-col gap-2">
               <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
                 Blue Chips (IBOV)
               </span>
@@ -260,7 +260,7 @@ export function TradingDashboard() {
 
         {/* Sidebar Controls */}
         <div className="flex flex-col gap-6">
-          <div className="p-6 bg-card/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl flex flex-col gap-6">
+          <div className="p-5 glass-heavy rounded-2xl shadow-2xl flex flex-col gap-5">
             <div className="space-y-3">
               <h3 className="font-bold text-lg flex items-center gap-2 text-white/90">
                 <Zap
@@ -433,7 +433,7 @@ export function TradingDashboard() {
             </div>
           </div>
 
-          <div className="p-5 bg-card/30 backdrop-blur-sm rounded-2xl border border-white/5 border-dashed flex flex-col gap-3">
+          <div className="p-4 glass rounded-2xl border-dashed flex flex-col gap-3">
             <h4 className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-2 tracking-widest">
               <ShieldAlert size={14} className="text-primary" />
               Trava de Risco
