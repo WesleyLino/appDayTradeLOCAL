@@ -40,7 +40,11 @@ inference = InferenceEngine(weights_path)
 
 @app.on_event("startup")
 async def startup_event():
-    bridge.connect()
+    if not bridge.connected:
+        logging.warning("MT5 Bridge não conectado na inicialização. Tentando reconectar...")
+        # A reconexão acontece no loop principal, mas podemos logar aqui.
+    else:
+        logging.info(f"MT5 Bridge conectado: {bridge.mt5.account_info().login}")
     # Atalho Global de Pânico: Ctrl+Q para zerar tudo
     
     # Verificar recursos críticos
@@ -98,11 +102,15 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             # --- 0. CHECK CONEXÃO MT5 ---
             if not bridge.check_connection():
-                if time_module.time() - last_heartbeat > 30.0:
-                    logging.error("Conexão MT5 perdida ou Terminal instável. Pausando execução...")
-                await asyncio.sleep(5) 
-                last_heartbeat = time_module.time()
-                continue
+                logging.warning("MT5 desconectado. Tentando reconectar...")
+                if bridge.connect():
+                    logging.info("Reconectado ao MT5 com sucesso!")
+                else:
+                    if time_module.time() - last_heartbeat > 30.0:
+                        logging.error("Conexão MT5 perdida ou Terminal instável. Pausando execução...")
+                    await asyncio.sleep(5) 
+                    last_heartbeat = time_module.time()
+                    continue
 
             try: # [HFT v2.1] Iteration-level error handling
                 # 0. Obter Símbolo (Async Wrapper)
@@ -415,44 +423,132 @@ async def websocket_endpoint(websocket: WebSocket):
                                 if is_sniper:
                                     order_type = bridge.mt5.ORDER_TYPE_BUY if side == "buy" else bridge.mt5.ORDER_TYPE_SELL
                                     logging.info("🎯 SNIPER MODE: MARKET ORDER")
-                                else:
-                                    order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
-                                    logging.info("🛡️ PASSIVE ENTRY: LIMIT ORDER")
-                                
-                                # Obter Tick Fresco para a ordem
-                                tick_info = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
-                                current_order_price = tick_info.ask if side == "buy" else tick_info.bid
-                                
-                                valid_comp, reason_comp = await asyncio.to_thread(bridge.validate_order_compliance, symbol, current_order_price)
-                                
-                                if not valid_comp:
-                                     logging.warning(f"BLOCK Compliance: {reason_comp}")
-                                else:
+                                    
+                                    # Obter Tick Fresco para a ordem
+                                    tick_info = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
+                                    current_order_price = tick_info.ask if side == "buy" else tick_info.bid
+                                    
                                     # [SOTA] Volatility Sizing
-                                    # Calcula lotes baseados na volatilidade atual
                                     point_value = 10.0 if "WDO" in symbol or "DOL" in symbol else 0.20
                                     sota_lots = risk.calculate_volatility_sizing(account['balance'], current_atr, point_value)
-                                    # Arredondar para inteiro (MT5 stocks) ou step mínimo (futuros é 1)
                                     final_lots = max(1, int(sota_lots))
                                     
-                                    logging.info(f"[SOTA] Volatility Sizing: {final_lots} lotes (ATR: {current_atr:.1f})")
-
                                     params = risk.get_order_params(symbol, order_type, current_order_price, final_lots)
                                     params["symbol"] = symbol
-                                    params["comment"] = "AUTO-RESILIENTE SCORE >= 75"
+                                    params["comment"] = "AUTO SNIPER"
                                     
                                     # Execução Resiliente (Trata Requotes)
                                     result = await asyncio.to_thread(bridge.place_resilient_order, params)
                                     
                                     if result and result.retcode == bridge.mt5.TRADE_RETCODE_DONE:
-                                        persistence.save_trade(symbol, side, current_order_price, final_lots, "AUTO_DONE")
+                                        persistence.save_trade(symbol, side, current_order_price, final_lots, "AUTO_SNIPER")
                                         persistence.save_state("last_auto_trade", f"{side} at {current_order_price}")
-                                        # Log de Slippage: Preço Executado vs Preço Solicitado
                                         slippage = abs(result.price - current_order_price)
-                                        logging.info(f"TRADE SUCCESS: Slippage {slippage:.1f} pts")
+                                        logging.info(f"TRADE SUCCESS (SNIPER): Slippage {slippage:.1f} pts")
                                     else:
                                         msg = result.comment if result else "Timeout/None"
-                                        logging.error(f"Falha Crítica na Execução: {msg}")
+                                        logging.error(f"Falha Crítica na Execução Sniper: {msg}")
+
+                                else:
+                                    # --- PASSIVE ENTRY: LIMIT ORDER (HFT SOTA) ---
+                                    order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
+                                    logging.info("🛡️ PASSIVE ENTRY: LIMIT ORDER (Top Book)")
+                                    
+                                    # Pegar Preço Do Topo do Book (Comprar no Bid, Vender no Ask)
+                                    # Isso garante spread a favor, mas risco de não executar
+                                    tick_info = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
+                                    # IMPORTANTE: Limit Buy é abaixo do preço atual (Bid), Limit Sell é acima (Ask)?
+                                    # Não! Limit Buy deve ser <= Ask. Se colocarmos no Bid, estamos na fila passiva.
+                                    # Se colocarmos no Ask, vira Market praticamente.
+                                    # Estratégia HFT: Colocar no BID (para compra) ou ASK (para venda) e esperar ser agredido.
+                                    limit_price = tick_info.bid if side == "buy" else tick_info.ask
+                                    
+                                    valid_comp, reason_comp = await asyncio.to_thread(bridge.validate_order_compliance, symbol, limit_price)
+                                    
+                                    if not valid_comp:
+                                         logging.warning(f"BLOCK Compliance: {reason_comp}")
+                                    else:
+
+                                        # [SOTA] Volatility Sizing
+                                        point_value = 10.0 if "WDO" in symbol or "DOL" in symbol else 0.20
+                                        sota_lots = risk.calculate_volatility_sizing(account['balance'], current_atr, point_value)
+                                        
+                                        # Ajuste fino de lotes (step)
+                                        vol_step = tick_info.volume_step if hasattr(tick_info, 'volume_step') else 1.0
+                                        # Arredondar para o step mais próximo
+                                        final_lots = round(sota_lots / vol_step) * vol_step
+                                        final_lots = max(vol_step, final_lots)
+                                        
+                                        logging.info(f"[SOTA] HFT Limit: {final_lots} lotes @ {limit_price}")
+
+                                        # Enviar Ordem Limitada
+                                        result = await asyncio.to_thread(
+                                            bridge.place_limit_order, 
+                                            symbol, order_type, limit_price, final_lots, 
+                                            sl=0, tp=0, comment="AUTO HFT LIMIT"
+                                        )
+                                        
+                                        if result and result.retcode == bridge.mt5.TRADE_RETCODE_DONE:
+                                            order_ticket = result.order
+                                            logging.info(f"Ordem Pendente Aberta: {order_ticket}. Aguardando 5s...")
+                                            
+                                            # --- HFT TTL LOOP (5 segundos) ---
+                                            filled = False
+                                            for _ in range(10): # 10x 0.5s = 5s
+                                                await asyncio.sleep(0.5)
+                                                status = await asyncio.to_thread(bridge.check_order_status, order_ticket)
+                                                
+                                                # [UX] Enviar Heartbeat para Frontend não congelar e mostrar status
+                                                try:
+                                                    hb_packet = {
+                                                        "symbol": symbol,
+                                                        "price": limit_price,
+                                                        "obi": obi,
+                                                        "sentiment": ai.latest_sentiment_score,
+                                                        "risk_status": {
+                                                            "ai_score": ai_total_score,
+                                                            "order_status": "PENDING_HFT",
+                                                            "ticket": order_ticket
+                                                        },
+                                                        "account": account,
+                                                        "timestamp": time_module.time()
+                                                    }
+                                                    await websocket.send_json(hb_packet)
+                                                except Exception:
+                                                    pass # Ignorar erros de socket no loop rápido
+
+                                                if status == "FILLED":
+                                                    filled = True
+                                                    logging.info(f"HFT FILL: Ordem {order_ticket} executada no spread!")
+                                                    persistence.save_trade(symbol, side, limit_price, final_lots, "AUTO_LIMIT_FILLED")
+                                                    break
+                                                elif status == "CANCELED":
+                                                    logging.warning(f"Ordem {order_ticket} cancelada externamente.")
+                                                    break
+                                            
+                                            if not filled:
+                                                logging.info(f"HFT TTL Expired: Tentando cancelar {order_ticket}...")
+                                                cancel_success = await asyncio.to_thread(bridge.cancel_order, order_ticket)
+                                                
+                                                if not cancel_success:
+                                                    # RACE CONDITION CHECK:
+                                                    # Se falhou cancelar, pode ter sido executada no último milissegundo.
+                                                    logging.warning(f"Falha ao cancelar {order_ticket}. Verificando se foi executada (Race Condition)...")
+                                                    final_status = await asyncio.to_thread(bridge.check_order_status, order_ticket)
+                                                    
+                                                    if final_status == "FILLED":
+                                                        logging.info(f"RACE CONDITION WIN: Ordem {order_ticket} foi executada no limite do tempo!")
+                                                        persistence.save_trade(symbol, side, limit_price, final_lots, "AUTO_LIMIT_FILLED_RACE")
+                                                    else:
+                                                        logging.error(f"Ordem {order_ticket} presa em estado incerto: {final_status}")
+                                                else:
+                                                    logging.info(f"Ordem {order_ticket} cancelada com sucesso (TTL).")
+
+                                                # Opcional: Aqui poderíamos agredir a mercado (Chase), mas HFT puro evita isso. 
+                                                # Vamos abortar para preservar a vantagem estatística.
+                                        else:
+                                            msg = result.comment if result else "Timeout/None"
+                                            logging.error(f"Falha ao enviar Limit Order: {msg}")
                     
                     # LOG DE BLOQUEIO ALTA CONFIANÇA
                     elif risk.allow_autonomous and ai_total_score >= 75:

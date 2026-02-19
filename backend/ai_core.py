@@ -414,7 +414,24 @@ class InferenceEngine:
         if model_path:
             self.load_model()
             
-    # ... check_resources implementation ...
+    def check_resources(self):
+        """Verifica se os arquivos de modelo necessários existem."""
+        missing = []
+        if self.onnx_path and not os.path.exists(self.onnx_path):
+             # Apenas reporta se não existir, mas load_model tem fallback
+             pass 
+        
+        if self.model_path and not os.path.exists(self.model_path):
+             missing.append(f"Model File ({self.model_path})")
+             
+        # Retorna lista vazia se pelo menos um modo puder ser carregado ou se não houver path configurado (inicio frio)
+        if not self.model_path:
+             return []
+             
+        if not os.path.exists(self.model_path) and (not self.onnx_path or not os.path.exists(self.onnx_path)):
+             return missing
+             
+        return []
 
     def load_model(self):
         """Carrega o modelo, priorizando ONNX Runtime (DirectML)."""

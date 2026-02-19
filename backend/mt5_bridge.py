@@ -19,14 +19,17 @@ class MT5Bridge:
         self.mt5 = mt5 # Expor módulo para acesso externo (HFT)
         self.connected = False
         self._macro_symbol_cache = None # [HFT v2.1] Cache para evitar busca repetitiva
-
-        """Estabelece conexão com o MetaTrader 5 local."""
-        if not mt5.initialize():
-            logging.error(f"Falha ao inicializar MT5: {mt5.last_error()}")
-            return False
         
+        self.connect()
+
+    def connect(self):
+        """Estabelece conexão com o MetaTrader 5 local."""
+        if not self.mt5.initialize():
+            logging.error(f"Falha ao inicializar MT5: {self.mt5.last_error()}")
+            return False
+
         # Verificar se está conectado à corretora correta
-        account_info = mt5.account_info()
+        account_info = self.mt5.account_info()
         if account_info is None:
             logging.error("Não foi possível obter informações da conta.")
             self.disconnect()
@@ -116,6 +119,98 @@ class MT5Bridge:
             return result
             
         return result
+
+    def place_limit_order(self, symbol, order_type, price, volume, sl=0.0, tp=0.0, comment="HFT Limit"):
+        """
+        Envia uma Ordem Limitada (Pending Order) para o book.
+        Retorna o result object do MT5.
+        """
+        if not self.connected: return None
+
+        # Normalização de Preço (Tick Size)
+        symbol_info = mt5.symbol_info(symbol)
+        if symbol_info is None:
+            logging.error(f"Símbolo {symbol} não encontrado para normalização.")
+            return None
+            
+        tick_size = symbol_info.trade_tick_size
+        if tick_size > 0:
+            price = round(price / tick_size) * tick_size
+            if sl > 0: sl = round(sl / tick_size) * tick_size
+            if tp > 0: tp = round(tp / tick_size) * tick_size
+
+        request = {
+            "action": mt5.TRADE_ACTION_PENDING,
+            "symbol": symbol,
+            "volume": float(volume),
+            "type": order_type,
+            "price": float(price),
+            "sl": float(sl),
+            "tp": float(tp),
+            "type_time": mt5.ORDER_TIME_DAY, # Expira no final do dia se não cancelada antes
+            "type_filling": mt5.ORDER_FILLING_RETURN,
+            "comment": comment,
+            "magic": 123456,
+        }
+
+        result = mt5.order_send(request)
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            logging.error(f"Falha ao enviar Limit Order: {result.comment} ({result.retcode})")
+        else:
+            logging.info(f"LIMIT ORDER ENVIADA: {symbol} {volume} @ {price} (Ticket: {result.order})")
+        
+        return result
+
+    def cancel_order(self, ticket):
+        """Cancela uma ordem pendente pelo ticket."""
+        if not self.connected: return False
+
+        request = {
+            "action": mt5.TRADE_ACTION_REMOVE,
+            "order": int(ticket),
+        }
+        
+        result = mt5.order_send(request)
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            logging.warning(f"Falha ao cancelar ordem {ticket}: {result.comment}")
+            return False
+            
+        logging.info(f"ORDEM CANCELADA: {ticket}")
+        return True
+
+    def check_order_status(self, ticket):
+        """
+        Verifica o estado de uma ordem.
+        Retorna: 'FILLED', 'PENDING', 'CANCELED', 'UNKNOWN'
+        """
+        if not self.connected: return "UNKNOWN"
+        
+        # Verificar em Histórico de Deals (Executadas)
+        # history_deals_get retorna tupla
+        # Poderíamos usar orders_get para pendentes e history_orders_get para finalizadas
+        
+        # 1. Checar se está PENDENTE (Active)
+        orders = mt5.orders_get(ticket=ticket)
+        if orders and len(orders) > 0:
+            return "PENDING"
+            
+        # 2. Checar se foi FINALIZADA (History)
+        # Precisamos de um range de tempo. Assumindo últimas 24h.
+        from_date = datetime.now() - timedelta(days=1)
+        hist_orders = mt5.history_orders_get(from_date, datetime.now(), ticket=ticket)
+        
+        if hist_orders and len(hist_orders) > 0:
+            state = hist_orders[0].state
+            if state == mt5.ORDER_STATE_FILLED:
+                return "FILLED"
+            elif state == mt5.ORDER_STATE_CANCELED:
+                return "CANCELED"
+            elif state == mt5.ORDER_STATE_PARTIAL:
+                return "PARTIAL"
+            else:
+                return f"STATE_{state}"
+                
+        return "UNKNOWN"
 
     def get_current_symbol(self, base="WIN"):
         """
