@@ -68,7 +68,7 @@ export function TradingChart() {
 
     // [SOTA] Uncertainty Cone Series
     const forecastSeries = chart.addSeries(LineSeries, {
-      color: "#a855f7", // Purple (AI)
+      color: "#06b6d4", // Cyan (AI)
       lineWidth: 2,
       lineStyle: LineStyle.Solid,
       crosshairMarkerVisible: false,

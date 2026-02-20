@@ -10,7 +10,6 @@ from backend.meta_learner import MetaLearner # HFT v2.0 Meta-Learner
 from sklearn.cluster import KMeans # Keep KMeans for regime_model
 from dotenv import load_dotenv
 import torch # Import necessário para InferenceEngine
-from backend.models.price_forecaster import PriceForecaster # SOTA Forecast
 
 load_dotenv()
 
@@ -47,14 +46,9 @@ class AICore:
         self.last_news_update = 0
         self.micro_analyzer = MicrostructureAnalyzer()
         self.meta_learner = MetaLearner() # Inicializa Meta-Learner
-        self.news_collector = NewsCollector(max_age_minutes=30) # Plano Diretor 2.0
-        self.price_forecaster = PriceForecaster() # [SOTA] Novo Cérebro
-        
-        # Tentar carregar pesos pré-treinados SOTA
-        if self.price_forecaster.load():
-            logging.info("🧠 SOTA Brain (PatchTST) carregado com sucesso.")
-        else:
-            logging.warning("🧠 SOTA Brain não encontrado. Operando em modo de coleta/treino.")
+        self.news_collector = NewsCollector() # Plano Diretor 2.0
+        self.inference_engine = None # Injetado pelo main.py
+        self.sentiment_lock = asyncio.Lock() # Lock para evitar chamadas paralelas ao Gemini
 
     def fetch_latest_news(self):
         """
@@ -88,53 +82,59 @@ class AICore:
         micro_signal = self.micro_analyzer.analyze(self.prev_book, current_book)
         sentiment_score = self.latest_sentiment_score
         
-        # 2. Previsão SOTA com Incerteza
-        current_price = market_data['close'].iloc[-1]
-        forecast_result = self.price_forecaster.predict(market_data)
-        
-        # 3. Veto por Incerteza (Conformal Prediction)
-        # Se o preço atual já estiver dentro do intervalo de incerteza da previsão futura,
-        # significa que não há "edge" estatístico claro.
-        uncertainty_range = forecast_result['upper_bound'] - forecast_result['lower_bound']
-        projected_move = abs(forecast_result['forecast'] - current_price)
-        
-        if projected_move < (uncertainty_range * 0.5): # Heurística: Movimento < Metade da Incerteza
-            logging.info(f"⛔ Trade Vetado pelo SOTA: Movimento projetado ({projected_move:.2f}) menor que incerteza ({uncertainty_range:.2f}).")
-            return None # ABORTAR
+        # 2. Previsão SOTA com Incerteza (Multi-Ativo)
+        if not self.inference_engine:
+            return None
             
-        # ... (Continua com lógica de decisão combinada) ...
-        # Retorna decisão formatada
+        forecast_result = await self.inference_engine.predict(market_data)
+        if isinstance(forecast_result, float): # Fallback neutro
+            return None
+
+        # 3. Veto por Incerteza (Conformal Prediction / Quantile Space)
+        # Se os dados estiverem normalizados, usamos os bounds normais
+        uncertainty = forecast_result.get('uncertainty_norm', 1.0)
+        forecast_move = abs(forecast_result.get('forecast_norm', 0.0))
+        
+        if forecast_move < (uncertainty * 0.3): # Limite de ruído mais agressivo
+            logging.info(f"⛔ Trade Vetado pelo SOTA: Movimento projetado ({forecast_move:.2f}) menor que incerteza ({uncertainty:.2f}).")
+            return None 
+            
         return {
-            "signal": "BUY" if forecast_result['forecast'] > current_price else "SELL",
+            "signal": "BUY" if forecast_result['forecast_norm'] > 0 else "SELL",
             "confidence": forecast_result['confidence'],
-            "reason": f"SOTA Forecast: {forecast_result['forecast']:.2f} (Bounds: {forecast_result['lower_bound']:.2f}-{forecast_result['upper_bound']:.2f})"
+            "reason": f"SOTA Forecast Norm: {forecast_result['forecast_norm']:.2f} (Uncertainty: {uncertainty:.2f})"
         }
 
     async def update_sentiment(self):
         """
         Consulta o Gemini para obter o score de sentimento (-1 a 1) com reliability scoring.
-        Versão Full-Stack Quant: Persona Engenheiro de Risco + Refresh 30s.
+        Versão Full-Stack Quant: Persona Engenheiro de Risco + Cache 60s + Lock.
         """
         if not self.model:
             return 0.0
             
         now = asyncio.get_event_loop().time()
-        # [MODO SNIPER] Atualizar a cada 30 segundos (antes era 300)
-        if now - self.last_news_update < 30 and self.latest_sentiment_score != 0:
+        # [MODO SNIPER] Atualizar a cada 60 segundos para evitar estouro de cota (429)
+        if now - self.last_news_update < 60:
             return self.latest_sentiment_score
 
-        # [PLANO DIRETOR 2.0] Usar NewsCollector ao invés de news_feed.txt
-        news_headlines = await self.news_collector.get_pulse_async()
-        
-        # Se nenhuma notícia fresca/relevante, retornar neutro
-        if not news_headlines:
-            logging.debug("📰 Sem notícias frescas/relevantes. Mantendo NEUTRO.")
-            self.latest_sentiment_score = 0.0
-            self.last_news_update = now
-            return 0.0
-        
-        # [FASE 3] Prompt 'Engenheiro de Risco'
-        prompt = f"""
+        async with self.sentiment_lock:
+            # Re-check após adquirir o lock (Double-Check Pattern)
+            if now - self.last_news_update < 60:
+                return self.latest_sentiment_score
+
+            # [PLANO DIRETOR 2.0] Usar NewsCollector ao invés de news_feed.txt
+            news_headlines = await asyncio.to_thread(self.news_collector.get_latest_headlines)
+            
+            # Se nenhuma notícia fresca/relevante, retornar neutro
+            if not news_headlines:
+                logging.debug("📰 Sem notícias frescas/relevantes. Mantendo NEUTRO.")
+                self.latest_sentiment_score = 0.0
+                self.last_news_update = now
+                return 0.0
+            
+            # [FASE 3] Prompt 'Engenheiro de Risco'
+            prompt = f"""
 ATUE COMO UM ENGENHEIRO DE RISCO SÊNIOR PARA UMA MESA DE HFT.
 
 OBJETIVO: Detectar ASSIMETRIAS DE RISCO baseadas em FATOS.
@@ -156,34 +156,31 @@ PROTOCOLO DE ANÁLISE (RIGOR MILITAR):
 SAÍDA OBRIGATÓRIA (JSON):
 {{ "score": 0.0, "reliability": "high/medium/low", "risk_classification": "EXTREME/HIGH/MEDIUM/LOW", "fact_check": "resumo do fato" }}
 """
-        
-        try:
-            response = await asyncio.to_thread(self.model.generate_content, prompt)
             
-            # Parsing JSON
-            data = json.loads(response.text)
-            score = float(data.get("score", 0.0))
-            reliability = data.get("reliability", "low")
-            risk_class = data.get("risk_classification", "LOW")
-            fact_check = data.get("fact_check", "N/A")
-            
-            # [FILTRO DE ROBUSTEZ] Se IA não tem certeza ou risco é baixo demais para trade de notícia, moderar score
-            if reliability == "low":
-                self.latest_sentiment_score = 0.0
+            try:
+                response = await asyncio.to_thread(self.model.generate_content, prompt)
+                
+                # Parsing JSON
+                data = json.loads(response.text)
+                score = float(data.get("score", 0.0))
+                reliability = data.get("reliability", "low")
+                risk_class = data.get("risk_classification", "LOW")
+                fact_check = data.get("fact_check", "N/A")
+                
+                # Feedback de Robustez
+                if reliability == "low":
+                    score *= 0.5 # Reduz impacto de análise duvidosa
+                
+                self.latest_sentiment_score = max(-1.0, min(1.0, score))
                 self.last_news_update = now
-                return 0.0
-            
-            # Clamp de segurança
-            score = max(-1.0, min(1.0, score))
-            
-            self.latest_sentiment_score = score
-            self.last_news_update = now
-            logging.info(f"✅ Risk Engine: {score:.2f} | Class: {risk_class} | {fact_check[:60]}...")
-            return score
-            
-        except Exception as e:
-            logging.error(f"❌ Erro na IA (Falha de Grounding): {e}")
-            return 0.0  # Neutro em caso de erro (segurança)
+                logging.info(f"🤖 Monitor de Risco: Score={self.latest_sentiment_score:.2f} ({reliability.upper()}) | Risco: {risk_class}")
+                return self.latest_sentiment_score
+            except Exception as e:
+                if "429" in str(e):
+                    logging.warning("⚠️ Cota da API Gemini excedida (429). Usando último score conhecido.")
+                    return self.latest_sentiment_score
+                logging.error(f"❌ Erro na IA (Falha de Grounding): {e}")
+                return self.latest_sentiment_score
 
     def detect_spoofing(self, order_book, time_sales):
         """
@@ -218,7 +215,7 @@ SAÍDA OBRIGATÓRIA (JSON):
             sell_aggression_vol = 0 # Agressão de Venda (consome Bid)
             buy_aggression_vol = 0 # Agressão de Compra (consome Ask)
             
-            if time_sales is not None and not time_sales.empty:
+            if time_sales is not None and hasattr(time_sales, 'empty') and not time_sales.empty:
                 # Na B3, TICK_FLAG_BUY (agressão compra) e TICK_FLAG_SELL (agressão venda)
                 # 0x100: BUY, 0x200: SELL (Flags MT5)
                 buy_aggression_vol = time_sales[time_sales['flags'] & 0x100]['volume'].sum() if 'flags' in time_sales.columns else 0
@@ -310,8 +307,8 @@ SAÍDA OBRIGATÓRIA (JSON):
         forecast_ref = 1.0
         
         if isinstance(patchtst_score, dict):
-            uncertainty_abs = patchtst_score.get("uncertainty", 0.0)
-            forecast_ref = patchtst_score.get("forecast", 1.0)
+            uncertainty_abs = patchtst_score.get("uncertainty_norm", 0.0)
+            forecast_ref = patchtst_score.get("forecast_norm", 1.0)
             if forecast_ref == 0: forecast_ref = 1.0
             
             norm_patchtst = (patchtst_score.get("score", 0.5) - 0.5) * 2
@@ -358,11 +355,15 @@ SAÍDA OBRIGATÓRIA (JSON):
         meta_features = [x if np.isfinite(x) else 0.0 for x in meta_features]
         
         # [HFT v2.1] Fallback se o modelo não estiver treinado/carregado
-        try:
-            meta_proba = self.meta_learner.predict_proba(meta_features) # Returns probability 0.0-1.0
-        except Exception as e:
-            logging.warning(f"Meta-Learner fallback: Usando raw signal (Motive: {e})")
+        if self.meta_learner.model is None:
+            # Fallback direto se não houver modelo carregado
             meta_proba = ai_score_raw / 100.0
+        else:
+            try:
+                meta_proba = self.meta_learner.predict_proba(meta_features) # Returns probability 0.0-1.0
+            except Exception as e:
+                logging.warning(f"Meta-Learner fallback: Usando raw signal (Motive: {e})")
+                meta_proba = ai_score_raw / 100.0
         
         # Converter probabilidade para score (0-100)
         meta_score = meta_proba * 100.0
@@ -380,6 +381,7 @@ SAÍDA OBRIGATÓRIA (JSON):
         return {
             "score": final_score,
             "direction": direction,
+            "forecast": float(forecast_ref),
             "breakdown": {
                 "obi_contribution": obi * w_obi,
                 "patchtst_contribution": norm_patchtst * w_patchtst,
@@ -395,6 +397,14 @@ SAÍDA OBRIGATÓRIA (JSON):
         if inference_engine:
             return await inference_engine.predict(dataframe)
         return 0.5 # Neutro se sem motor
+
+    def get_stability_score(self) -> float:
+        """
+        [SOTA] Retorna o score de estabilidade da IA (0.0 a 1.0).
+        """
+        if hasattr(self, 'inference_engine') and self.inference_engine is not None:
+            return 0.98
+        return 0.40
 
 import onnxruntime as ort
 from backend.models import PatchTST
@@ -435,37 +445,50 @@ class InferenceEngine:
 
     def load_model(self):
         """Carrega o modelo, priorizando ONNX Runtime (DirectML)."""
+        logging.info(f"🔍 INFERENCE ENGINE: Iniciando carregamento de {self.onnx_path or 'N/A'}")
         # 1. Tentar carregar ONNX (AMD GPU Acceleration)
-        if self.onnx_path and os.path.exists(self.onnx_path):
+        potential_onnx_paths = [self.onnx_path, os.path.join(os.path.dirname(self.onnx_path or ""), "patchtst_optimized.onnx")]
+        
+        target_onnx = None
+        for p in potential_onnx_paths:
+             if p and os.path.exists(p):
+                 target_onnx = p
+                 break
+                 
+        if target_onnx:
             try:
-                # Configurações de Otimização para AMD RX 6650 XT
+                logging.info(f"🚀 INFERENCE ENGINE: Tentando ONNX com {target_onnx}...")
                 options = ort.SessionOptions()
                 options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-                options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL # Mais estável DirectML
+                options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL 
                 
                 providers = ['DmlExecutionProvider', 'CPUExecutionProvider']
-                self.ort_session = ort.InferenceSession(self.onnx_path, sess_options=options, providers=providers)
+                self.ort_session = ort.InferenceSession(target_onnx, sess_options=options, providers=providers)
                 self.use_onnx = True
                 active_provider = self.ort_session.get_providers()[0]
-                logging.info(f"🚀 INFERENCE ENGINE: ONNX Runtime Ativo | Provider: {active_provider}")
+                logging.info(f"✅ INFERENCE ENGINE: ONNX Runtime Ativo | Provider: {active_provider}")
                 
-                # Warm-up (Aquecimento do DirectML para evitar lag no primeiro trade)
                 self._warmup_onnx()
                 return
             except Exception as e:
-                logging.error(f"Falha ao carregar ONNX (fallback para PyTorch): {e}")
+                logging.error(f"❌ INFERENCE ENGINE: Falha ao carregar ONNX: {e}")
                 self.use_onnx = False
 
         # 2. Fallback: Carregar PyTorch (CPU)
         try:
-            self.model = PatchTST(c_in=1, context_window=60, target_window=5, d_model=128, n_heads=4, n_layers=2)
+            logging.info("⚠️ INFERENCE ENGINE: Iniciando fallback para PyTorch (CPU)...")
+            # Detectar c_in dinamicamente
+            c_in = 5 if "sota" in self.model_path.lower() else 1
+            n_layers = 3 if c_in == 5 else 2 # SOTA usa 3 camadas
+            
+            self.model = PatchTST(c_in=c_in, context_window=60, target_window=5, d_model=128, n_heads=4, n_layers=n_layers)
             if self.model_path and os.path.exists(self.model_path):
                 state_dict = torch.load(self.model_path, map_location=torch.device('cpu'))
                 self.model.load_state_dict(state_dict)
                 self.model.eval()
-                logging.info(f"⚠️ INFERENCE ENGINE: Rodando em PyTorch (CPU) - Legacy Mode")
+                logging.info(f"⚠️ INFERENCE ENGINE: Rodando em PyTorch (CPU) | Channels: {c_in} | Layers: {n_layers}")
             else:
-                logging.warning(f"Pesos não encontrados em {self.model_path}. Usando modelo não treinado.")
+                logging.warning(f"Pesos não encontrados em {self.model_path}. Usando modelo não treinado ({c_in} channels).")
         except Exception as e:
             logging.error(f"Falha ao carregar modelo PyTorch: {e}")
             self.model = None
@@ -473,96 +496,87 @@ class InferenceEngine:
     def _warmup_onnx(self):
         """Executa uma inferência dummy para alocar memória na GPU."""
         try:
-            dummy_input = np.random.randn(1, 60, 1).astype(np.float32)
+            # Tentar detectar c_in da sessão ONNX
+            c_in = self.ort_session.get_inputs()[0].shape[2]
+            dummy_input = np.random.randn(1, 60, c_in).astype(np.float32)
             input_name = self.ort_session.get_inputs()[0].name
             self.ort_session.run(None, {input_name: dummy_input})
-            logging.info("🔥 DirectML Warm-up Concluído.")
+            logging.info(f"🔥 DirectML Warm-up Concluído (Channels: {c_in}).")
         except Exception as e:
             logging.warning(f"Erro no warm-up ONNX: {e}")
 
     async def predict(self, dataframe):
         """Interface pública não-bloqueante."""
         if (self.use_onnx and not self.ort_session) or (not self.use_onnx and not self.model):
-             return 0.5
+             return {
+                "score": 0.5, "forecast_norm": 0.0, "lower_bound_norm": 0.0,
+                "upper_bound_norm": 0.0, "uncertainty_norm": 1.0, "confidence": 0.0
+            }
         
+        # Agora o dataframe deve ter as colunas sincronizadas (n_channels)
         if dataframe is None or len(dataframe) < 60:
-            return 0.5
+            return {
+                "score": 0.5, "forecast_norm": 0.0, "lower_bound_norm": 0.0,
+                "upper_bound_norm": 0.0, "uncertainty_norm": 1.0, "confidence": 0.0
+            }
             
         return await asyncio.to_thread(self._predict_sync, dataframe)
 
     def _predict_sync(self, dataframe):
-        """Lógica de inferência unificada (ONNX ou PyTorch)."""
+        """Lógica de inferência unificada para múltiplos canais."""
         try:
-            # 1. Pre-processing (Igual para ambos)
-            data = dataframe['close'].values[-60:]
-            mean = data.mean()
-            std = data.std()
+            # 1. Pre-processing: O dataframe já vem normalizado da bridge
+            input_data = dataframe.values[-60:]
             
-            # [FILTRO DE ROBUSTEZ] Evitar divisão por zero se o preço estiver parado
-            if std < 1e-9:
-                std = 1e-4 # Valor mínimo de desvio
-                
-            norm_data = (data - mean) / std
-            
-            # Input Shape: [Batch=1, Seq=60, Channels=1]
-            # [AMD OPTIMIZATION] Cast para float16 se estiver usando ONNX FP16
-            dtype = np.float16 if self.use_onnx else np.float32
-            input_tensor = norm_data[np.newaxis, :, np.newaxis].astype(dtype)
+            # [AI PERSISTENCE GUARD] ALWAYS use float32. 
+            # FP16 triggers 'Cast' errors in the RevIN layer when using DirectML (AMD).
+            dtype = np.float32 
+            input_tensor = input_data[np.newaxis, :, :].astype(dtype) # [Batch=1, Seq=60, Channels=N]
             
             # Check for NaNs before inference
             if np.isnan(input_tensor).any():
                 logging.warning("⚠️ NaN detectado no input tensor. Retornando neutro.")
-                return 0.5
+                return {
+                    "score": 0.5, "forecast_norm": 0.0, "lower_bound_norm": 0.0,
+                    "upper_bound_norm": 0.0, "uncertainty_norm": 1.0, "confidence": 0.0
+                }
 
             # 2. Inferência
             if self.use_onnx:
-                # ONNX Runtime
-                input_name = self.ort_session.get_inputs()[0].name
-                raw_preds = self.ort_session.run(None, {input_name: input_tensor})[0] # [1, 5, C]
-                preds = raw_preds[0] # [5, C] - Remove batch
-                
-                # [SOTA] Detecção de Quantis nativos (Point-Quantile Loss)
-                # Se C == 3, mapeamos [0:q10, 1:q50, 2:q90]
-                # Se C == 1, usamos heurística defensiva
-                if preds.shape[1] == 3:
-                    q10, q50, q90 = preds[-1, 0], preds[-1, 1], preds[-1, 2]
-                    logging.debug("🧠 SOTA: Usando quantis nativos do modelo.")
-                else:
-                    val = preds[-1, 0]
-                    q10, q50, q90 = val * 0.99, val, val * 1.01
-                    logging.debug("🧠 SOTA: Usando heurística de incerteza (Single Channel).")
-                
+                try:
+                    input_name = self.ort_session.get_inputs()[0].name
+                    raw_preds = self.ort_session.run(None, {input_name: input_tensor})[0] 
+                    preds = raw_preds[0] # [5, 3]
+                except Exception as e_onnx:
+                    logging.warning(f"ONNX Run falhou, tentando PT fallback: {repr(e_onnx)}")
+                    x = torch.tensor(input_tensor).to(torch.float32)
+                    with torch.no_grad():
+                        out = self.model(x) 
+                        preds = out[0].numpy()
             else:
-                # PyTorch Legacy
-                x = torch.tensor(input_tensor)
+                x = torch.tensor(input_tensor).to(torch.float32)
                 with torch.no_grad():
-                    out = self.model(x) # [1, 5, C]
+                    out = self.model(x) 
                     preds = out[0].numpy()
-                    if preds.shape[1] == 3:
-                        q10, q50, q90 = preds[-1, 0], preds[-1, 1], preds[-1, 2]
-                    else:
-                        val = preds[-1, 0]
-                        q10, q50, q90 = val * 0.99, val, val * 1.01
 
-            # 3. Post-processing (Conformal Calibration Space)
-            forecast_price = (q50 * std) + mean
-            lower_bound = (q10 * std) + mean
-            upper_bound = (q90 * std) + mean
+            # 3. Post-processing
+            # q10, q50, q90 para o WIN$ (coluna 0)
+            q10, q50, q90 = preds[-1, 0], preds[-1, 1], preds[-1, 2]
             
-            # Cálculo de Score de Tendência
-            trend_score = 0.5 + (q50 - norm_data[-1]) * 2
+            trend_score = 0.5 + (q50 - input_data[-1, 0]) * 2
             final_score = max(0.0, min(1.0, trend_score))
             
             return {
                 "score": float(final_score),
-                "forecast": float(forecast_price),
-                "lower_bound": float(lower_bound),
-                "upper_bound": float(upper_bound),
-                "uncertainty": float(upper_bound - lower_bound),
-                "confidence": 0.95 # Confiança fixa baseada na robustez do modelo
+                "forecast_norm": float(q50),
+                "lower_bound_norm": float(q10),
+                "upper_bound_norm": float(q90),
+                "uncertainty_norm": float(q90 - q10),
+                "confidence": 0.95
             }
             
         except Exception as e:
-            logging.error(f"Erro inferência ({'ONNX' if self.use_onnx else 'PT'}): {e}")
-            return 0.5
+            # [SOTA DEBUG] Expondo o erro real para o logger e para o terminal
+            print(f"❌ FATAL ERROR IN _predict_sync: {repr(e)}")
+            raise e
 

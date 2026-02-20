@@ -7,6 +7,8 @@ class RiskManager:
     def __init__(self, max_daily_loss=200.00):
         self.max_daily_loss = max_daily_loss
         self.max_deviation = 5 # Pontos de slippage permitidos (B3)
+        self.allow_autonomous = True # [MODO ALPHA] Habilita execução automática sob alta confiança
+        self.dry_run = True # [FAILSAFE] Evita envio real de ordens para a B3 se True
         self.forbidden_hours = [
             (time(8, 55), time(9, 5)),   # Abertura
             (time(12, 0), time(13, 0)),  # Almoço/Baixa liquidez
