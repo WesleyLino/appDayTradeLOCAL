@@ -19,6 +19,7 @@ from backend.rl_agent import PPOAgent # HFT v2.0
 from backend.microstructure_analyzer import MicrostructureAnalyzer # HFT v2.0
 from backend.news_collector import NewsCollector
 import pandas as pd
+import numpy as np
 from .data_collector import DataCollector
 import time as time_module
 import traceback
@@ -123,6 +124,11 @@ async def startup_event():
 
 def panic_close_all():
     """Zera todas as posições abertas imediatamente."""
+    # Evita spam do botão de pânico se já estiver ativado
+    current_status = persistence.load_state("panic_status")
+    if current_status == "CLOSED_ALL":
+        return
+        
     logging.warning("!!! BOTÃO DE PÂNICO ACIONADO !!!")
     if bridge.connected:
         mt5 = bridge.mt5
@@ -334,9 +340,27 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 # Inferência SOTA Multi-Ativo (usa multi_data sincronizado)
                 logging.debug("Executando inferência SOTA...")
-                ai_predict_data = await inference.predict(multi_data if multi_data is not None else data_60)
+                
+                # Garantir 60 linhas e 5 canais (SOTA Multi-Ativo exige c_in=5)
+                sota_input = multi_data
+                if sota_input is None or len(sota_input) < 60:
+                    logging.warning(f"SOTA: multi_data incompleto (len={len(sota_input) if sota_input is not None else 0}). Gerando dataframe de contingencia (5 canais).")
+                    # Cria um DF de fallback com 60 linhas usando apenas a coluna 'close' de data_60 repetida
+                    # Isso garante c_in=5 e len=60 para o ONNX não crashar
+                    if data_60 is not None and not data_60.empty and 'close' in data_60.columns:
+                        base_col = data_60['close'].values[-60:]
+                        if len(base_col) < 60:
+                            base_col = np.pad(base_col, (60 - len(base_col), 0), 'edge')
+                    else:
+                        base_col = np.zeros(60)
+                        
+                    sota_input = pd.DataFrame({
+                        'c1': base_col, 'c2': base_col, 'c3': base_col, 'c4': base_col, 'c5': base_col
+                    })
+                    
+                ai_predict_data = await inference.predict(sota_input)
                 ai_confidence = ai_predict_data.get("confidence", 0.0) if isinstance(ai_predict_data, dict) else 0.0
-                logging.debug("Inferência concluída.")
+                logging.debug(f"Inferência concluída. Confidence: {ai_confidence}")
                 
                 # Validação de Condição de Mercado (Estágio 2)
                 volatility = data_60['close'].std() if data_60 is not None and not data_60.empty else 0
@@ -810,9 +834,8 @@ async def websocket_endpoint(websocket: WebSocket):
             except asyncio.CancelledError:
                 raise # Respeitar shutdown
             except Exception as e:
-                logging.error(f"Erro (recuperável) no loop principal: {e}")
+                logging.error(f"Erro (recuperável) no loop principal: {e}", exc_info=True)
                 await asyncio.sleep(1) # Backoff para não floodar logs
-            
     except WebSocketDisconnect:
         logging.info("WebSocket desconectado.")
     except Exception as e:
@@ -880,4 +903,4 @@ async def place_order(req: OrderRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
