@@ -51,37 +51,51 @@ class MultiAssetSOTADataset(Dataset):
 
 def load_all_sota_data(data_dir="data/sota_training"):
     """
-    Carrega e sincroniza os 5 ativos mestres: WIN$, WDO$, VALE3, PETR4, ITUB4.
+    Carrega e sincroniza os 5 ativos mestres + features de microestrutura (CVD, OFI, volume_ratio).
+    Colunas incluídas: close por ativo + [cvd, ofi, volume_ratio] do WIN$ quando disponíveis.
     """
     files = glob.glob(os.path.join(data_dir, "training_*_MASTER.csv"))
     if not files:
         logging.error(f"Nenhum dado encontrado em {data_dir}")
         return None
-        
+
     dfs = {}
+    micro_df = None  # Features de microestrutura do WIN$
+
     for f in files:
         sym = os.path.basename(f).split('_')[1]
         df = pd.read_csv(f)
         df['time'] = pd.to_datetime(df['time'])
         df = df.drop_duplicates(subset='time').set_index('time')
-        # Usamos apenas o 'close' para o treinamento do Transformer multi-ativo
         dfs[sym] = df[['close']].rename(columns={'close': sym})
-        
-    # Join interno para garantir alinhamento temporal perfeito
+
+        # Extrair features de microestrutura apenas do WIN$ (ativo principal)
+        if sym == 'WIN$':
+            micro_cols = [c for c in ['cvd', 'ofi', 'volume_ratio'] if c in df.columns]
+            if micro_cols:
+                micro_df = df[micro_cols]
+                logging.info(f"🔬 Features de microestrutura encontradas: {micro_cols}")
+
+    # Join interno para alinhamento temporal perfeito
     master_df = pd.concat(dfs.values(), axis=1, join='inner')
-    
-    # Ordem SOTA: WIN$ deve ser a primeira coluna (Target Principal)
+
+    # Ordem SOTA: WIN$ como primeira coluna (Target Principal)
     cols = ['WIN$', 'WDO$', 'VALE3', 'PETR4', 'ITUB4']
     actual_cols = [c for c in cols if c in master_df.columns]
     master_df = master_df[actual_cols]
-    
-    logging.info(f"📊 Dataset SOTA carregado: {master_df.shape} (Ativos: {actual_cols})")
-    
-    # Normalização Simples (Z-Score) por coluna
-    # Em produção o RevIN trata disso, mas dados pré-normalizados ajudam na divergência inicial
+
+    # [FASE 3] Adicionar CVD/OFI como canais extras se disponíveis
+    if micro_df is not None:
+        master_df = master_df.join(micro_df, how='left').fillna(0.0)
+        logging.info(f"🔬 Dataset enriquecido com microestrutura: {list(master_df.columns)}")
+
+    logging.info(f"📊 Dataset SOTA carregado: {master_df.shape} ({len(master_df.columns)} canais)")
+
+    # Normalização Z-Score por coluna
     master_df = (master_df - master_df.mean()) / (master_df.std() + 1e-8)
-    
+
     return master_df
+
 
 # --- TRAINING ENGINE ---
 

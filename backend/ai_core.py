@@ -314,15 +314,35 @@ SAÍDA OBRIGATÓRIA (JSON):
         # PatchTST vem 0.0 a 1.0 (0.5 é neutro).
         uncertainty_abs = 0.0
         forecast_ref = 1.0
+        # Quantis Q10/Q50/Q90 para calibração de convicção
+        q10 = q50 = q90 = None
+        quantile_confidence = "NORMAL"  # NORMAL | HIGH | VERY_HIGH
         
         if isinstance(patchtst_score, dict):
             uncertainty_abs = patchtst_score.get("uncertainty_norm", 0.0)
             forecast_ref = patchtst_score.get("forecast_norm", 1.0)
             if forecast_ref == 0: forecast_ref = 1.0
-            
+
+            # [FASE 2] Extrair quantis se disponíveis no forecast
+            q10 = patchtst_score.get("q10", None)
+            q50 = patchtst_score.get("q50", None)
+            q90 = patchtst_score.get("q90", None)
+
+            if q10 is not None and q50 is not None and q90 is not None:
+                spread_up   = abs(q90 - q50)   # Potencial de alta
+                spread_down = abs(q50 - q10)   # Potencial de queda
+                # Convicção VERY_HIGH: banda assimétrica >20% superior ao outro lado
+                if spread_up   > spread_down * 1.2 and spread_up   > 0.01:
+                    quantile_confidence = "VERY_HIGH"   # BUY com alta convicção
+                elif spread_down > spread_up   * 1.2 and spread_down > 0.01:
+                    quantile_confidence = "VERY_HIGH"   # SELL com alta convicção
+                elif max(spread_up, spread_down) > 0.005:
+                    quantile_confidence = "HIGH"
+                # Senão permanece "NORMAL"
+
             norm_patchtst = (patchtst_score.get("score", 0.5) - 0.5) * 2
         else:
-            norm_patchtst = (patchtst_score - 0.5) * 2 
+            norm_patchtst = (patchtst_score - 0.5) * 2
         
         # [HFT v2.1 FIX] Calcular incerteza relativa (%)
         uncertainty_rel = abs(uncertainty_abs / forecast_ref)
@@ -387,25 +407,32 @@ SAÍDA OBRIGATÓRIA (JSON):
         # Isso garante que o sentimento IA (notícias/bluechips) não seja silenciado pelo modelo estatístico.
         final_score = (ai_score_raw * 0.4) + (meta_score * 0.6)
         
-        # 5. Direção (Thresholds SOTA v3.1 - Precisão Absoluta)
-        # Exigimos 85% de confluência para modo autônomo.
+        # 5. Direção — threshold padrão 85, rebaixado se convicção VERY_HIGH
+        # [FASE 2] quantile_confidence permite entrada com score >= 80 em sinais de alta convicção
+        buy_threshold  = 85.0 if quantile_confidence == "NORMAL" else 80.0
+        sell_threshold = 15.0 if quantile_confidence == "NORMAL" else 20.0
+
         direction = "NEUTRAL"
-        if final_score >= 85: 
+        if final_score >= buy_threshold:
             direction = "BUY"
-        elif final_score <= 15: 
+        elif final_score <= sell_threshold:
             direction = "SELL"
-            
+
         return {
             "score": final_score,
             "direction": direction,
             "forecast": float(forecast_ref),
+            "quantile_confidence": quantile_confidence,  # NORMAL | HIGH | VERY_HIGH
             "breakdown": {
                 "obi_contribution": obi * w_obi,
                 "patchtst_contribution": norm_patchtst * w_patchtst,
                 "sentiment_contribution": sentiment * w_sent,
                 "raw_signal": composite_signal,
                 "ai_score_raw": ai_score_raw,
-                "meta_score": meta_score
+                "meta_score": meta_score,
+                "q10": q10,
+                "q50": q50,
+                "q90": q90,
             }
         }
         

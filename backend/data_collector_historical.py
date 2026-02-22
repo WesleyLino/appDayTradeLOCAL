@@ -64,30 +64,64 @@ class HistoricalDataCollector:
         
         return (buy_vol - sell_vol) / total_vol
 
+    def calculate_cvd_ofi_from_candles(self, df_candles, df_ticks=None):
+        """
+        Calcula CVD (Cumulative Volume Delta) e OFI (Order Flow Imbalance) por candle M1.
+        Usa ticks quando disponível; caso contrário, usa heurística OHLCV (proxy).
+        """
+        if df_ticks is not None and not df_ticks.empty and 'flags' in df_ticks.columns:
+            # Método preciso via ticks
+            df_ticks = df_ticks.copy()
+            df_ticks['time_1m'] = df_ticks['time'].dt.floor('1min')
+            df_ticks['buy_vol']  = df_ticks['volume'].where((df_ticks['flags'] & 32) > 0, 0)
+            df_ticks['sell_vol'] = df_ticks['volume'].where((df_ticks['flags'] & 64) > 0, 0)
+            agg = df_ticks.groupby('time_1m').agg(
+                buy_vol=('buy_vol', 'sum'),
+                sell_vol=('sell_vol', 'sum')
+            ).reset_index()
+            agg['cvd'] = agg['buy_vol'] - agg['sell_vol']
+            agg['ofi'] = (agg['buy_vol'] - agg['sell_vol']) / (agg['buy_vol'] + agg['sell_vol'] + 1e-8)
+            agg['volume_ratio'] = agg['buy_vol'] / (agg['sell_vol'] + 1e-8)
+            agg = agg.rename(columns={'time_1m': 'time'})
+            df_candles = df_candles.merge(agg[['time', 'cvd', 'ofi', 'volume_ratio']], on='time', how='left')
+        else:
+            # Heurística OHLCV: candle de alta = buy pressure; candle de baixa = sell pressure
+            df_candles = df_candles.copy()
+            body = df_candles['close'] - df_candles['open']
+            df_candles['cvd'] = df_candles['real_volume'] * body.apply(lambda x: 1 if x > 0 else -1 if x < 0 else 0)
+            df_candles['ofi'] = body / (df_candles['high'] - df_candles['low'] + 1e-8)
+            df_candles['volume_ratio'] = df_candles['real_volume'] / (df_candles['real_volume'].rolling(20).mean() + 1e-8)
+
+        # Preencher NaN com neutro
+        for col in ['cvd', 'ofi', 'volume_ratio']:
+            if col in df_candles.columns:
+                df_candles[col] = df_candles[col].fillna(0.0)
+        return df_candles
+
     def process_and_save(self, symbol, df_candles, df_ticks):
-        """Aplica Pipeline SOTA e salva em CSV."""
+        """Aplica Pipeline SOTA (com CVD/OFI) e salva em CSV."""
         if df_candles is None or df_candles.empty: return
 
         logging.info(f"Processando {len(df_candles)} candles para {symbol}...")
-        
-        # 1. Rotulagem SOTA
+
+        # 1. Features de Microestrutura — CVD, OFI, Volume Ratio
+        df_candles = self.calculate_cvd_ofi_from_candles(df_candles, df_ticks)
+
+        # 2. Rotulagem SOTA (Triple Barrier)
         try:
             df_labeled = apply_triple_barrier_method(df_candles)
         except Exception as e:
             logging.error(f"Erro na rotulagem: {e}")
             df_labeled = df_candles
 
-        # Adicionar coluna de símbolo se não existir
         if 'symbol' not in df_labeled.columns:
             df_labeled['symbol'] = symbol
-            
+
         filename = f"{self.dataset_dir}/training_{symbol}_MASTER.csv"
-        
         file_exists = os.path.isfile(filename)
-        
-        # Salvar (Append se existir)
         df_labeled.to_csv(filename, mode='a', index=False, header=not file_exists)
-        logging.info(f"✅ Chunk salvo em: {filename} (Total atual: {len(df_labeled)} linhas adicionadas)")
+        logging.info(f"✅ Chunk salvo em: {filename} (+{len(df_labeled)} linhas | cols: {list(df_labeled.columns)})")
+
 
     def run_bulk_collection(self, symbols=None, days_back=180):
         if not self.connect(): return
