@@ -4,10 +4,12 @@
         "bb_dev": 2.2,
         "sl_dist": 150.0,
         "tp_dist": 400.0,
-        "vol_spike_mult": 1.5,
-        "trailing_trigger": 150.0,
+        "vol_spike_mult": 1.2,
+        "trailing_trigger": 70.0,
         "trailing_lock": 50.0,
         "trailing_step": 20.0,
+        "be_trigger": 50.0,
+        "be_lock": 0.0,
         "confidence_threshold": 0.85
     },
     "metadata": {

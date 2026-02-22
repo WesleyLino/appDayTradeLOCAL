@@ -45,23 +45,24 @@ class BacktestPro:
         self.opt_params = {
             'rsi_period': kwargs.get('rsi_period', 9),
             'bb_dev': kwargs.get('bb_dev', 2.0),
-            'vol_spike_mult': kwargs.get('vol_spike_mult', 1.5),
-            'trailing_trigger': kwargs.get('trailing_trigger', 150.0),
+            'vol_spike_mult': kwargs.get('vol_spike_mult', 1.2),
+            'trailing_trigger': kwargs.get('trailing_trigger', 70.0),
             'trailing_lock': kwargs.get('trailing_lock', 50.0),
             'trailing_step': kwargs.get('trailing_step', 20.0),
-            'sl_dist': kwargs.get('sl_dist', 130.0),
-            'tp_dist': kwargs.get('tp_dist', 260.0),
-            'confidence_threshold': kwargs.get('confidence_threshold', 0.5), # [SOTA] Filtro de Confiança IA
-            'aggressive_mode': kwargs.get('aggressive_mode', False),
-            'use_trailing_stop': kwargs.get('use_trailing_stop', False),
+            'sl_dist': kwargs.get('sl_dist', 150.0),
+            'tp_dist': kwargs.get('tp_dist', 400.0),
+            'confidence_threshold': kwargs.get('confidence_threshold', 0.85), # [SOTA] Filtro de Confiança IA
+            'aggressive_mode': kwargs.get('aggressive_mode', True),
+            'use_trailing_stop': kwargs.get('use_trailing_stop', True),
             'dynamic_lot': kwargs.get('dynamic_lot', False),
             'start_time': kwargs.get('start_time', "09:15"),
             'end_time': kwargs.get('end_time', "17:15"),
             'daily_trade_limit': kwargs.get('daily_trade_limit', 3),
-            'use_flux_filter': kwargs.get('use_flux_filter', False),
+            'use_flux_filter': kwargs.get('use_flux_filter', True),
             'flux_imbalance_threshold': kwargs.get('flux_imbalance_threshold', 1.2),
-            'be_trigger': kwargs.get('be_trigger', 70.0),
-            'be_lock': kwargs.get('be_lock', 0.0)
+            'be_trigger': kwargs.get('be_trigger', 50.0),
+            'be_lock': kwargs.get('be_lock', 0.0),
+            'base_lot': kwargs.get('base_lot', 1) # Novo parâmetro para escala dinâmica
         }
 
         # Estado do Backtest
@@ -80,6 +81,17 @@ class BacktestPro:
         self.daily_pnl = 0.0
         self.daily_trade_count = 0
         self.missed_signals = 0
+        self.shadow_signals = {
+            'total_missed': 0,
+            'filtered_by_ai': 0,
+            'filtered_by_flux': 0,
+            'filtered_by_vol': 0,
+            'tiers': {
+                '70-75': 0,
+                '75-80': 0,
+                '80-85': 0
+            }
+        }
         self.last_day = None
         self.last_trade_time = datetime.datetime.min # Cooldown control
 
@@ -342,28 +354,39 @@ class BacktestPro:
                 vol_stable = vol_min < atr_current < vol_max
 
                 # AI Filter (SOTA Stability)
-                ai_stability = self.ai.get_stability_score()
+                # No backtest, simulamos a confiança da IA com base no RSI e Volume (Proxy)
+                # Em um cenário real, isso viria do PatchTST. Aqui usamos uma heurística de 'Confluência'.
+                test_side = "buy" if v22_buy else ("sell" if v22_sell else None)
+                base_confidence = 0.70
+                if vol_spike_eff: base_confidence += 0.15
+                if (test_side == "buy" and rsi < 25) or (test_side == "sell" and rsi > 75): base_confidence += 0.10
+                
+                ai_stability = min(0.99, base_confidence)
                 ai_filter_ok = ai_stability >= self.opt_params['confidence_threshold']
                 
-                # Tracking Missed Opportunities
-                if 0.70 <= ai_stability < 0.85 and (v22_buy or v22_sell):
-                    self.missed_signals += 1
-
                 # Sentiment Filter (V2.5)
                 sentiment_ok = True
                 if self.sentiment_stream and row.name in self.sentiment_stream:
                     score = self.sentiment_stream[row.name]
-                    # Veto se sinal for contrário ao sentimento (Simples: se sell e sentiment > 0.5, block; se buy e sentiment < -0.5, block)
                     if (v22_buy and score < -0.5) or (v22_sell and score > 0.5):
                         sentiment_ok = False
-                        logging.info(f"🚫 TRADE VETADO POR SENTIMENTO: Score {score:.2f} | Horário: {row.name}")
 
                 # Flux Filter (Proxy para Backtest CSV)
                 flux_ok = True
                 if self.opt_params.get('use_flux_filter', False):
-                    # Em backtest, simulamos o fluxo pela aceleração do tick_volume
-                    # Se volume atual > threshold * média recente, consideramos fluxo alinhado
-                    flux_ok = row['tick_volume'] > (vol_sma * self.opt_params['flux_imbalance_threshold'])
+                    flux_ok = row['tick_volume'] > (vol_sma * self.opt_params.get('flux_imbalance_threshold', 1.2))
+                
+                # Tracking Detalhado de Oportunidades Perdidas
+                if (v22_buy or v22_sell) and not ai_filter_ok:
+                    self.shadow_signals['total_missed'] += 1
+                    self.shadow_signals['filtered_by_ai'] += 1
+                    if 0.70 <= ai_stability < 0.75: self.shadow_signals['tiers']['70-75'] += 1
+                    elif 0.75 <= ai_stability < 0.80: self.shadow_signals['tiers']['75-80'] += 1
+                    elif 0.80 <= ai_stability < 0.85: self.shadow_signals['tiers']['80-85'] += 1
+                
+                if (v22_buy or v22_sell) and ai_filter_ok and not flux_ok:
+                    self.shadow_signals['total_missed'] += 1
+                    self.shadow_signals['filtered_by_flux'] += 1
 
                 if (v22_buy or v22_sell) and time_ok and risk_ok and limit_ok and vol_stable and cooldown_ok and ai_filter_ok and sentiment_ok and flux_ok:
                     side = "buy" if v22_buy else "sell"
@@ -376,14 +399,15 @@ class BacktestPro:
                     tp = row['close'] + tp_dist if side == "buy" else row['close'] - tp_dist
                     
                     # Lote Dinâmico (Anti-Martingale)
-                    base_lot = 1 # We use 1 base lot (min contract)
-                    if self.opt_params.get('dynamic_lot', False):
-                        # Limit to max 5 lots for safety in this simulation
-                        target_lot = min(5, base_lot + self.consecutive_wins)
+                    # Lote Dinâmico / Fixo
+                    if self.opt_params.get('force_lots'):
+                        target_lot = self.opt_params['force_lots']
+                    elif self.opt_params.get('dynamic_lot', False):
+                        # Escala a partir do base_lot
+                        base = self.opt_params.get('base_lot', 1)
+                        target_lot = min(10, base + self.consecutive_wins)
                     else:
-                        # Use standard risk-based sizing if dynamic lot is off, bounded to 1 for 1000BRL base tests
-                        target_lot = 1 # Forcing 1 for strict WIN 1000BRL behavior if not using dynamic or standard sizing
-                        # vol_sizing = self.risk.calculate_volatility_sizing(self.balance, sl_dist, mult, 0.01) # Optional standard sizing
+                        target_lot = self.opt_params.get('base_lot', 1)
                     
                     self.position = {
                         'side': side,
@@ -408,7 +432,7 @@ class BacktestPro:
             self.timestamps.append(row.name)
 
         logging.info("🏁 Simulação concluída.")
-        self.generate_report()
+        return self.generate_report()
 
     def _close_trade(self, price, reason, time):
         pos = self.position
@@ -476,6 +500,16 @@ class BacktestPro:
         print(f"Max Drawdown:  {self.max_drawdown*100:.2f}%")
         print(f"\nRelatório Visual salvo em: {report_path}")
         print("="*50)
+        
+        return {
+            'final_balance': self.balance,
+            'total_pnl': total_pnl,
+            'trades': df_trades.to_dict('records'),
+            'win_rate': win_rate,
+            'profit_factor': profit_factor,
+            'max_drawdown': self.max_drawdown * 100,
+            'shadow_signals': self.shadow_signals # Exporta oportunidades perdidas
+        }
 
 if __name__ == "__main__":
     import argparse

@@ -2,10 +2,10 @@ import asyncio
 import logging
 from logging.handlers import TimedRotatingFileHandler
 from datetime import datetime, time, date
-from mt5_bridge import MT5Bridge
-from risk_manager import RiskManager
-from ai_core import AICore
-from persistence import PersistenceManager
+from backend.mt5_bridge import MT5Bridge
+from backend.risk_manager import RiskManager
+from backend.ai_core import AICore
+from backend.persistence import PersistenceManager
 import pandas as pd
 import numpy as np
 
@@ -20,11 +20,15 @@ logger.addHandler(log_handler)
 logger.addHandler(logging.StreamHandler())
 
 class SniperBotWIN:
-    def __init__(self, dry_run=True):
-        self.bridge = MT5Bridge()
-        self.risk = RiskManager(max_daily_loss=100.0, daily_trade_limit=3) # Conservador para WIN 1000 BRL
-        self.risk.dry_run = dry_run
-        self.ai = AICore()
+    def __init__(self, bridge=None, risk=None, ai=None, dry_run=True):
+        self.bridge = bridge or MT5Bridge()
+        self.risk = risk or RiskManager(max_daily_loss=600.0, daily_trade_limit=3) # Calibrado para WIN 3000 BRL
+        
+        # Só define dry_run se o risk for novo ou se explicitamente passado
+        if risk is None:
+            self.risk.dry_run = dry_run
+            
+        self.ai = ai or AICore()
         self.persistence = PersistenceManager()
         
         self.symbol = None
@@ -38,8 +42,8 @@ class SniperBotWIN:
         self.end_time = time(15, 0) # Expandido para janela da tarde
         self.consecutive_wins = 0 # Alpha Scaling tracker
         self.rsi_period = 14
-        self.flux_threshold = 1.3 # 30% mais pressão no book
-        self.vol_spike_mult = 1.5 # Sniper Pro: Menor mult para maior frequência no window certo
+        self.flux_threshold = 1.2 # Sniper Pro: 1.2x (Validated)
+        self.vol_spike_mult = 1.2 # Sniper Pro: 1.2x (Validated)
         self.last_trade_time = None
         
         self._load_state()
@@ -100,8 +104,8 @@ class SniperBotWIN:
         # O usuário sugeriu Ask ou Ask - 0.5. No WIN, subtraímos 5 pontos (1 tick).
         limit_price = tick.ask if side == "buy" else tick.bid
         
-        # Alpha Scaling: 1 contrato base + vitórias consecutivas (Max 5)
-        lots = min(1 + self.consecutive_wins, 5)
+        # [R$ 3000] Lote Fixo Proporcional (1 contrato por R$ 1000)
+        lots = 3.0
         
         if self.risk.dry_run:
             logger.info(f"🧪 [DRY RUN] LIMIT {side.upper()} Sniper disparado @ {limit_price}")
@@ -226,10 +230,11 @@ class SniperBotWIN:
                             logger.info(f"⚡ [SOTA TRAILING] SL SELL Movido: {potential_sl} | Flutuante: {current_profit:.1f} pts")
 
     async def run(self):
-        logger.info("🚀 Inicializando Sniper Bot WIN (Foco: R$ 1000 Capital)...")
-        if not self.bridge.connect():
-            logger.error("Falha ao conectar MT5. Encerrando.")
-            return
+        logger.info("🚀 Inicializando Sniper Bot WIN (Foco: R$ 3000 Capital)...")
+        if not self.bridge.connected:
+            if not self.bridge.connect():
+                logger.error("Falha ao conectar MT5. Encerrando.")
+                return
 
         self.symbol = self.bridge.get_current_symbol("WIN")
         logger.info(f"Símbolo alvo: {self.symbol} | MODO: {'DRY RUN' if self.risk.dry_run else 'LIVE'}")
@@ -274,7 +279,7 @@ class SniperBotWIN:
 
                 # 3. Limite de Risco Agressivo (60% do Saldo)
                 # Assumindo capital fixo de R$ 1000 para a verificação de limite
-                current_balance = 1000.0 # Idealmente pegar do MT5, mas para proteção usamos o capital base
+                current_balance = 3000.0 # Capital Atualizado para R$ 3000
                 limit_ok, msg = self.risk.check_aggressive_risk(self.persistence.get_state("daily_pnl") or 0.0, current_balance)
                 if not limit_ok:
                     logger.info(f"🏁 Limite de perda agressivo (60%) atingido: {msg}")

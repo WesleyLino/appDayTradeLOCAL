@@ -1,0 +1,13 @@
+{
+    "params": {
+        "rsi_period": 7,
+        "bb_dev": 1.0,
+        "sl_dist": 3.5,
+        "tp_dist": 7.0,
+        "vol_spike_mult": 1.0
+    },
+    "net_profit": 0,
+    "max_dd": 0.0,
+    "profit_factor": 999.0,
+    "trades": 0
+}

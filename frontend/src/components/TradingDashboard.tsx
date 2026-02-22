@@ -5,6 +5,7 @@ import { TradingChart } from "./TradingChart";
 import { FlowMeter } from "./FlowMeter";
 import { OrderBookHeatmap } from "./OrderBookHeatmap";
 import { SotaMetrics } from "./SotaMetrics";
+import { ConfluenceGauge } from "./ConfluenceGauge";
 import { PerformanceWidget } from "./PerformanceWidget";
 import {
   AlertCircle,
@@ -23,7 +24,8 @@ import { Label } from "@/components/ui/label";
 
 export function TradingDashboard() {
   const { data, connected } = useTradingStore();
-  const { sendOrder, setAutonomous } = useTradingWebSocket();
+  const { sendOrder, setAutonomous, startSniper, stopSniper } =
+    useTradingWebSocket();
 
   // Dados SOTA (Buscando das chaves mapeadas no backend/main.py packet)
   const sotaData = {
@@ -78,6 +80,24 @@ export function TradingDashboard() {
     }
 
     setIsUpdatingAuto(false);
+  };
+
+  // Sniper Bot State (Mapped to backend telemetry)
+  const isSniperRunning = data?.risk_status?.sniper?.running ?? false;
+  const [isUpdatingSniper, setIsUpdatingSniper] = useState(false);
+
+  const toggleSniper = async () => {
+    if (isUpdatingSniper) return;
+    setIsUpdatingSniper(true);
+
+    const newState = !isSniperRunning;
+    const response = newState ? await startSniper() : await stopSniper();
+
+    if (response?.status !== "success") {
+      console.error("Falha ao alterar Sniper Bot na rede");
+    }
+
+    setIsUpdatingSniper(false);
   };
 
   // Limits
@@ -191,107 +211,19 @@ export function TradingDashboard() {
 
           {/* Sidebar Controls */}
           <div className="flex flex-col gap-6">
+            <ConfluenceGauge
+              score={aiScore}
+              direction={aiDirection}
+              obi={data?.obi ?? 0}
+              sentiment={
+                typeof data?.sentiment === "object"
+                  ? data.sentiment.score
+                  : (data?.sentiment ?? 0)
+              }
+              syntheticIndex={data?.risk_status?.synthetic_index ?? 0}
+            />
+
             <div className="p-5 glass-heavy rounded-2xl shadow-2xl flex flex-col gap-5">
-              <div className="space-y-3">
-                <h3 className="font-bold text-lg flex items-center gap-2 text-white/90">
-                  <Zap
-                    className="text-amber-400 fill-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]"
-                    size={18}
-                  />
-                  Decisão da IA
-                </h3>
-                <div className="h-2.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary/50 to-primary transition-all duration-700 ease-out shadow-[0_0_10px_rgba(255,255,255,0.3)]"
-                    style={{
-                      width: `${(data?.ai_confidence ?? 0.5) * 100}%`,
-                    }}
-                  />
-                </div>
-                <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-medium">
-                  <span className="text-muted-foreground">
-                    Score Integrado (AI)
-                  </span>
-                  <span
-                    className={cn(
-                      "font-bold text-lg",
-                      aiScore >= 85
-                        ? "text-emerald-400 text-shadow-glow-green"
-                        : "text-primary text-shadow-glow-blue",
-                    )}
-                  >
-                    {aiScore}/100
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-medium mt-1">
-                  <span className="text-muted-foreground">Direção</span>
-                  <span
-                    className={cn(
-                      "font-bold",
-                      aiDirection === "BUY"
-                        ? "text-emerald-400"
-                        : aiDirection === "SELL"
-                          ? "text-red-400"
-                          : "text-muted-foreground",
-                    )}
-                  >
-                    {aiDirection}
-                  </span>
-                </div>
-              </div>
-
-              {/* Faróis de Decisão (Master Plan) */}
-              <div className="grid grid-cols-3 gap-2 py-3 border-y border-border/40">
-                <div className="flex flex-col items-center gap-1">
-                  <div
-                    className={cn(
-                      "w-3 h-3 rounded-full shadow-sm",
-                      isObiOk ? "bg-profit animate-pulse" : "bg-muted",
-                    )}
-                  />
-                  <span className="text-[10px] text-muted-foreground font-bold">
-                    OBI
-                  </span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <div
-                    className={cn(
-                      "w-3 h-3 rounded-full shadow-sm",
-                      isConfidenceOk ? "bg-profit animate-pulse" : "bg-muted",
-                    )}
-                  />
-                  <span className="text-[10px] text-muted-foreground font-bold">
-                    IA
-                  </span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <div
-                    className={cn(
-                      "w-3 h-3 rounded-full shadow-sm",
-                      isSentimentOk ? "bg-profit animate-pulse" : "bg-muted",
-                    )}
-                  />
-                  <span className="text-[10px] text-muted-foreground font-bold">
-                    SENT
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-border/40">
-                <div className="flex justify-between items-center bg-muted/20 p-2 rounded shadow-inner">
-                  <span className="text-[10px] uppercase text-muted-foreground">
-                    Regime de Mercado
-                  </span>
-                  <span className="text-xs font-bold font-mono">
-                    {data?.risk_status?.regime === 1
-                      ? "📈 TENDÊNCIA"
-                      : data?.risk_status?.regime === 2
-                        ? "🌪️ RUÍDO"
-                        : "↔️ CONSOLIDAÇÃO"}
-                  </span>
-                </div>
-              </div>
-
               <div className="grid grid-cols-1 gap-3">
                 <button
                   onClick={() => sendOrder("BUY")}
@@ -363,6 +295,59 @@ export function TradingDashboard() {
                     SISTEMA AUTORIZADO PARA OPERAR SOZINHO
                   </div>
                 )}
+
+                <div className="flex flex-col gap-2 p-3 bg-indigo-500/5 rounded-lg border border-indigo-500/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Zap
+                        className={cn(
+                          "w-5 h-5",
+                          isSniperRunning
+                            ? "text-indigo-400"
+                            : "text-muted-foreground",
+                        )}
+                      />
+                      <div>
+                        <Label
+                          htmlFor="sniper-mode"
+                          className="text-xs font-bold block"
+                        >
+                          PRECISION SNIPER
+                        </Label>
+                        <span className="text-[10px] text-muted-foreground leading-none">
+                          Microstructure SOTA
+                        </span>
+                      </div>
+                    </div>
+                    <Switch
+                      id="sniper-mode"
+                      checked={isSniperRunning}
+                      onCheckedChange={toggleSniper}
+                      disabled={isUpdatingSniper}
+                    />
+                  </div>
+
+                  {isSniperRunning && data?.risk_status?.sniper && (
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <div className="bg-black/40 p-1.5 rounded border border-white/5 text-center">
+                        <p className="text-[8px] text-muted-foreground uppercase">
+                          Wins
+                        </p>
+                        <p className="text-xs font-bold text-indigo-400">
+                          {data.risk_status.sniper.consecutive_wins}
+                        </p>
+                      </div>
+                      <div className="bg-black/40 p-1.5 rounded border border-white/5 text-center">
+                        <p className="text-[8px] text-muted-foreground uppercase">
+                          Trades
+                        </p>
+                        <p className="text-xs font-bold text-white">
+                          {data.risk_status.sniper.trade_count}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from typing import Optional
 # --- MONKEY-PATCH PARA CONFLITO ONNX/BEARTYPE ---
 try:
     import onnxscript.values as v
@@ -11,7 +12,7 @@ except ImportError:
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 import logging
-from .mt5_bridge import MT5Bridge
+from backend.mt5_bridge import MT5Bridge
 from backend.risk_manager import RiskManager
 from backend.ai_core import AICore, InferenceEngine
 from backend.persistence import PersistenceManager
@@ -20,7 +21,7 @@ from backend.microstructure_analyzer import MicrostructureAnalyzer # HFT v2.0
 from backend.news_collector import NewsCollector
 import pandas as pd
 import numpy as np
-from .data_collector import DataCollector
+from backend.data_collector import DataCollector
 import time as time_module
 import traceback
 # Configuração de Logs Unificada
@@ -41,6 +42,12 @@ class OrderRequest(BaseModel):
     side: str
     volume: float = 1.0
 
+class SniperStatus(BaseModel):
+    running: bool
+    consecutive_wins: int
+    trade_count: int
+    last_trade_time: Optional[str] = None
+
 app = FastAPI()
 
 # Permite acesso do frontend Next.js local
@@ -58,6 +65,12 @@ ai = AICore()
 persistence = PersistenceManager()
 rl_agent = PPOAgent(input_dim=7, n_actions=3) # Global para evitar lag na conexão
 micro_analyzer = MicrostructureAnalyzer()   # Global
+
+# --- ALPHA-X: SNIPER BOT INTEGRATION ---
+from backend.bot_sniper_win import SniperBotWIN
+# Sniper compartilha os mesmos componentes de infra para economizar recursos
+sniper_bot = SniperBotWIN(bridge=bridge, risk=risk, ai=ai)
+bot_task = None # Task para rodar o loop do bot
 
 import os
 weights_path = os.path.join(os.getcwd(), "backend", "patchtst_weights_sota.pth")
@@ -539,8 +552,8 @@ async def websocket_endpoint(websocket: WebSocket):
                                 
                                 is_wdo = "WDO" in symbol or "DOL" in symbol
                                 # Configuração Trailing (Poderia vir do Config/Risk)
-                                trigger_pts = 5.0 if is_wdo else 100.0 # Gatilho para iniciar
-                                step_pts = 2.0 if is_wdo else 50.0 # Passo do trailing
+                                trigger_pts = 5.0 if is_wdo else 70.0 # Gatilho para iniciar (Otimizado)
+                                step_pts = 2.0 if is_wdo else 20.0 # Distância do trailing (70-50=20) (Otimizado)
                                 
                                 current_price = last_price
                                 if pos.type == bridge.mt5.POSITION_TYPE_BUY:
@@ -808,7 +821,13 @@ async def websocket_endpoint(websocket: WebSocket):
                             "weighted_ofi": float(wen_ofi_val),
                             "synthetic_index": float(synthetic_idx),
                             "psr": float(current_psr),
-                            "regime": int(regime)
+                            "regime": int(regime),
+                            "sniper": {
+                                "running": sniper_bot.running,
+                                "consecutive_wins": sniper_bot.consecutive_wins,
+                                "trade_count": sniper_bot.trade_count,
+                                "last_trade_time": str(sniper_bot.last_trade_time) if sniper_bot.last_trade_time else None
+                            }
                         },
                         "timestamp": (datetime.utcnow() - timedelta(hours=3)).timestamp()
                     }
@@ -870,6 +889,41 @@ async def toggle_autonomous(enabled: bool):
     risk.allow_autonomous = enabled
     logging.info(f"Modo Autônomo: {'ATIVO' if enabled else 'INATIVO'}")
     return {"status": "success", "autonomous": enabled}
+
+@app.post("/config/sniper/start")
+async def start_sniper():
+    """Inicia o processamento do Sniper Bot em background."""
+    global bot_task
+    if sniper_bot.running:
+        return {"status": "error", "message": "Bot already running"}
+    
+    bot_task = asyncio.create_task(sniper_bot.run())
+    logging.info("🎯 Sniper Bot iniciado via API.")
+    return {"status": "success"}
+
+@app.post("/config/sniper/stop")
+async def stop_sniper():
+    """Para o Sniper Bot."""
+    sniper_bot.stop()
+    logging.info("🛑 Sniper Bot parado via API.")
+    return {"status": "success"}
+
+@app.get("/performance")
+async def get_performance():
+    """Retorna métricas de performance do dia."""
+    # Por enquanto retorna dados resumidos do RiskManager
+    # Em produção isso leria o histórico real do MT5
+    return {
+        "status": "success",
+        "data": {
+            "total_trades": risk.total_trades,
+            "win_rate": 0.0, # Implementar cálculo real se necessário
+            "profit_factor": 0.0,
+            "gross_profit": float(risk.daily_profit) if risk.daily_profit > 0 else 0.0,
+            "gross_loss": float(abs(risk.daily_profit)) if risk.daily_profit < 0 else 0.0,
+            "net_profit": float(risk.daily_profit)
+        }
+    }
 
 @app.post("/order")
 async def place_order(req: OrderRequest):

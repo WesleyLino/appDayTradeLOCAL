@@ -64,6 +64,12 @@ interface TradeData {
       upper: number;
       ref: number;
     };
+    sniper?: {
+      running: boolean;
+      consecutive_wins: number;
+      trade_count: number;
+      last_trade_time: string | null;
+    };
   };
   account: {
     balance: number;
@@ -155,5 +161,32 @@ export function useTradingWebSocket(url: string = "ws://localhost:8000/ws") {
     }
   };
 
-  return { sendOrder, setAutonomous };
+  const startSniper = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:8000/config/sniper/start",
+        {
+          method: "POST",
+        },
+      );
+      return await response.json();
+    } catch (error) {
+      console.error("Sniper Start Error:", error);
+      return { status: "error", message: "Falha na rede" };
+    }
+  };
+
+  const stopSniper = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/config/sniper/stop", {
+        method: "POST",
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Sniper Stop Error:", error);
+      return { status: "error", message: "Falha na rede" };
+    }
+  };
+
+  return { sendOrder, setAutonomous, startSniper, stopSniper };
 }

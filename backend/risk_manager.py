@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 class RiskManager:
-    def __init__(self, max_daily_loss=200.00, daily_trade_limit=3, max_daily_loss_pct=0.60):
+    def __init__(self, max_daily_loss=600.00, daily_trade_limit=3, max_daily_loss_pct=0.60):
         self.max_daily_loss = max_daily_loss
         self.max_daily_loss_pct = max_daily_loss_pct
         self.daily_trade_limit = daily_trade_limit # Mantido para compatibilidade, mas ignorado no modo agressivo
@@ -18,12 +18,12 @@ class RiskManager:
         ]
         
         # [SOTA] Trailing Stop Parameters (Default WIN Champion)
-        self.trailing_trigger = 150.0 # Ativa com 150 pontos
+        self.trailing_trigger = 70.0  # Ativa com 70 pontos (Otimizado)
         self.trailing_lock = 50.0    # Trava 50 pontos iniciais
         self.trailing_step = 20.0    # Move a cada 20 pontos de avanço
         
         # [URGENTE] Breakeven Parameters
-        self.be_trigger = 70.0       # Ativa com 70 pontos de lucro
+        self.be_trigger = 50.0       # Ativa com 50 pontos de lucro (Otimizado)
         self.be_lock = 0.0           # Move para o preço de entrada (0.0 de lucro garantido)
 
     def is_time_allowed(self):
