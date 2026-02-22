@@ -1,69 +1,24 @@
 {
   "project_profile": {
-    "name": "QuantumTrade_B3_Local",
-    "description": "Estação de Trading Quantitativo de Baixa Latência (Monolito Local) para B3",
-    "architecture": "Local Monolith (Windows 10/11 nativo)",
-    "ide": "Google Antigravity",
-    "target_market": "B3 Futures (WIN/WDO)",
-    "broker": "Genial Investimentos"
+    "name": "QuantumTrade_SOTA_Local",
+    "architecture": "Local Monolith (Zero Latency)",
+    "broker": "Genial Investimentos (MT5)",
+    "target_asset": "WIN/WDO (Auto-Rolling)"
   },
-  "tech_stack": {
-    "backend": "Python 3.11+",
-    "backend_framework": "FastAPI (Gerenciamento de WebSocket e Rotas)",
-    "backend_libs": [
-      "MetaTrader5 (Conexão Oficial B3)",
-      "Pandas (Manipulação de Dados)",
-      "Numpy (Cálculo Numérico)",
-      "PyTorch (IA Local - PatchTST/LSTM)",
-      "Google-GenerativeAI (Gemini 1.5 Pro API para Sentimento)",
-      "Scikit-learn (Clustering de Regime de Mercado)"
-    ],
-    "frontend": "Next.js 15 (App Router)",
-    "frontend_libs": [
-      "TailwindCSS (Estilização)",
-      "Shadcn/UI (Componentes Visuais)",
-      "Lightweight-charts (Gráficos de Alta Performance)",
-      "Lucide-React (Ícones)",
-      "Zustand (Gerenciamento de Estado)"
-    ]
+  "precision_engine": {
+    "primary_model": "PatchTST (Time-Series Transformer) via PyTorch",
+    "validation_layer": "Conformal Prediction (Mapie Library)",
+    "microstructure": "Order Flow Imbalance (OFI) + Spoofing Detection",
+    "sentiment_analysis": "Google Gemini 1.5 Pro API",
+    "decision_threshold": "Consensus required (AI Score > 85 + Flow Positive)"
   },
-  "trading_rules": {
-    "execution_mode": "Netting (Padrão Day Trade B3)",
-    "order_types": {
-      "entry": "Híbrido: LIMIT (Padrão) vs MARKET (Se Score > 90 - Alta Convicção)",
-      "exit": "OCO (One-Cancels-Other) obrigatório para Stop Loss & Gain"
-    },
-    "risk_management": {
-      "max_daily_loss_brl": 200.0,
-      "forbidden_hours": ["08:55-09:05", "12:00-13:00", "16:55-18:00"],
-      "circuit_breaker": "Parar se volatilidade > 3x ATR (Average True Range)",
-      "exit_strategy": "Triple Barrier Method (Profit/Loss/Time Barrier 15min)",
-      "latency_alert_ms": 50
-    }
+  "performance_rules": {
+    "max_latency": "50ms (Tick-to-Trade)",
+    "execution_type": "Limit Orders (Sniper Entry)",
+    "hardware_acceleration": "DirectML (AMD) if available, else CPU optimized"
   },
-  "ai_logic": {
-    "ai_acceleration": {
-      "framework": "ONNX Runtime",
-      "execution_provider": "DmlExecutionProvider",
-      "fallback": "CPUExecutionProvider",
-      "precision": "FP16 (Half Precision)",
-      "note": "FORCE AMD COMPATIBILITY. Do not use torch.cuda."
-    },
-    "price_model": "Local PatchTST (Transformer) converted to ONNX (DirectML)",
-    "sentiment_model": "Google Gemini 1.5 Pro (Score -1 a +1 via Notícias) - AsyncIO Non-Blocking",
-    "microstructure": "Order Book Imbalance (OBI) + Detecção de Spoofing (Heurística)",
-    "decision_matrix": "Entrada se Score > 85/100 (Soma ponderada de OBI, IA e SENT)",
-    "advanced_methodology": {
-        "labeling": "Triple Barrier Method (Profit/Loss/Time)",
-        "loss_function": "Point-Quantile Loss (q10, q50, q90) em backend/models.py",
-        "uncertainty": "Conformal Prediction (Calibração Alpha=0.1)",
-        "validation": "Probabilistic Sharpe Ratio (PSR) > 0.95"
-    }
-  },
-  "development_guidelines": {
-    "language": "Português (Brasil)",
-    "comments": "Explicações detalhadas em cada função",
-    "error_handling": "Logs robustos para queda de conexão MT5 ou Socket",
-    "latency_check": "Alertar se latência interna > 50ms"
+  "risk_management": {
+    "method": "AlphaX Triple Barrier (Profit, Loss, Time)",
+    "hard_veto": ["Daily Loss Limit", "High Volatility Regime", "News Impact"]
   }
 }

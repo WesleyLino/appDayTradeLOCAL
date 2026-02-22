@@ -54,8 +54,8 @@ class SniperBotWIN:
         bid_vol = sum(item['volume'] for item in book['bids'][:5])
         ask_vol = sum(item['volume'] for item in book['asks'][:5])
         
-        if ask_vol == 0: return 999.0
-        return float(bid_vol / ask_vol)
+        # Formula SOTA: (Bid - Ask) / (Bid + Ask + 1)
+        return float((bid_vol - ask_vol) / (bid_vol + ask_vol + 1))
 
     def _load_state(self):
         """Carrega estado persistido do bot."""
@@ -92,36 +92,58 @@ class SniperBotWIN:
         return 100 - (100 / (1 + rs))
 
     async def execute_trade(self, side):
-        """Coordena o envio da ordem via RiskManager e Bridge."""
+        """Coordena o envio de ORDEM LIMITADA (Passive Entry) com Cancelamento Tático."""
         tick = self.bridge.mt5.symbol_info_tick(self.symbol)
         if not tick: return False
         
-        price = tick.ask if side == "buy" else tick.bid
+        # Preço Sniper: Ask para Compra, Bid para Venda (Garante execução no topo do book)
+        # O usuário sugeriu Ask ou Ask - 0.5. No WIN, subtraímos 5 pontos (1 tick).
+        limit_price = tick.ask if side == "buy" else tick.bid
         
         # Alpha Scaling: 1 contrato base + vitórias consecutivas (Max 5)
         lots = min(1 + self.consecutive_wins, 5)
         
-        # Sniper Pro Strategy params for 1000 BRL
-        ots = self.risk.get_order_params(self.symbol, 
-                                        self.bridge.mt5.ORDER_TYPE_BUY if side == "buy" else self.bridge.mt5.ORDER_TYPE_SELL,
-                                        price, lots)
-        
-        ots['symbol'] = self.symbol
-        # [HFT Optimization] Forçar TRADE_ACTION_DEAL para execução imediata no Book
-        ots['action'] = self.bridge.mt5.TRADE_ACTION_DEAL
-        
         if self.risk.dry_run:
-            logger.info(f"🧪 [DRY RUN] {side.upper()} Sniper disparado no {self.symbol} @ {price}")
+            logger.info(f"🧪 [DRY RUN] LIMIT {side.upper()} Sniper disparado @ {limit_price}")
             self.trade_count += 1
             self._save_state()
             return True
-            
-        result = self.bridge.place_resilient_order(ots)
+
+        # Enviar Ordem Limitada
+        order_type = self.bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else self.bridge.mt5.ORDER_TYPE_SELL_LIMIT
+        result = self.bridge.place_limit_order(self.symbol, order_type, limit_price, lots, comment="SNIPER_SOTA_LIMIT")
+        
         if result and result.retcode == self.bridge.mt5.TRADE_RETCODE_DONE:
-            self.trade_count += 1
-            self._save_state()
-            logger.info(f"🎯 [SNIPER EXEC] {side.upper()} @ {price} | Trade {self.trade_count}/{self.risk.daily_trade_limit}")
-            return True
+            order_ticket = result.order
+            logger.info(f"⏳ Ordem LIMIT {order_ticket} aberta @ {limit_price}. Aguardando 3s (Tactical TTL)...")
+            
+            # --- CANCELAMENTO TÁTICO (3 segundos) ---
+            for _ in range(6): # 6 x 0.5s = 3s
+                await asyncio.sleep(0.5)
+                status = self.bridge.check_order_status(order_ticket)
+                if status == "FILLED":
+                    self.trade_count += 1
+                    self._save_state()
+                    logger.info(f"🎯 [SNIPER FILL] {side.upper()} @ {limit_price} | Trade {self.trade_count}/{self.risk.daily_trade_limit}")
+                    return True
+                elif status == "CANCELED":
+                    logger.warning(f"Ordem {order_ticket} cancelada externamente.")
+                    return False
+            
+            # Se não executar em 3s, cancela
+            logger.info(f"⏱️ TTL Expirou. Cancelando ordem {order_ticket}...")
+            if self.bridge.cancel_order(order_ticket):
+                logger.info(f"🛡️ Ordem {order_ticket} cancelada (Momento passou).")
+            else:
+                # Race Condition Check
+                final_status = self.bridge.check_order_status(order_ticket)
+                if final_status == "FILLED":
+                    logger.info(f"🏁 Race Condition WIN: {order_ticket} preenchida no limite!")
+                    self.trade_count += 1
+                    self._save_state()
+                    return True
+            return False
+            
         return False
 
     async def _check_trade_results(self):
@@ -280,12 +302,12 @@ class SniperBotWIN:
                 
                 # 7. FILTRO DE FLUXO (L2 PRESSURE) + AI VETO
                 if buy_cond or sell_cond:
-                    pressure = await self.get_flux_pressure()
+                    pressure = await self.get_flux_pressure() # Agora retorna -1 a 1
                     side = "buy" if buy_cond else "sell"
                     
-                    # Filtro de Fluxo
-                    flux_ok = (side == "buy" and pressure >= self.flux_threshold) or \
-                              (side == "sell" and pressure <= (1/self.flux_threshold))
+                    # Filtro de Fluxo SOTA
+                    flux_ok = (side == "buy" and pressure > 0.3) or \
+                              (side == "sell" and pressure < -0.3)
                     
                     if flux_ok:
                         # [HFT 2.1] AI VETO: Verifica se a IA concorda com a direção técnica

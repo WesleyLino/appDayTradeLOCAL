@@ -196,7 +196,7 @@ SAÍDA OBRIGATÓRIA (JSON):
         
         current_obi = 0.5
         if total_bid + total_ask > 0:
-            current_obi = (total_bid - total_ask) / (total_bid + total_ask)
+            current_obi = (total_bid - total_ask) / (total_bid + total_ask + 1)
         
         # Suavização EMA
         self.obi_ema = (current_obi * self.ema_alpha) + (self.obi_ema * (1 - self.ema_alpha))
@@ -327,19 +327,25 @@ SAÍDA OBRIGATÓRIA (JSON):
         # [HFT v2.1 FIX] Calcular incerteza relativa (%)
         uncertainty_rel = abs(uncertainty_abs / forecast_ref)
 
+        # [VETO POR INCERTEZA] Se PatchTST estiver muito incerto (>5% range relativo), VETO total.
+        if uncertainty_rel > 0.05: 
+            logging.warning(f"CONFORMAL VETO: Incerteza Alta ({uncertainty_rel*100:.2f}%). Abortando decisão.")
+            return {
+                "score": 50.0,
+                "direction": "NEUTRAL",
+                "forecast": float(forecast_ref),
+                "breakdown": {
+                    "veto": "HIGH_UNCERTAINTY",
+                    "uncertainty_rel": uncertainty_rel
+                }
+            }
+        
         # 2. Pesos Dinâmicos (Restauração Macro: IA Proativa)
-        # Devolvemos a dominância ao motor Gemini (Sentimento) para atender solicitação de reversão.
         w_sent = 0.40
         w_obi = 0.30
         w_patchtst = 0.30
 
-        # [VETO POR INCERTEZA] Se PatchTST estiver muito incerto (>5% range relativo), anular peso
-        if uncertainty_rel > 0.05: 
-            logging.warning(f"CONFORMAL VETO: Incerteza Alta ({uncertainty_rel*100:.2f}%).")
-            w_patchtst = 0.0
-            w_obi = 0.70 # Backup para Microestrutura (OBI)
-            w_sent = 0.30
-        elif regime == 0: # Consolidação / Ruído -> Equilíbrio Fluxo/Predição
+        if regime == 0: # Consolidação / Ruído -> Equilíbrio Fluxo/Predição
             w_obi = 0.50
             w_patchtst = 0.30
             w_sent = 0.20
@@ -381,11 +387,12 @@ SAÍDA OBRIGATÓRIA (JSON):
         # Isso garante que o sentimento IA (notícias/bluechips) não seja silenciado pelo modelo estatístico.
         final_score = (ai_score_raw * 0.4) + (meta_score * 0.6)
         
-        # 5. Direção (Thresholds Proativos v2.0)
+        # 5. Direção (Thresholds SOTA v3.1 - Precisão Absoluta)
+        # Exigimos 85% de confluência para modo autônomo.
         direction = "NEUTRAL"
-        if final_score >= 52: # Limiar v2.0 para BUY
+        if final_score >= 85: 
             direction = "BUY"
-        elif final_score <= 48: # Limiar v2.0 para SELL
+        elif final_score <= 15: 
             direction = "SELL"
             
         return {

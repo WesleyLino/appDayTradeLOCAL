@@ -8,7 +8,7 @@
         "trailing_trigger": 150.0,
         "trailing_lock": 50.0,
         "trailing_step": 20.0,
-        "confidence_threshold": 0.4
+        "confidence_threshold": 0.85
     },
     "metadata": {
         "strategy": "Sniper AlphaV22 Pro",

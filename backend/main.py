@@ -82,11 +82,9 @@ import sys
 async def startup_event():
     try:
         global inference
-        print("DEBUG: STARTUP EVENT STARTED", file=sys.stderr)
-        # Configurar Logs (já feito no global, mas ok)
-        
+        logging.info("SOTA Server Startup initiated...")
         # Conexão MT5 (Refatorado para não ser bloqueante)
-        print("DEBUG: Connecting bridge...", file=sys.stderr)
+        logging.info("Connecting to MT5 Bridge...")
         connected = await asyncio.to_thread(bridge.connect)
         if not connected:
             logging.warning("MT5 Bridge não conectado na inicialização. Tentando reconectar...")
@@ -574,7 +572,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     logging.warning("Check Force Close: 17:50 atingido.")
 
                 # --- LÓGICA DE DECISÃO DE TRADE (RESTAURAÇÃO MACRO) ---
-                if risk.allow_autonomous and ai_total_score >= 75 and risk_ok and market_ok and time_allowed:
+                if risk.allow_autonomous and ai_total_score >= 85 and risk_ok and market_ok and time_allowed:
                     if ai_direction in ["BUY", "SELL"]:
                         side = "buy" if ai_direction == "BUY" else "sell"
                         
@@ -599,8 +597,8 @@ async def websocket_endpoint(websocket: WebSocket):
                                     is_sniper = True
                             
                             if is_sniper:
-                                order_type = bridge.mt5.ORDER_TYPE_BUY if side == "buy" else bridge.mt5.ORDER_TYPE_SELL
-                                logging.info("🎯 SNIPER MODE: MARKET ORDER")
+                                order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
+                                logging.info("🎯 SNIPER MODE: AGGRESSIVE LIMIT ORDER")
                                 
                                 # Obter Tick Fresco para a ordem
                                 tick_info = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
@@ -617,21 +615,37 @@ async def websocket_endpoint(websocket: WebSocket):
                                 
                                 # Execução Resiliente (Trata Requotes)
                                 if risk.dry_run:
-                                    logging.warning(f"DRY-RUN: Simulando Ordem SNIPER {side.upper()} de {final_lots} lotes @ {current_order_price}")
+                                    logging.warning(f"DRY-RUN: Simulando Ordem SNIPER LIMIT {side.upper()} de {final_lots} lotes @ {current_order_price}")
                                     # Criação de um mock result válido
                                     class MockResult:
                                         retcode = bridge.mt5.TRADE_RETCODE_DONE
                                         price = current_order_price
+                                        order = 888888
                                     result = MockResult()
                                 else:
-                                    result = await asyncio.to_thread(bridge.place_resilient_order, params)
+                                    # Sniper Limit: Enviamos no Ask (Compra) ou Bid (Venda) para garantir execução rápida
+                                    result = await asyncio.to_thread(bridge.place_limit_order, symbol, order_type, current_order_price, final_lots, comment="AUTO_SNIPER_LIMIT")
                                 
                                 if result and result.retcode == bridge.mt5.TRADE_RETCODE_DONE:
+                                    order_ticket = result.order
                                     mode_tag = "SIMULATION_SNIPER" if risk.dry_run else "AUTO_SNIPER"
-                                    persistence.save_trade(symbol, side, current_order_price, final_lots, mode_tag)
-                                    persistence.save_state("last_auto_trade", f"{side} at {current_order_price}")
-                                    slippage = abs(result.price - current_order_price)
-                                    logging.info(f"TRADE SUCCESS ({mode_tag}): Slippage {slippage:.1f} pts")
+                                    
+                                    # --- SNIPER TTL (3 segundos) ---
+                                    filled = False
+                                    for _ in range(6): # 6 x 0.5s = 3s
+                                        await asyncio.sleep(0.5)
+                                        status = await asyncio.to_thread(bridge.check_order_status, order_ticket)
+                                        if status == "FILLED":
+                                            filled = True
+                                            break
+                                    
+                                    if filled:
+                                        persistence.save_trade(symbol, side, current_order_price, final_lots, mode_tag)
+                                        persistence.save_state("last_auto_trade", f"{side} at {current_order_price}")
+                                        logging.info(f"TRADE SUCCESS ({mode_tag}): Sniper preenchido.")
+                                    else:
+                                        logging.warning(f"Sniper TTL Expired. Cancelando {order_ticket}...")
+                                        await asyncio.to_thread(bridge.cancel_order, order_ticket)
                                 else:
                                     msg = result.comment if hasattr(result, 'comment') else "Timeout/None"
                                     logging.error(f"Falha Crítica na Execução Sniper: {msg}")
@@ -687,9 +701,9 @@ async def websocket_endpoint(websocket: WebSocket):
                                         mode_tag = "SIMULACAO_LIMITE_PENDENTE" if risk.dry_run else "PENDENTE"
                                         logging.info(f"Ordem {mode_tag} Aberta: {order_ticket}. Aguardando 5s...")
                                         
-                                        # --- HFT TTL LOOP (5 segundos) ---
+                                        # --- HFT TTL LOOP (3 segundos) ---
                                         filled = False
-                                        for _ in range(10): # 10x 0.5s = 5s
+                                        for _ in range(6): # 6x 0.5s = 3s
                                             await asyncio.sleep(0.5)
                                             status = await asyncio.to_thread(bridge.check_order_status, order_ticket)
                                             

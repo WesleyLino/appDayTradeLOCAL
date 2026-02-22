@@ -52,6 +52,7 @@ async def run_1day_micro_test():
         be_trades = [t for t in backtester.trades if t['pnl_fin'] == 0]
         
         print(f"Vitórias: {len(win_trades)} | Derrotas: {len(loss_trades)} | BE: {len(be_trades)}")
+        print(f"Oportunidades Ignoradas (Prob 70-85%): {backtester.missed_signals}")
     else:
         print("Nenhum trade realizado no pregão mais recente.")
     

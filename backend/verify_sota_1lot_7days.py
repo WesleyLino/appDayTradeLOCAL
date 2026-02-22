@@ -51,6 +51,7 @@ async def run_7day_baseline_test():
         win_trades = [t for t in backtester.trades if t['pnl_fin'] > 0]
         wr = (len(win_trades) / len(backtester.trades)) * 100
         print(f"Win Rate: {wr:.1f}%")
+        print(f"Oportunidades Ignoradas (Prob 70-85%): {backtester.missed_signals}")
     else:
         print("Nenhum trade realizado no período.")
     

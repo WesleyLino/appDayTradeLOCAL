@@ -79,6 +79,7 @@ class BacktestPro:
         self.peak_balance = self.initial_balance
         self.daily_pnl = 0.0
         self.daily_trade_count = 0
+        self.missed_signals = 0
         self.last_day = None
         self.last_trade_time = datetime.datetime.min # Cooldown control
 
@@ -343,6 +344,10 @@ class BacktestPro:
                 # AI Filter (SOTA Stability)
                 ai_stability = self.ai.get_stability_score()
                 ai_filter_ok = ai_stability >= self.opt_params['confidence_threshold']
+                
+                # Tracking Missed Opportunities
+                if 0.70 <= ai_stability < 0.85 and (v22_buy or v22_sell):
+                    self.missed_signals += 1
 
                 # Sentiment Filter (V2.5)
                 sentiment_ok = True
