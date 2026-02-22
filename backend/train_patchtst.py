@@ -1,3 +1,12 @@
+## Patch de compatibilidade: onnxscript 0.6.x removeu ParamSchema que beartype 0.19.x
+# tenta resolver durante o import de torch.optim. Injetar antes de qualquer import.
+try:
+    import onnxscript.values as _ov
+    if not hasattr(_ov, 'ParamSchema'):
+        _ov.ParamSchema = type('ParamSchema', (), {})
+except Exception:
+    pass
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -10,6 +19,7 @@ import glob
 import time
 from backend.models.patchtst import PatchTST
 from backend.models.loss import PointQuantileLoss
+
 
 # --- CONFIGURAÇÃO DE AMBIENTE ---
 # Detectar se DirectML (AMD) está disponível ou CPU
@@ -167,35 +177,41 @@ def train_sota(epochs=10, batch_size=128, lr=0.0001):
 
 def export_to_onnx(model, n_channels):
     """
-    Exporta para ONNX seguindo as regras de estabilidade do hardware (AMD/DirectML).
-    1. FLOAT32 Apenas.
-    2. No Dynamic Axes.
+    Exporta para ONNX usando backend legado (sem dynamo/onnxscript).
+    Regras: FLOAT32 apenas, sem dynamic_axes (AMD/DirectML estabilidade).
+    Compatível com torch 2.4.x + onnx 1.20.x.
     """
-    logging.info("⚙️ Exportando para ONNX (Hardware Acceleration Mode)...")
+    logging.info("⚙️ Exportando para ONNX (modo legado — AMD/DirectML compatible)...")
     model.eval()
-    model.cpu() # Exportação mais robusta via CPU
-    
+    model.cpu()
+
     dummy_input = torch.randn(1, 60, n_channels, dtype=torch.float32)
     onnx_path = "backend/patchtst_weights_sota_optimized.onnx"
-    
+
     try:
-        torch.onnx.export(
-            model,
-            dummy_input,
-            onnx_path,
-            export_params=True,
-            opset_version=14, # Opset balanceado
-            do_constant_folding=True,
-            input_names=['input'],
-            output_names=['output'],
-            # [ANTIGRAVITY RULES] Nunca usar dynamic_axes para o SOTA model.
-            # DirectML causa mismatch de dimensões se não for fixo.
-            dynamic_axes=None 
-        )
-        logging.info(f"✅ ONNX Exportado com Sucesso: {onnx_path}")
+        # [ANTIGRAVITY RULES] Nunca usar dynamic_axes para o SOTA model.
+        # Força backend legado com torch.onnx sem acionar onnxscript/dynamo.
+        with torch.no_grad():
+            torch.onnx.export(
+                model,
+                dummy_input,
+                onnx_path,
+                export_params=True,
+                opset_version=14,
+                do_constant_folding=True,
+                input_names=['input'],
+                output_names=['output'],
+                dynamic_axes=None,    # [ANTIVIBE-CODING] fixed axes only
+                verbose=False,
+            )
+        logging.info(f"✅ ONNX Exportado: {onnx_path}")
     except Exception as e:
-        logging.error(f"❌ Falha no export ONNX: {e}")
+        logging.error(f"❌ Falha no export ONNX: {repr(e)}")
+        # Salvar checkpoint PyTorch como fallback
+        fallback = onnx_path.replace('.onnx', '_fallback.pth')
+        torch.save(model.state_dict(), fallback)
+        logging.info(f"💾 Fallback PyTorch salvo: {fallback}")
+
 
 if __name__ == "__main__":
-    # Inicia com LR menor para estabilidade SOTA
     train_sota(epochs=15, batch_size=64, lr=0.0001)
