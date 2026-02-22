@@ -32,10 +32,10 @@ class BacktestPro:
             self.inference = InferenceEngine(model_path="backend/patchtst_weights_sota.pth")
             self.ai.inference_engine = self.inference
             logging.info("🧠 Motor de Inferência SOTA carregado.")
-        except:
-            self.inference = True 
-            self.ai.inference_engine = True
-            logging.warning("⚠️ Pesos SOTA não encontrados. Mockando IA para backtest.")
+        except Exception as e_engine:
+            self.inference = None 
+            self.ai.inference_engine = None
+            logging.warning(f"⚠️ Pesos SOTA não carregados ({e_engine}). Usando modo degenerado (Sentiment/OBI).")
             
         self.risk = RiskManager()
         self.collector = DataCollector(symbol)
@@ -61,7 +61,8 @@ class BacktestPro:
             'flux_imbalance_threshold': kwargs.get('flux_imbalance_threshold', 1.2),
             'be_trigger': kwargs.get('be_trigger', 50.0),
             'be_lock': kwargs.get('be_lock', 0.0),
-            'base_lot': kwargs.get('base_lot', 1) # Novo parâmetro para escala dinâmica
+            'base_lot': kwargs.get('base_lot', 1), # Novo parâmetro para escala dinâmica
+            'use_ai_core': kwargs.get('use_ai_core', False) # Ativa lógica blindada Fase 27
         }
 
         # Estado do Backtest
@@ -92,7 +93,7 @@ class BacktestPro:
             }
         }
         self.last_day = None
-        self.last_trade_time = datetime.datetime.min # Cooldown control
+        self.last_trade_time = datetime.min # Cooldown control
 
     async def load_data(self):
         if self.data_file is not None and os.path.exists(self.data_file):
@@ -295,51 +296,111 @@ class BacktestPro:
                 
                 # 2.2 Filtros de Tendência
                 # Gatilhos Alpha V22 (Counter-Trend Sniper)
-                cooldown_ok = (row.name - self.last_trade_time) >= datetime.timedelta(minutes=15)
+                cooldown_ok = (row.name - self.last_trade_time) >= timedelta(minutes=15)
                 
                 # --- ADAPTIVE REGIME CORTEX ---
                 # OBI is approximated as 0.0 in OHLCV backtester
                 current_regime = row['regime']
+                use_ai_core = self.opt_params.get('use_ai_core', False)
                 
-                # --- INTELIGÊNCIA DO SUCESSO: REGIME MAESTRO & SCALPING ADAPTATION ---
-                dir_prob = row['dir_prob']
-                aggressive = self.opt_params.get('aggressive_mode', False)
-                v_mult_eff = v_mult * 0.8 if aggressive else v_mult # Reduce volume spike req by 20%
-                vol_spike_eff = row['tick_volume'] > (vol_sma * v_mult_eff)
+                # Default for operational filters
+                vol_spike_eff = vol_spike
+                ai_stability = 0.75 # Default threshold
+                
+                # --- [FASE 27] BLINDED DECISION CORTEX ---
+                if use_ai_core:
+                    # Preparar métricas sincronizadas
+                    obi = 0.0 # Sem L2 no backtest CSV
+                    sentiment_score = 0.0
+                    if self.sentiment_stream and row.name in self.sentiment_stream:
+                        sentiment_score = self.sentiment_stream[row.name]
+                    
+                    # Predição PatchTST (Agora com normalização automática no AICore)
+                    patchtst_data = 0.0
+                    if self.ai.inference_engine is not True:
+                        # Extrair janela para predição
+                        window_data = data.iloc[i-64:i] # PatchTST usa 64 velas
+                        if len(window_data) == 64:
+                            patchtst_data = await self.ai.predict_with_patchtst(self.ai.inference_engine, window_data)
 
-                # 1. Regime Maestro (Trend Routing)
-                # Verifica se a IA detectou 80%+ de chance de continuação
-                if dir_prob >= 0.8 and current_regime == 1: # Trend Mode
-                    v22_buy = (row['close'] > mid_bb) and (rsi > 50) and (rsi < 70) and vol_spike_eff
-                    v22_sell = (row['close'] < mid_bb) and (rsi < 50) and (rsi > 30) and vol_spike_eff
-                    dyn_sl = self.opt_params['sl_dist'] * 1.5
-                    dyn_tp = self.opt_params['tp_dist'] * 2.0
-                    regime_tag = "TREND_MAESTRO"
-                
-                # 2. Amorphous Regimes (Scalping Adaptation)
-                elif current_regime == 2: # Noise Mode
-                    rsi_buy_thresh = 30 if aggressive else 20
-                    rsi_sell_thresh = 70 if aggressive else 80
-                    v22_buy = (row['close'] < lower_bb) and (rsi < rsi_buy_thresh) and (lower_wick > body * 0.7) and vol_spike_eff
-                    v22_sell = (row['close'] > upper_bb) and (rsi > rsi_sell_thresh) and (upper_wick > body * 0.7) and vol_spike_eff
-                    # Fix TP to strict Scalping (100 points for WIN) 
-                    dyn_sl = self.opt_params['sl_dist'] * 0.5 # Tighter SL
-                    dyn_tp = 100.0 if "WIN" in self.symbol else self.opt_params['tp_dist'] * 0.5
-                    regime_tag = "NOISE_SCALP"
-                
-                else: # Consolidation / Default Mode
-                    rsi_buy_thresh = 35 if aggressive else 25
-                    rsi_sell_thresh = 65 if aggressive else 75
-                    v22_buy = (row['close'] < lower_bb) and (rsi < rsi_buy_thresh) and (lower_wick > body * 0.5) and vol_spike_eff
-                    v22_sell = (row['close'] > upper_bb) and (rsi > rsi_sell_thresh) and (upper_wick > body * 0.5) and vol_spike_eff
-                    # Fix TP to strict Scalping (100 points for WIN)
+                    # Volatilidade Anualizada (Proxy do Bot)
+                    log_returns = np.log(window['close'] / window['close'].shift(1))
+                    vol_val = float(log_returns.tail(20).std() * np.sqrt(252 * 480))
+                    if not np.isfinite(vol_val): vol_val = 0.0
+
+                    ai_decision = self.ai.calculate_decision(
+                        obi=obi,
+                        sentiment=sentiment_score,
+                        patchtst_score=patchtst_data,
+                        regime=current_regime,
+                        atr=atr_current,
+                        volatility=vol_val,
+                        hour=row.name.hour
+                    )
+                    
+                    direction = ai_decision['direction']
+                    v22_buy = direction == "BUY"
+                    v22_sell = direction == "SELL"
+                    quantile_confidence = ai_decision.get('quantile_confidence', "NORMAL")
+                    
+                    regime_tag = f"AI_{direction}_{quantile_confidence}"
                     dyn_sl = self.opt_params['sl_dist']
-                    dyn_tp = 100.0 if "WIN" in self.symbol else self.opt_params['tp_dist'] * 0.5 
-                    regime_tag = "CONSOL_SCALP"
+                    dyn_tp = self.opt_params['tp_dist']
+                    
+                    # Ajustes de alvos por regime (Compatibilidade com Phase 13)
+                    if current_regime == 2 or current_regime == 0: # Noise/Consol
+                        dyn_tp = 100.0 if "WIN" in self.symbol else self.opt_params['tp_dist'] * 0.5
+                    
+                    # Log de auditoria interna
+                    if v22_buy or v22_sell:
+                        logging.debug(f"🤖 AI Decision: {ai_decision}")
+                        vol_spike_eff = vol_spike # No modo IA usamos volume puro
+                        ai_stability = 0.99 # IA emitiu sinal, assume estabilidade
+
+                # --- [LEGACY] INTELIGÊNCIA DO SUCESSO: REGIME MAESTRO & SCALPING ADAPTATION ---
+                else:
+                    dir_prob = row['dir_prob']
+                    aggressive = self.opt_params.get('aggressive_mode', False)
+                    v_mult_eff = v_mult * 0.8 if aggressive else v_mult # Reduce volume spike req by 20%
+                    vol_spike_eff = row['tick_volume'] > (vol_sma * v_mult_eff)
+
+                    # 1. Regime Maestro (Trend Routing)
+                    # Verifica se a IA detectou 80%+ de chance de continuação
+                    if dir_prob >= 0.8 and current_regime == 1: # Trend Mode
+                        v22_buy = (row['close'] > mid_bb) and (rsi > 50) and (rsi < 70) and vol_spike_eff
+                        v22_sell = (row['close'] < mid_bb) and (rsi < 50) and (rsi > 30) and vol_spike_eff
+                        dyn_sl = self.opt_params['sl_dist'] * 1.5
+                        dyn_tp = self.opt_params['tp_dist'] * 2.0
+                        regime_tag = "TREND_MAESTRO"
+                    
+                    # 2. Amorphous Regimes (Scalping Adaptation)
+                    elif current_regime == 2: # Noise Mode
+                        rsi_buy_thresh = 30 if aggressive else 20
+                        rsi_sell_thresh = 70 if aggressive else 80
+                        v22_buy = (row['close'] < lower_bb) and (rsi < rsi_buy_thresh) and (lower_wick > body * 0.7) and vol_spike_eff
+                        v22_sell = (row['close'] > upper_bb) and (rsi > rsi_sell_thresh) and (upper_wick > body * 0.7) and vol_spike_eff
+                        # Fix TP to strict Scalping (100 points for WIN) 
+                        dyn_sl = self.opt_params['sl_dist'] * 0.5 # Tighter SL
+                        dyn_tp = 100.0 if "WIN" in self.symbol else self.opt_params['tp_dist'] * 0.5
+                        regime_tag = "NOISE_SCALP"
+                    
+                    else: # Consolidation / Default Mode
+                        rsi_buy_thresh = 35 if aggressive else 25
+                        rsi_sell_thresh = 65 if aggressive else 75
+                        v22_buy = (row['close'] < lower_bb) and (rsi < rsi_buy_thresh) and (lower_wick > body * 0.5) and vol_spike_eff
+                        v22_sell = (row['close'] > upper_bb) and (rsi > rsi_sell_thresh) and (upper_wick > body * 0.5) and vol_spike_eff
+                        # Fix TP to strict Scalping (100 points for WIN)
+                        dyn_sl = self.opt_params['sl_dist']
+                        dyn_tp = 100.0 if "WIN" in self.symbol else self.opt_params['tp_dist'] * 0.5 
+                        regime_tag = "CONSOL_SCALP"
+
+                    # Ajustar flags para filtros abaixo
+                    vol_spike_eff = vol_spike_eff
+                    ai_stability = min(0.99, 0.70) # Placeholder para fluxo legado
 
                 # Filtros Operacionais
-                t_start = datetime.datetime.strptime(self.opt_params['start_time'], "%H:%M").time()
-                t_end = datetime.datetime.strptime(self.opt_params['end_time'], "%H:%M").time()
+                t_start = datetime.strptime(self.opt_params['start_time'], "%H:%M").time()
+                t_end = datetime.strptime(self.opt_params['end_time'], "%H:%M").time()
                 time_ok = t_start <= row.name.time() <= t_end
                 
                 # [AGRESSIVO] Limite de 60% de perda diária
@@ -415,10 +476,11 @@ class BacktestPro:
                         'tp': tp,
                         'lots': target_lot,
                         'index': i,
-                        'time': row.name
+                        'time': row.name,
+                        'quantile_confidence': quantile_confidence if 'quantile_confidence' in locals() else "NORMAL"
                     }
                     self.daily_trade_count += 1
-                    logging.info(f"🎯 V22 TRIGGER [{regime_tag}]: {side} @ {row['close']} | Vol Spike: {row['tick_volume']/vol_sma:.1f}x | RSI: {rsi:.1f}")
+                    logging.info(f"🎯 V22 TRIGGER [{regime_tag}]: {side} @ {row['close']} | Lots: {target_lot}")
             
             # Atualizar Drawdown
             if self.balance > self.peak_balance:

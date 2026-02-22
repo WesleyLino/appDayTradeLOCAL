@@ -258,18 +258,13 @@ class AICore:
         # [HFT v2.1 FIX] Calcular incerteza relativa (%)
         uncertainty_rel = abs(uncertainty_abs / forecast_ref)
 
-        # [VETO POR INCERTEZA] Se PatchTST estiver muito incerto (>5% range relativo), VETO total.
+        # [VETO POR INCERTEZA] Se PatchTST estiver muito incerto (>5% range relativo), usamos Fail-Safe
         if uncertainty_rel > 0.05: 
-            logging.warning(f"CONFORMAL VETO: Incerteza Alta ({uncertainty_rel*100:.2f}%). Abortando decisão.")
-            return {
-                "score": 50.0,
-                "direction": "NEUTRAL",
-                "forecast": float(forecast_ref),
-                "breakdown": {
-                    "veto": "HIGH_UNCERTAINTY",
-                    "uncertainty_rel": uncertainty_rel
-                }
-            }
+            logging.warning(f"CONFORMAL FAIL-SAFE: Incerteza Alta ({uncertainty_rel*100:.2f}%). Neutralizando PatchTST.")
+            norm_patchtst = 0.0 # Neutraliza contribuição da IA
+            patchtst_score["score"] = 0.5 # Para o breakdown
+            veto_reason = "HIGH_UNCERTAINTY_FAILSAFE"
+            # Não abortamos mais a decisão, deixamos Sentiment/OBI/Meta-Learner operarem
         
         # 2. Pesos Dinâmicos (Restauração Macro: IA Proativa)
         w_sent = 0.40
@@ -358,9 +353,13 @@ class AICore:
         
     async def predict_with_patchtst(self, inference_engine, dataframe):
         """Usa o motor de inferência para obter a predição do PatchTST."""
-        if inference_engine:
-            return await inference_engine.predict(dataframe)
-        return 0.5 # Neutro se sem motor
+        if inference_engine and not isinstance(inference_engine, bool):
+            try:
+                return await inference_engine.predict(dataframe)
+            except Exception as e:
+                logging.warning(f"⚠️ Predição PatchTST falhou: {e}")
+                return 0.5
+        return 0.5 # Neutro se sem motor ou mockado
 
     def get_stability_score(self) -> float:
         """
@@ -542,7 +541,30 @@ class InferenceEngine:
         """Lógica de inferência unificada para múltiplos canais."""
         try:
             # 1. Pre-processing: O dataframe já vem normalizado da bridge
-            input_data = dataframe.values[-60:]
+            # Filtramos as colunas necessárias para o PatchTST (OHLCV)
+            # Se vier da bridge de produção, as colunas já estão ordenadas.
+            # Se vier do backtest, garantimos a ordem.
+            try:
+                # Tenta colunas padrão da B3/MT5
+                cols = ['open', 'high', 'low', 'close', 'tick_volume']
+                numeric_df = dataframe[cols]
+            except:
+                # Fallback: pega apenas as primeiras 5 colunas numéricas ou 1 se for o caso
+                all_numeric = dataframe.select_dtypes(include=[np.number])
+                c_in = 5 if all_numeric.shape[1] >= 5 else 1
+                numeric_df = all_numeric.iloc[:, :c_in]
+                
+            input_data = numeric_df.values[-60:]
+            
+            # [FASE 28] NORMALIZAÇÃO DINÂMICA (Log-Returns por Janela)
+            # Se os dados contêm valores > 10 (preços brutos), aplicamos log-returns
+            if np.max(np.abs(input_data)) > 10.0:
+                # Calculamos log-returns para as 60 velas (usando a 61ª anterior se possível, 
+                # mas aqui simulamos com diff sobre a própria janela)
+                # Para evitar perda de 1 vela, usamos log(x / x[0]) ou diff
+                # O ideal para PatchTST treinado é Diferenciação Simples:
+                input_data = np.diff(input_data, axis=0, prepend=input_data[0:1])
+                #logging.debug("🧠 INFERENCE: Diferenciação local aplicada.")
             
             # [AI PERSISTENCE GUARD] ALWAYS use float32. 
             # FP16 triggers 'Cast' errors in the RevIN layer when using DirectML (AMD).
@@ -565,15 +587,21 @@ class InferenceEngine:
                     preds = raw_preds[0] # [5, 3]
                 except Exception as e_onnx:
                     logging.warning(f"ONNX Run falhou, tentando PT fallback: {repr(e_onnx)}")
+                    if self.model is not None:
+                        x = torch.tensor(input_tensor).to(torch.float32)
+                        with torch.no_grad():
+                            out = self.model(x) 
+                            preds = out[0].numpy()
+                    else:
+                        raise ValueError("ONNX failed and PyTorch model is None")
+            else:
+                if self.model is not None:
                     x = torch.tensor(input_tensor).to(torch.float32)
                     with torch.no_grad():
                         out = self.model(x) 
                         preds = out[0].numpy()
-            else:
-                x = torch.tensor(input_tensor).to(torch.float32)
-                with torch.no_grad():
-                    out = self.model(x) 
-                    preds = out[0].numpy()
+                else:
+                    raise ValueError("Inference Engine has no active model (ONNX or PT)")
 
             # 3. Post-processing
             # q10, q50, q90 para o WIN$ (coluna 0)
