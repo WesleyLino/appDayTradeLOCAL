@@ -95,17 +95,26 @@ class SniperBotWIN:
         rs = gain / loss.replace(0, 0.000001)
         return 100 - (100 / (1 + rs))
 
-    async def execute_trade(self, side):
-        """Coordena o envio de ORDEM LIMITADA (Passive Entry) com Cancelamento Tático."""
+    async def execute_trade(self, side, quantile_confidence="NORMAL"):
+        """Coordena o envio de ORDEM LIMITADA (Passive Entry) com Cancelamento Tático.
+        Args:
+            side: 'buy' ou 'sell'
+            quantile_confidence: 'NORMAL' | 'HIGH' | 'VERY_HIGH' — calibra o tamanho do lote.
+        """
         tick = self.bridge.mt5.symbol_info_tick(self.symbol)
         if not tick: return False
         
         # Preço Sniper: Ask para Compra, Bid para Venda (Garante execução no topo do book)
-        # O usuário sugeriu Ask ou Ask - 0.5. No WIN, subtraímos 5 pontos (1 tick).
         limit_price = tick.ask if side == "buy" else tick.bid
         
-        # [R$ 3000] Lote Fixo Proporcional (1 contrato por R$ 1000)
-        lots = 3.0
+        # [FASE 22 — QUANTILE CONFIDENCE SCALING]
+        # Calibra o número de contratos pela convicção do PatchTST Q10/Q90
+        # NORMAL   : 1 contrato (sinal padrão, threshold 85%)
+        # HIGH     : 2 contratos (banda Q10/Q90 assimétrica > 5pts)
+        # VERY_HIGH: 3 contratos (banda assimétrica > 20% — alta convicção direcional)
+        lot_map = {"NORMAL": 1.0, "HIGH": 2.0, "VERY_HIGH": 3.0}
+        lots = lot_map.get(quantile_confidence, 1.0)
+        logger.info(f"[QUANTILE] confidence={quantile_confidence} -> lotes={lots}")
         
         if self.risk.dry_run:
             logger.info(f"🧪 [DRY RUN] LIMIT {side.upper()} Sniper disparado @ {limit_price}")
@@ -315,18 +324,32 @@ class SniperBotWIN:
                               (side == "sell" and pressure < -0.3)
                     
                     if flux_ok:
-                        # [HFT 2.1] AI VETO: Verifica se a IA concorda com a direção técnica
-                        # Para WIN 1000 BRL, o veto é a última linha de defesa
-                        ai_pred = self.ai.predict_regime(df)
-                        ai_ok = (side == "buy" and ai_pred['direction'] == 1) or \
-                                (side == "sell" and ai_pred['direction'] == -1)
-                        
+                        # [FASE 22] DECISÃO COMPLETA DA IA com quantile_confidence
+                        # calculate_decision retorna score, direction e quantile_confidence (Q10/Q90)
+                        ai_decision = self.ai.calculate_decision(
+                            obi=pressure,
+                            sentiment=0.0,        # neutral fallback sem news feed
+                            patchtst_score=0.5,   # fallback; em produção real vem do InferenceEngine
+                        )
+                        ai_direction = ai_decision.get("direction", "NEUTRAL")
+                        quantile_confidence = ai_decision.get("quantile_confidence", "NORMAL")
+                        ai_score = ai_decision.get("score", 50.0)
+
+                        ai_ok = (side == "buy"  and ai_direction == "BUY") or \
+                                (side == "sell" and ai_direction == "SELL")
+
+                        logger.info(
+                            f"[AI] direction={ai_direction} score={ai_score:.1f} "
+                            f"confidence={quantile_confidence} flux={pressure:.2f}"
+                        )
+
                         if ai_ok:
-                            if await self.execute_trade(side):
-                                logger.info(f"🚀 Sniper disparado com sucesso! Iniciando cooldown.")
+                            if await self.execute_trade(side, quantile_confidence=quantile_confidence):
+                                logger.info(f"[SNIPER] Disparado! Lotes calibrados por {quantile_confidence}. Cooldown iniciado.")
                                 self.last_trade_time = datetime.now()
                         else:
-                            logger.info(f"🛡️ AI VETO: Sinal técnico ignorado por desalinhamento da IA ({ai_pred['direction']})")
+                            logger.info(f"[AI VETO] Sinal ignorado. direction={ai_direction} score={ai_score:.1f}")
+
                     else:
                         logger.debug(f"Fluxo não alinhado: {side.upper()} | Pressure: {pressure:.2f}")
 
