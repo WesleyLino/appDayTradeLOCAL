@@ -210,10 +210,10 @@ skill-name/
 
 ### Enhanced Skills (with scripts/references)
 
-| Skill               | Files | Coverage                            |
-| ------------------- | ----- | ----------------------------------- |
-| `ui-ux-pro-max`     | 27    | 50 styles, 21 palettes, 50 fonts    |
-| `app-builder`       | 20    | Full-stack scaffolding              |
+| Skill           | Files | Coverage                         |
+| --------------- | ----- | -------------------------------- |
+| `ui-ux-pro-max` | 27    | 50 styles, 21 palettes, 50 fonts |
+| `app-builder`   | 20    | Full-stack scaffolding           |
 
 ---
 
@@ -285,4 +285,24 @@ For details, see [scripts/README.md](scripts/README.md)
 | Security | `security-auditor`    | vulnerability-scanner                 |
 | Testing  | `test-engineer`       | testing-patterns, webapp-testing      |
 | Debug    | `debugger`            | systematic-debugging                  |
-| Plan     | `project-planner`     | brainstorming, plan-writing           |
+
+---
+
+## 🛡️ Critical Architecture Decisions (Hardware Acceleration)
+
+To prevent regression and "AI hallucinations" in future sessions, the following decisions are **BINDING**:
+
+### 1. AMD GPU / DirectML Inference
+
+- **Precision**: ALWAYS use **Float32**. FP16 causes `Cast` errors in `RevIN` layers under DirectML.
+- **ONNX Export**: ALWAYS use **Static Graphs** (fixed `batch_size=1`, `channels=5`). Dynamic axes trigger `MatMul` dimension mismatches in the DirectML provider.
+- **Patching Operations**: NEVER use `unfold` or `view` patterns that create complex striding. USE **`Conv1d`** for patching, as it translates to standard, highly optimized ops in ONNX.
+
+### 2. SOTA Brain Integration
+
+- **Sync Model**: The 5-asset synchronized input (WIN, WDO, PETR, VALE, ITUB) is a hard requirement for the SOTA model.
+- **Fallback**: Inference must ALWAYS have a PyTorch CPU fallback to ensure the trading loop never hangs if the GPU driver crashes.
+
+### 3. Encoding Stability
+
+- **Logs**: Never log raw exception objects directly to the terminal to avoid `UnicodeDecodeError`. Use `repr(e)` to ensure ASCII-safe logging.

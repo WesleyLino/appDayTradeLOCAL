@@ -115,7 +115,7 @@ def train_model(X, y):
     logging.info(f"\nConfusion Matrix:\n{confusion_matrix(y_test, y_pred)}")
     
     # Calibração: Verificar distribuição de probabilidades
-    logging.info(f"\nDistribuição de Probabilidades (Teste):")
+    logging.info("\nDistribuição de Probabilidades (Teste):")
     logging.info(f"  Min:  {y_proba.min():.3f}")
     logging.info(f"  25%:  {np.percentile(y_proba, 25):.3f}")
     logging.info(f"  50%:  {np.percentile(y_proba, 50):.3f}")

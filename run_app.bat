@@ -2,8 +2,8 @@
 title QuantumTrade B3 - Local Startup
 echo Initializing QuantumTrade B3 Station...
 
-:: Start Backend
-start cmd /k "python -m uvicorn backend.main:app --reload --port 8000"
+:: Start Backend (UTF-8 Encoding enforced)
+start cmd /k "set PYTHONIOENCODING=utf-8 && uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload"
 
 :: Start Frontend
 start cmd /k "cd frontend && npm run dev"

@@ -1,0 +1,20 @@
+{
+    "params": {
+        "rsi_period": 14,
+        "bb_dev": 2.2,
+        "sl_dist": 150.0,
+        "tp_dist": 400.0,
+        "vol_spike_mult": 1.5,
+        "trailing_trigger": 150.0,
+        "trailing_lock": 50.0,
+        "trailing_step": 20.0,
+        "confidence_threshold": 0.4
+    },
+    "metadata": {
+        "strategy": "Sniper AlphaV22 Pro",
+        "instrument": "WIN$",
+        "methodology": "Walk-Forward Analysis (Champion)",
+        "expected_profit_factor": 1.42,
+        "regime_alert": "Market in low-volatility/trend regime (last 30 days). Extra caution advised."
+    }
+}

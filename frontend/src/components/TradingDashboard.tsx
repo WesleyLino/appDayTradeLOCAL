@@ -5,6 +5,7 @@ import { TradingChart } from "./TradingChart";
 import { FlowMeter } from "./FlowMeter";
 import { OrderBookHeatmap } from "./OrderBookHeatmap";
 import { SotaMetrics } from "./SotaMetrics";
+import { PerformanceWidget } from "./PerformanceWidget";
 import {
   AlertCircle,
   Zap,
@@ -186,6 +187,7 @@ export function TradingDashboard() {
         {/* Coluna Esquerda: Métricas SOTA */}
         <div className="space-y-6 lg:col-span-1 flex flex-col">
           <SotaMetrics {...sotaData} />
+          <PerformanceWidget />
 
           {/* Sidebar Controls */}
           <div className="flex flex-col gap-6">
@@ -281,9 +283,9 @@ export function TradingDashboard() {
                     Regime de Mercado
                   </span>
                   <span className="text-xs font-bold font-mono">
-                    {data?.regime === 1
+                    {data?.risk_status?.regime === 1
                       ? "📈 TENDÊNCIA"
-                      : data?.regime === 2
+                      : data?.risk_status?.regime === 2
                         ? "🌪️ RUÍDO"
                         : "↔️ CONSOLIDAÇÃO"}
                   </span>

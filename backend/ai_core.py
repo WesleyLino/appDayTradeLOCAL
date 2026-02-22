@@ -274,8 +274,17 @@ SAÍDA OBRIGATÓRIA (JSON):
             
         current_state = np.array([[volatility, obi]])
         try:
-            return int(self.regime_model.predict(current_state)[0])
-        except:
+            # Predict returns the original cluster label
+            raw_label = int(self.regime_model.predict(current_state)[0])
+            
+            # Sort cluster centers by volatility (index 0) to consistently map:
+            # 0: Baixa Vol (Consolidação), 1: Média Vol (Tendência), 2: Alta Vol (Ruído)
+            centers = self.regime_model.cluster_centers_
+            sorted_indices = np.argsort(centers[:, 0])
+            mapped_label = int(np.where(sorted_indices == raw_label)[0][0])
+            
+            return mapped_label
+        except Exception as e:
             return 0
 
     def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0):
@@ -318,11 +327,11 @@ SAÍDA OBRIGATÓRIA (JSON):
         # [HFT v2.1 FIX] Calcular incerteza relativa (%)
         uncertainty_rel = abs(uncertainty_abs / forecast_ref)
 
-        # 2. Pesos Dinâmicos (HFT v2.1: AlphaX - Transformer First)
-        # O modelo Transformer (PatchTST) é o âncora contextual principal.
-        w_patchtst = 0.50
+        # 2. Pesos Dinâmicos (Restauração Macro: IA Proativa)
+        # Devolvemos a dominância ao motor Gemini (Sentimento) para atender solicitação de reversão.
+        w_sent = 0.40
         w_obi = 0.30
-        w_sent = 0.20
+        w_patchtst = 0.30
 
         # [VETO POR INCERTEZA] Se PatchTST estiver muito incerto (>5% range relativo), anular peso
         if uncertainty_rel > 0.05: 
@@ -368,14 +377,15 @@ SAÍDA OBRIGATÓRIA (JSON):
         # Converter probabilidade para score (0-100)
         meta_score = meta_proba * 100.0
 
-        # A decisão final é baseada no meta_score
-        final_score = meta_score
+        # A decisão final é uma média ponderada entre o Sinal Bruto (Macro) e o Meta-Learner
+        # Isso garante que o sentimento IA (notícias/bluechips) não seja silenciado pelo modelo estatístico.
+        final_score = (ai_score_raw * 0.4) + (meta_score * 0.6)
         
-        # 5. Direção
+        # 5. Direção (Thresholds Proativos v2.0)
         direction = "NEUTRAL"
-        if final_score > 55: # Limiar para BUY (ajustável)
+        if final_score >= 52: # Limiar v2.0 para BUY
             direction = "BUY"
-        elif final_score < 45: # Limiar para SELL (ajustável)
+        elif final_score <= 48: # Limiar v2.0 para SELL
             direction = "SELL"
             
         return {
@@ -405,6 +415,42 @@ SAÍDA OBRIGATÓRIA (JSON):
         if hasattr(self, 'inference_engine') and self.inference_engine is not None:
             return 0.98
         return 0.40
+
+    def get_directional_probability(self, market_data) -> float:
+        """
+        [INTELIGÊNCIA DO SUCESSO] Retorna a probabilidade da IA para a continuação direcional.
+        Simula/calcula se a força institucional tem > 80% de chance de continuação.
+        Como o backtest OHLCV de 1M é rápido, usaremos uma heurística robusta aqui
+        se o motor de inferência profundo for muito lento, ou o output do Meta-Learner.
+        """
+        # Em produção real (Tick a Tick), isso consulta o PatchTST/Conformal Prediction.
+        # Para o backtester, vamos simular a "certeza direcional" baseada no momentum
+        # recente e no OBI suavizado para decidir se habilitamos o Trend-Following.
+        
+        try:
+            # Pega os últimos 3-5 candles para avaliar a inércia direcional
+            if len(market_data) >= 5:
+                recent_closes = market_data['close'].tail(5).values
+                returns = np.diff(recent_closes) / recent_closes[:-1]
+                
+                # Se todos os retornos apontam para o mesmo lado, alta probabilidade
+                if all(r > 0 for r in returns) or all(r < 0 for r in returns):
+                    base_prob = 0.85
+                else:
+                    # Direcionalidade fraca
+                    base_prob = max(0.0, abs(sum(returns)) * 100) # Pseudo-probabilidade
+                
+                # Modula com OBI persistente se houver book data
+                obi_factor = abs(self.obi_ema) # 0 a 1.0
+                
+                final_prob = min(0.99, base_prob + (obi_factor * 0.2))
+                return final_prob
+            
+            return 0.5 # Neutro se sem dados
+            
+        except Exception as e:
+            return 0.5
+
 
 import onnxruntime as ort
 from backend.models import PatchTST

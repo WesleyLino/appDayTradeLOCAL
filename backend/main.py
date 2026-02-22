@@ -573,8 +573,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     await asyncio.to_thread(panic_close_all)
                     logging.warning("Check Force Close: 17:50 atingido.")
 
-                # --- LÓGICA DE DECISÃO DE TRADE ---
-                if risk.allow_autonomous and ai_total_score >= 85 and risk_ok and market_ok and time_allowed:
+                # --- LÓGICA DE DECISÃO DE TRADE (RESTAURAÇÃO MACRO) ---
+                if risk.allow_autonomous and ai_total_score >= 75 and risk_ok and market_ok and time_allowed:
                     if ai_direction in ["BUY", "SELL"]:
                         side = "buy" if ai_direction == "BUY" else "sell"
                         
@@ -583,7 +583,15 @@ async def websocket_endpoint(websocket: WebSocket):
                             logging.warning(f"AUTÔNOMO BLOQUEADO: {macro_msg}")
                         else:
                             # EXECUÇÃO AUTORIZADA
-                            logging.info(f"AUTÔNOMO: Disparando {side.upper()} via Score {ai_total_score:.1f}")
+                            # [RESTAURAÇÃO MACRO] Log detalhado da composição do score
+                            brk = decision.get("breakdown", {})
+                            log_msg = (
+                                f"🚀 [SCORE MACRO: {ai_total_score:.1f}] Disparando {side.upper()} | "
+                                f"Sent: {brk.get('sentiment_contribution', 0)*100:+.1f} | "
+                                f"Blue: {synthetic_idx*100:+.2f}% | "
+                                f"OBI: {brk.get('obi_contribution', 0)*100:+.1f}"
+                            )
+                            logging.info(log_msg)
                             
                             is_sniper = False
                             if ai_total_score > 90:

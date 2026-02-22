@@ -1,5 +1,4 @@
 
-import sys
 
 def extract_text(pdf_path):
     text = ""

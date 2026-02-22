@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 import logging
 import MetaTrader5 as mt5
@@ -130,11 +129,39 @@ class MicrostructureAnalyzer:
         self.prev_book_levels = current_book
         return ofi_weighted_sum
 
+    def calculate_vap(self, ticks_df, symbol, bins=20):
+        """
+        [SOTA] Calcula o Volume at Price (VAP) para identificar áreas de alta liquidez.
+        Retorna os níveis de suporte/resistência baseados em volume acumulado.
+        """
+        if ticks_df is None or not hasattr(ticks_df, 'empty') or ticks_df.empty:
+            return None
+            
+        try:
+            # Agrupar volume por preço
+            vap = ticks_df.groupby('price')['volume'].sum().reset_index()
+            vap = vap.sort_values(by='volume', ascending=False)
+            
+            # Point of Control (Preço com maior volume)
+            poc = vap.iloc[0]['price']
+            
+            # Identificar áreas de valor (Top 3 níveis de volume)
+            value_areas = vap.head(3).to_dict(orient='records')
+            
+            return {
+                "poc": poc,
+                "value_areas": value_areas
+            }
+        except Exception as e:
+            logging.error(f"Erro ao calcular VAP: {e}")
+            return None
+
+    def calculate_cvd(self, ticks_df):
         """
         Calcula o Cumulative Volume Delta (CVD) a partir de um DataFrame de ticks.
         Retorna o valor final do CVD e a tendência (inclinação).
         """
-        if ticks_df is None or ticks_df.empty:
+        if ticks_df is None or not hasattr(ticks_df, 'empty') or ticks_df.empty:
             return 0.0
 
         # Identificar agressão
@@ -148,7 +175,14 @@ class MicrostructureAnalyzer:
         
         # Vetorização para performance
         flags = ticks_df['flags'].values
-        volumes = ticks_df['volume_real'].values # Ou 'volume' se for B3 sem volume real, mas B3 tem.
+        
+        # [FAILSAFE] B3/MT5 Ticks podem usar 'volume' ou 'volume_real'
+        if 'volume_real' in ticks_df.columns:
+            volumes = ticks_df['volume_real'].values
+        elif 'volume' in ticks_df.columns:
+            volumes = ticks_df['volume'].values
+        else:
+            return 0.0
 
         buy_aggressions = (flags & mt5.TICK_FLAG_BUY) == mt5.TICK_FLAG_BUY
         sell_aggressions = (flags & mt5.TICK_FLAG_SELL) == mt5.TICK_FLAG_SELL
@@ -156,11 +190,7 @@ class MicrostructureAnalyzer:
         buy_vol = np.where(buy_aggressions, volumes, 0).sum()
         sell_vol = np.where(sell_aggressions, volumes, 0).sum()
         
-        current_cvd = buy_vol - sell_vol
-        
-        # Simples oscilador de CVD: CVD vs Média móvel dele (não temos histórico aqui, então retornamos o raw)
-        # Para tendência, ideal seria ter série temporal.
-        # Aqui vamos retornar o NET FLOW (Saldo de Agressão) deste batch de ticks.
+        current_cvd = float(buy_vol - sell_vol)
         
         return current_cvd
 
@@ -229,7 +259,7 @@ class MicrostructureAnalyzer:
                 return -1.0
                 
             return 0.0
-        except Exception as e:
+        except Exception:
             # logging.error(f"Erro Divergencia: {e}") # Opcional
             return 0.0
 

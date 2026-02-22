@@ -4,7 +4,6 @@ import logging
 import asyncio
 import sys
 import os
-from datetime import datetime
 
 # Adiciona diretório raiz
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

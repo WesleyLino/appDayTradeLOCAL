@@ -4,8 +4,10 @@ import math
 import numpy as np
 
 class RiskManager:
-    def __init__(self, max_daily_loss=200.00):
+    def __init__(self, max_daily_loss=200.00, daily_trade_limit=3, max_daily_loss_pct=0.60):
         self.max_daily_loss = max_daily_loss
+        self.max_daily_loss_pct = max_daily_loss_pct
+        self.daily_trade_limit = daily_trade_limit # Mantido para compatibilidade, mas ignorado no modo agressivo
         self.max_deviation = 5 # Pontos de slippage permitidos (B3)
         self.allow_autonomous = True # [MODO ALPHA] Habilita execução automática sob alta confiança
         self.dry_run = True # [FAILSAFE] Evita envio real de ordens para a B3 se True
@@ -14,6 +16,15 @@ class RiskManager:
             (time(12, 0), time(13, 0)),  # Almoço/Baixa liquidez
             (time(16, 55), time(18, 0))  # Fechamento
         ]
+        
+        # [SOTA] Trailing Stop Parameters (Default WIN Champion)
+        self.trailing_trigger = 150.0 # Ativa com 150 pontos
+        self.trailing_lock = 50.0    # Trava 50 pontos iniciais
+        self.trailing_step = 20.0    # Move a cada 20 pontos de avanço
+        
+        # [URGENTE] Breakeven Parameters
+        self.be_trigger = 70.0       # Ativa com 70 pontos de lucro
+        self.be_lock = 0.0           # Move para o preço de entrada (0.0 de lucro garantido)
 
     def is_time_allowed(self):
         """Verifica se o horário atual é permitido para operar."""
@@ -138,6 +149,25 @@ class RiskManager:
             return False, f"Daily loss limit reached: {total_profit:.2f} <= -{self.max_daily_loss:.2f}"
         return True, "OK"
 
+    def check_aggressive_risk(self, daily_pnl, initial_balance=1000.0):
+        """
+        [AGRESSIVO] Verifica se o prejuízo do dia atingiu o limite percentual.
+        Ignora a contagem de trades enquanto houver capital e sinal.
+        """
+        limit = initial_balance * self.max_daily_loss_pct
+        if daily_pnl <= -limit:
+            return False, f"Limite de perda agressivo atingido: R$ {abs(daily_pnl):.2f} (>= {int(self.max_daily_loss_pct*100)}%)"
+        return True, "Risco OK"
+
+    def check_trade_limit(self, current_trade_count):
+        """
+        Verifica se o limite de trades diários foi atingido.
+        [AGRESSIVO] No modo 60%, este método pode ser ignorado pelo bot.
+        """
+        if current_trade_count >= self.daily_trade_limit:
+            return False, f"Daily trade limit reached: {current_trade_count} / {self.daily_trade_limit}"
+        return True, "OK"
+
     def validate_volatility(self, current_atr, avg_atr):
         """
         Implementa o Circuit Breaker baseado em volatilidade.
@@ -199,8 +229,8 @@ class RiskManager:
             sl_points = 5.0   # 5 pontos no Dólar (R$ 50,00)
             tp_points = 10.0  # 10 pontos no Dólar (R$ 100,00)
         elif "WIN" in symbol or "IND" in symbol:
-            sl_points = 150.0 # 150 pontos no Índice (R$ 30,00)
-            tp_points = 300.0 # 300 pontos no Índice (R$ 60,00)
+            sl_points = 130.0 # 130 pontos no Índice (RR 1:2 - Alpha V22 Pro)
+            tp_points = 400.0 # 400 pontos no Índice (SOTA Expansion)
         else:
             sl_points = 0.0
             tp_points = 0.0

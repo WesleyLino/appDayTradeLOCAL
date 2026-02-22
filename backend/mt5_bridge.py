@@ -6,10 +6,10 @@ import time
 
 # Configuração de Logs
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("backend/trading_bridge.log"),
+        logging.FileHandler("backend/trading_bridge.log", encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -20,7 +20,7 @@ class MT5Bridge:
         self.connected = False
         self._macro_symbol_cache = None # [HFT v2.1] Cache para evitar busca repetitiva
         
-        self.connect()
+        # self.connect() # Moved to explicit call
 
     def connect(self):
         """Estabelece conexão com o MetaTrader 5 local."""
@@ -35,14 +35,27 @@ class MT5Bridge:
             self.disconnect()
             return False
             
-        logging.info(f"Conectado com sucesso!")
+        logging.info("Conectado com sucesso!")
+        logging.info(f"Servidor: {account_info.server}")
         logging.info(f"Corretora: {account_info.company}")
         logging.info(f"Conta: {account_info.login}")
         logging.info(f"Saldo: R$ {account_info.balance:.2f}")
         
-        # No ambiente local do usuário, validamos se a corretora contém 'Genial'
-        if "Genial" not in account_info.company:
-            logging.warning(f"Atenção: A corretora detectada é '{account_info.company}', mas o plano foca na Genial.")
+        # Validação Estrita de Servidor (Genial)
+        allowed_servers = ["GenialInvestimentos-PRD", "GenialInvestimentos-DEMO"]
+        if account_info.server not in allowed_servers:
+            logging.warning(f"[AVISO CRITICO] Servidor conectado ({account_info.server}) nao e Genial PRD/DEMO. Verifique sua conexao.")
+        else:
+            logging.info(f"[OK] Servidor Genial Verificado: {account_info.server}")
+
+        # Validação de AlgoTrading
+        terminal_info = self.mt5.terminal_info()
+        if not terminal_info.trade_allowed:
+            logging.error("[ERRO CRITICO] AlgoTrading DESATIVADO. Ative o botao 'AlgoTrading' no MT5 para operar.")
+            self.disconnect()
+            return False
+        else:
+            logging.info("[OK] AlgoTrading: ATIVADO (Negociacao Permitida)")
 
         self.connected = True
         return True
@@ -85,7 +98,7 @@ class MT5Bridge:
             latency = (time.time() - start_time) * 1000
             
             if result is None:
-                logging.error(f"MT5 order_send retornou None inesperadamente.")
+                logging.error("MT5 order_send retornou None inesperadamente.")
                 break
 
             if result.retcode == mt5.TRADE_RETCODE_DONE:
@@ -185,17 +198,12 @@ class MT5Bridge:
         """
         if not self.connected: return "UNKNOWN"
         
-        # Verificar em Histórico de Deals (Executadas)
-        # history_deals_get retorna tupla
-        # Poderíamos usar orders_get para pendentes e history_orders_get para finalizadas
-        
         # 1. Checar se está PENDENTE (Active)
         orders = mt5.orders_get(ticket=ticket)
         if orders and len(orders) > 0:
             return "PENDING"
             
         # 2. Checar se foi FINALIZADA (History)
-        # Precisamos de um range de tempo. Assumindo últimas 24h.
         from_date = datetime.now() - timedelta(days=1)
         hist_orders = mt5.history_orders_get(from_date, datetime.now(), ticket=ticket)
         
@@ -211,6 +219,86 @@ class MT5Bridge:
                 return f"STATE_{state}"
                 
         return "UNKNOWN"
+
+    def close_position(self, ticket):
+        """Fecha uma posição aberta pelo ticket (B3 Netting)."""
+        if not self.connected: return False
+        
+        positions = mt5.positions_get(ticket=ticket)
+        if not positions:
+            logging.warning(f"Posição {ticket} não encontrada para fechamento.")
+            return False
+            
+        pos = positions[0]
+        symbol = pos.symbol
+        lots = pos.volume
+        order_type = mt5.ORDER_TYPE_SELL if pos.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
+        
+        tick = mt5.symbol_info_tick(symbol)
+        if not tick: return False
+        price = tick.bid if order_type == mt5.ORDER_TYPE_SELL else tick.ask
+        
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": float(lots),
+            "type": order_type,
+            "position": int(ticket),
+            "price": float(price),
+            "deviation": 20,
+            "magic": 123456,
+            "comment": "CLOSE AUTO",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC if "WIN" in symbol or "WDO" in symbol else mt5.ORDER_FILLING_RETURN,
+        }
+        
+        result = mt5.order_send(request)
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            logging.error(f"Erro ao fechar posição {ticket}: {result.comment}")
+            return False
+            
+        logging.info(f"POSIÇÃO FECHADA: {ticket} {symbol} {lots} lotes")
+        return True
+
+    def update_sltp(self, ticket, sl, tp):
+        """Atualiza o Stop Loss e Take Profit de uma posição."""
+        if not self.connected: return False
+        
+        positions = mt5.positions_get(ticket=ticket)
+        if not positions: return False
+        pos = positions[0]
+        
+        symbol_info = mt5.symbol_info(pos.symbol)
+        if symbol_info:
+            tick_size = symbol_info.trade_tick_size
+            if tick_size > 0:
+                sl = round(sl / tick_size) * tick_size
+                tp = round(tp / tick_size) * tick_size
+
+        request = {
+            "action": mt5.TRADE_ACTION_SLTP,
+            "symbol": pos.symbol,
+            "position": int(ticket),
+            "sl": float(sl),
+            "tp": float(tp),
+        }
+        
+        result = mt5.order_send(request)
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            logging.error(f"Erro ao atualizar SL/TP {ticket}: {result.comment}")
+            return False
+            
+        return True
+
+    def close_all_positions(self, symbol=None):
+        """Fecha todas as posições abertas. Se symbol for fornecido, apenas desse símbolo."""
+        if not self.connected: return False
+        
+        positions = mt5.positions_get(symbol=symbol) if symbol else mt5.positions_get()
+        if positions:
+            for pos in positions:
+                self.close_position(pos.ticket)
+        return True
 
     def get_current_symbol(self, base="WIN"):
         """
@@ -302,6 +390,90 @@ class MT5Bridge:
         except Exception as e:
             logging.error(f"Erro ao calcular simbolo WIN: {e}")
             return f"{base}$" # Fallback genérico
+
+    def get_market_data(self, symbol, timeframe=mt5.TIMEFRAME_M1, n_candles=100):
+        """Coleta candles históricos e retorna como DataFrame."""
+        if not self.connected: return pd.DataFrame()
+        
+        rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, n_candles)
+        if rates is None or len(rates) == 0:
+            logging.error(f"Erro ao obter rates para {symbol}: {mt5.last_error()}")
+            return pd.DataFrame()
+            
+        df = pd.DataFrame(rates)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+        # Localização para Brasília (GMT-3)
+        df['time'] = df['time'] - timedelta(hours=3)
+        return df
+
+    def get_synchronized_multi_asset_data(self, symbols, n_candles=60):
+        """
+        Coleta e sincroniza dados de múltiplos ativos para inferência multi-variável.
+        Retorna um DataFrame com as colunas sincronizadas pelo timestamp.
+        """
+        if not self.connected: return None
+        
+        dfs = {}
+        for sym in symbols:
+            df = self.get_market_data(sym, n_candles=n_candles + 10) # Pegar um pouco a mais para garantir o merge
+            if not df.empty:
+                df = df.drop_duplicates(subset='time').set_index('time')
+                # Normalização de Nomes para o Modelo SOTA (Mantém consistência WIN$ e WDO$)
+                clean_name = sym
+                if "WIN" in sym.upper(): clean_name = "WIN$"
+                elif "WDO" in sym.upper(): clean_name = "WDO$"
+                
+                dfs[clean_name] = df[['close']].rename(columns={'close': f'close_{clean_name}'})
+        
+        if not dfs: return pd.DataFrame()
+        
+        # Merge sincronizado (Inner Join)
+        master_df = pd.concat(dfs.values(), axis=1, join='inner')
+        master_df = master_df.sort_index().tail(n_candles)
+        
+        # Normalização Z-Score Local (para o pacote de inferência)
+        master_df = (master_df - master_df.mean()) / (master_df.std() + 1e-8)
+        
+        return master_df
+
+    def get_time_and_sales(self, symbol, n_ticks=100):
+        """Coleta os últimos negócios realizados (Time & Sales) como DataFrame."""
+        if not self.connected: return pd.DataFrame()
+        
+        ticks = mt5.copy_ticks_from(symbol, datetime.utcnow(), n_ticks, mt5.COPY_TICKS_ALL)
+        if ticks is None or len(ticks) == 0: return pd.DataFrame()
+        
+        df = pd.DataFrame(ticks)
+        # Sincronização Brasília (GMT-3)
+        df['time_dt'] = pd.to_datetime(df['time'], unit='s') - timedelta(hours=3)
+        df['time_str'] = df['time_dt'].dt.strftime('%H:%M:%S')
+        return df
+
+    def get_order_book(self, symbol):
+        """Retorna o book de ofertas atualizado (Snapshot L2)."""
+        if not self.connected: return {"bids": [], "asks": []}
+        
+        # Inscreve para receber atualizações do book se necessário
+        mt5.market_book_add(symbol)
+        book = mt5.market_book_get(symbol)
+        if book is None:
+            return {"bids": [], "asks": []}
+            
+        bids = []
+        asks = []
+        
+        for item in book:
+            order_data = {"price": item.price, "volume": item.volume}
+            if item.type == mt5.BOOK_TYPE_SELL:
+                asks.append(order_data)
+            elif item.type == mt5.BOOK_TYPE_BUY:
+                bids.append(order_data)
+        
+        # Ordenar: Bids Decrescente (melhor preço primeiro), Asks Crescente
+        return {
+            "bids": sorted(bids, key=lambda x: x['price'], reverse=True),
+            "asks": sorted(asks, key=lambda x: x['price'])
+        }
     
     def get_daily_volume(self, symbol):
         """Helper para pegar volume do dia."""
@@ -317,9 +489,9 @@ class MT5Bridge:
         """Calcula o lucro realizado no dia (00:00 até agora)."""
         if not self.connected: return 0.0
         try:
-            now = datetime.now()
+            now = datetime.utcnow()
             start_of_day = datetime(now.year, now.month, now.day)
-            deals = mt5.history_deals_get(start_of_day, now)
+            deals = mt5.history_deals_get(start_of_day, now + timedelta(hours=1)) # Margem de segurança
             
             if deals is None or len(deals) == 0:
                 return 0.0
@@ -335,6 +507,66 @@ class MT5Bridge:
             logging.error(f"Erro ao calcular lucro diário: {e}")
             return 0.0
 
+    def get_trading_performance(self):
+        """
+        Calcula as estatísticas de performance diária acessando o histórico de deals do MT5.
+        Retorna: Win Rate (%), Profit Factor, Trades Totais, Gross Profit, Gross Loss, Net Profit.
+        """
+        default_stats = {
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "profit_factor": 0.0,
+            "gross_profit": 0.0,
+            "gross_loss": 0.0,
+            "net_profit": 0.0
+        }
+        if not self.connected: return default_stats
+        
+        try:
+            now = datetime.utcnow()
+            start_of_day = datetime(now.year, now.month, now.day)
+            deals = mt5.history_deals_get(start_of_day, now + timedelta(hours=1))
+            
+            if deals is None or len(deals) == 0:
+                return default_stats
+                
+            total_trades = 0
+            winning_trades = 0
+            gross_profit = 0.0
+            gross_loss = 0.0
+            net_profit = 0.0
+            
+            for deal in deals:
+                if deal.type in [mt5.DEAL_TYPE_BUY, mt5.DEAL_TYPE_SELL]:
+                    # MT5 deals de SAÍDA (fechamento de posição) representam um trade finalizado.
+                    # Vamos considerar DEAL_ENTRY_OUT ou INOUT. 
+                    if deal.entry in [mt5.DEAL_ENTRY_OUT, mt5.DEAL_ENTRY_INOUT]:
+                        deal_profit = deal.profit + deal.swap + deal.commission
+                        total_trades += 1
+                        net_profit += deal_profit
+                        
+                        if deal_profit > 0:
+                            winning_trades += 1
+                            gross_profit += deal_profit
+                        elif deal_profit < 0:
+                            gross_loss += abs(deal_profit)
+                            
+            win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0.0
+            # Se não houver gross loss mas houver gross profit, define profit_factor como o gross_profit
+            profit_factor = (gross_profit / gross_loss) if gross_loss > 0 else (gross_profit if gross_profit > 0 else 0.0)
+            
+            return {
+                "total_trades": total_trades,
+                "win_rate": round(win_rate, 2),
+                "profit_factor": round(profit_factor, 2),
+                "gross_profit": round(gross_profit, 2),
+                "gross_loss": round(gross_loss, 2),
+                "net_profit": round(net_profit, 2)
+            }
+        except Exception as e:
+            logging.error(f"Erro ao calcular performance historica: {e}")
+            return default_stats
+
     def get_settlement_price(self, symbol):
         """Retorna o preço de ajuste (Settlement) do dia anterior."""
         if not self.connected: return 0.0
@@ -342,11 +574,11 @@ class MT5Bridge:
         info = mt5.symbol_info(symbol)
         if not info: return 0.0
         
-        # Tenta pegar do session_price_ref (geralmente é o ajuste na B3)
-        # Se for zero, tenta pegar o prev_close
-        settlement = info.session_price_ref
+        # Tenta pegar do session_price_ref (geralmente é o ajuste na B3) usando getattr para segurança
+        # Se o atributo não existir ou for zero, tenta pegar o prev_close
+        settlement = getattr(info, 'session_price_ref', 0.0)
         if settlement <= 0:
-             settlement = info.prev_close
+             settlement = getattr(info, 'prev_close', 0.0)
              
         return settlement
 
@@ -449,139 +681,16 @@ class MT5Bridge:
         # mt5.copy_ticks_from(symbol, datetime.now(), n, mt5.COPY_TICKS_ALL) pega DO PASSADO a partir da data.
         # Então datetime.now() pega os últimos N.
         
-        ticks = mt5.copy_ticks_from(symbol, datetime.now(), n, mt5.COPY_TICKS_ALL)
+        ticks = mt5.copy_ticks_from(symbol, datetime.utcnow(), n, mt5.COPY_TICKS_ALL)
         if ticks is None:
             logging.error(f"Erro ao obter ticks para {symbol}: {mt5.last_error()}")
-            return None
+            return pd.DataFrame()
             
         df = pd.DataFrame(ticks)
-        df['time'] = pd.to_datetime(df['time'], unit='s')
+        df['time'] = pd.to_datetime(df['time'], unit='s') - timedelta(hours=3)
         return df
 
-    def get_order_book(self, symbol):
-        """Retorna o estado atual do Book de Ofertas (Separado em Bids/Asks)."""
-        # Inscreve para receber atualizações do book se necessário
-        mt5.market_book_add(symbol)
-        book = mt5.market_book_get(symbol)
-        if book is None:
-            return {"bids": [], "asks": []}
-            
-        bids = []
-        asks = []
-        for b in book:
-            item = {"price": b.price, "volume": b.volume}
-            if b.type == mt5.BOOK_TYPE_SELL:
-                asks.append(item)
-            else: # BOOK_TYPE_BUY or others
-                bids.append(item)
-                
-        # Ordenação padrão:
-        # Bids: Maior preço primeiro (Topo do book)
-        bids.sort(key=lambda x: x['price'], reverse=True)
-    def update_sltp(self, ticket, sl, tp):
-        """Modifica SL/TP de uma posição existente."""
-        if not self.connected: return False
-
-        request = {
-            "action": mt5.TRADE_ACTION_SLTP,
-            "position": ticket,
-            "sl": float(sl),
-            "tp": float(tp),
-        }
-        
-        result = mt5.order_send(request)
-        if result.retcode != mt5.TRADE_RETCODE_DONE:
-            logging.error(f"Falha ao atualizar SL/TP (Ticket {ticket}): {result.comment}")
-            return False
-            
-        return True
-
-    def close_position(self, ticket):
-        """
-        Encerra uma posição aberta (B3 Netting).
-        Informa o ticket e envia ordem oposta para zeragem.
-        """
-        if not self.connected: return False
-
-        positions = mt5.positions_get(ticket=ticket)
-        if not positions:
-            logging.warning(f"Fechar Posição: Ticket {ticket} não encontrado.")
-            return False
-        
-        pos = positions[0]
-        symbol = pos.symbol
-        volume = pos.volume
-        order_type = mt5.ORDER_TYPE_SELL if pos.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
-        price = mt5.symbol_info_tick(symbol).ask if order_type == mt5.ORDER_TYPE_BUY else mt5.symbol_info_tick(symbol).bid
-
-        request = {
-            "action": mt5.TRADE_ACTION_DEAL,
-            "symbol": symbol,
-            "volume": float(volume),
-            "type": order_type,
-            "position": ticket,
-            "price": price,
-            "deviation": 5,
-            "magic": 123456,
-            "comment": "ZEZERAGEM SOTA (EXIT)",
-            "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_RETURN,
-        }
-
-        result = mt5.order_send(request)
-        if result.retcode != mt5.TRADE_RETCODE_DONE:
-            logging.error(f"Falha ao fechar posição {ticket}: {result.comment}")
-            return False
-            
-        logging.info(f"POSIÇÃO ENCERRADA: Ticket {ticket} ({symbol})")
-        return True
-
-    def validate_order_compliance(self, symbol, price):
-        """
-        Valida se o preço da ordem está dentro dos limites de oscilação permitidos pela B3.
-        Retorna (bool, str): (Aprovado, Motivo)
-        """
-        if not self.connected:
-             return False, "MT5 não conectado."
-             
-        info = mt5.symbol_info(symbol)
-        if info is None:
-            return False, f"Símbolo {symbol} não encontrado."
-            
-        # Limites informados pela corretora/bolsa
-        lower_limit = info.session_price_limit_min
-        upper_limit = info.session_price_limit_max
-        
-        # Fallback se os limites não estiverem preenchidos (comum em contas demo ou fora de hora)
-        if lower_limit == 0 or upper_limit == 0:
-            logging.warning(f"Limites de sessão zerados para {symbol}. Calculando manual base regras.")
-            ref_price = info.session_price_ref if info.session_price_ref > 0 else info.last
-            
-            if ref_price > 0:
-                if "WIN" in symbol or "IND" in symbol:
-                    limit_pct = 0.10 # 10%
-                elif "WDO" in symbol or "DOL" in symbol:
-                    limit_pct = 0.06 # 6%
-                else:
-                    limit_pct = 0.05 # Default 5% para ações
-                
-                lower_limit = ref_price * (1 - limit_pct)
-                upper_limit = ref_price * (1 + limit_pct)
-            else:
-                 return True, "AVISO: Sem referência de preço para validação. Ordem permitida com risco."
-
-        # Se preço for 0 (Market Order), assumimos que será executado no preço atual, 
-        # que teoricamente já está dentro do túnel, mas idealmente deveríamos checar o last.
-        if price == 0:
-            price = info.last
-
-        if price < lower_limit:
-            return False, f"REJEITADO: Preço {price} abaixo do limite inferior do túnel ({lower_limit:.2f})."
-        
-        if price > upper_limit:
-            return False, f"REJEITADO: Preço {price} acima do limite superior do túnel ({upper_limit:.2f})."
-            
-        return True, f"OK: Dentro dos limites ({lower_limit:.2f} - {upper_limit:.2f})"
+    # get_order_book unificado no topo
 
 if __name__ == "__main__":
     # Teste de conexão básico

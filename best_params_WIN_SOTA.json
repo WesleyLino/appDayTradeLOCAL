@@ -1,0 +1,13 @@
+{
+    "params": {
+        "bb_dev": 2.2,
+        "confidence_threshold": 0.4,
+        "rsi_period": 14,
+        "sl_dist": 150.0,
+        "tp_dist": 400.0,
+        "vol_spike_mult": 1.5
+    },
+    "avg_profit_factor": 1.423650518200401,
+    "total_net_profit": 58.23446402587078,
+    "max_drawdown": 0.05726226262581075
+}

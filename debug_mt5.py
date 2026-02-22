@@ -1,5 +1,4 @@
 import MetaTrader5 as mt5
-import os
 from dotenv import load_dotenv
 
 load_dotenv()

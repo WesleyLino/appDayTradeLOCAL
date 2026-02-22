@@ -1,5 +1,5 @@
 import torch
-import torch.onnx
+import numpy as np
 import onnx
 import onnxruntime as ort
 import os
@@ -28,16 +28,32 @@ def export_to_onnx(model_path="backend/patchtst_weights.pth", onnx_path="backend
         target_window=5, # Deve bater com train_model.py
         d_model=128, 
         n_heads=4, 
-        n_layers=2
+        n_layers=3
     )
 
     # 2. Carregar pesos (se existirem)
     if os.path.exists(model_path):
         try:
-            model.load_state_dict(torch.load(model_path))
-            logger.info("Pesos carregados com sucesso.")
+            state_dict = torch.load(model_path)
+            
+            # [MIGRAÇÃO] Mapear patch_embedding para patch_conv se necessário
+            if "patch_embedding.weight" in state_dict and hasattr(model, 'patch_conv'):
+                print("🔄 Migrando pesos: patch_embedding -> patch_conv")
+                w = state_dict.pop("patch_embedding.weight") # [128, 8]
+                b = state_dict.pop("patch_embedding.bias")   # [128]
+                
+                # Expandir para os grupos do Conv1d [c_in*d_model, 1, patch_len]
+                # Repetimos o mesmo embedding para todos os 5 canais (conforme arquitetura SOTA)
+                new_w = w.repeat(c_in, 1).unsqueeze(1) # [5*128, 1, 8]
+                new_b = b.repeat(c_in)                 # [5*128]
+                
+                state_dict["patch_conv.weight"] = new_w
+                state_dict["patch_conv.bias"] = new_b
+                
+            model.load_state_dict(state_dict)
+            logger.info("Pesos carregados e migrados com sucesso.")
         except Exception as e:
-            logger.error(f"Erro ao carregar pesos: {e}")
+            logger.error(f"Erro ao carregar/migrar pesos: {e}")
             return False
     else:
         logger.warning(f"Pesos não encontrados em {model_path}. Exportando modelo não treinado (apenas estrutura).")
@@ -49,7 +65,8 @@ def export_to_onnx(model_path="backend/patchtst_weights.pth", onnx_path="backend
 
     # 4. Exportar para ONNX
     try:
-        torch.onnx.export(
+        import torch.onnx as t_onnx
+        t_onnx.export(
             model,
             dummy_input,
             onnx_path,
@@ -58,10 +75,9 @@ def export_to_onnx(model_path="backend/patchtst_weights.pth", onnx_path="backend
             do_constant_folding=True,
             input_names=['input'],
             output_names=['output'],
-            dynamic_axes={
-                'input': {0: 'batch_size'}, # Batch size variável
-                'output': {0: 'batch_size'}
-            }
+            # [AI PERSISTENCE GUARD] ALWAYS use dynamic_axes=None for DirectML.
+            # Dynamic shapes trigger MatMul dimension mismatches in the DML execution provider.
+            dynamic_axes=None 
         )
         logger.info(f"Modelo exportado com sucesso para: {onnx_path}")
     except Exception as e:
@@ -75,11 +91,12 @@ def export_to_onnx(model_path="backend/patchtst_weights.pth", onnx_path="backend
         logger.info("Validação ONNX: OK (Estrutura válida)")
         
         # Conversão FP16
-        from onnxconverter_common import float16
         logger.info("Convertendo modelo para FP16 (AMD Zero-Lag)...")
-        fp16_model = float16.convert_float_to_float16(onnx_model)
-        onnx.save(fp16_model, onnx_path)
-        logger.info(f"Modelo FP16 salvo em: {onnx_path}")
+        # [AMD STABILITY] Desativado FP16 temporariamente para evitar bugs de Cast no RevIN/DirectML
+        # fp16_model = float16.convert_float_to_float16(onnx_model)
+        # onnx.save(fp16_model, onnx_path)
+        onnx.save(onnx_model, onnx_path)
+        logger.info(f"Modelo ONNX (Standard FP32) salvo em: {onnx_path}")
         
         # Teste de Inferência Simples (Sanity Check)
         # Nota: FP16 pode não rodar em CPUExecutionProvider dependendo da CPU, mas DmlExecutionProvider suporta.
@@ -102,4 +119,9 @@ def export_to_onnx(model_path="backend/patchtst_weights.pth", onnx_path="backend
         return False
 
 if __name__ == "__main__":
-    export_to_onnx()
+    export_to_onnx(
+        model_path="backend/patchtst_weights_sota.pth", 
+        onnx_path="backend/patchtst_weights_sota_optimized.onnx", 
+        c_in=5, 
+        context_window=60
+    )

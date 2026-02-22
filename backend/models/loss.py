@@ -28,17 +28,19 @@ class PointQuantileLoss(nn.Module):
             
         losses = []
         for i, q in enumerate(self.quantiles):
-            errors = target - preds[:, :, i].unsqueeze(-1)
+            # Forçamos p a ter o mesmo shape de target [Batch, Window, 1]
+            p = preds[:, :, i].view_as(target)
+            errors = target - p
             loss = torch.max((q - 1) * errors, q * errors)
             losses.append(loss.mean())
             
         quantile_loss = torch.stack(losses).mean()
         
-        # Se o quantil mediano (0.5) estiver presente, usamos como "previsão pontual"
-        # e reforçamos com MSE para estabilidade
         mse = 0
         if 0.5 in self.quantiles:
             idx_median = self.quantiles.index(0.5)
-            mse = self.mse_loss(preds[:, :, idx_median].unsqueeze(-1), target)
+            # Garantir shape idêntico para MSE via view_as
+            p_median = preds[:, :, idx_median].view_as(target)
+            mse = self.mse_loss(p_median, target)
             
         return (1 - self.weight_mse) * quantile_loss + self.weight_mse * mse
