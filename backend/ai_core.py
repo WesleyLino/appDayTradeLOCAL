@@ -1,54 +1,35 @@
+from backend.microstructure_analyzer import MicrostructureAnalyzer # HFT v2.0
+from backend.meta_learner import MetaLearner # HFT v2.0 Meta-Learner
+from sklearn.cluster import KMeans # Keep KMeans for regime_model
+from dotenv import load_dotenv
+import torch # Import necessário para InferenceEngine
+import time
+
 import google.generativeai as genai
 import os
 import logging
 import numpy as np
 import asyncio
 import json
-from backend.microstructure_analyzer import MicrostructureAnalyzer # HFT v2.0
-from backend.news_collector import NewsCollector # Plano Diretor 2.0
-from backend.meta_learner import MetaLearner # HFT v2.0 Meta-Learner
-from sklearn.cluster import KMeans # Keep KMeans for regime_model
-from dotenv import load_dotenv
-import torch # Import necessário para InferenceEngine
 
 load_dotenv()
 
-# Configuração da API Google Gemini
-api_key = os.getenv("GOOGLE_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
-else:
-    logging.warning("GOOGLE_API_KEY não encontrada no .env. AI de Sentimento desabilitada.")
+# AICore agora consome dados do NewsSentimentWorker via data/news_sentiment.json
 
 class AICore:
     def __init__(self):
-        # [FASE 1] Gemini 2.5 Flash com Zero-Hallucination Config
-        if api_key:
-            generation_config = {
-                "temperature": 0.0,        # Zero criatividade (determinístico)
-                "top_p": 0.1,             # Apenas respostas mais prováveis
-                "response_mime_type": "application/json"  # Força saída JSON
-            }
-            self.model = genai.GenerativeModel(
-                'gemini-2.5-flash',
-                generation_config=generation_config
-            )
-        else:
-            self.model = None
         self.latest_sentiment_score = 0.0
         self.obi_ema = 0.5 # Valor inicial neutro
-        self.ema_alpha = 0.2 # Fator de suavização (aproximadamente 1s em loops de 100ms)
-        self.regime_model = KMeans(n_clusters=3, n_init=10) # 0: Baixa Vol, 1: Tendência, 2: Ruído
+        self.ema_alpha = 0.2 # Fator de suavização
+        self.regime_model = KMeans(n_clusters=3, n_init=10)
         self.regime_history = []
         self.regime_counter = 0
         self.prev_book = None
         self.toxic_flow_score = 0.0
         self.last_news_update = 0
         self.micro_analyzer = MicrostructureAnalyzer()
-        self.meta_learner = MetaLearner() # Inicializa Meta-Learner
-        self.news_collector = NewsCollector() # Plano Diretor 2.0
+        self.meta_learner = MetaLearner() 
         self.inference_engine = None # Injetado pelo main.py
-        self.sentiment_lock = asyncio.Lock() # Lock para evitar chamadas paralelas ao Gemini
 
     def fetch_latest_news(self):
         """
@@ -68,119 +49,49 @@ class AICore:
         # Fallback se arquivo vazio ou inexistente
         return "Mercado aguardando novos dados. Sem notícias relevantes no momento."
 
-    async def evaluate_opportunity(self, market_data):
-        """
-        Avalia oportunidade de trade com validação SOTA (Conformal Prediction).
-        """
-        # ... (Análise existente: Sentiment, Microestrutura, Meta-Learner) ...
-        
-        # 1. Análise Atual (Legacy + Microstructure)
-        # Assuming current_book is available, e.g., from market_data or a separate parameter
-        # For this snippet, we'll assume current_book is passed or derived.
-        # Placeholder for current_book, as it's not provided in the snippet's context
-        current_book = {} # This needs to be properly sourced from market_data or another input
-        micro_signal = self.micro_analyzer.analyze(self.prev_book, current_book)
-        sentiment_score = self.latest_sentiment_score
-        
-        # 2. Previsão SOTA com Incerteza (Multi-Ativo)
-        if not self.inference_engine:
-            return None
-            
-        forecast_result = await self.inference_engine.predict(market_data)
-        if isinstance(forecast_result, float): # Fallback neutro
-            return None
-
-        # 3. Veto por Incerteza (Conformal Prediction / Quantile Space)
-        # Se os dados estiverem normalizados, usamos os bounds normais
-        uncertainty = forecast_result.get('uncertainty_norm', 1.0)
-        forecast_move = abs(forecast_result.get('forecast_norm', 0.0))
-        
-        if forecast_move < (uncertainty * 0.3): # Limite de ruído mais agressivo
-            logging.info(f"⛔ Trade Vetado pelo SOTA: Movimento projetado ({forecast_move:.2f}) menor que incerteza ({uncertainty:.2f}).")
-            return None 
-            
-        return {
-            "signal": "BUY" if forecast_result['forecast_norm'] > 0 else "SELL",
-            "confidence": forecast_result['confidence'],
-            "reason": f"SOTA Forecast Norm: {forecast_result['forecast_norm']:.2f} (Uncertainty: {uncertainty:.2f})"
-        }
+    # [Fase 27] Lógica evaluate_opportunity removida. 
+    # O Bot agora decide usando calculate_decision diretamente para maior controle de parâmetros.
 
     async def update_sentiment(self):
         """
-        Consulta o Gemini para obter o score de sentimento (-1 a 1) com reliability scoring.
-        Versão Full-Stack Quant: Persona Engenheiro de Risco + Cache 60s + Lock.
+        Lê o score de sentimento do arquivo gerado pelo NewsSentimentWorker.
+        Remove latência e custo de chamadas repetitivas à API no loop principal.
         """
-        if not self.model:
-            return 0.0
-            
-        now = asyncio.get_event_loop().time()
-        # [MODO SNIPER] Atualizar a cada 60 segundos para evitar estouro de cota (429)
-        if now - self.last_news_update < 60:
+        sentiment_file = os.path.join("data", "news_sentiment.json")
+        if not os.path.exists(sentiment_file):
+            # Fallback legacy: news_feed.txt
+            legacy_news = self.fetch_latest_news()
+            if "Sem notícias relevantes" not in legacy_news:
+                logging.debug("⚠️ Usando news_feed.txt como fallback (Worker Inativo)")
             return self.latest_sentiment_score
 
-        async with self.sentiment_lock:
-            # Re-check após adquirir o lock (Double-Check Pattern)
-            if now - self.last_news_update < 60:
+        try:
+            if os.path.getsize(sentiment_file) == 0:
+                logging.warning("⚠️ news_sentiment.json vazio.")
                 return self.latest_sentiment_score
 
-            # [PLANO DIRETOR 2.0] Usar NewsCollector ao invés de news_feed.txt
-            news_headlines = await asyncio.to_thread(self.news_collector.get_latest_headlines)
+            with open(sentiment_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                
+            score = float(data.get("score", 0.0))
+            timestamp = data.get("timestamp", 0)
+            reliability = data.get("reliability", "low")
             
-            # Se nenhuma notícia fresca/relevante, retornar neutro
-            if not news_headlines:
-                logging.debug("📰 Sem notícias frescas/relevantes. Mantendo NEUTRO.")
+            # Verificação de Staleness (Dado caduco se > 15 minutos)
+            if time.time() - timestamp > 900:
+                logging.warning("⚠️ Sentiment Feed Estagnado (>15min). Neutralizando score.")
                 self.latest_sentiment_score = 0.0
-                self.last_news_update = now
-                return 0.0
-            
-            # [FASE 3] Prompt 'Engenheiro de Risco'
-            prompt = f"""
-ATUE COMO UM ENGENHEIRO DE RISCO SÊNIOR PARA UMA MESA DE HFT.
-
-OBJETIVO: Detectar ASSIMETRIAS DE RISCO baseadas em FATOS.
-Sua missão NÃO é prever o futuro, mas sim classificar o RISCO IMEDIATO.
-
-FONTE DE DADOS:
-{news_headlines}
-
-PROTOCOLO DE ANÁLISE (RIGOR MILITAR):
-1. SEPARAÇÃO FATO vs RUÍDO: Ignore opiniões de analistas. Foque em DADOS (Payroll, IPCA, Selic, Fusões).
-2. CLASSIFICAÇÃO DE RISCO:
-   - "EXTREME": Evento sistêmico (ex: Guerra, Quebra de Banco, Circuit Breaker).
-   - "HIGH": Dado macro muito acima/abaixo do esperado, mudança de juros não precificada.
-   - "MEDIUM": Notícia corporativa relevante (Blue Chips), falas de Banco Central.
-   - "LOW": Ruído normal de mercado.
-3. SENTIMENTO MATEMÁTICO:
-   - -1.0 (Pânico/Venda) a +1.0 (Euforia/Compra).
-
-SAÍDA OBRIGATÓRIA (JSON):
-{{ "score": 0.0, "reliability": "high/medium/low", "risk_classification": "EXTREME/HIGH/MEDIUM/LOW", "fact_check": "resumo do fato" }}
-"""
-            
-            try:
-                response = await asyncio.to_thread(self.model.generate_content, prompt)
-                
-                # Parsing JSON
-                data = json.loads(response.text)
-                score = float(data.get("score", 0.0))
-                reliability = data.get("reliability", "low")
-                risk_class = data.get("risk_classification", "LOW")
-                fact_check = data.get("fact_check", "N/A")
-                
-                # Feedback de Robustez
-                if reliability == "low":
-                    score *= 0.5 # Reduz impacto de análise duvidosa
-                
+            else:
+                if reliability == "low": score *= 0.5
                 self.latest_sentiment_score = max(-1.0, min(1.0, score))
-                self.last_news_update = now
-                logging.info(f"🤖 Monitor de Risco: Score={self.latest_sentiment_score:.2f} ({reliability.upper()}) | Risco: {risk_class}")
-                return self.latest_sentiment_score
-            except Exception as e:
-                if "429" in str(e):
-                    logging.warning("⚠️ Cota da API Gemini excedida (429). Usando último score conhecido.")
-                    return self.latest_sentiment_score
-                logging.error(f"❌ Erro na IA (Falha de Grounding): {e}")
-                return self.latest_sentiment_score
+                
+            return self.latest_sentiment_score
+        except (json.JSONDecodeError, ValueError) as je:
+            logging.error(f"❌ Corrupção de dados no JSON de sentimento: {je}")
+            return self.latest_sentiment_score
+        except Exception as e:
+            logging.error(f"Erro ao ler news_sentiment.json: {e}")
+            return self.latest_sentiment_score
 
     def detect_spoofing(self, order_book, time_sales):
         """
@@ -383,8 +294,8 @@ SAÍDA OBRIGATÓRIA (JSON):
         ai_score_raw = max(0.0, min(100.0, ai_score_raw))
 
         # --- HFT v2.0: Meta-Learner (XGBoost) para refinar a decisão ---
-        # Features esperadas: [ATR, OBI, Sentiment, Volatility, Hour, AI_Score_Raw]
-        meta_features = [atr, obi, sentiment, volatility, hour, ai_score_raw]
+        # Features esperadas: [ATR, OBI, Sentiment, Volatility, Hour, AI_Score (0-1)]
+        meta_features = [atr, obi, sentiment, volatility, hour, ai_score_raw / 100.0]
         
         # [HFT v2.1] Sanitize inputs: substituir NaN ou Inf por 0.0 para evitar crash no XGBoost
         meta_features = [x if np.isfinite(x) else 0.0 for x in meta_features]
@@ -407,16 +318,24 @@ SAÍDA OBRIGATÓRIA (JSON):
         # Isso garante que o sentimento IA (notícias/bluechips) não seja silenciado pelo modelo estatístico.
         final_score = (ai_score_raw * 0.4) + (meta_score * 0.6)
         
-        # 5. Direção — threshold padrão 85, rebaixado se convicção VERY_HIGH
-        # [FASE 2] quantile_confidence permite entrada com score >= 80 em sinais de alta convicção
-        buy_threshold  = 85.0 if quantile_confidence == "NORMAL" else 80.0
-        sell_threshold = 15.0 if quantile_confidence == "NORMAL" else 20.0
+        # [FASE 24] VETO ADICIONAL: Se o Meta-Learner diz que a chance de WIN é < 45%, anulamos.
+        veto_reason = None
+        if meta_proba < 0.45:
+            direction = "NEUTRAL"
+            veto_reason = "META-FILTER"
+            logging.info(f"🛡️ META-FILTER VETO: Probabilidade {meta_proba:.2%} abaixo do limiar de 45%. Sinal ignorado.")
+        else:
+            # 5. Direção — threshold padrão 85, rebaixado se convicção VERY_HIGH
+            # [FASE 2] quantile_confidence permite entrada com score >= 80 em sinais de alta convicção
+            buy_threshold  = 85.0 if quantile_confidence == "NORMAL" else 80.0
+            sell_threshold = 15.0 if quantile_confidence == "NORMAL" else 20.0
 
-        direction = "NEUTRAL"
-        if final_score >= buy_threshold:
-            direction = "BUY"
-        elif final_score <= sell_threshold:
-            direction = "SELL"
+            if final_score >= buy_threshold:
+                direction = "BUY"
+            elif final_score <= sell_threshold:
+                direction = "SELL"
+            else:
+                direction = "NEUTRAL"
 
         return {
             "score": final_score,
@@ -433,6 +352,7 @@ SAÍDA OBRIGATÓRIA (JSON):
                 "q10": q10,
                 "q50": q50,
                 "q90": q90,
+                "veto": veto_reason
             }
         }
         
@@ -495,14 +415,14 @@ class InferenceEngine:
     Prioriza DirectML para GPUs AMD (RX 6650 XT) visando latência < 30ms.
     """
     def __init__(self, model_path=None):
-        self.model_path = model_path # Caminho do .pth (Legacy/Training)
-        self.onnx_path = model_path.replace(".pth", "_optimized.onnx") if model_path else None
-        self.use_onnx = False
+        self.model_path = model_path or "backend/models/sota_model_win.pth"
+        self.onnx_path = self.model_path.replace(".pth", ".onnx")
         self.ort_session = None
-        self.model = None # PyTorch fallback
-        
-        if model_path:
-            self.load_model()
+        self.use_onnx = False
+        self.model = None
+        self.last_mtime = 0
+        self.target_onnx = None
+        self.load_model()
             
     def check_resources(self):
         """Verifica se os arquivos de modelo necessários existem."""
@@ -526,24 +446,27 @@ class InferenceEngine:
     def load_model(self):
         """Carrega o modelo, priorizando ONNX Runtime (DirectML)."""
         logging.info(f"🔍 INFERENCE ENGINE: Iniciando carregamento de {self.onnx_path or 'N/A'}")
+        
         # 1. Tentar carregar ONNX (AMD GPU Acceleration)
         potential_onnx_paths = [self.onnx_path, os.path.join(os.path.dirname(self.onnx_path or ""), "patchtst_optimized.onnx")]
         
-        target_onnx = None
+        self.target_onnx = None
         for p in potential_onnx_paths:
              if p and os.path.exists(p):
-                 target_onnx = p
+                 self.target_onnx = p
                  break
                  
-        if target_onnx:
+        if self.target_onnx:
             try:
-                logging.info(f"🚀 INFERENCE ENGINE: Tentando ONNX com {target_onnx}...")
+                logging.info(f"🚀 INFERENCE ENGINE: Tentando ONNX com {self.target_onnx}...")
+                self.last_mtime = os.path.getmtime(self.target_onnx)
+                
                 options = ort.SessionOptions()
                 options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
                 options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL 
                 
                 providers = ['DmlExecutionProvider', 'CPUExecutionProvider']
-                self.ort_session = ort.InferenceSession(target_onnx, sess_options=options, providers=providers)
+                self.ort_session = ort.InferenceSession(self.target_onnx, sess_options=options, providers=providers)
                 self.use_onnx = True
                 active_provider = self.ort_session.get_providers()[0]
                 logging.info(f"✅ INFERENCE ENGINE: ONNX Runtime Ativo | Provider: {active_provider}")
@@ -573,6 +496,17 @@ class InferenceEngine:
             logging.error(f"Falha ao carregar modelo PyTorch: {e}")
             self.model = None
 
+    def _check_for_updates(self):
+        """Verifica se o arquivo ONNX foi atualizado para recarregar o modelo (Hot-Reload)."""
+        if self.target_onnx and os.path.exists(self.target_onnx):
+            try:
+                current_mtime = os.path.getmtime(self.target_onnx)
+                if current_mtime > self.last_mtime:
+                    logging.info("♻️ INFERENCE ENGINE: Novo modelo ONNX detectado! Recarregando...")
+                    self.load_model()
+            except Exception as e:
+                logging.error(f"Erro ao verificar updates do modelo: {e}")
+
     def _warmup_onnx(self):
         """Executa uma inferência dummy para alocar memória na GPU."""
         try:
@@ -587,6 +521,8 @@ class InferenceEngine:
 
     async def predict(self, dataframe):
         """Interface pública não-bloqueante."""
+        self._check_for_updates() # Hot-reload check
+        
         if (self.use_onnx and not self.ort_session) or (not self.use_onnx and not self.model):
              return {
                 "score": 0.5, "forecast_norm": 0.0, "lower_bound_norm": 0.0,

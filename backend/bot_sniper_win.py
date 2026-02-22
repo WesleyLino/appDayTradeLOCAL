@@ -175,7 +175,7 @@ class SniperBotWIN:
                         logger.info(f"✨ VITÓRIA detectada! Consecutive Wins: {self.consecutive_wins} | Lote Próximo: {min(1 + self.consecutive_wins, 5)}")
                     else:
                         self.consecutive_wins = 0
-                        logger.info(f"📉 LOSS ou BE detectado. Resetando Alpha Scaling. Consecutive Wins: 0")
+                        logger.info("📉 LOSS ou BE detectado. Resetando Alpha Scaling. Consecutive Wins: 0")
                     self._save_state()
             self.last_total_trades = stats['total_trades']
 
@@ -310,13 +310,33 @@ class SniperBotWIN:
                 avg_vol = last_row['vol_sma']
                 curr_vol = last_row['tick_volume']
                 
+                # [Fase 27] Métricas de Contexto para Meta-Learner
+                # Cálculo de ATR (14 períodos)
+                low_high_range = df['high'] - df['low']
+                close_prev_close = abs(df['close'] - df['close'].shift(1))
+                true_range = pd.concat([low_high_range, close_prev_close], axis=1).max(axis=1)
+                atr = float(true_range.rolling(14).mean().iloc[-1])
+                
+                # Volatilidade de Curto Prazo (Log returns de 20 períodos, anualizado)
+                log_returns = np.log(df['close'] / df['close'].shift(1))
+                volatility = float(log_returns.tail(20).std() * np.sqrt(252 * 480)) # Multiplicador para 1min
+                if not np.isfinite(volatility): volatility = 0.0
+
+                # Pressão de Fluxo Atual (Usada para Regime e Decision)
+                pressure = await self.get_flux_pressure()
+
+                # Detectar Regime (Contínuo para manter histórico)
+                regime = self.ai.detect_regime(volatility, pressure)
+
+                # Atualizar Sentimento (Lê do JSON do Worker)
+                sentiment_score = await self.ai.update_sentiment()
+                
                 # 6. Lógica Sniper (Aggressive Bollinger Style)
                 buy_cond = rsi < 30 and curr_vol > (avg_vol * self.vol_spike_mult)
                 sell_cond = rsi > 70 and curr_vol > (avg_vol * self.vol_spike_mult)
                 
                 # 7. FILTRO DE FLUXO (L2 PRESSURE) + AI VETO
                 if buy_cond or sell_cond:
-                    pressure = await self.get_flux_pressure() # Agora retorna -1 a 1
                     side = "buy" if buy_cond else "sell"
                     
                     # Filtro de Fluxo SOTA
@@ -324,13 +344,20 @@ class SniperBotWIN:
                               (side == "sell" and pressure < -0.3)
                     
                     if flux_ok:
-                        # [FASE 22] DECISÃO COMPLETA DA IA com quantile_confidence
-                        # calculate_decision retorna score, direction e quantile_confidence (Q10/Q90)
+                        # [FASE 27] DECISÃO COMPLETA DA IA (Sincronizada)
+                        # Busca predição profunda do PatchTST
+                        patchtst_data = await self.ai.predict_with_patchtst(self.ai.inference_engine, df)
+
                         ai_decision = self.ai.calculate_decision(
                             obi=pressure,
-                            sentiment=0.0,        # neutral fallback sem news feed
-                            patchtst_score=0.5,   # fallback; em produção real vem do InferenceEngine
+                            sentiment=sentiment_score,
+                            patchtst_score=patchtst_data,
+                            regime=regime,
+                            atr=atr,
+                            volatility=volatility,
+                            hour=now.hour
                         )
+                        
                         ai_direction = ai_decision.get("direction", "NEUTRAL")
                         quantile_confidence = ai_decision.get("quantile_confidence", "NORMAL")
                         ai_score = ai_decision.get("score", 50.0)
@@ -340,15 +367,15 @@ class SniperBotWIN:
 
                         logger.info(
                             f"[AI] direction={ai_direction} score={ai_score:.1f} "
-                            f"confidence={quantile_confidence} flux={pressure:.2f}"
+                            f"conf={quantile_confidence} flux={pressure:.2f} reg={regime} sent={sentiment_score:.2f}"
                         )
 
                         if ai_ok:
                             if await self.execute_trade(side, quantile_confidence=quantile_confidence):
-                                logger.info(f"[SNIPER] Disparado! Lotes calibrados por {quantile_confidence}. Cooldown iniciado.")
+                                logger.info(f"[SNIPER] Disparado! Lotes: {quantile_confidence} | P-Score: {ai_score:.1f}. Cooldown.")
                                 self.last_trade_time = datetime.now()
                         else:
-                            logger.info(f"[AI VETO] Sinal ignorado. direction={ai_direction} score={ai_score:.1f}")
+                            logger.info(f"[AI VETO] Sinal ignorado. AI: {ai_direction} | Score: {ai_score:.1f}")
 
                     else:
                         logger.debug(f"Fluxo não alinhado: {side.upper()} | Pressure: {pressure:.2f}")

@@ -7,7 +7,6 @@ import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta, time
-import datetime
 
 # Adiciona diretório raiz
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -434,7 +433,7 @@ class BacktestPro:
         logging.info("🏁 Simulação concluída.")
         return self.generate_report()
 
-    def _close_trade(self, price, reason, time):
+    def _close_trade(self, price, reason, exit_time):
         pos = self.position
         pnl_points = (price - pos['entry_price']) if pos['side'] == 'buy' else (pos['entry_price'] - price)
         
@@ -452,7 +451,7 @@ class BacktestPro:
         self.daily_pnl += pnl_fin
         self.trades.append({
             'entry_time': pos['time'],
-            'exit_time': time,
+            'exit_time': exit_time,
             'side': pos['side'],
             'entry': pos['entry_price'],
             'exit': price,
