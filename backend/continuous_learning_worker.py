@@ -15,12 +15,43 @@ logging.basicConfig(
 )
 
 
+def run_retraining_cycle():
+    """
+    Executa o re-treino do PatchTST (Deep Learning).
+    Atualiza o cérebro da IA com os dados mais recentes.
+    """
+    logging.info("🧬 Iniciando Ciclo de Re-treino do PatchTST (Deep Learning)...")
+    
+    # 1. Coleta e Enriquecimento de Dados
+    logging.info("📥 Passo 1/3: Coletando e enriquecendo dados históricos...")
+    try:
+        cmd_data = ["python", "-m", "backend.data_collector_historical"]
+        subprocess.run(cmd_data, check=True, text=True, capture_output=True)
+        logging.info("✅ Dados MASTER atualizados com CVD/OFI.")
+    except Exception as e:
+        logging.error(f"❌ Falha na coleta de dados: {e}")
+        return False
+
+    # 2. Treino e Exportação ONNX
+    logging.info("🏗️ Passo 2/3: Treinando PatchTST e exportando ONNX...")
+    try:
+        # Usamos o módulo diretamente para herdar os patches de compatibilidade
+        cmd_train = ["python", "-m", "backend.train_patchtst"]
+        subprocess.run(cmd_train, check=True, text=True, capture_output=True)
+        logging.info("✅ PatchTST re-treinado e ONNX exportado com sucesso.")
+    except Exception as e:
+        logging.error(f"❌ Falha no re-treino do PatchTST: {e}")
+        return False
+
+    return True
+
+
 def run_optimization_cycle():
     """
-    Executa o optimizer.py para aprimorar os parâmetros.
-    Combate o Concept Drift (Degradação Temporal Silenciosa).
+    Executa o optimizer.py para aprimorar os parâmetros técnicos (BE, Trailing, Flux).
+    Passo 3/3 do ciclo de aprendizado.
     """
-    logging.info("🧠 Iniciando Ciclo de Aprendizado Contínuo (Walk-Forward Analysis)...")
+    logging.info("🧪 Passo 3/3: Iniciando Otimização de Parâmetros (Bayesian Opt)...")
 
     cmd = [
         "python",
@@ -39,23 +70,28 @@ def run_optimization_cycle():
         stdout, stderr = process.communicate()
 
         if process.returncode == 0:
-            logging.info("✅ Ciclo de Aprendizado concluído. best_params_WIN.json atualizado.")
+            logging.info("✅ Parâmetros otimizados: best_params_WIN.json atualizado.")
+            return True
         else:
             logging.error(f"❌ Erro durante a otimização:\n{stderr}")
+            return False
 
     except Exception as e:
-        logging.error(f"❌ Falha crítica no Continuous Learning Worker: {str(e)}")
+        logging.error(f"❌ Falha crítica no Optimizer: {str(e)}")
+        return False
 
 
 def main():
     logging.info("🚀 Sistema Imunológico Autônomo Iniciado. Monitorando Concept Drift...")
 
-    # Executa ciclo imediato na primeira inicialização
-    run_optimization_cycle()
+    # Executa ciclo integral na primeira inicialização
+    if run_retraining_cycle():
+        run_optimization_cycle()
 
     # Loop daemon: agenda próximo ciclo para as 18:05 (pós-fechamento do pregão B3)
     while True:
         now = datetime.now()
+        # Horário estratégico: fim do pregão para processar os dados do dia
         next_run = now.replace(hour=18, minute=5, second=0, microsecond=0)
         if now >= next_run:
             next_run = next_run + timedelta(days=1)
