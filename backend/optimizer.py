@@ -7,13 +7,20 @@ import json
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import concurrent.futures
+import io
+
+# --- CORREÇÃO DE ENCODING PARA WINDOWS (STDOUT) ---
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+# --------------------------------------------------
 
 # Adiciona o diretório raiz ao path para resolver imports de 'backend.*'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from backend.backtest_pro import BacktestPro
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', encoding='utf-8')
 
 def run_single_backtest(params, data_file):
     """
@@ -93,6 +100,13 @@ def optimize():
     keys, values = zip(*grid.items())
     combinations = [dict(zip(keys, v)) for v in itertools.product(*values)]
     
+    # [FASE 28] Limitar o número de combinações para otimização rápida se solicitado
+    if args.n < len(combinations):
+        import random
+        random.seed(42) # Reprodutibilidade
+        combinations = random.sample(combinations, args.n)
+        logging.info(f"🎲 Amostragem aleatória ativa: Reduzido de {len(combinations)} para {args.n} combinações.")
+
     # Injetar filtros de tempo em todas as combinações
     for c in combinations:
         c['start_time'] = args.start_time

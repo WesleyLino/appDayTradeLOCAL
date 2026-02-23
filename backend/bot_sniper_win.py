@@ -46,6 +46,10 @@ class SniperBotWIN:
         self.vol_spike_mult = 1.2 # Sniper Pro: 1.2x (Validated)
         self.last_trade_time = None
         
+        # [FASE 28] Sincronização de Parâmetros Calibrados (Grid Search)
+        self.risk.load_optimized_params("WIN", "best_params_WIN.json")
+        self.risk.load_optimized_params("WINJ26", "best_params_WIN.json") # Fallback para símbolo específico
+        
         self._load_state()
         
     async def get_flux_pressure(self):
@@ -247,6 +251,15 @@ class SniperBotWIN:
 
         self.symbol = self.bridge.get_current_symbol("WIN")
         logger.info(f"Símbolo alvo: {self.symbol} | MODO: {'DRY RUN' if self.risk.dry_run else 'LIVE'}")
+        
+        # [FASE 28] APLICAR PARÂMETROS DINÂMICOS SE CARREGADOS
+        if self.symbol in self.risk.dynamic_params:
+            d_params = self.risk.dynamic_params[self.symbol]
+            if d_params.get("rsi_period"):
+                self.rsi_period = int(d_params["rsi_period"])
+            if d_params.get("vol_spike_mult"):
+                self.vol_spike_mult = float(d_params["vol_spike_mult"])
+            logger.info(f"🎯 SniperBot: Parâmetros aplicados: RSI_Period={self.rsi_period}, VolSpike={self.vol_spike_mult}")
         
         self.running = True
         while self.running:

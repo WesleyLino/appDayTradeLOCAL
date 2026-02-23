@@ -76,10 +76,23 @@ class AICore:
             score = float(data.get("score", 0.0))
             timestamp = data.get("timestamp", 0)
             reliability = data.get("reliability", "low")
+            risk_level = data.get("risk_classification", "LOW")
             
-            # Verificação de Staleness (Dado caduco se > 15 minutos)
-            if time.time() - timestamp > 900:
-                logging.warning("⚠️ Sentiment Feed Estagnado (>15min). Neutralizando score.")
+            # [FASE 28] TTL DINÂMICO POR NÍVEL DE RISCO
+            # Eventos sistêmicos têm vida longa; ruído expira rápido.
+            ttl_map = {
+                "EXTREME": 8 * 3600,  # 8h  – eventos geopolíticos/sistêmicos persistem
+                "HIGH":    2 * 3600,  # 2h  – macro surpresa, normaliza no pregão
+                "MEDIUM":  30 * 60,   # 30min – notícia corporativa, absorção rápida
+                "LOW":     10 * 60,   # 10min – ruído, descartável
+            }
+            ttl = ttl_map.get(risk_level, 15 * 60)  # Fallback: 15min
+            age_seconds = time.time() - timestamp
+            
+            if age_seconds > ttl:
+                logging.warning(
+                    f"⏰ Sentiment expirado [{risk_level}]: {age_seconds/60:.0f}min > TTL {ttl/60:.0f}min. Neutralizando."
+                )
                 self.latest_sentiment_score = 0.0
             else:
                 if reliability == "low": score *= 0.5
@@ -447,7 +460,11 @@ class InferenceEngine:
         logging.info(f"🔍 INFERENCE ENGINE: Iniciando carregamento de {self.onnx_path or 'N/A'}")
         
         # 1. Tentar carregar ONNX (AMD GPU Acceleration)
-        potential_onnx_paths = [self.onnx_path, os.path.join(os.path.dirname(self.onnx_path or ""), "patchtst_optimized.onnx")]
+        potential_onnx_paths = [
+            self.onnx_path, 
+            os.path.join(os.path.dirname(self.onnx_path or ""), "patchtst_optimized.onnx"),
+            "backend/models/patchtst_optimized.onnx"
+        ]
         
         self.target_onnx = None
         for p in potential_onnx_paths:
@@ -590,10 +607,15 @@ class InferenceEngine:
                     if self.model is not None:
                         x = torch.tensor(input_tensor).to(torch.float32)
                         with torch.no_grad():
-                            out = self.model(x) 
+                            out = self.model(x)
                             preds = out[0].numpy()
                     else:
-                        raise ValueError("ONNX failed and PyTorch model is None")
+                        # Sem fallback disponível: retorna neutro sem quebrar o loop
+                        logging.warning("⚠️ Sem modelo ONNX nem PyTorch. Retornando score neutro.")
+                        return {
+                            "score": 0.5, "forecast_norm": 0.0, "lower_bound_norm": 0.0,
+                            "upper_bound_norm": 0.0, "uncertainty_norm": 1.0, "confidence": 0.0
+                        }
             else:
                 if self.model is not None:
                     x = torch.tensor(input_tensor).to(torch.float32)
@@ -620,7 +642,10 @@ class InferenceEngine:
             }
             
         except Exception as e:
-            # [SOTA DEBUG] Expondo o erro real para o logger e para o terminal
-            print(f"❌ FATAL ERROR IN _predict_sync: {repr(e)}")
-            raise e
+            # [SOTA DEBUG] repr(e) previne UnicodeDecodeError em mensagens com caracteres especiais
+            logging.error(f"❌ ERRO em _predict_sync: {repr(e)}")
+            return {
+                "score": 0.5, "forecast_norm": 0.0, "lower_bound_norm": 0.0,
+                "upper_bound_norm": 0.0, "uncertainty_norm": 1.0, "confidence": 0.0
+            }
 

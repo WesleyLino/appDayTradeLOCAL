@@ -136,7 +136,7 @@ async def startup_event():
 def panic_close_all():
     """Zera todas as posições abertas imediatamente."""
     # Evita spam do botão de pânico se já estiver ativado
-    current_status = persistence.load_state("panic_status")
+    current_status = persistence.get_state("panic_status")
     if current_status == "CLOSED_ALL":
         return
         
@@ -911,19 +911,26 @@ async def stop_sniper():
 @app.get("/performance")
 async def get_performance():
     """Retorna métricas de performance do dia."""
-    # Por enquanto retorna dados resumidos do RiskManager
-    # Em produção isso leria o histórico real do MT5
-    return {
-        "status": "success",
-        "data": {
-            "total_trades": risk.total_trades,
-            "win_rate": 0.0, # Implementar cálculo real se necessário
-            "profit_factor": 0.0,
-            "gross_profit": float(risk.daily_profit) if risk.daily_profit > 0 else 0.0,
-            "gross_loss": float(abs(risk.daily_profit)) if risk.daily_profit < 0 else 0.0,
-            "net_profit": float(risk.daily_profit)
+    try:
+        # Lê o que existe no RiskManager (sem total_trades/daily_profit — esses são do MT5)
+        return {
+            "status": "success",
+            "data": {
+                "total_trades": getattr(risk, "total_trades", 0),
+                "win_rate": getattr(risk, "win_rate", 0.0),
+                "profit_factor": 0.0,
+                "gross_profit": max(0.0, float(getattr(risk, "daily_profit", 0.0))),
+                "gross_loss": abs(min(0.0, float(getattr(risk, "daily_profit", 0.0)))),
+                "net_profit": float(getattr(risk, "daily_profit", 0.0)),
+                "max_daily_loss_limit": float(risk.max_daily_loss),
+                "dry_run": risk.dry_run,
+                "allow_autonomous": risk.allow_autonomous,
+            }
         }
-    }
+    except Exception as e:
+        logging.error(f"Erro em /performance: {repr(e)}")
+        return {"status": "error", "data": {}, "detail": repr(e)}
+
 
 @app.post("/order")
 async def place_order(req: OrderRequest):

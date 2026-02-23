@@ -25,6 +25,9 @@ class RiskManager:
         # [URGENTE] Breakeven Parameters
         self.be_trigger = 50.0       # Ativa com 50 pontos de lucro (Otimizado)
         self.be_lock = 0.0           # Move para o preço de entrada (0.0 de lucro garantido)
+        
+        # [FASE 28] DYNAMIC PARAMS CACHE
+        self.dynamic_params = {} # Carregado via load_optimized_params
 
     def is_time_allowed(self):
         """Verifica se o horário atual é permitido para operar."""
@@ -211,6 +214,33 @@ class RiskManager:
         if volatility_cost == 0: return 1.0
         
         suggested_lots = risk_amount / volatility_cost
+        return float(suggested_lots)
+
+    def load_optimized_params(self, symbol, json_path):
+        """Carrega parâmetros otimizados (SL, TP, etc) de um arquivo JSON."""
+        import json
+        import os
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, 'r') as f:
+                    raw_data = json.load(f)
+                    # O optimizer.py salva no formato {"params": {...}, "profit_factor": ...}
+                    params = raw_data.get("params", raw_data)
+                    
+                    # Mapeamento de nomes do optimizer para nomes do SniperBot
+                    mapped_params = {
+                        "sl": params.get("sl_dist", params.get("sl")),
+                        "tp": params.get("tp_dist", params.get("tp")),
+                        "rsi_period": params.get("rsi_period"),
+                        "vol_spike_mult": params.get("vol_spike_mult")
+                    }
+                    
+                    self.dynamic_params[symbol] = mapped_params
+                    logging.info(f"✅ RISK: Parâmetros para {symbol} mapeados: {mapped_params}")
+                    return True
+            except Exception as e:
+                logging.error(f"❌ RISK: Erro ao carregar parâmetros de {json_path}: {e}")
+        return False
         
         # Clip de segurança (Ex: não operar menos que 1 lote nem mais que alavancagem excessiva)
         # Aqui retornamos o valor bruto para decisão superior
@@ -225,7 +255,13 @@ class RiskManager:
         import MetaTrader5 as mt5
         
         # Definição de Stops por Ativo (Padrão Day Trade)
-        if "WDO" in symbol or "DOL" in symbol:
+        # PRIORIDADE: Parâmetros Otimizados dinamicamente
+        if symbol in self.dynamic_params:
+            d_params = self.dynamic_params[symbol]
+            sl_points = float(d_params.get("sl", 130.0))
+            tp_points = float(d_params.get("tp", 400.0))
+            logging.info(f"🎯 RISK: Usando parâmetros OTIMIZADOS para {symbol}: SL={sl_points}, TP={tp_points}")
+        elif "WDO" in symbol or "DOL" in symbol:
             sl_points = 5.0   # 5 pontos no Dólar (R$ 50,00)
             tp_points = 10.0  # 10 pontos no Dólar (R$ 100,00)
         elif "WIN" in symbol or "IND" in symbol:

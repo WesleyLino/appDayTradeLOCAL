@@ -278,7 +278,7 @@ export function TradingDashboard() {
                         MODO AUTÔNOMO
                       </Label>
                       <span className="text-[10px] text-muted-foreground leading-none">
-                        Score &gt; 90
+                        Score ≥ 85
                       </span>
                     </div>
                   </div>
