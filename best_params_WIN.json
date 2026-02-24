@@ -1,17 +1,16 @@
 {
     "params": {
-        "rsi_period": 14,
-        "bb_dev": 2.5,
-        "sl_dist": 130.0,
-        "tp_dist": 100.0,
+        "rsi_period": 7,
+        "bb_dev": 2.2,
+        "sl_dist": 100.0,
+        "tp_dist": 200.0,
         "vol_spike_mult": 1.2,
-        "use_trailing_stop": false,
-        "be_trigger": 50.0,
-        "be_lock": 0.0,
-        "max_daily_trades": 30,
+        "confidence_threshold": 0.4,
         "start_time": "09:15",
         "end_time": "17:15"
     },
-    "net_profit": 325.0,
-    "trades": 16
+    "net_profit": 235.39999999999418,
+    "max_dd": 0.013393918804144839,
+    "profit_factor": 1.37448297804644,
+    "trades": 104
 }

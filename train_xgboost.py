@@ -50,7 +50,7 @@ def load_data():
 def prepare_features(df):
     """Prepara features e targets para treinamento."""
     # Features esperadas: [ATR, OBI, Sentiment, Volatility, Hour, AI_Score_Raw]
-    feature_cols = ['ATR', 'OBI', 'Sentiment', 'Volatility', 'Hour', 'AI_Score_Raw']
+    feature_cols = ['ATR', 'OBI', 'Sentiment', 'Volatility', 'Hour', 'AI_Score']
     
     # Verificar colunas faltantes
     missing_cols = [col for col in feature_cols if col not in df.columns]

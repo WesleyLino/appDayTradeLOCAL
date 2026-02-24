@@ -169,7 +169,7 @@ export function ConfluenceGauge({
         <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
         <p className="text-[10px] leading-relaxed text-muted-foreground">
           O modo autônomo requer{" "}
-          <span className="text-white font-bold">SCORE &gt; 85</span> e
+          <span className="text-white font-bold ">SCORE &gt; 85</span> e
           confluência positiva entre fluxo de ordens e predição de IA.
         </p>
       </div>

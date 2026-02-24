@@ -1,59 +1,59 @@
 {
-  "score": 0.45,
-  "reliability": "high",
+  "score": -0.1,
+  "reliability": "medium",
   "risk_classification": "MEDIUM",
-  "fact_check": "Dados positivos de ensaio cl\u00ednico impulsionam a\u00e7\u00f5es da Iovance. AMD fecha grande acordo de fornecimento de chips com a Meta. Bayer processa J&J por propaganda enganosa de medicamento. Petrobras e Ita\u00fa superam Mercado Livre em ranking regional. Vale, Petrobras e Prio lideram ranking de a\u00e7\u00f5es mais negociadas em janeiro.",
+  "fact_check": "Resultados corporativos mistos: C&A reporta lucro acima do esperado, enquanto Gerdau e Azul registram quedas significativas ap\u00f3s balan\u00e7os e not\u00edcias de reestrutura\u00e7\u00e3o. H\u00e1 tamb\u00e9m relatos de interesse de aquisi\u00e7\u00e3o no PayPal e eleva\u00e7\u00e3o de rating para Western Digital.",
   "news": [
     {
-      "headline": "A\u00e7\u00f5es Iovance sobem 32% ap\u00f3s dados positivos de ensaio cl\u00ednico.",
-      "relevance": 0.7,
+      "headline": "Weg (WEGE3): Balan\u00e7o testa efici\u00eancia no topo e valuation premium",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "C&A (CEAB3) lucra R$ 269,8 milh\u00f5es no 4\u00ba tri, alta anual de 7,9%",
+      "relevance": 0.8,
       "impact": "BULLISH"
     },
     {
-      "headline": "AMD fecha grande acordo de fornecimento de chips com a Meta.",
-      "relevance": 0.9,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "TIM projeta crescimento operacional de 6-8% at\u00e9 2026.",
-      "relevance": 0.4,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "\u00cdndice STOXX 600 fecha em alta, mas incerteza comercial permanece.",
-      "relevance": 0.3,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Warner Bros. avalia nova proposta da Paramount em disputa de aquisi\u00e7\u00e3o.",
-      "relevance": 0.6,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Bayer processa J&J por propaganda enganosa de medicamento.",
-      "relevance": 0.7,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Not\u00edcias gerais dos mercados financeiros.",
+      "headline": "Mercados Financeiros - \u00daltimas Not\u00edcias | InfoMoney",
       "relevance": 0.0,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Vale, Petrobras e Prio lideram ranking de a\u00e7\u00f5es mais negociadas em janeiro.",
-      "relevance": 0.8,
+      "headline": "Gerdau (GGBR4) fecha em queda de mais de 2% ap\u00f3s balan\u00e7o do 4\u00ba tri",
+      "relevance": 0.7,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "PayPal estende alta ap\u00f3s relato de interesse da Stripe na empresa",
+      "relevance": 0.6,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Santander Brasil anuncia mudan\u00e7a de endere\u00e7o da sede em 2028",
+      "relevance": 0.1,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Expectativa para o balan\u00e7o da C&A (CEAB3).",
-      "relevance": 0.2,
+      "headline": "Azul (AZUL53): Ativos caem 11% ap\u00f3s Chapter 11",
+      "relevance": 0.9,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "S&P eleva rating da Western Digital ap\u00f3s redu\u00e7\u00e3o de d\u00edvida",
+      "relevance": 0.5,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "A\u00e7\u00f5es em movimento no after-hours: HP Inc, CAVA, Workday, First Solar e mais",
+      "relevance": 0.0,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Petrobras e Ita\u00fa superam Mercado Livre em ranking na Am\u00e9rica Latina.",
-      "relevance": 0.8,
+      "headline": "C&A tem alta de 22,9% no lucro e Ebitda acima das expectativas no 4\u00ba tri",
+      "relevance": 0.9,
       "impact": "BULLISH"
     }
   ],
-  "timestamp": 1771961963.2844863
+  "timestamp": 1771975138.0014396
 }

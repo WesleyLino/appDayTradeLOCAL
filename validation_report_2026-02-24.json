@@ -1,0 +1,37 @@
+{
+    "date": "2026-02-24",
+    "capital": 3000.0,
+    "params": {
+        "rsi_period": 7,
+        "bb_dev": 2.2,
+        "sl_dist": 100.0,
+        "tp_dist": 200.0,
+        "vol_spike_mult": 1.2,
+        "confidence_threshold": 0.4,
+        "start_time": "09:15",
+        "end_time": "17:15"
+    },
+    "metrics": {
+        "pnl": 133.23571428571594,
+        "trades": 12,
+        "win_rate": 83.33333333333334
+    },
+    "shadow": {
+        "total_missed": 20,
+        "filtered_by_ai": 0,
+        "filtered_by_flux": 0,
+        "v22_candidates": 21,
+        "component_fail": {
+            "rsi": 0,
+            "bb": 0,
+            "volume": 1,
+            "cooldown": 18,
+            "time": 6
+        },
+        "tiers": {
+            "70-75": 0,
+            "75-80": 0,
+            "80-85": 0
+        }
+    }
+}

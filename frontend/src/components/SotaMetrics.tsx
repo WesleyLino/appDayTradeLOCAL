@@ -126,8 +126,8 @@ export function SotaMetrics({
         </div>
 
         {/* Synthetic Index (Blue Chips) */}
-        <div className="pt-2 border-t border-white/5 space-y-1">
-          <div className="flex justify-between text-[10px] uppercase tracking-tighter text-muted-foreground">
+        <div className="pt-2 border-t border-white/5 space-y-1 text-xs">
+          <div className="flex justify-between  uppercase tracking-tighter text-muted-foreground">
             <span>Blue Chips Synth Index</span>
             <span
               className={
