@@ -1,0 +1,24 @@
+{
+  "comment": "PARÂMETROS V22 ATUALIZADOS EM 2026-02-23 - NÃO ALTERAR SEM AUTORIZAÇÃO",
+  "account_config": {
+    "initial_balance": 3000.0,
+    "symbol": "WIN$",
+    "timeframe": "M1"
+  },
+  "strategy_params": {
+    "rsi_period": 9,
+    "bb_dev": 2.0,
+    "vol_spike_mult": 1.0,
+    "use_flux_filter": true,
+    "flux_imbalance_threshold": 1.2,
+    "confidence_threshold": 0.70,
+    "sl_dist": 150.0,
+    "tp_dist": 400.0,
+    "trailing_trigger": 70.0,
+    "trailing_lock": 50.0,
+    "trailing_step": 20.0,
+    "use_ai_core": false,
+    "cooldown_minutes": 15
+  },
+  "anti_vibe_seal": "20260223_GOLDEN_V22_LOCKED"
+}

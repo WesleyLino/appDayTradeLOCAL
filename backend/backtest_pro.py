@@ -40,29 +40,42 @@ class BacktestPro:
         self.risk = RiskManager()
         self.collector = DataCollector(symbol)
         
-        # Parâmetros Editáveis no Grid Search
+        # Parâmetros Editáveis no Grid Search - [ANTIVIBE-CODING]
+        # Carrega Golden Params se existirem, senão usa defaults validados em 23/02/2026
+        locked_params = {}
+        try:
+            import json
+            params_path = os.path.join(os.path.dirname(__file__), "v22_locked_params.json")
+            if os.path.exists(params_path):
+                with open(params_path, "r") as f:
+                    config = json.load(f)
+                    locked_params = config.get("strategy_params", {})
+                    logging.info("🛡️ Golden Params V22 carregados com sucesso.")
+        except Exception as e:
+            logging.warning(f"⚠️ Falha ao carregar Golden Params ({e}). Usando defaults hardcoded.")
+
         self.opt_params = {
-            'rsi_period': kwargs.get('rsi_period', 9),
-            'bb_dev': kwargs.get('bb_dev', 2.0),
-            'vol_spike_mult': kwargs.get('vol_spike_mult', 1.2),
-            'trailing_trigger': kwargs.get('trailing_trigger', 70.0),
-            'trailing_lock': kwargs.get('trailing_lock', 50.0),
-            'trailing_step': kwargs.get('trailing_step', 20.0),
-            'sl_dist': kwargs.get('sl_dist', 150.0),
-            'tp_dist': kwargs.get('tp_dist', 400.0),
-            'confidence_threshold': kwargs.get('confidence_threshold', 0.85), # [SOTA] Filtro de Confiança IA
+            'rsi_period': kwargs.get('rsi_period', locked_params.get('rsi_period', 9)), # [ANTIVIBE-CODING]
+            'bb_dev': kwargs.get('bb_dev', locked_params.get('bb_dev', 2.0)), # [ANTIVIBE-CODING]
+            'vol_spike_mult': kwargs.get('vol_spike_mult', locked_params.get('vol_spike_mult', 1.0)), # [ANTIVIBE-CODING]
+            'trailing_trigger': kwargs.get('trailing_trigger', locked_params.get('trailing_trigger', 70.0)), # [ANTIVIBE-CODING]
+            'trailing_lock': kwargs.get('trailing_lock', locked_params.get('trailing_lock', 50.0)), # [ANTIVIBE-CODING]
+            'trailing_step': kwargs.get('trailing_step', locked_params.get('trailing_step', 20.0)), # [ANTIVIBE-CODING]
+            'sl_dist': kwargs.get('sl_dist', locked_params.get('sl_dist', 150.0)), # [ANTIVIBE-CODING]
+            'tp_dist': kwargs.get('tp_dist', locked_params.get('tp_dist', 400.0)), # [ANTIVIBE-CODING]
+            'confidence_threshold': kwargs.get('confidence_threshold', locked_params.get('confidence_threshold', 0.85)), # [ANTIVIBE-CODING]
             'aggressive_mode': kwargs.get('aggressive_mode', True),
             'use_trailing_stop': kwargs.get('use_trailing_stop', True),
-            'dynamic_lot': kwargs.get('dynamic_lot', False),
+            'dynamic_lot': kwargs.get('dynamic_lot', locked_params.get('dynamic_lot', False)),
             'start_time': kwargs.get('start_time', "09:15"),
             'end_time': kwargs.get('end_time', "17:15"),
             'daily_trade_limit': kwargs.get('daily_trade_limit', 3),
-            'use_flux_filter': kwargs.get('use_flux_filter', True),
-            'flux_imbalance_threshold': kwargs.get('flux_imbalance_threshold', 1.2),
+            'use_flux_filter': kwargs.get('use_flux_filter', locked_params.get('use_flux_filter', True)), # [ANTIVIBE-CODING]
+            'flux_imbalance_threshold': kwargs.get('flux_imbalance_threshold', locked_params.get('flux_imbalance_threshold', 1.2)), # [ANTIVIBE-CODING]
             'be_trigger': kwargs.get('be_trigger', 50.0),
             'be_lock': kwargs.get('be_lock', 0.0),
-            'base_lot': kwargs.get('base_lot', 1), # Novo parâmetro para escala dinâmica
-            'use_ai_core': kwargs.get('use_ai_core', False) # Ativa lógica blindada Fase 27
+            'base_lot': kwargs.get('base_lot', 1), # [ANTIVIBE-CODING]
+            'use_ai_core': kwargs.get('use_ai_core', locked_params.get('use_ai_core', False)) # [ANTIVIBE-CODING]
         }
 
         # Estado do Backtest
@@ -80,20 +93,22 @@ class BacktestPro:
         self.peak_balance = self.initial_balance
         self.daily_pnl = 0.0
         self.daily_trade_count = 0
-        self.missed_signals = 0
+        # Tracking de Oportunidades (Shadow Trading)
         self.shadow_signals = {
             'total_missed': 0,
             'filtered_by_ai': 0,
             'filtered_by_flux': 0,
-            'filtered_by_vol': 0,
-            'tiers': {
-                '70-75': 0,
-                '75-80': 0,
-                '80-85': 0
-            }
+            'v22_candidates': 0,
+            'component_fail': {
+                'rsi': 0,
+                'bb': 0,
+                'volume': 0
+            },
+            'tiers': {'70-75': 0, '75-80': 0, '80-85': 0}
         }
         self.last_day = None
-        self.last_trade_time = datetime.min # Cooldown control
+        self.last_trade_time = datetime(2000, 1, 1) # Cooldown control
+        self.data = None # Para inspeção externa
 
     async def load_data(self):
         if self.data_file is not None and os.path.exists(self.data_file):
@@ -195,19 +210,25 @@ class BacktestPro:
         return None, None
 
     async def run(self):
-        data = await self.load_data()
-        if data is None: return
-
-        logging.info("🚀 Iniciando Simulação High Fidelity...")
+        if self.data is None:
+            self.data = await self.load_data()
+            
+        data = self.data
+        if data is None: 
+            logging.error("❌ Erro no BacktestPro: load_data retornou None")
+            return
+            
+        logging.info(f"🚀 Iniciando Simulação High Fidelity com {len(data)} velas...")
         
         # ---- PRE-CALCULATIONS FOR EXTREME SPEED ----
-        # 1. RSI
+        # 1. RSI (Usa EWM para suavizar e evitar NaNs persistentes)
         rsi_p = self.opt_params['rsi_period']
-        delta = data['close'].diff().fillna(0)
-        gain = (delta.where(delta > 0, 0)).rolling(window=rsi_p).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=rsi_p).mean()
-        rs = gain / (loss + 1e-6)
+        delta = data['close'].diff()
+        gain = (delta.where(delta > 0, 0)).ewm(span=rsi_p, adjust=False).mean()
+        loss = (-delta.where(delta < 0, 0)).ewm(span=rsi_p, adjust=False).mean()
+        rs = gain / (loss + 1e-9)
         data['rsi'] = 100 - (100 / (1 + rs))
+        data['rsi'] = data['rsi'].fillna(50.0) # Estabiliza início
 
         # 2. Bollinger Bands
         bb_d = self.opt_params['bb_dev']
@@ -223,7 +244,9 @@ class BacktestPro:
         data['atr_current'] = tr.rolling(window=14).mean()
 
         # 4. Volume SMA
-        data['vol_sma'] = data['tick_volume'].rolling(window=20).mean()
+        data['vol_sma'] = data['tick_volume'].rolling(window=20).mean().bfill()
+        
+        self.data = data # Expor para debug externo
 
         # 5. Regime Detection (Vectorized)
         try:
@@ -362,37 +385,56 @@ class BacktestPro:
                     dir_prob = row['dir_prob']
                     aggressive = self.opt_params.get('aggressive_mode', False)
                     v_mult_eff = v_mult * 0.8 if aggressive else v_mult # Reduce volume spike req by 20%
-                    vol_spike_eff = row['tick_volume'] > (vol_sma * v_mult_eff)
+                    
+                    # Sinais V22 (Estratégia de Reversão de Volatilidade - Mean Reversion)
+                    cond_rsi_buy = (rsi < 30)
+                    cond_bb_buy = (row['close'] < lower_bb)
+                    cond_vol_buy = (row['tick_volume'] > vol_sma * self.opt_params['vol_spike_mult'])
+                    
+                    cond_rsi_sell = (rsi > 70)
+                    cond_bb_sell = (row['close'] > upper_bb)
+                    cond_vol_sell = (row['tick_volume'] > vol_sma * self.opt_params['vol_spike_mult'])
+
+                    v22_reversion_buy = cond_rsi_buy and cond_bb_buy and cond_vol_buy
+                    v22_reversion_sell = cond_rsi_sell and cond_bb_sell and cond_vol_sell
 
                     # 1. Regime Maestro (Trend Routing)
-                    # Verifica se a IA detectou 80%+ de chance de continuação
+                    v22_trend_buy = v22_trend_sell = False
                     if dir_prob >= 0.8 and current_regime == 1: # Trend Mode
-                        v22_buy = (row['close'] > mid_bb) and (rsi > 50) and (rsi < 70) and vol_spike_eff
-                        v22_sell = (row['close'] < mid_bb) and (rsi < 50) and (rsi > 30) and vol_spike_eff
+                        v22_trend_buy = (row['close'] > mid_bb) and (rsi > 50) and (rsi < 70) and vol_spike_eff
+                        v22_trend_sell = (row['close'] < mid_bb) and (rsi < 50) and (rsi > 30) and vol_spike_eff
                         dyn_sl = self.opt_params['sl_dist'] * 1.5
                         dyn_tp = self.opt_params['tp_dist'] * 2.0
                         regime_tag = "TREND_MAESTRO"
                     
                     # 2. Amorphous Regimes (Scalping Adaptation)
-                    elif current_regime == 2: # Noise Mode
-                        rsi_buy_thresh = 30 if aggressive else 20
-                        rsi_sell_thresh = 70 if aggressive else 80
-                        v22_buy = (row['close'] < lower_bb) and (rsi < rsi_buy_thresh) and (lower_wick > body * 0.7) and vol_spike_eff
-                        v22_sell = (row['close'] > upper_bb) and (rsi > rsi_sell_thresh) and (upper_wick > body * 0.7) and vol_spike_eff
-                        # Fix TP to strict Scalping (100 points for WIN) 
-                        dyn_sl = self.opt_params['sl_dist'] * 0.5 # Tighter SL
+                    v22_scalp_buy = v22_scalp_sell = False
+                    if current_regime == 2: # Noise Mode
+                        rsi_buy_thresh = 35 if aggressive else 25 # Loosened for relaxed analysis
+                        rsi_sell_thresh = 65 if aggressive else 75
+                        v22_scalp_buy = (row['close'] < lower_bb) and (rsi < rsi_buy_thresh) and (lower_wick > body * 0.4) and vol_spike_eff
+                        v22_scalp_sell = (row['close'] > upper_bb) and (rsi > rsi_sell_thresh) and (upper_wick > body * 0.4) and vol_spike_eff
+                        dyn_sl = self.opt_params['sl_dist'] * 0.5
                         dyn_tp = 100.0 if "WIN" in self.symbol else self.opt_params['tp_dist'] * 0.5
                         regime_tag = "NOISE_SCALP"
                     
-                    else: # Consolidation / Default Mode
+                    elif current_regime == 3 or True: # Consolidation / Default Mode
                         rsi_buy_thresh = 35 if aggressive else 25
                         rsi_sell_thresh = 65 if aggressive else 75
-                        v22_buy = (row['close'] < lower_bb) and (rsi < rsi_buy_thresh) and (lower_wick > body * 0.5) and vol_spike_eff
-                        v22_sell = (row['close'] > upper_bb) and (rsi > rsi_sell_thresh) and (upper_wick > body * 0.5) and vol_spike_eff
-                        # Fix TP to strict Scalping (100 points for WIN)
+                        v22_scalp_buy = (row['close'] < lower_bb) and (rsi < rsi_buy_thresh) and (lower_wick > body * 0.4) and vol_spike_eff
+                        v22_scalp_sell = (row['close'] > upper_bb) and (rsi > rsi_sell_thresh) and (upper_wick > body * 0.4) and vol_spike_eff
                         dyn_sl = self.opt_params['sl_dist']
                         dyn_tp = 100.0 if "WIN" in self.symbol else self.opt_params['tp_dist'] * 0.5 
                         regime_tag = "CONSOL_SCALP"
+
+                    v22_buy = v22_reversion_buy or v22_trend_buy or v22_scalp_buy
+                    v22_sell = v22_reversion_sell or v22_trend_sell or v22_scalp_sell
+
+                    # Debug tracking (Who triggered or why it failed)
+                    if cond_rsi_buy and cond_bb_buy:
+                        self.shadow_signals['v22_candidates'] += 1
+                        if not cond_vol_buy: self.shadow_signals['component_fail']['volume'] += 1
+                        if v22_reversion_buy: self.shadow_signals['total_missed'] += 1 # Base signal ok
 
                     # Ajustar flags para filtros abaixo
                     vol_spike_eff = vol_spike_eff
@@ -437,26 +479,50 @@ class BacktestPro:
                     flux_ok = row['tick_volume'] > (vol_sma * self.opt_params.get('flux_imbalance_threshold', 1.2))
                 
                 # Tracking Detalhado de Oportunidades Perdidas
-                if (v22_buy or v22_sell) and not ai_filter_ok:
-                    self.shadow_signals['total_missed'] += 1
-                    self.shadow_signals['filtered_by_ai'] += 1
-                    if 0.70 <= ai_stability < 0.75: self.shadow_signals['tiers']['70-75'] += 1
-                    elif 0.75 <= ai_stability < 0.80: self.shadow_signals['tiers']['75-80'] += 1
-                    elif 0.80 <= ai_stability < 0.85: self.shadow_signals['tiers']['80-85'] += 1
-                
-                if (v22_buy or v22_sell) and ai_filter_ok and not flux_ok:
-                    self.shadow_signals['total_missed'] += 1
-                    self.shadow_signals['filtered_by_flux'] += 1
+                if v22_buy or v22_sell:
+                    if not time_ok: self.shadow_signals['component_fail']['time'] = self.shadow_signals['component_fail'].get('time', 0) + 1
+                    if not vol_stable: self.shadow_signals['component_fail']['vol_stable'] = self.shadow_signals['component_fail'].get('vol_stable', 0) + 1
+                    if not cooldown_ok: self.shadow_signals['component_fail']['cooldown'] = self.shadow_signals['component_fail'].get('cooldown', 0) + 1
+                    
+                    if not ai_filter_ok:
+                        self.shadow_signals['total_missed'] += 1
+                        self.shadow_signals['filtered_by_ai'] += 1
+                        if 0.70 <= ai_stability < 0.75: self.shadow_signals['tiers']['70-75'] += 1
+                        elif 0.75 <= ai_stability < 0.80: self.shadow_signals['tiers']['75-80'] += 1
+                        elif 0.80 <= ai_stability < 0.85: self.shadow_signals['tiers']['80-85'] += 1
+                    
+                    elif not flux_ok:
+                        self.shadow_signals['total_missed'] += 1
+                        self.shadow_signals['filtered_by_flux'] += 1
+                    
+                    elif not sentiment_ok:
+                        self.shadow_signals['total_missed'] += 1
+                        # self.shadow_signals['filtered_by_sentiment'] = ...
+
+                if (v22_buy or v22_sell) and not (time_ok and risk_ok and limit_ok and vol_stable and cooldown_ok and ai_filter_ok and sentiment_ok and flux_ok):
+                    logging.debug(f"⚠️ Signal BLOCKED at {row.name}: time={time_ok}, risk={risk_ok}, limit={limit_ok}, vol_stable={vol_stable}, cooldown={cooldown_ok}, ai={ai_filter_ok}, flux={flux_ok}")
 
                 if (v22_buy or v22_sell) and time_ok and risk_ok and limit_ok and vol_stable and cooldown_ok and ai_filter_ok and sentiment_ok and flux_ok:
                     side = "buy" if v22_buy else "sell"
                     
-                    # Risco Dinamizado por Regime
-                    sl_dist = dyn_sl
-                    tp_dist = dyn_tp
+                    # --- [DYNAMIC ATR TARGETS] ---
+                    # Replica a lógica do RiskManager em O(1)
+                    tp_mult = 1.0 
+                    sl_mult = 1.3
                     
-                    sl = row['close'] - sl_dist if side == "buy" else row['close'] + sl_dist
-                    tp = row['close'] + tp_dist if side == "buy" else row['close'] - tp_dist
+                    # ATR atual já calculado no início do loop: row['atr_current']
+                    raw_tp = atr_current * tp_mult
+                    raw_sl = atr_current * sl_mult
+
+                    if "WDO" in self.symbol or "DOL" in self.symbol:
+                        dyn_tp_pts = max(5.0, min(30.0, raw_tp))
+                        dyn_sl_pts = max(3.0, min(15.0, raw_sl))
+                    else: # Padrão WIN
+                        dyn_tp_pts = max(100.0, min(400.0, raw_tp))
+                        dyn_sl_pts = max(100.0, min(300.0, raw_sl))
+                    
+                    sl = row['close'] - dyn_sl_pts if side == "buy" else row['close'] + dyn_sl_pts
+                    tp = row['close'] + dyn_tp_pts if side == "buy" else row['close'] - dyn_tp_pts
                     
                     # Lote Dinâmico (Anti-Martingale)
                     # Lote Dinâmico / Fixo
