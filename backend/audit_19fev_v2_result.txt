@@ -1,0 +1,92 @@
+
+==========================================================================================
+  RAIO-X COMPARATIVO: WIN$ | 19/02/2026 | R$ 3000.00
+  Trailing: 70.0pts | Flux: 1.2x
+  Cenario A (Atual)   : BE=50pts, Janela=padrao (sem alteracao)
+  Cenario B (Melhoria): BE=40pts, Janela iniciando 09:15
+==========================================================================================
+
+Sincronizando dados do MetaTrader 5...
+Periodo disponivel: 2026-02-11 ate 2026-02-20
+
+Dia: 19/02/2026 | 565 candles + 100 de padding
+Rodando 2 cenarios...
+
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2980.00
+Lucro Líquido: R$ -20.00
+Total Trades:  2
+Win Rate:      50.0%
+Profit Factor: 0.33
+Max Drawdown:  1.00%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+==========================================================================================
+  CENARIO: A: ATUAL (BE=50)
+==========================================================================================
+  P&L Total   : R$ -20.00  |  Win Rate: 50.0%  (1V/1D)
+  Drawdown    : 1.00%  |  Profit Factor: 0.33
+  Shadow AI   : 0 sinais  |  Shadow FLUX: 1 sinais
+
+  #   HORA            PNL  STATUS
+  -----------------------------------
+  1   13:48    R$    10.00  WIN
+  2   14:18    R$   -30.00  LOSS
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2980.00
+Lucro Líquido: R$ -20.00
+Total Trades:  2
+Win Rate:      50.0%
+Profit Factor: 0.33
+Max Drawdown:  1.00%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+==========================================================================================
+  CENARIO: B: MELHORIA (BE=40 + 09:15)
+==========================================================================================
+  P&L Total   : R$ -20.00  |  Win Rate: 50.0%  (1V/1D)
+  Drawdown    : 1.00%  |  Profit Factor: 0.33
+  Shadow AI   : 0 sinais  |  Shadow FLUX: 1 sinais
+
+  #   HORA            PNL  STATUS
+  -----------------------------------
+  1   13:48    R$    10.00  WIN
+  2   14:18    R$   -30.00  LOSS
+
+
+==========================================================================================
+  COMPARATIVO: CONFIGURACAO ATUAL  vs.  MELHORIAS PROPOSTAS
+==========================================================================================
+  Metrica                      ATUAL (BE=50 / 09:20) MELHORIA (BE=40 / 09:15)
+  --------------------------------------------------------------------------------------
+  Lucro/Prejuizo                          R$ -20.00 R$ -20.00  (+R$ 0.00)
+  Trades Executados                               2                    2
+  Win Rate                                    50.0%       50.0%  (+0.0%)
+  Drawdown Max                                1.00%       1.00%  (+0.0%)
+  Profit Factor                                0.33                 0.33
+  Shadow IA                                       0                    0
+  Shadow FLUX                                     1                    1
+  --------------------------------------------------------------------------------------
+  VEREDITO: EMPATE. Ambas configuracoes produziram o mesmo resultado.
+==========================================================================================
+
+DIAGNOSTICO FINAL
+  Neste dia, o BE=50pts foi mais permissivo e capturou mais ganho.
+  Sugestao: Manter BE=50 por enquanto. Testar BE=40 em mais dias antes de alterar producao.
+
+==========================================================================================
+Auditoria concluida.
+==========================================================================================
+

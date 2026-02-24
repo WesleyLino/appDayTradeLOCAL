@@ -17,7 +17,7 @@ else:
     logging.warning("GOOGLE_API_KEY não encontrada no .env. Worker operando em modo degradado.")
 
 class NewsSentimentWorker:
-    def __init__(self, interval=300):
+    def __init__(self, interval=60):
         self.collector = NewsCollector()
         generation_config = {
             "temperature": 0.0,
@@ -46,21 +46,22 @@ class NewsSentimentWorker:
             return
 
         prompt = f"""
-ATUE COMO UM ENGENHEIRO DE RISCO SÊNIOR PARA UMA MESA DE HFT.
+ATUE COMO UM ENGENHEIRO DE RISCO SÊNIOR PARA UMA MESA DE HFT BRASILEIRA.
 OBJETIVO: Detectar ASSIMETRIAS DE RISCO baseadas em FATOS.
 Sua missão NÃO é prever o futuro, mas sim classificar o RISCO IMEDIATO.
 
-FONTE DE DADOS:
+FONTE DE DADOS (Manchetes):
 {headlines}
 
 PROTOCOLO DE ANÁLISE (RIGOR MILITAR):
-1. SEPARAÇÃO FATO vs RUÍDO: Ignore opiniões de analistas. Foque em DADOS (Payroll, IPCA, Selic, Fusões).
-2. CLASSIFICAÇÃO DE RISCO:
+1. IDIOMA: TODA A SAÍDA DE TEXTO (headline, fact_check) DEVE SER EM PORTUGUÊS DO BRASIL.
+2. SEPARAÇÃO FATO vs RUÍDO: Ignore opiniões de analistas. Foque em DADOS (Payroll, IPCA, Selic, Fusões).
+3. CLASSIFICAÇÃO DE RISCO:
    - "EXTREME": Evento sistêmico (ex: Guerra, Quebra de Banco, Circuit Breaker).
    - "HIGH": Dado macro muito acima/abaixo do esperado, mudança de juros não precificada.
    - "MEDIUM": Notícia corporativa relevante (Blue Chips), falas de Banco Central.
    - "LOW": Ruído normal de mercado.
-3. SENTIMENTO MATEMÁTICO:
+4. SENTIMENTO MATEMÁTICO:
    - -1.0 (Pânico/Venda) a +1.0 (Euforia/Compra).
 
 SAÍDA OBRIGATÓRIA: RESPONDA EXCLUSIVAMENTE COM O JSON ABAIXO, SEM TEXTO ADICIONAL, SEM EXPLICAÇÕES, SEM MARKDOWN.
@@ -70,7 +71,14 @@ JSON FORMAT:
   "score": float (-1.0 to 1.0),
   "reliability": "high" | "medium" | "low",
   "risk_classification": "EXTREME" | "HIGH" | "MEDIUM" | "LOW",
-  "fact_check": "string with summary"
+  "fact_check": "Resumo conciso em Português brasileiro",
+  "news": [
+    {{
+      "headline": "Manchete traduzida e resumida para Português brasileiro",
+      "relevance": float (0.0 to 1.0),
+      "impact": "BULLISH" | "BEARISH" | "NEUTRAL"
+    }}
+  ]
 }}
 """
         try:

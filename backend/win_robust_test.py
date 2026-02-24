@@ -4,7 +4,10 @@ import numpy as np
 import logging
 import json
 import asyncio
-from optimizer import run_single_backtest
+try:
+    from backend.optimizer import run_single_backtest
+except ImportError:
+    from optimizer import run_single_backtest
 import concurrent.futures
 from concurrent.futures import ProcessPoolExecutor
 import itertools
@@ -98,7 +101,7 @@ def perform_wfa(symbol="WIN$", n_folds=3):
     print("="*50)
 
     if champions:
-        out_file = f'best_params_WIN_SOTA.json'
+        out_file = 'best_params_WIN_SOTA.json'
         with open(out_file, 'w') as f:
             json.dump(champions[0], f, indent=4)
         logging.info(f"💾 BEST CONFIG SAVED TO {out_file}")

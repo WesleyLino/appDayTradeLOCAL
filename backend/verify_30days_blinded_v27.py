@@ -130,7 +130,7 @@ async def run_blinded_30day_test():
     print(f"TOTAL DE OPERAÇÕES:......... {total_trades}")
     print(f"WIN RATE MÉDIO:............. {avg_wr:.1f}%")
     print(f"MAX DRAWDOWN DIÁRIO:........ {max_dd_day:.2f}%")
-    print(f"CAPITAL SUGERIDO:........... R$ 3.000,00")
+    print("CAPITAL SUGERIDO:........... R$ 3.000,00")
     print("="*85 + "\n")
 
 if __name__ == "__main__":

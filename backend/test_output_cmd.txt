@@ -1,0 +1,46 @@
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\backend\ai_core.py:1: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:root:Nenhum modelo Meta-Learner encontrado. Operando em modo coleta de dados.
+INFO:root:🔍 INFERENCE ENGINE: Iniciando carregamento de backend/patchtst_weights_sota_optimized.onnx
+INFO:root:🚀 INFERENCE ENGINE: Tentando ONNX com backend/patchtst_weights_sota_optimized.onnx...
+INFO:root:✅ INFERENCE ENGINE: ONNX Runtime Ativo | Provider: DmlExecutionProvider
+INFO:root:🔥 DirectML Warm-up Concluído (Channels: 5).
+INFO:root:🧠 Motor de Inferência SOTA carregado.
+INFO:root:📥 Coletando 600 candles do DIA ANTERIOR para WIN$...
+INFO:root:Conectado com sucesso!
+INFO:root:Servidor: GenialInvestimentos-PRD
+INFO:root:Corretora: Genial Investimentos Corretora de Valores Mobiliários S.A.
+INFO:root:Conta: 4635067
+INFO:root:Saldo: R$ 0.00
+INFO:root:[OK] Servidor Genial Verificado: GenialInvestimentos-PRD
+INFO:root:[OK] AlgoTrading: ATIVADO (Negociacao Permitida)
+INFO:root:✅ 600 candles carregados (Dia anterior).
+INFO:root:🚀 Iniciando Simulação High Fidelity...
+INFO:root:📅 Mudança de dia detectada (2026-02-18 -> 2026-02-19). Resetando métricas diárias.
+INFO:root:🎯 V22 TRIGGER [CONSOL_SCALP]: sell @ 192310.0 | Vol Spike: 1.7x | RSI: 83.8
+INFO:root:🏁 Simulação concluída.
+📈 Iniciando Verificação DIA ANTERIOR: 3 Contratos / Cap R$ 1000
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 1000.00
+Saldo Final:   R$ 910.00
+Lucro Líquido: R$ -90.00
+Total Trades:  1
+Win Rate:      0.0%
+Profit Factor: 0.00
+Max Drawdown:  9.00%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+--- DETALHAMENTO DE TRADES ---
+Trade 1: SELL em 2026-02-19 14:18:00 | Saída: 2026-02-19 14:20:00 | Pontos: -150.0 | R$ -90.00 (SL)

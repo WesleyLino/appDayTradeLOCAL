@@ -1,0 +1,73 @@
+
+==========================================================================================
+  RAIO-X DE PRODUCAO: WIN$ | 19/02/2026 | CAPITAL: R$ 3000.00
+  Trailing: 70.0pts | BE: 50.0pts | Flux: 1.2x
+==========================================================================================
+
+Sincronizando dados do MetaTrader 5 (pode levar alguns segundos)...
+Periodo disponivel: 2026-02-11 ate 2026-02-20
+
+Dia analisado : 19/02/2026
+Candles M1    : 565 candles do dia (665 com padding)
+Rodando simulacao...
+
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2980.00
+Lucro Líquido: R$ -20.00
+Total Trades:  2
+Win Rate:      50.0%
+Profit Factor: 0.33
+Max Drawdown:  1.00%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+------------------------------------------------------------------------------------------
+RESULTADO FINANCEIRO
+  Saldo Inicial    : R$ 3000.00
+  Lucro/Prejuizo   : R$ -20.00  (-0.67%)
+  Saldo Final      : R$ 2980.00
+  Drawdown Max     : 1.00%
+  Profit Factor    : 0.33
+------------------------------------------------------------------------------------------
+
+BREAKDOWN DE TRADES
+  Total de Trades  : 2
+  Vitorias         : 1 (50.0%)
+  Derrotas         : 1 (50.0%)
+  Ganho Medio Win  : R$ +10.00
+  Perda Media Loss : R$ -30.00
+
+  #   HORA     DIRECAO ENTRY     EXIT             PNL  STATUS
+  ----------------------------------------------------------------------
+  1   13:48    ?       0         0         R$    10.00  WIN
+  2   14:18    ?       0         0         R$   -30.00  LOSS
+
+------------------------------------------------------------------------------------------
+OPORTUNIDADES PERDIDAS (Shadow Signals)
+  Bloqueadas por IA  (Score < 85%) : 0
+  Bloqueadas por FLUX (vol < 1.2x) : 1
+  TOTAL ignorado                   : 1
+  Potencial nao capturado (estim.) : R$ -5.00
+
+------------------------------------------------------------------------------------------
+DIAGNOSTICO E SUGESTOES DE MELHORIA
+  RESULTADO: Dia de perda (R$ -20.00). Analise as derrotas abaixo.
+
+  [1] IA com filtragem eficiente (<= 2 sinais bloqueados).
+      Manter threshold em 0.85 por ora.
+
+  [3] Existem operacoes perdedoras.
+      Avaliar se o Trailing Trigger de 70pts protegeu o pior cenario.
+      Se nao, considerar BE mais rapido (40pts).
+
+  [4] Baixa frequencia de trades (<3 no dia).
+      Expandir janela de operacao: testar inicio as 09:15.
+
+==========================================================================================
+Auditoria concluida.
+==========================================================================================
+

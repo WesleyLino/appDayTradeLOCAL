@@ -40,9 +40,9 @@ async def run_deep_potential_analysis():
     params['be_lock'] = 10.0
     
     print("\n" + "="*70)
-    print(f"🚀 ANÁLISE PROFUNDA DE POTENCIAL - QUANTUMTRADE PRO")
+    print("🚀 ANÁLISE PROFUNDA DE POTENCIAL - QUANTUMTRADE PRO")
     print(f"Instrumento: WIN$ (Mini Índice) | Capital: R$ {initial_capital:.2f}")
-    print(f"Estratégia: SOTA Precision (3 Lotes Fixos - 1 por k)")
+    print("Estratégia: SOTA Precision (3 Lotes Fixos - 1 por k)")
     print("="*70 + "\n")
 
     # 2. Configurar o Backtester (600 candles ~ 1 dia M1)
@@ -119,7 +119,7 @@ async def run_deep_potential_analysis():
 
         report_path = "backend/deep_potential_3k_report.txt"
         with open(report_path, 'w') as f:
-            f.write(f"DEEP POTENTIAL ANALYSIS - WIN$ - R$ 3000\n")
+            f.write("DEEP POTENTIAL ANALYSIS - WIN$ - R$ 3000\n")
             json.dump(report, f, indent=4, cls=CustomEncoder)
             
         print(f"✅ Relatório profundo salvo em: {report_path}")

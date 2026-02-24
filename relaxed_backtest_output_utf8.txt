@@ -1,0 +1,2083 @@
+﻿python : C:\Users\Wesley 
+Lino\Documents\ProjetosApp\appDayTradeLOCAL\backend\ai_core.py:8: 
+FutureWarning: 
+No linha:1 caractere:1
++ python backend/run_relaxed_backtest.py > 
+relaxed_backtest_output.txt  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\Wesley...Fu 
+   tureWarning: :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+All support for the `google.generativeai` package has ended. It 
+will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package 
+as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/b
+lob/main/README.md
+
+  import google.generativeai as genai
+2026-02-23 21:20:08,740 - DEBUG - Using proactor: IocpProactor
+2026-02-23 21:20:08,740 - INFO - \U0001f680 Iniciando SimulaþÒo 
+RELAXADA (Feb 23) - Mini ═ndice
+2026-02-23 21:20:08,782 - INFO - Meta-Learner carregado: 
+data/models/xgboost_meta_v1.json
+2026-02-23 21:20:08,782 - INFO - \U0001f50d INFERENCE ENGINE: 
+Iniciando carregamento de backend/patchtst_weights_sota.onnx
+2026-02-23 21:20:08,782 - INFO - \U0001f680 INFERENCE ENGINE: 
+Tentando ONNX com backend\patchtst_optimized.onnx...
+2026-02-23 21:20:09,061 - INFO - \u2705 INFERENCE ENGINE: ONNX 
+Runtime Ativo | Provider: DmlExecutionProvider
+2026-02-23 21:20:09,064 - INFO - \U0001f525 DirectML Warm-up 
+ConcluÝdo (Channels: 8).
+2026-02-23 21:20:09,064 - INFO - \U0001f9e0 Motor de InferÛncia 
+SOTA carregado.
+2026-02-23 21:20:09,064 - INFO - \U0001f4e5 Lendo DataFrame 
+Estßtico em O(1) do filepath: backend/data_23feb_m1.csv (Amostra: 
+5000 velas)
+2026-02-23 21:20:09,071 - INFO - \U0001f680 Iniciando SimulaþÒo 
+High Fidelity...
+2026-02-23 21:20:09,083 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,090 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,096 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,103 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,111 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,116 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,122 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,130 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,142 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,146 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,154 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,161 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,167 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,173 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,181 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,192 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,200 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,206 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,215 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,223 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,231 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,239 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,250 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,258 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,265 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,272 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,281 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,286 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,293 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,303 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,310 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,314 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,321 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,328 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,336 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,342 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,349 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,365 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,371 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,379 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,387 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,392 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,398 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,405 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,421 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,429 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,435 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,443 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,451 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,458 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,465 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,472 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,500 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,508 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,516 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,532 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,542 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,561 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,569 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,577 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,585 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,593 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,608 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,626 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,633 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,640 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,649 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,657 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,671 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,680 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,687 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,695 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,704 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,711 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,844 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,850 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,857 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,865 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,873 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,881 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,890 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,897 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,904 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,911 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,920 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,929 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,936 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,944 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,951 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,960 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,967 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,976 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,984 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:09,990 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,000 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,008 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,016 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,024 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,031 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,040 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,047 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,056 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,064 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,073 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,080 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,089 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,096 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,106 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,112 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,122 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,130 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,136 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,143 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,150 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,160 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,170 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,177 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,184 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,193 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,203 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,211 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,217 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,227 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,248 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,258 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,270 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,283 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,305 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,326 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,339 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,356 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,374 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,384 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,401 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,408 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,420 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,434 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,447 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,467 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,485 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,492 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,519 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,544 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,561 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,570 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,580 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,589 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,600 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,614 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,633 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,640 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,649 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,658 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,673 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,684 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,691 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,702 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,710 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,721 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,733 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,740 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,748 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,758 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,765 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,773 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,782 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,792 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,800 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,815 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,825 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,833 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,842 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,851 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,861 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,871 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,881 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,891 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,900 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,909 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,917 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,924 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,936 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,947 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,954 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,968 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,977 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,985 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:10,998 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,008 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,017 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,027 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,034 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,040 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,048 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,064 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,071 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,080 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,094 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,102 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,111 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,120 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,127 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,134 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,141 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,151 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,159 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,169 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,177 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,190 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,205 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,214 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,221 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,233 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,240 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,263 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,270 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,295 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,309 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,320 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,331 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,339 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,346 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,356 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,371 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,384 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,392 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,407 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,421 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,433 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,440 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,447 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,464 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,475 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,484 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,493 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,500 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,509 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,516 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,525 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,532 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,542 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,550 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,560 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,570 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,578 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,585 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,611 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,623 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,629 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,639 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,649 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,657 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,665 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,671 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,681 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,689 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,701 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,712 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,720 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,735 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,745 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,751 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,766 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,779 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,787 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,801 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,809 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,823 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,831 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,840 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,847 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,856 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,864 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,873 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,879 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,887 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,895 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,903 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,909 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,915 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,924 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,933 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,942 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,950 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,960 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,969 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:11,982 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,000 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,006 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,013 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,023 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,031 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,046 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,059 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,067 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,076 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,084 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,090 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,100 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,107 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,123 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,132 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,140 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,147 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,157 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,168 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,179 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,187 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,202 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,209 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,216 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,225 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,235 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,249 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,257 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,265 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,274 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,281 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,300 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,316 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,329 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,338 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,346 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,354 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,361 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,374 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,382 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,389 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,401 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,408 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,415 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,422 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,431 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,440 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,448 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,455 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,470 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,481 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,491 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,499 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,506 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,517 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,527 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,534 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,543 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,558 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,565 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,576 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,586 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,593 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,599 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,608 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,619 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,634 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,643 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,651 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,662 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,671 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,679 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,692 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,699 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,705 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,712 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,720 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,730 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,740 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,751 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,759 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,765 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,772 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,780 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,789 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,798 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,819 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,832 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,840 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,847 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,853 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,861 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,867 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,880 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,886 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,895 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,906 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,913 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,920 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,937 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,944 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,951 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,968 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,976 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,984 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:12,994 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,000 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,006 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,013 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,021 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,027 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,035 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,045 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,051 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,058 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,064 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,071 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,080 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,086 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,094 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,105 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,115 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,122 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,131 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,139 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,145 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,152 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,160 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,167 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,175 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,184 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,190 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,199 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,207 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,215 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,226 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,232 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,239 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,247 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,253 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,263 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,273 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,282 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,299 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,308 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,330 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,338 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,345 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,352 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,360 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,366 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,374 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,382 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,390 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,399 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,408 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,415 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,423 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,431 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,439 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,445 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,451 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,461 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,470 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,478 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,485 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,495 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,502 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,510 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,516 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,526 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,534 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,540 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,549 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,562 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,570 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,577 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,583 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,589 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,594 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,603 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,610 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,619 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,633 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,643 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,651 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,659 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,667 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,675 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,684 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,694 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,701 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,715 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,724 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,730 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,739 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,746 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,754 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,761 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,769 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,778 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,784 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,790 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,796 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,804 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,811 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,822 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,831 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,837 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,844 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,852 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,859 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,868 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,873 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,883 - WARNING - \u26a0\ufe0f Column mismatch. 
+Columns present: ['open', 'high', 'low', 'close', 'tick_volume', 
+'spread', 'real_volume', 'rsi', 'sma_20', 'std_20', 'upper_bb', 
+'lower_bb', 'atr_current', 'vol_sma', 'regime', 'dir_prob']
+2026-02-23 21:20:13,891 - INFO - \U0001f3c1 SimulaþÒo concluÝda.
+2026-02-23 21:20:13,891 - WARNING - Nenhum trade realizado no 
+perÝodo.
+
+==================================================
+Traceback (most recent call last):
+  File "C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCA
+L\backend\run_relaxed_backtest.py", line 92, in <module>
+    asyncio.run(run_analysis())
+  File "C:\Users\Wesley Lino\AppData\Local\Programs\Python\Python3
+12\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\Wesley Lino\AppData\Local\Programs\Python\Python3
+12\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Wesley Lino\AppData\Local\Programs\Python\Python3
+12\Lib\asyncio\base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCA
+L\backend\run_relaxed_backtest.py", line 57, in run_analysis
+    print(f"\U0001f4ca RELATËRIO RELAXADO (POTENCIAL) - {symbol} 
+(23/02/2026)")
+  File "C:\Users\Wesley Lino\AppData\Local\Programs\Python\Python3
+12\Lib\encodings\cp1252.py", line 19, in encode
+    return 
+codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character 
+'\U0001f4ca' in position 0: character maps to <undefined>

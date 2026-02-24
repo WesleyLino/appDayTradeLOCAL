@@ -1,0 +1,43 @@
+DEEP POTENTIAL ANALYSIS - BALANCED - WIN$ - R$ 3000
+{
+    "final_balance": 3068.0,
+    "total_pnl": 68.0,
+    "trades": [
+        {
+            "entry_time": "2026-02-20T12:02:00",
+            "exit_time": "2026-02-20T12:03:00",
+            "side": "sell",
+            "entry": 191995.0,
+            "exit": 191895.0,
+            "lots": 3,
+            "pnl_points": 100.0,
+            "pnl_fin": 60.0,
+            "reason": "TP"
+        },
+        {
+            "entry_time": "2026-02-20T15:33:00",
+            "exit_time": "2026-02-20T15:35:00",
+            "side": "sell",
+            "entry": 193165.0,
+            "exit": 193155.0,
+            "lots": 4,
+            "pnl_points": 10.0,
+            "pnl_fin": 8.0,
+            "reason": "SL"
+        }
+    ],
+    "win_rate": 100.0,
+    "profit_factor": Infinity,
+    "max_drawdown": 0.0,
+    "shadow_signals": {
+        "total_missed": 0,
+        "filtered_by_ai": 0,
+        "filtered_by_flux": 0,
+        "filtered_by_vol": 0,
+        "tiers": {
+            "70-75": 0,
+            "75-80": 0,
+            "80-85": 0
+        }
+    }
+}

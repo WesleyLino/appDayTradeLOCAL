@@ -158,7 +158,7 @@ export function ConfluenceGauge({
               )}
             >
               {sentiment >= 0 ? "+" : ""}
-              {sentiment.toFixed(1)}
+              {sentiment.toFixed(2)}
             </span>
           </div>
         </div>

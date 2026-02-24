@@ -1,0 +1,98 @@
+
+==========================================================================================
+  RAIO-X COMPARATIVO: WIN$ | 20/02/2026 | R$ 3000.00
+  Trailing: 70.0pts | Flux: 1.2x
+  Cenario A (Atual)   : BE=50pts, Janela=padrao (sem alteracao)
+  Cenario B (Melhoria): BE=40pts, Janela iniciando 09:15
+==========================================================================================
+
+Sincronizando dados do MetaTrader 5...
+Periodo disponivel: 2026-02-11 ate 2026-02-20
+
+Dia: 20/02/2026 | 565 candles + 100 de padding
+Rodando 2 cenarios...
+
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 3136.00
+Lucro Líquido: R$ 136.00
+Total Trades:  5
+Win Rate:      100.0%
+Profit Factor: inf
+Max Drawdown:  0.00%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+==========================================================================================
+  CENARIO: A: ATUAL (BE=50)
+==========================================================================================
+  P&L Total   : R$ +136.00  |  Win Rate: 100.0%  (5V/0D)
+  Drawdown    : 0.00%  |  Profit Factor: inf
+  Shadow AI   : 0 sinais  |  Shadow FLUX: 1 sinais
+
+  #   HORA            PNL  STATUS
+  -----------------------------------
+  1   10:15    R$    23.00  WIN
+  2   10:32    R$    46.00  WIN
+  3   12:02    R$    39.00  WIN
+  4   14:12    R$    18.00  WIN
+  5   15:33    R$    10.00  WIN
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 3090.00
+Lucro Líquido: R$ 90.00
+Total Trades:  5
+Win Rate:      80.0%
+Profit Factor: inf
+Max Drawdown:  0.00%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+==========================================================================================
+  CENARIO: B: MELHORIA (BE=40 + 09:15)
+==========================================================================================
+  P&L Total   : R$ +90.00  |  Win Rate: 80.0%  (4V/0D)
+  Drawdown    : 0.00%  |  Profit Factor: inf
+  Shadow AI   : 0 sinais  |  Shadow FLUX: 1 sinais
+
+  #   HORA            PNL  STATUS
+  -----------------------------------
+  1   10:15    R$    23.00  WIN
+  2   10:32    R$     0.00  BE
+  3   12:02    R$    39.00  WIN
+  4   14:12    R$    18.00  WIN
+  5   15:33    R$    10.00  WIN
+
+
+==========================================================================================
+  COMPARATIVO: CONFIGURACAO ATUAL  vs.  MELHORIAS PROPOSTAS
+==========================================================================================
+  Metrica                      ATUAL (BE=50 / 09:20) MELHORIA (BE=40 / 09:15)
+  --------------------------------------------------------------------------------------
+  Lucro/Prejuizo                         R$ +136.00 R$ +90.00  (R$ -46.00)
+  Trades Executados                               5                    5
+  Win Rate                                   100.0%      80.0%  (-20.0%)
+  Drawdown Max                                0.00%       0.00%  (+0.0%)
+  Profit Factor                                 inf                  inf
+  Shadow IA                                       0                    0
+  Shadow FLUX                                     1                    1
+  --------------------------------------------------------------------------------------
+  VEREDITO: Configuracao ATUAL foi superior neste dia.
+==========================================================================================
+
+DIAGNOSTICO FINAL
+  Neste dia, o BE=50pts foi mais permissivo e capturou mais ganho.
+  Sugestao: Manter BE=50 por enquanto. Testar BE=40 em mais dias antes de alterar producao.
+
+==========================================================================================
+Auditoria concluida.
+==========================================================================================
+

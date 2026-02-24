@@ -37,10 +37,10 @@ async def run_potential_analysis():
     params['be_lock'] = 10.0
     
     print("\n" + "="*60)
-    print(f"🚀 TESTE DE POTENCIAL DE GANHO - QUANTUMTRADE PRO")
-    print(f"Instrumento: WIN$ (Mini Índice)")
+    print("🚀 TESTE DE POTENCIAL DE GANHO - QUANTUMTRADE PRO")
+    print("Instrumento: WIN$ (Mini Índice)")
     print(f"Timeframe: M1 | Capital Inicial: R$ {initial_capital:.2f}")
-    print(f"SOTA Aligned: Sim (Trailing Stop & Breakeven ATIVOS)")
+    print("SOTA Aligned: Sim (Trailing Stop & Breakeven ATIVOS)")
     print("="*60 + "\n")
 
     # 2. Configurar o Backtester (Amostra de 1 dia ~ 540 candles)
@@ -84,7 +84,7 @@ async def run_potential_analysis():
 
         report_path = "backend/potencial_ganho_report.txt"
         with open(report_path, 'w') as f:
-            f.write(f"RELATÓRIO DE POTENCIAL DE GANHO - WIN$\n")
+            f.write("RELATÓRIO DE POTENCIAL DE GANHO - WIN$\n")
             f.write(f"Data Execução: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write(f"Janela: {start_date} - {end_date}\n\n")
             json.dump(report, f, indent=4, cls=CustomEncoder)

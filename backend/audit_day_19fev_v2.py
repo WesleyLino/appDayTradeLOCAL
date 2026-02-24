@@ -135,8 +135,8 @@ async def run_validation():
     print("\n" + "="*90)
     print(f"  RAIO-X COMPARATIVO: WIN$ | {TARGET_DATE.strftime('%d/%m/%Y')} | R$ {initial_capital:.2f}")
     print(f"  Trailing: {base_params['trailing_trigger']}pts | Flux: {base_params['vol_spike_mult']}x")
-    print(f"  Cenario A (Atual)   : BE=50pts, Janela=padrao (sem alteracao)")
-    print(f"  Cenario B (Melhoria): BE=40pts, Janela iniciando 09:15")
+    print("  Cenario A (Atual)   : BE=50pts, Janela=padrao (sem alteracao)")
+    print("  Cenario B (Melhoria): BE=40pts, Janela iniciando 09:15")
     print("="*90 + "\n")
 
     # Carregar dados do MT5
@@ -195,8 +195,8 @@ async def run_validation():
     if gained_b > gained_a:
         print(f"  BE=40pts protegeu melhor o capital: +R$ {gained_b - gained_a:.2f} vs atual.")
     elif gained_b <= gained_a:
-        print(f"  Neste dia, o BE=50pts foi mais permissivo e capturou mais ganho.")
-        print(f"  Sugestao: Manter BE=50 por enquanto. Testar BE=40 em mais dias antes de alterar producao.")
+        print("  Neste dia, o BE=50pts foi mais permissivo e capturou mais ganho.")
+        print("  Sugestao: Manter BE=50 por enquanto. Testar BE=40 em mais dias antes de alterar producao.")
 
     print()
     print("="*90)

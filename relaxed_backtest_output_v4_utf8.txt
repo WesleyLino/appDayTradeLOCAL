@@ -1,0 +1,44 @@
+﻿python : C:\Users\Wesley 
+Lino\Documents\ProjetosApp\appDayTradeLOCAL\backend\ai_core.py:8: 
+FutureWarning: 
+No linha:1 caractere:1
++ python backend/run_relaxed_backtest.py > 
+relaxed_backtest_output_v4.t ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\Wesley...Fu 
+   tureWarning: :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+All support for the `google.generativeai` package has ended. It 
+will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package 
+as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/b
+lob/main/README.md
+
+  import google.generativeai as genai
+2026-02-23 21:33:35,866 - DEBUG - Using proactor: IocpProactor
+2026-02-23 21:33:35,867 - INFO - INICIANDO SIMULACAO RELAXADA 
+(Feb 23) - Mini Indice
+2026-02-23 21:33:35,914 - INFO - Meta-Learner carregado: 
+data/models/xgboost_meta_v1.json
+2026-02-23 21:33:35,914 - INFO - \U0001f50d INFERENCE ENGINE: 
+Iniciando carregamento de backend/patchtst_weights_sota.onnx
+2026-02-23 21:33:35,915 - INFO - \U0001f680 INFERENCE ENGINE: 
+Tentando ONNX com backend\patchtst_optimized.onnx...
+2026-02-23 21:33:36,235 - INFO - \u2705 INFERENCE ENGINE: ONNX 
+Runtime Ativo | Provider: DmlExecutionProvider
+2026-02-23 21:33:36,240 - INFO - \U0001f525 DirectML Warm-up 
+ConcluÝdo (Channels: 8).
+2026-02-23 21:33:36,241 - INFO - \U0001f9e0 Motor de InferÛncia 
+SOTA carregado.
+
+ESTATISTICAS DE FILTRO (SHADOW):
+- Total Sinais V22 Detectados: 0
+- Negados pela IA:            0
+- Negados pelo Fluxo:         0
+Erro na analise de mercado: 'BacktestPro' object has no attribute 'data'

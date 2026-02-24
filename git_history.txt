@@ -1,0 +1,15 @@
+﻿4aa6057 fix(websocket): stabilize SOTA telemetry, add ai_confidence, isolate panic mode event loop error
+345753d feat: fix IA indicator telemetry and SOTA metric synchronization
+7b49beb fix: backend startup errors & HFT connection stability
+49e566e feat(ui): implement premium zinc theme, outfit font, and glassmorphism
+cec71a2 chore: consolidate frontend repository structure
+e05e482 feat: Ultimate System Audit complete. Zero-Fault Certified. Hardened AI, Risk, and Execution layers.
+004dd3b feat(amd-opt): Apply robust FP16 optimization and relative uncertainty veto
+8b47719 docs: consolidated AlphaX production-ready documentation and institutional analysis
+4f0a698 feat: finalized Zero-Fault hardening for AlphaX evolution
+e0a0974 feat: hft v2.1 zero-fault surgical refinements
+cd9bb51 feat: Multi-Source News System (Plano Diretor 2.0)
+291caa5 feat: Zero-Hallucination Protocol (Gemini 2.5 Flash)
+6e742ec feat: HFT v2.0 Complete - Institutional Grade Features
+e1edf57 Refinamento de Robustez e Arquitetura: Models Centralizados, AsyncIO e Security Checks
+60760bd Initial commit: Project structure, Backend (Python/FastAPI/MT5), Frontend (Next.js/Shadcn), and AI Core

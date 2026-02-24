@@ -1,4 +1,29 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from dotenv import load_dotenv
+from datetime import datetime, timedelta
+import time as time_module
+# --- CONFIGURAÇÃO DE LOGS OPERACIONAIS ---
+# [ANTIVIBE-CODING] - Buffer circular para o Dashboard
+trade_logs = []
+MAX_LOGS = 50
+
+def add_operational_log(msg: str, log_type: str = "info"):
+    global trade_logs
+    timestamp = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M:%S")
+    trade_logs.insert(0, {
+        "id": f"{time_module.time()}-{log_type}", # Changed time.time() to time_module.time() to avoid conflict
+        "time": timestamp,
+        "msg": msg,
+        "type": log_type
+    })
+    if len(trade_logs) > MAX_LOGS:
+        del trade_logs[MAX_LOGS:]
+
+# Inicialização do Log
+add_operational_log("Sistema HFT Sniper Inicializado", "info")
+import os
+import json
+load_dotenv()
 from typing import Optional
 # --- MONKEY-PATCH PARA CONFLITO ONNX/BEARTYPE ---
 try:
@@ -35,6 +60,8 @@ logging.basicConfig(
 )
 from backend.sentiment_analyzer import SentimentAnalyzer
 from backend.calendar_manager import CalendarManager
+from backend.news_sentiment_worker import NewsSentimentWorker 
+from backend.market_data_worker import MarketDataWorker # Novo Worker de Dados de Mercado
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 
@@ -72,7 +99,6 @@ from backend.bot_sniper_win import SniperBotWIN
 sniper_bot = SniperBotWIN(bridge=bridge, risk=risk, ai=ai)
 bot_task = None # Task para rodar o loop do bot
 
-import os
 weights_path = os.path.join(os.getcwd(), "backend", "patchtst_weights_sota.pth")
 if not os.path.exists(weights_path):
     # Tentar caminho alternativo
@@ -124,6 +150,24 @@ async def startup_event():
         # Injeção de Dependência (opcional, já que passamos no loop, mas boa prática)
         ai.inference_engine = inference
         
+        # Iniciar NewsSentimentWorker em background
+        try:
+            sentiment_worker = NewsSentimentWorker(interval=300) # 5 minutos para economizar API
+            asyncio.create_task(sentiment_worker.run())
+            logging.info("🚀 NewsSentimentWorker iniciado com sucesso.")
+            add_operational_log("Worker de Sentimento (Gemini) Ativado", "success")
+        except Exception as e:
+            logging.error(f"Erro ao iniciar NewsSentimentWorker: {e}")
+
+        # Iniciar MarketDataWorker em background (HFT Optimization)
+        try:
+            market_worker = MarketDataWorker(bridge=bridge, calendar=calendar, interval=10)
+            asyncio.create_task(market_worker.run())
+            logging.info("🚀 MarketDataWorker iniciado com sucesso.")
+            add_operational_log("Worker de Dados Macro/BlueChips Ativado", "success")
+        except Exception as e:
+            logging.error(f"Erro ao iniciar MarketDataWorker: {e}")
+
         # keyboard.add_hotkey('ctrl+q', lambda: panic_close_all())
         # logging.info("Kill Switch ativo: Pressione Ctrl+Q para ZERAR TUDO.")
         print("DEBUG: STARTUP FINISHED", file=sys.stderr)
@@ -177,6 +221,17 @@ async def websocket_endpoint(websocket: WebSocket):
         prev_total_profit = 0.0
         current_day = datetime.now().day
         
+        # Helper para carregar contexto em background (HFT Optimization)
+        def load_market_context():
+            ctx_path = os.path.join("data", "market_context.json")
+            if os.path.exists(ctx_path):
+                try:
+                    with open(ctx_path, "r", encoding="utf-8") as f:
+                        return json.load(f)
+                except:
+                    pass
+            return {}
+        
         # [HFT] Inicialização de Variáveis de Ciclo
         loop_count = 0
         data_60 = pd.DataFrame()
@@ -185,7 +240,7 @@ async def websocket_endpoint(websocket: WebSocket):
         wen_ofi_val = 0.0
         vol_reason = ""
         settlement_price = 0.0
-        bluechips = pd.DataFrame()
+        bluechips = {} # Changed from pd.DataFrame() to dict for consistency with packet
         macro_change = {"score": 0.0, "reason": "No data"}
         daily_rates = None
         current_symbol = "WIN$"
@@ -257,42 +312,93 @@ async def websocket_endpoint(websocket: WebSocket):
                     last_price = last_valid_price
                     logging.warning("Tick Info falhou. Usando ultimo preco valido.")
 
-                # Coleta Lenta (Prioridade 2 - a cada ~200ms-500ms dependendo do sleep)
-                if loop_count % 10 == 1 or 'data_60' not in locals():
-                    wdo_symbol = await asyncio.to_thread(bridge.get_current_symbol, "WDO")
-                    multi_symbols = [symbol, "ITUB4", "PETR4", "VALE3", wdo_symbol or "WDO$"]
-                    
-                    multi_data, data_60, account_info, daily_realized, bluechips = await asyncio.gather(
-                        asyncio.to_thread(bridge.get_synchronized_multi_asset_data, multi_symbols, n_candles=60),
+                # Coleta Otimizada (HFT v2.1)
+                # Somente o estritamente necessário para o sinal e execução entra no loop principal
+                if loop_count % 5 == 1 or 'data_60' not in locals():
+                    # 1.1 Coleta Essencial (MT5 Rapid)
+                    data_60, account_info, daily_realized = await asyncio.gather(
                         asyncio.to_thread(bridge.get_market_data, symbol, n_candles=60),
                         asyncio.to_thread(bridge.mt5.account_info),
-                        asyncio.to_thread(bridge.get_daily_realized_profit),
-                        asyncio.to_thread(bridge.get_bluechips_data)
+                        asyncio.to_thread(bridge.get_daily_realized_profit)
                     )
                     
-                    # 1.2 Coleta de Dados Macro/Lenta (A cada ~5-10 segundos)
-                    if loop_count % 50 == 1:
-                        logging.debug("Iniciando coleta Macro (Notícias, Ajuste, Gap Trap)...")
-                        headlines = await asyncio.to_thread(news_collector.get_latest_headlines, 5)
-                        sentiment_score = await sentiment_engine.analyze_sentiment(headlines)
-                        ai.latest_sentiment_score = sentiment_score
-                        vol_expected, vol_reason = calendar.is_volatility_expected()
-                        settlement_price = await asyncio.to_thread(bridge.get_settlement_price, symbol)
-                        macro_change = await asyncio.to_thread(bridge.get_macro_data)
+                    # 1.2 Atuallização via Cache (Background Worker)
+                    ctx = load_market_context()
+                    bluechips = ctx.get("bluechips", {})
+                    macro_change = ctx.get("macro", {"score": 0.0, "reason": "Background data"})
+                    vol_expected = ctx.get("calendar", {}).get("volatility_expected", False)
+                    vol_reason = ctx.get("calendar", {}).get("reason", "")
+                    settlement_price = ctx.get("settlement_price", 0.0)
+                    
+                    # Multi-data fallback (usado para correlações/índices sintéticos)
+                    # No HFT v2.1, o worker deveria prover isso, mas para manter compatibilidade:
+                    if 'multi_data' not in locals():
+                        multi_data = pd.DataFrame() # Será populado conforme necessário no futuro pelo worker
+                    
+                    # Inicialização segura para evitar UnboundLocalError
+                    if 'sentiment_score' not in locals():
+                        sentiment_score = 0.0
+                        headlines = [] # Agora será uma lista de objetos ou strings
+
+                    # 1.3 Coleta de Dados Macro/Sentimento (Background Files)
+                    if loop_count % 20 == 1:
+                        logging.debug("Iniciando leitura de Sentimento e Macro do Cache...")
+                        
+                        # Carregar Sentimento do Arquivo (NewsSentimentWorker)
+                        try:
+                            sentiment_path = os.path.join("data", "news_sentiment.json")
+                            if os.path.exists(sentiment_path):
+                                with open(sentiment_path, "r", encoding="utf-8") as f:
+                                    sent_data = json.load(f)
+                                    sentiment_score = float(sent_data.get("score", 0.0))
+                                    # PRIORIDADE: Lista de Notícias Detalhada. FALLBACK: Resumo fact_check.
+                                    news = sent_data.get("news", [])
+                                    headlines = news if news else [sent_data.get("fact_check", "No news summary available")]
+                                    ai.latest_sentiment_score = sentiment_score
+                                    logging.debug(f"Sentimento carregado: {sentiment_score} | Notícias: {len(news)}")
+                            else:
+                                sentiment_score = 0.0
+                                headlines = ["Aguardando análise de IA..."]
+                        except Exception as e:
+                            logging.error(f"Erro ao ler news_sentiment.json: {e}")
+                            sentiment_score = 0.0
+                            headlines = []
+
+                        # Nota: Settlement e Volatilidade agora vêm do context_json atualizado pelo MarketDataWorker
                         daily_rates = await asyncio.to_thread(bridge.mt5.copy_rates_from_pos, symbol, bridge.mt5.TIMEFRAME_D1, 0, 2)
-                        logging.debug("Coleta Macro concluída.")
+                        logging.debug("Leitura de Cache Macro concluída.")
                         
                     logging.debug(f"Coleta Lenta executada (Loop {loop_count})")
                 
-                # 1.1 Processamento de Conta e Risco (CRÍTICO: Definir variáveis antes do uso)
+                # 1.1 Processamento de Conta e Risco
                 if account_info is None:
-                    logging.warning(f"WAIT: account_info indisponível para {symbol}. Retrying...")
-                    await asyncio.sleep(1)
-                    continue
-                    
-                account = account_info._asdict()
-                floating_profit = account_info.profit
+                    if risk.dry_run:
+                        # [SIMULATION] Create synthetic account if MT5 info is missing
+                        account = {
+                            "balance": 3000.0,
+                            "equity": 3000.0 + daily_realized,
+                            "profit": 0.0,
+                            "margin": 0.0,
+                            "margin_free": 3000.0,
+                            "currency": "BRL"
+                        }
+                    else:
+                        logging.warning(f"WAIT: account_info indisponível para {symbol}. Retrying...")
+                        await asyncio.sleep(1)
+                        continue
+                else:
+                    account = account_info._asdict()
+                
+                floating_profit = account_info.profit if account_info else 0.0
                 total_daily_profit = daily_realized + floating_profit
+
+                # [SIMULATION] Override balance/equity with virtual values when in Dry Run
+                if risk.dry_run:
+                    virtual_capital = 3000.0
+                    account['balance'] = virtual_capital
+                    account['equity'] = virtual_capital + total_daily_profit
+                    logging.debug(f"[SIM] Virtual Balance Active: {account['balance']} | Equity: {account['equity']}")
+
                 # Validação de Risco Diário
                 risk_ok, risk_msg = risk.check_daily_loss(total_daily_profit)
                 
@@ -327,8 +433,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 time_allowed = risk.is_time_allowed()
                 
                 latency_ms = (time_module.perf_counter() - start_time) * 1000
-                if latency_ms > 200: # Tolerância maior em Python puro
-                    logging.warning(f"HIGH LATENCY: {latency_ms:.2f}ms")
+                if latency_ms > 300: # Sincronizado com o alerta do Frontend
+                    logging.warning(f"HIGH LATENCY ALERT: {latency_ms:.2f}ms")
                 
                 # Heartbeat Log (1 min)
                 if time_module.time() - last_heartbeat > 60:
@@ -355,18 +461,17 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Garantir 60 linhas e 5 canais (SOTA Multi-Ativo exige c_in=5)
                 sota_input = multi_data
                 if sota_input is None or len(sota_input) < 60:
-                    logging.warning(f"SOTA: multi_data incompleto (len={len(sota_input) if sota_input is not None else 0}). Gerando dataframe de contingencia (5 canais).")
-                    # Cria um DF de fallback com 60 linhas usando apenas a coluna 'close' de data_60 repetida
-                    # Isso garante c_in=5 e len=60 para o ONNX não crashar
+                    logging.warning(f"SOTA: multi_data incompleto (len={len(sota_input) if sota_input is not None else 0}). Gerando dataframe de contingencia (8 canais).")
                     if data_60 is not None and not data_60.empty and 'close' in data_60.columns:
-                        base_col = data_60['close'].values[-60:]
-                        if len(base_col) < 60:
-                            base_col = np.pad(base_col, (60 - len(base_col), 0), 'edge')
+                        base_val = data_60['close'].values[-60:]
+                        if len(base_val) < 60:
+                            base_val = np.pad(base_val, (60 - len(base_val), 0), 'edge')
                     else:
-                        base_col = np.zeros(60)
+                        base_val = np.zeros(60)
                         
                     sota_input = pd.DataFrame({
-                        'c1': base_col, 'c2': base_col, 'c3': base_col, 'c4': base_col, 'c5': base_col
+                        'open': base_val, 'high': base_val, 'low': base_val, 'close': base_val,
+                        'tick_volume': np.zeros(60), 'cvd': np.zeros(60), 'ofi': np.zeros(60), 'volume_ratio': np.ones(60)
                     })
                     
                 ai_predict_data = await inference.predict(sota_input)
@@ -622,7 +727,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                 sota_lots = risk.calculate_volatility_sizing(account['balance'], current_atr, point_value)
                                 final_lots = max(1, int(sota_lots))
                                 
-                                params = risk.get_order_params(symbol, order_type, current_order_price, final_lots)
+                                params = risk.get_order_params(symbol, order_type, current_order_price, final_lots, current_atr=current_atr)
                                 params["symbol"] = symbol
                                 params["comment"] = "AUTO SNIPER"
                                 
@@ -637,7 +742,12 @@ async def websocket_endpoint(websocket: WebSocket):
                                     result = MockResult()
                                 else:
                                     # Sniper Limit: Enviamos no Ask (Compra) ou Bid (Venda) para garantir execução rápida
-                                    result = await asyncio.to_thread(bridge.place_limit_order, symbol, order_type, current_order_price, final_lots, comment="AUTO_SNIPER_LIMIT")
+                                    result = await asyncio.to_thread(
+                                        bridge.place_limit_order, 
+                                        symbol, order_type, current_order_price, final_lots, 
+                                        sl=params['sl'], tp=params['tp'],
+                                        comment="AUTO_SNIPER_LIMIT"
+                                    )
                                 
                                 if result and result.retcode == bridge.mt5.TRADE_RETCODE_DONE:
                                     order_ticket = result.order
@@ -655,13 +765,17 @@ async def websocket_endpoint(websocket: WebSocket):
                                     if filled:
                                         persistence.save_trade(symbol, side, current_order_price, final_lots, mode_tag)
                                         persistence.save_state("last_auto_trade", f"{side} at {current_order_price}")
+                                        msg_log = f"TRADE SUCCESS: {side.upper()} {final_lots} lotes @ {current_order_price}"
+                                        add_operational_log(msg_log, "success")
                                         logging.info(f"TRADE SUCCESS ({mode_tag}): Sniper preenchido.")
                                     else:
                                         logging.warning(f"Sniper TTL Expired. Cancelando {order_ticket}...")
+                                        add_operational_log(f"Sniper TTL Expired. Ordem {order_ticket} cancelada.", "warning")
                                         await asyncio.to_thread(bridge.cancel_order, order_ticket)
                                 else:
                                     msg = result.comment if hasattr(result, 'comment') else "Timeout/None"
                                     logging.error(f"Falha Crítica na Execução Sniper: {msg}")
+                                    add_operational_log(f"Falha Execução Sniper: {msg}", "error")
 
                             else:
                                 # --- PASSIVE ENTRY: LIMIT ORDER (HFT SOTA) ---
@@ -695,6 +809,10 @@ async def websocket_endpoint(websocket: WebSocket):
                                     
                                     logging.info(f"[SOTA] HFT Limit: {final_lots} lotes @ {limit_price}")
 
+                                    params = risk.get_order_params(symbol, order_type, limit_price, final_lots, current_atr=current_atr)
+                                    params["symbol"] = symbol
+                                    params["comment"] = "AUTO_HFT_LIMIT"
+
                                     # Enviar Ordem Limitada
                                     if risk.dry_run:
                                         logging.warning(f"DRY-RUN: Simulando Ordem LIMIT {side.upper()} de {final_lots} lotes @ {limit_price}")
@@ -706,7 +824,8 @@ async def websocket_endpoint(websocket: WebSocket):
                                         result = await asyncio.to_thread(
                                             bridge.place_limit_order, 
                                             symbol, order_type, limit_price, final_lots, 
-                                            sl=0, tp=0, comment="AUTO HFT LIMIT"
+                                            sl=params['sl'], tp=params['tp'], 
+                                            comment="AUTO HFT LIMIT"
                                         )
                                     
                                     if result and result.retcode == bridge.mt5.TRADE_RETCODE_DONE:
@@ -727,6 +846,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                                     "price": limit_price,
                                                     "obi": obi,
                                                     "sentiment": ai.latest_sentiment_score,
+                                                    "logs": trade_logs,
                                                     "risk_status": {
                                                         "ai_score": ai_total_score,
                                                         "order_status": "PENDING_HFT",
@@ -742,10 +862,12 @@ async def websocket_endpoint(websocket: WebSocket):
                                             if status == "FILLED":
                                                 filled = True
                                                 logging.info(f"HFT FILL: Ordem {order_ticket} executada no spread!")
+                                                add_operational_log(f"HFT FILL: {side.upper()} {final_lots} lotes @ {limit_price}", "success")
                                                 persistence.save_trade(symbol, side, limit_price, final_lots, "AUTO_LIMIT_FILLED")
                                                 break
                                             elif status == "CANCELED":
                                                 logging.warning(f"Ordem {order_ticket} cancelada externamente.")
+                                                add_operational_log(f"Ordem {order_ticket} cancelada externamente.", "warning")
                                                 break
                                         
                                         if not filled:
@@ -760,11 +882,14 @@ async def websocket_endpoint(websocket: WebSocket):
                                                 
                                                 if final_status == "FILLED":
                                                     logging.info(f"RACE CONDITION WIN: Ordem {order_ticket} foi executada no limite do tempo!")
+                                                    add_operational_log(f"RACE CONDITION WIN: {side.upper()} {final_lots} lotes preenchidos!", "success")
                                                     persistence.save_trade(symbol, side, limit_price, final_lots, "AUTO_LIMIT_FILLED_RACE")
                                                 else:
                                                     logging.error(f"Ordem {order_ticket} presa em estado incerto: {final_status}")
+                                                    add_operational_log(f"Erro cancelamento TTL: {order_ticket}", "error")
                                             else:
                                                 logging.info(f"Ordem {order_ticket} cancelada com sucesso (TTL).")
+                                                add_operational_log(f"HFT TTL: {order_ticket} cancelada por timeout (sem fill).", "info")
 
                                             # Opcional: Aqui poderíamos agredir a mercado (Chase), mas HFT puro evita isso. 
                                             # Vamos abortar para preservar a vantagem estatística.
@@ -773,25 +898,32 @@ async def websocket_endpoint(websocket: WebSocket):
                                         logging.error(f"Falha ao enviar Limit Order: {msg}")
                 
                 # LOG DE BLOQUEIO ALTA CONFIANÇA
-                elif risk.allow_autonomous and ai_total_score >= 75:
+                elif risk.allow_autonomous and ai_total_score >= 82:
                      if not market_ok:
                          logging.info(f"SINAL FORTE BLOQUEADO (RISCO MERCADO): {market_condition['reason']}")
+                         add_operational_log(f"OPORTUNIDADE VETADA (Mercado): {market_condition['reason']}", "warning")
                      elif not risk_ok:
                          logging.info(f"SINAL FORTE BLOQUEADO (MONEY MANAGEMENT): {risk_msg}")
+                         add_operational_log(f"OPORTUNIDADE VETADA (Limites): {risk_msg}", "warning")
                      elif not time_allowed:
                          pass # Horário bloqueado é comum, não poluir log
+                     else:
+                         # Bloqueado por conformidade ou outro motivo não capturado acima
+                         add_operational_log(f"SINAL ANALISADO ({ai_total_score}%): Aguardando Confluência L2", "info")
 
-                # 4. Dados de Compliance (Limites)
-                info = await asyncio.to_thread(bridge.mt5.symbol_info, symbol)
-                session_limits = {
-                    "lower": getattr(info, 'session_price_limit_min', 0.0) if info else 0,
-                    "upper": getattr(info, 'session_price_limit_max', 0.0) if info else 0,
-                    "ref": getattr(info, 'session_price_ref', 0.0) if info else 0
-                }
+                # 4. Dados de Compliance (Limites) - Ciclo Lento (a cada ~1s)
+                if loop_count % 10 == 0 or 'session_limits' not in locals():
+                    info = await asyncio.to_thread(bridge.mt5.symbol_info, symbol)
+                    session_limits = {
+                        "lower": getattr(info, 'session_price_limit_min', 0.0) if info else 0,
+                        "upper": getattr(info, 'session_price_limit_max', 0.0) if info else 0,
+                        "ref": getattr(info, 'session_price_ref', 0.0) if info else 0
+                    }
 
                 # 5. Enviar Pacote ao Frontend (Consolidado)
                 try:
                     # Camada Macro (já processada no ciclo lento)
+                    # [ANTIVIBE-CODING] - Contrato de Payload WebSocket (Não alterar sem autorização)
                     packet = {
                         "symbol": str(symbol),
                         "price": float(last_price),
@@ -820,8 +952,9 @@ async def websocket_endpoint(websocket: WebSocket):
                             "upper_bound": float(ai_predict_data.get("upper_bound_norm", last_price) if isinstance(ai_predict_data, dict) else last_price),
                             "weighted_ofi": float(wen_ofi_val),
                             "synthetic_index": float(synthetic_idx),
+                            "bluechips": bluechips if isinstance(bluechips, dict) else {},
                             "psr": float(current_psr),
-                            "regime": int(regime),
+                            "regime": int(regime), # [ANTIVIBE-CODING] - Mapeamento de Regimes (0, 1, 2)
                             "sniper": {
                                 "running": sniper_bot.running,
                                 "consecutive_wins": sniper_bot.consecutive_wins,
@@ -829,11 +962,18 @@ async def websocket_endpoint(websocket: WebSocket):
                                 "last_trade_time": str(sniper_bot.last_trade_time) if sniper_bot.last_trade_time else None
                             }
                         },
-                        "timestamp": (datetime.utcnow() - timedelta(hours=3)).timestamp()
+                        "timestamp": (datetime.utcnow() - timedelta(hours=3)).timestamp(),
+                        "logs": trade_logs
                     }
                     logging.debug("Preparando pacote para envio...")
                     await websocket.send_json(packet)
                     logging.debug("Pacote enviado via WebSocket.")
+                except (WebSocketDisconnect, RuntimeError) as ws_err:
+                    err_msg = str(ws_err).lower()
+                    if isinstance(ws_err, WebSocketDisconnect) or "closed" in err_msg or "connect" in err_msg:
+                        logging.info("WebSocket Cliente desconectado. Encerrando worker.")
+                        break
+                    logging.error(f"Erro de comunicação WS: {ws_err}")
                 except Exception as packet_e:
                     logging.error(f"Erro ao processar/enviar pacote WS: {packet_e}")
                     traceback.print_exc()

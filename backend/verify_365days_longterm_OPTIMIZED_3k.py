@@ -35,8 +35,8 @@ async def run_365d_stress_test():
     params['aggressive_mode'] = True  # Fluxo 1.2x Otimizado
     
     print("\n" + "="*85)
-    print(f"⌛ TESTE DE ESTRESSE 365 DIAS (ANUAL) - SOTA OPTIMIZED")
-    print(f"Capital: R$ 3.000,00 | Lotes: 3.0 | WIN$ M1")
+    print("⌛ TESTE DE ESTRESSE 365 DIAS (ANUAL) - SOTA OPTIMIZED")
+    print("Capital: R$ 3.000,00 | Lotes: 3.0 | WIN$ M1")
     print("="*85 + "\n")
 
     # 2. Carregar dados do MT5 (1 ano ~ 250 dias úteis)
@@ -135,7 +135,7 @@ async def run_365d_stress_test():
     avg_monthly = total_gain / (len(target_days) / 21)
     
     print("-" * 65)
-    print(f"📊 RELATÓRIO ANUAL (365 DIAS) - SOTA OPTIMIZED")
+    print("📊 RELATÓRIO ANUAL (365 DIAS) - SOTA OPTIMIZED")
     print(f"LUCRO LÍQUIDO FINAL:........ R$ {total_gain:.2f} ({ (total_gain/initial_capital)*100:.1f}%)")
     print(f"MÉDIA MENSAL ESTIMADA:...... R$ {avg_monthly:.2f}")
     print(f"DRAWDOWN MÁXIMO ANUAL:...... {max_drawdown:.2f}%")

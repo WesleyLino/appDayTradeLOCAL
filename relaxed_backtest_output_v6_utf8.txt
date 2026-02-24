@@ -1,0 +1,71 @@
+﻿python : C:\Users\Wesley 
+Lino\Documents\ProjetosApp\appDayTradeLOCAL\backend\ai_core.py:8: 
+FutureWarning: 
+No linha:1 caractere:1
++ python backend/run_relaxed_backtest.py > 
+relaxed_backtest_output_v6.t ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\Wesley...Fu 
+   tureWarning: :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+All support for the `google.generativeai` package has ended. It 
+will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package 
+as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/b
+lob/main/README.md
+
+  import google.generativeai as genai
+2026-02-23 21:41:37,937 - DEBUG - Using proactor: IocpProactor
+2026-02-23 21:41:37,940 - INFO - INICIANDO SIMULACAO RELAXADA 
+(Feb 23) - Mini Indice
+2026-02-23 21:41:37,995 - INFO - Meta-Learner carregado: 
+data/models/xgboost_meta_v1.json
+2026-02-23 21:41:37,995 - INFO - \U0001f50d INFERENCE ENGINE: 
+Iniciando carregamento de backend/patchtst_weights_sota.onnx
+2026-02-23 21:41:37,995 - INFO - \U0001f680 INFERENCE ENGINE: 
+Tentando ONNX com backend\patchtst_optimized.onnx...
+2026-02-23 21:41:38,333 - INFO - \u2705 INFERENCE ENGINE: ONNX 
+Runtime Ativo | Provider: DmlExecutionProvider
+2026-02-23 21:41:38,340 - INFO - \U0001f525 DirectML Warm-up 
+ConcluÝdo (Channels: 8).
+2026-02-23 21:41:38,340 - INFO - \U0001f9e0 Motor de InferÛncia 
+SOTA carregado.
+2026-02-23 21:41:38,340 - INFO - \U0001f4e5 Lendo DataFrame 
+Estßtico em O(1) do filepath: backend/data_23feb_m1.csv (Amostra: 
+5000 velas)
+2026-02-23 21:41:38,349 - INFO - \U0001f680 Iniciando SimulaþÒo 
+High Fidelity com 566 velas...
+Traceback (most recent call last):
+  File "C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCA
+L\backend\run_relaxed_backtest.py", line 90, in <module>
+    asyncio.run(run_analysis())
+  File "C:\Users\Wesley Lino\AppData\Local\Programs\Python\Python3
+12\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\Wesley Lino\AppData\Local\Programs\Python\Python3
+12\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Wesley Lino\AppData\Local\Programs\Python\Python3
+12\Lib\asyncio\base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCA
+L\backend\run_relaxed_backtest.py", line 55, in run_analysis
+    report = await tester.run()
+             ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCA
+L\backend\backtest_pro.py", line 230, in run
+    data['vol_sma'] = data['tick_volume'].rolling(window=20).mean(
+).fillna(method='bfill')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: NDFrame.fillna() got an unexpected keyword argument 
+'method'

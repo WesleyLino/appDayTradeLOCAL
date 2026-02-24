@@ -47,10 +47,16 @@ class MetaLearner:
             
             # predict_proba retorna [[prob_0, prob_1]]
             probs = self.model.predict_proba(features_array)
-            return probs[0][1] # Retorna prob da classe 1 (Gain)
+            prob_gain = float(probs[0][1]) # Retorna prob da classe 1 (Gain)
+
+            if prob_gain < 0.45:
+                logging.info(f"🛡️ META-VETO: Baixa prob de ganho ({prob_gain:.2%}) p/ contexto {features}")
+
+            return prob_gain
         except Exception as e:
             logging.error(f"Erro na inferência do Meta-Learner: {e}")
             return 0.5
+
 
     def log_training_data(self, features, label=None, file_path="data/training/triple_barrier_data.csv"):
         """

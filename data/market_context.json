@@ -1,0 +1,19 @@
+{
+  "timestamp": 1771964827.4089985,
+  "bluechips": {
+    "VALE3": 0.7,
+    "PETR4": 1.49,
+    "ITUB4": 1.15,
+    "BBDC4": 0.14,
+    "ELET3": 2.27
+  },
+  "macro": {
+    "score": 0.0,
+    "reason": "No data"
+  },
+  "calendar": {
+    "volatility_expected": false,
+    "reason": "Mercado Est\u00e1vel"
+  },
+  "settlement_price": 0.0
+}

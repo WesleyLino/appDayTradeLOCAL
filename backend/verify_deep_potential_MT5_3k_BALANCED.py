@@ -39,9 +39,9 @@ async def run_balanced_potential_analysis():
     params['be_lock'] = 10.0       # Original
     
     print("\n" + "="*70)
-    print(f"🚀 ANÁLISE BALANCEADA DE POTENCIAL - QUANTUMTRADE PRO")
+    print("🚀 ANÁLISE BALANCEADA DE POTENCIAL - QUANTUMTRADE PRO")
     print(f"Instrumento: WIN$ (Mini Índice) | Capital: R$ {initial_capital:.2f}")
-    print(f"Estratégia: SOTA Balanced (3 Lotes + Anti-Martingale + Trailing 20pt)")
+    print("Estratégia: SOTA Balanced (3 Lotes + Anti-Martingale + Trailing 20pt)")
     print("="*70 + "\n")
 
     # 2. Configurar o Backtester (600 candles ~ 1 dia M1)
@@ -97,7 +97,7 @@ async def run_balanced_potential_analysis():
                 if hasattr(obj, 'isoformat'): return obj.isoformat()
                 return super().default(obj)
         with open(report_path, 'w') as f:
-            f.write(f"DEEP POTENTIAL ANALYSIS - BALANCED - WIN$ - R$ 3000\n")
+            f.write("DEEP POTENTIAL ANALYSIS - BALANCED - WIN$ - R$ 3000\n")
             json.dump(report, f, indent=4, cls=CustomEncoder)
             
         print(f"✅ Relatório balanceado salvo em: {report_path}")

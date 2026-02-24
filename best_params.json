@@ -1,0 +1,13 @@
+{
+    "params": {
+        "rsi_period": 14,
+        "bb_dev": 2.5,
+        "vol_spike_mult": 1.5,
+        "trailing_trigger": 200.0,
+        "trailing_lock": 50.0
+    },
+    "net_profit": -134.258664022785,
+    "max_dd": 0.03277045725713602,
+    "profit_factor": 0.8097095006021701,
+    "trades": 11
+}

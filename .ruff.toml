@@ -1,0 +1,19 @@
+[lint]
+select = ["E", "F"]
+ignore = ["E501", "E701", "E722", "E731", "F401", "F403", "F841", "E402"] # Ignore minor style and unused vars
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[format]
+quote-style = "double"
+
+exclude = [
+    ".agent",
+    ".gemini",
+    ".git",
+    "frontend",
+    "node_modules",
+    "venv",
+    ".venv",
+    "tests",
+    "data"
+]

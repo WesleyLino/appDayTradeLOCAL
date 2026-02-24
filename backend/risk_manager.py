@@ -3,14 +3,16 @@ import logging
 import math
 import numpy as np
 
+# [ANTIVIBE-CODING] - Classe Crítica de Risco
 class RiskManager:
     def __init__(self, max_daily_loss=600.00, daily_trade_limit=3, max_daily_loss_pct=0.60):
         self.max_daily_loss = max_daily_loss
         self.max_daily_loss_pct = max_daily_loss_pct
-        self.daily_trade_limit = daily_trade_limit # Mantido para compatibilidade, mas ignorado no modo agressivo
-        self.max_deviation = 5 # Pontos de slippage permitidos (B3)
-        self.allow_autonomous = True # [MODO ALPHA] Habilita execução automática sob alta confiança
-        self.dry_run = True # [FAILSAFE] Evita envio real de ordens para a B3 se True
+        self.daily_trade_limit = daily_trade_limit 
+        self.max_deviation = 5 
+        self.allow_autonomous = True 
+        self.dry_run = True # [SIMULATION MODE] Always True for safe testing
+        # [ANTIVIBE-CODING] - Limites de Perda Agressivos
         self.forbidden_hours = [
             (time(8, 55), time(9, 5)),   # Abertura
             (time(12, 0), time(13, 0)),  # Almoço/Baixa liquidez
@@ -241,32 +243,50 @@ class RiskManager:
             except Exception as e:
                 logging.error(f"❌ RISK: Erro ao carregar parâmetros de {json_path}: {e}")
         return False
-        
-        # Clip de segurança (Ex: não operar menos que 1 lote nem mais que alavancagem excessiva)
-        # Aqui retornamos o valor bruto para decisão superior
-        return max(0.1, suggested_lots)
 
 
-    def get_order_params(self, symbol, type, price, volume):
+    def get_order_params(self, symbol, type, price, volume, current_atr=None):
         """
         Retorna parâmetros calculados para envio de ordem OCO (One Cancels Other).
         Detecta automaticamente se é WIN ou WDO para definir stops.
+        Agora suporta alvos dinâmicos baseados no ATR para adaptação à volatilidade.
         """
         import MetaTrader5 as mt5
         
         # Definição de Stops por Ativo (Padrão Day Trade)
-        # PRIORIDADE: Parâmetros Otimizados dinamicamente
-        if symbol in self.dynamic_params:
+        # PRIORIDADE 1: Alvos Dinâmicos baseados em ATR (Se disponível)
+        if current_atr and current_atr > 0:
+            # Multiplicadores baseados na recalibração vencedora de 23/02
+            # TP = ~100 pts quando ATR está em ~100-120
+            # SL = ~130 pts
+            tp_mult = 1.0 
+            sl_mult = 1.3
+            
+            sl_points = float(current_atr * sl_mult)
+            tp_points = float(current_atr * tp_mult)
+            
+            # Limites de segurança (Sanity Check)
+            if "WIN" in symbol:
+                sl_points = max(100.0, min(300.0, sl_points))
+                tp_points = max(100.0, min(400.0, tp_points))
+            elif "WDO" in symbol or "DOL" in symbol:
+                sl_points = max(3.0, min(15.0, sl_points))
+                tp_points = max(5.0, min(30.0, tp_points))
+            
+            logging.info(f"⚡ RISK DYNAMO: Alvos dinâmicos via ATR ({current_atr:.1f}): SL={sl_points:.1f}, TP={tp_points:.1f}")
+            
+        # PRIORIDADE 2: Parâmetros Otimizados dinamicamente via JSON
+        elif symbol in self.dynamic_params:
             d_params = self.dynamic_params[symbol]
             sl_points = float(d_params.get("sl", 130.0))
-            tp_points = float(d_params.get("tp", 400.0))
+            tp_points = float(d_params.get("tp", 100.0))
             logging.info(f"🎯 RISK: Usando parâmetros OTIMIZADOS para {symbol}: SL={sl_points}, TP={tp_points}")
         elif "WDO" in symbol or "DOL" in symbol:
-            sl_points = 5.0   # 5 pontos no Dólar (R$ 50,00)
-            tp_points = 10.0  # 10 pontos no Dólar (R$ 100,00)
+            sl_points = 5.0   # 5 pontos no Dólar
+            tp_points = 10.0  # 10 pontos no Dólar
         elif "WIN" in symbol or "IND" in symbol:
-            sl_points = 130.0 # 130 pontos no Índice (RR 1:2 - Alpha V22 Pro)
-            tp_points = 400.0 # 400 pontos no Índice (SOTA Expansion)
+            sl_points = 130.0 # 130 pontos no Índice
+            tp_points = 100.0 # 100 pontos no Índice (Target Recalibrado)
         else:
             sl_points = 0.0
             tp_points = 0.0

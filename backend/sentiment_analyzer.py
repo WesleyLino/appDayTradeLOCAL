@@ -2,14 +2,16 @@ import google.generativeai as genai
 import os
 import logging
 import asyncio
+from dotenv import load_dotenv
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 class SentimentAnalyzer:
     def __init__(self, api_key=None):
         # Tenta pegar do ambiente ou do parâmetro
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
-        self.model_name = "gemini-1.5-pro"
+        self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
+        self.model_name = "gemini-2.5-flash"
         self.is_configured = False
         
         if self.api_key:
@@ -17,7 +19,7 @@ class SentimentAnalyzer:
                 genai.configure(api_key=self.api_key)
                 self.model = genai.GenerativeModel(self.model_name)
                 self.is_configured = True
-                logging.info("✅ Gemini 1.5 Pro configurado com sucesso para análise de sentimento.")
+                logging.info("✅ Gemini 2.5 Flash configurado com sucesso para análise de sentimento.")
             except Exception as e:
                 logging.error(f"Erro ao configurar Gemini: {e}")
         else:

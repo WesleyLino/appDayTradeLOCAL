@@ -132,7 +132,7 @@ class SniperBotWIN:
         
         if result and result.retcode == self.bridge.mt5.TRADE_RETCODE_DONE:
             order_ticket = result.order
-            logger.info(f"⏳ Ordem LIMIT {order_ticket} aberta @ {limit_price}. Aguardando 3s (Tactical TTL)...")
+            logger.info(f"⏳ [INITIATED] Ordem LIMIT {order_ticket} aberta @ {limit_price}. Aguardando 3s (Tactical TTL)...")
             
             # --- CANCELAMENTO TÁTICO (3 segundos) ---
             for _ in range(6): # 6 x 0.5s = 3s
@@ -141,27 +141,29 @@ class SniperBotWIN:
                 if status == "FILLED":
                     self.trade_count += 1
                     self._save_state()
-                    logger.info(f"🎯 [SNIPER FILL] {side.upper()} @ {limit_price} | Trade {self.trade_count}/{self.risk.daily_trade_limit}")
+                    logger.info(f"🎯 [PROFIT/FILL] {side.upper()} @ {limit_price} | Trade {self.trade_count}/{self.risk.daily_trade_limit}")
                     return True
                 elif status == "CANCELED":
-                    logger.warning(f"Ordem {order_ticket} cancelada externamente.")
+                    logger.warning(f"🚫 [REJECTED/CANCELED] Ordem {order_ticket} cancelada externamente.")
                     return False
             
             # Se não executar em 3s, cancela
             logger.info(f"⏱️ TTL Expirou. Cancelando ordem {order_ticket}...")
             if self.bridge.cancel_order(order_ticket):
-                logger.info(f"🛡️ Ordem {order_ticket} cancelada (Momento passou).")
+                logger.info(f"🛡️ [STOPPED/TTL] Ordem {order_ticket} cancelada (Momento passou).")
             else:
                 # Race Condition Check
                 final_status = self.bridge.check_order_status(order_ticket)
                 if final_status == "FILLED":
-                    logger.info(f"🏁 Race Condition WIN: {order_ticket} preenchida no limite!")
+                    logger.info(f"🏁 [PROFIT/RACE] Race Condition WIN: {order_ticket} preenchida no limite!")
                     self.trade_count += 1
                     self._save_state()
                     return True
             return False
-            
-        return False
+        else:
+            msg = result.comment if result else "None"
+            logger.error(f"❌ [REJECTED] Falha ao enviar ordem: {msg}")
+            return False
 
     async def _check_trade_results(self):
         """Monitora o histórico para atualizar vitórias consecutivas (Alpha Scaling)."""
@@ -176,10 +178,10 @@ class SniperBotWIN:
                     profit = last_deal.profit + last_deal.swap + last_deal.commission
                     if profit > 0:
                         self.consecutive_wins += 1
-                        logger.info(f"✨ VITÓRIA detectada! Consecutive Wins: {self.consecutive_wins} | Lote Próximo: {min(1 + self.consecutive_wins, 5)}")
+                        logger.info(f"✨ [PROFIT] Vitória detectada! Lucro: {profit:.2f} | Consecutive Wins: {self.consecutive_wins}")
                     else:
                         self.consecutive_wins = 0
-                        logger.info("📉 LOSS ou BE detectado. Resetando Alpha Scaling. Consecutive Wins: 0")
+                        logger.info(f"📉 [STOPPED/LOSS] Loss ou BE detectado. Lucro: {profit:.2f}. Resetando Alpha Scaling.")
                     self._save_state()
             self.last_total_trades = stats['total_trades']
 
@@ -259,7 +261,15 @@ class SniperBotWIN:
                 self.rsi_period = int(d_params["rsi_period"])
             if d_params.get("vol_spike_mult"):
                 self.vol_spike_mult = float(d_params["vol_spike_mult"])
-            logger.info(f"🎯 SniperBot: Parâmetros aplicados: RSI_Period={self.rsi_period}, VolSpike={self.vol_spike_mult}")
+            if d_params.get("start_time"):
+                try:
+                    self.start_time = datetime.strptime(d_params["start_time"], "%H:%M").time()
+                except: pass
+            if d_params.get("end_time"):
+                try:
+                    self.end_time = datetime.strptime(d_params["end_time"], "%H:%M").time()
+                except: pass
+            logger.info(f"🎯 SniperBot: Parâmetros SOTA aplicados: RSI={self.rsi_period}, VolSpike={self.vol_spike_mult}, Janela={self.start_time}-{self.end_time}")
         
         self.running = True
         while self.running:

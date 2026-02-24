@@ -1,0 +1,436 @@
+{
+    "sota": {
+        "trades": [
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 09:00:00",
+                "time_exit": "2026-02-23 09:02:00",
+                "side": "buy",
+                "entry": 193625.0,
+                "exit": 193675.0,
+                "pnl": 10.0,
+                "type": "SL",
+                "max_favorable": 65.0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 09:02:00",
+                "time_exit": "2026-02-23 09:04:00",
+                "side": "buy",
+                "entry": 193405.0,
+                "exit": 193810.0,
+                "pnl": 81.0,
+                "type": "SL",
+                "max_favorable": 360.0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 09:17:00",
+                "time_exit": "2026-02-23 09:24:00",
+                "side": "buy",
+                "entry": 192815.0,
+                "exit": 192865.0,
+                "pnl": 10.0,
+                "type": "SL",
+                "max_favorable": 45.0,
+                "max_adverse": -140.0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 11:34:00",
+                "time_exit": "2026-02-23 11:36:00",
+                "side": "sell",
+                "entry": 193810.0,
+                "exit": 193760.0,
+                "pnl": 10.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": -145.0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 12:04:00",
+                "time_exit": "2026-02-23 12:07:00",
+                "side": "buy",
+                "entry": 194040.0,
+                "exit": 193840.0,
+                "pnl": -40.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": -90.0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 12:32:00",
+                "time_exit": "2026-02-23 12:35:00",
+                "side": "buy",
+                "entry": 193060.0,
+                "exit": 192860.0,
+                "pnl": -40.0,
+                "type": "SL",
+                "max_favorable": 20.0,
+                "max_adverse": -125.0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 12:58:00",
+                "time_exit": "2026-02-23 13:03:00",
+                "side": "buy",
+                "entry": 192500.0,
+                "exit": 192300.0,
+                "pnl": -40.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": -120.0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 13:03:00",
+                "time_exit": "2026-02-23 13:05:00",
+                "side": "buy",
+                "entry": 192220.0,
+                "exit": 192420.0,
+                "pnl": 40.0,
+                "type": "SL",
+                "max_favorable": 220.0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 14:53:00",
+                "time_exit": "2026-02-23 15:07:00",
+                "side": "sell",
+                "entry": 192655.0,
+                "exit": 192855.0,
+                "pnl": -40.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": -140.0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 16:04:00",
+                "time_exit": "2026-02-23 16:06:00",
+                "side": "buy",
+                "entry": 192560.0,
+                "exit": 192360.0,
+                "pnl": -40.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": -55.0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 16:06:00",
+                "time_exit": "2026-02-23 16:09:00",
+                "side": "buy",
+                "entry": 192350.0,
+                "exit": 192450.0,
+                "pnl": 20.0,
+                "type": "SL",
+                "max_favorable": 75.0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 17:40:00",
+                "time_exit": "2026-02-23 17:43:00",
+                "side": "sell",
+                "entry": 192655.0,
+                "exit": 192475.0,
+                "pnl": 36.0,
+                "type": "SL",
+                "max_favorable": 180.0,
+                "max_adverse": 0
+            }
+        ],
+        "missed": [
+            {
+                "time": "2026-02-23 11:50:00",
+                "reason": "VOL_FILTER",
+                "side": "sell",
+                "price": 194515.0,
+                "vol_mult": 1.0225022501281442
+            },
+            {
+                "time": "2026-02-23 12:07:00",
+                "reason": "VOL_FILTER",
+                "side": "buy",
+                "price": 193885.0,
+                "vol_mult": 0.9013872660379803
+            },
+            {
+                "time": "2026-02-23 12:08:00",
+                "reason": "VOL_FILTER",
+                "side": "buy",
+                "price": 193815.0,
+                "vol_mult": 0.7483435462979342
+            },
+            {
+                "time": "2026-02-23 12:27:00",
+                "reason": "VOL_FILTER",
+                "side": "buy",
+                "price": 193135.0,
+                "vol_mult": 0.9595648349710248
+            },
+            {
+                "time": "2026-02-23 12:56:00",
+                "reason": "VOL_FILTER",
+                "side": "buy",
+                "price": 192630.0,
+                "vol_mult": 1.113287587008451
+            },
+            {
+                "time": "2026-02-23 18:22:00",
+                "reason": "VOL_FILTER",
+                "side": "sell",
+                "price": 192555.0,
+                "vol_mult": 0.3165430392301681
+            }
+        ],
+        "final_balance": 3007.0
+    },
+    "recal": {
+        "trades": [
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 09:00:00",
+                "time_exit": "2026-02-23 09:01:00",
+                "side": "buy",
+                "entry": 193625.0,
+                "exit": 193495.0,
+                "pnl": -26.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 09:01:00",
+                "time_exit": "2026-02-23 09:02:00",
+                "side": "buy",
+                "entry": 193690.0,
+                "exit": 193560.0,
+                "pnl": -26.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 09:02:00",
+                "time_exit": "2026-02-23 09:03:00",
+                "side": "buy",
+                "entry": 193405.0,
+                "exit": 193505.0,
+                "pnl": 20.0,
+                "type": "TP",
+                "max_favorable": 0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 09:17:00",
+                "time_exit": "2026-02-23 09:19:00",
+                "side": "buy",
+                "entry": 192815.0,
+                "exit": 192685.0,
+                "pnl": -26.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": -20.0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 11:34:00",
+                "time_exit": "2026-02-23 11:35:00",
+                "side": "sell",
+                "entry": 193810.0,
+                "exit": 193940.0,
+                "pnl": -26.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 11:35:00",
+                "time_exit": "2026-02-23 11:36:00",
+                "side": "sell",
+                "entry": 193955.0,
+                "exit": 193855.0,
+                "pnl": 20.0,
+                "type": "TP",
+                "max_favorable": 0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 12:04:00",
+                "time_exit": "2026-02-23 12:05:00",
+                "side": "buy",
+                "entry": 194040.0,
+                "exit": 193910.0,
+                "pnl": -26.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 12:32:00",
+                "time_exit": "2026-02-23 12:34:00",
+                "side": "buy",
+                "entry": 193060.0,
+                "exit": 193070.0,
+                "pnl": 2.0,
+                "type": "SL",
+                "max_favorable": 20.0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 12:34:00",
+                "time_exit": "2026-02-23 12:36:00",
+                "side": "buy",
+                "entry": 192935.0,
+                "exit": 192945.0,
+                "pnl": 2.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 12:56:00",
+                "time_exit": "2026-02-23 12:58:00",
+                "side": "buy",
+                "entry": 192630.0,
+                "exit": 192500.0,
+                "pnl": -26.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": -5.0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 12:58:00",
+                "time_exit": "2026-02-23 13:01:00",
+                "side": "buy",
+                "entry": 192500.0,
+                "exit": 192510.0,
+                "pnl": 2.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": -30.0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 13:03:00",
+                "time_exit": "2026-02-23 13:04:00",
+                "side": "buy",
+                "entry": 192220.0,
+                "exit": 192320.0,
+                "pnl": 20.0,
+                "type": "TP",
+                "max_favorable": 0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 14:53:00",
+                "time_exit": "2026-02-23 14:58:00",
+                "side": "sell",
+                "entry": 192655.0,
+                "exit": 192785.0,
+                "pnl": -26.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": -95.0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 16:04:00",
+                "time_exit": "2026-02-23 16:06:00",
+                "side": "buy",
+                "entry": 192560.0,
+                "exit": 192430.0,
+                "pnl": -26.0,
+                "type": "SL",
+                "max_favorable": 0,
+                "max_adverse": -55.0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 16:06:00",
+                "time_exit": "2026-02-23 16:08:00",
+                "side": "buy",
+                "entry": 192350.0,
+                "exit": 192450.0,
+                "pnl": 20.0,
+                "type": "TP",
+                "max_favorable": 15.0,
+                "max_adverse": 0
+            },
+            {
+                "status": "EXECUTED",
+                "time_entry": "2026-02-23 17:40:00",
+                "time_exit": "2026-02-23 17:42:00",
+                "side": "sell",
+                "entry": 192655.0,
+                "exit": 192555.0,
+                "pnl": 20.0,
+                "type": "TP",
+                "max_favorable": 30.0,
+                "max_adverse": 0
+            }
+        ],
+        "missed": [
+            {
+                "time": "2026-02-23 09:19:00",
+                "reason": "VOL_FILTER",
+                "side": "buy",
+                "price": 192780.0,
+                "vol_mult": 1.0077413009264702
+            },
+            {
+                "time": "2026-02-23 11:50:00",
+                "reason": "VOL_FILTER",
+                "side": "sell",
+                "price": 194515.0,
+                "vol_mult": 1.0225022501281442
+            },
+            {
+                "time": "2026-02-23 12:07:00",
+                "reason": "VOL_FILTER",
+                "side": "buy",
+                "price": 193885.0,
+                "vol_mult": 0.9013872660379803
+            },
+            {
+                "time": "2026-02-23 12:08:00",
+                "reason": "VOL_FILTER",
+                "side": "buy",
+                "price": 193815.0,
+                "vol_mult": 0.7483435462979342
+            },
+            {
+                "time": "2026-02-23 12:27:00",
+                "reason": "VOL_FILTER",
+                "side": "buy",
+                "price": 193135.0,
+                "vol_mult": 0.9595648349710248
+            },
+            {
+                "time": "2026-02-23 18:22:00",
+                "reason": "VOL_FILTER",
+                "side": "sell",
+                "price": 192555.0,
+                "vol_mult": 0.3165430392301681
+            }
+        ],
+        "final_balance": 2898.0
+    }
+}

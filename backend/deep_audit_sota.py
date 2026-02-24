@@ -51,8 +51,8 @@ async def run_deep_audit():
     win_rate = results.get('win_rate', 0)
     drawdown = results.get('max_drawdown', 0)
     
-    print(f"\n📈 RESULTADOS DA EXECUÇÃO (THRESHOLD 85%):")
-    print(f"-------------------------------------------")
+    print("\n📈 RESULTADOS DA EXECUÇÃO (THRESHOLD 85%):")
+    print("-------------------------------------------")
     print(f"Balanço Final:    R$ {final_balance:.2f}")
     print(f"Lucro Líquido:    R$ {profit:.2f} ({ (profit/config['initial_balance'])*100:.2f}%)")
     print(f"Total de Trades:  {len(trades)}")
@@ -61,28 +61,28 @@ async def run_deep_audit():
     
     # 5. Análise de Oportunidades Perdidas (Shadow Signals)
     shadow = backtester.shadow_signals
-    print(f"\n🕵️ ANÁLISE DE OPORTUNIDADES PERDIDAS (SNIPER VETO):")
-    print(f"--------------------------------------------------")
+    print("\n🕵️ ANÁLISE DE OPORTUNIDADES PERDIDAS (SNIPER VETO):")
+    print("--------------------------------------------------")
     print(f"Total de Sinais Vetados:     {shadow['total_missed']}")
     print(f"Vetados por Confiança IA:    {shadow['filtered_by_ai']}")
     print(f"Vetados por Fluxo/Volume:    {shadow['filtered_by_flux']}")
     
-    print(f"\n📊 DISTRIBUIÇÃO POR TIER DE CONFIANÇA (POTENCIAL):")
+    print("\n📊 DISTRIBUIÇÃO POR TIER DE CONFIANÇA (POTENCIAL):")
     print(f"  70-75% (Risco Alto):     {shadow['tiers']['70-75']} sinais")
     print(f"  75-80% (Risco Médio):    {shadow['tiers']['75-80']} sinais")
     print(f"  80-85% (Quase Sniper):   {shadow['tiers']['80-85']} sinais")
     
     # 6. Recomendações SOTA
-    print(f"\n💡 RECOMENDAÇÕES PARA ELEVAR ASSERTIVIDADE:")
-    print(f"-------------------------------------------")
+    print("\n💡 RECOMENDAÇÕES PARA ELEVAR ASSERTIVIDADE:")
+    print("-------------------------------------------")
     if shadow['tiers']['80-85'] > 0:
         print(f"  1. Otimização de Score: Existem {shadow['tiers']['80-85']} sinais 'Quase Sniper'.")
-        print(f"     Ajustar o Trailing Stop para travar BE mais cedo pode permitir operar no Tier 80%.")
+        print("     Ajustar o Trailing Stop para travar BE mais cedo pode permitir operar no Tier 80%.")
     else:
-        print(f"  1. Filtro Mestre: O Threshold de 85% está agindo perfeitamente contra ruído.")
+        print("  1. Filtro Mestre: O Threshold de 85% está agindo perfeitamente contra ruído.")
     
     print(f"  2. Alpha Scaling: Com Win Rate de {win_rate}%, o escalonamento de lotes após 2 vitórias é seguro.")
-    print(f"  3. Sentiment Veto: Continue usando o filtro de sentimento para evitar reversões macro.")
+    print("  3. Sentiment Veto: Continue usando o filtro de sentimento para evitar reversões macro.")
 
 if __name__ == "__main__":
     asyncio.run(run_deep_audit())

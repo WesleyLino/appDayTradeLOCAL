@@ -39,7 +39,7 @@ async def run_30day_potential_analysis():
     n_candles = 12000
 
     print("\n" + "="*75)
-    print(f"🕵️ SIMULAÇÃO DE ESTRESSE: 30 DIAS DE POTENCIAL (MT5)")
+    print("🕵️ SIMULAÇÃO DE ESTRESSE: 30 DIAS DE POTENCIAL (MT5)")
     print(f"Ativo: WIN$ | Capital: R$ {initial_capital:.2f} | Lotes: 3.0 (Fixo)")
     print(f"Período Estimado: ~30 dias de negociação (~{n_candles} candles M1)")
     print("="*75 + "\n")
@@ -72,7 +72,7 @@ async def run_30day_potential_analysis():
         pct_return = (total_pnl / initial_capital) * 100
         
         print("\n" + "="*75)
-        print(f"📈 PERFORMANCE FINAL (30 DIAS)")
+        print("📈 PERFORMANCE FINAL (30 DIAS)")
         print("="*75)
         print(f"Saldo Inicial:.............. R$ {initial_capital:.2f}")
         print(f"Saldo Final:................ R$ {bt.balance:.2f}")
@@ -99,12 +99,12 @@ async def run_30day_potential_analysis():
         print("🏆 VEREDITO DE POTENCIAL")
         print("="*75)
         if total_pnl > 0 and report['max_drawdown'] < 15:
-            print(f"Estratégia ALTAMENTE LUCRATIVA e Estável para R$ 3000.")
+            print("Estratégia ALTAMENTE LUCRATIVA e Estável para R$ 3000.")
             print(f"O potencial de {pct_return:.1f}% em 30 dias é excepcional com DD de {report['max_drawdown']:.2f}%.")
         else:
             print("Estratégia requer ajustes para o capital de R$ 3000 neste período.")
         
-        print(f"\n✅ Relatório detalhado disponível nos logs do sistema.")
+        print("\n✅ Relatório detalhado disponível nos logs do sistema.")
         print("="*75 + "\n")
 
     else:

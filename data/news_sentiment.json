@@ -1,0 +1,59 @@
+{
+  "score": 0.45,
+  "reliability": "high",
+  "risk_classification": "MEDIUM",
+  "fact_check": "Dados positivos de ensaio cl\u00ednico impulsionam a\u00e7\u00f5es da Iovance. AMD fecha grande acordo de fornecimento de chips com a Meta. Bayer processa J&J por propaganda enganosa de medicamento. Petrobras e Ita\u00fa superam Mercado Livre em ranking regional. Vale, Petrobras e Prio lideram ranking de a\u00e7\u00f5es mais negociadas em janeiro.",
+  "news": [
+    {
+      "headline": "A\u00e7\u00f5es Iovance sobem 32% ap\u00f3s dados positivos de ensaio cl\u00ednico.",
+      "relevance": 0.7,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "AMD fecha grande acordo de fornecimento de chips com a Meta.",
+      "relevance": 0.9,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "TIM projeta crescimento operacional de 6-8% at\u00e9 2026.",
+      "relevance": 0.4,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "\u00cdndice STOXX 600 fecha em alta, mas incerteza comercial permanece.",
+      "relevance": 0.3,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Warner Bros. avalia nova proposta da Paramount em disputa de aquisi\u00e7\u00e3o.",
+      "relevance": 0.6,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Bayer processa J&J por propaganda enganosa de medicamento.",
+      "relevance": 0.7,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Not\u00edcias gerais dos mercados financeiros.",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Vale, Petrobras e Prio lideram ranking de a\u00e7\u00f5es mais negociadas em janeiro.",
+      "relevance": 0.8,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Expectativa para o balan\u00e7o da C&A (CEAB3).",
+      "relevance": 0.2,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Petrobras e Ita\u00fa superam Mercado Livre em ranking na Am\u00e9rica Latina.",
+      "relevance": 0.8,
+      "impact": "BULLISH"
+    }
+  ],
+  "timestamp": 1771961963.2844863
+}

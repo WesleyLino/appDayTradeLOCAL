@@ -13,6 +13,12 @@ interface TradeData {
         headlines: string[];
       }
     | number; // Backward compatibility with previous simple number
+  logs?: {
+    id: string;
+    time: string;
+    msg: string;
+    type: string;
+  }[];
   ai_confidence?: number;
   regime?: number;
   latency_ms: number;
@@ -55,6 +61,7 @@ interface TradeData {
     upper_bound?: number;
     weighted_ofi?: number;
     synthetic_index?: number;
+    bluechips?: Record<string, number>;
     psr?: number;
     regime?: number;
     order_status?: string;
@@ -93,7 +100,8 @@ export const useTradingStore = create<TradingStore>((set) => ({
 }));
 
 export function useTradingWebSocket(url: string = "ws://localhost:8000/ws") {
-  const { setData, setConnected } = useTradingStore();
+  const setData = useTradingStore((state) => state.setData);
+  const setConnected = useTradingStore((state) => state.setConnected);
   const socketRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(() => {

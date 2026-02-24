@@ -11,6 +11,7 @@ import logging
 import numpy as np
 import asyncio
 import json
+import pandas as pd
 
 load_dotenv()
 
@@ -310,28 +311,36 @@ class AICore:
         
         # [HFT v2.1] Fallback se o modelo não estiver treinado/carregado
         if self.meta_learner.model is None:
-            # Fallback direto se não houver modelo carregado
-            meta_proba = ai_score_raw / 100.0
+            # Em modo Pass-Through, o Meta-Score não interfere na decisão primária
+            meta_score = ai_score_raw
         else:
             try:
                 meta_proba = self.meta_learner.predict_proba(meta_features) # Returns probability 0.0-1.0
+                
+                # [ANTIVIBE-CODING] Mapeamento de score sensível à direção
+                # Se o sinal bruto for de VENDA (score < 50), meta_proba de 1.0 (ganho) deve gerar um meta_score de 0 (venda forte).
+                # Se o sinal bruto for de COMPRA (score > 50), meta_proba de 1.0 (ganho) deve gerar um meta_score de 100 (compra forte).
+                if ai_score_raw >= 50.0:
+                    meta_score = meta_proba * 100.0
+                else:
+                    meta_score = (1.0 - meta_proba) * 100.0
+
             except Exception as e:
                 logging.warning(f"Meta-Learner fallback: Usando raw signal (Motive: {e})")
-                meta_proba = ai_score_raw / 100.0
-        
-        # Converter probabilidade para score (0-100)
-        meta_score = meta_proba * 100.0
+                meta_score = ai_score_raw
 
         # A decisão final é uma média ponderada entre o Sinal Bruto (Macro) e o Meta-Learner
-        # Isso garante que o sentimento IA (notícias/bluechips) não seja silenciado pelo modelo estatístico.
         final_score = (ai_score_raw * 0.4) + (meta_score * 0.6)
         
-        # [FASE 24] VETO ADICIONAL: Se o Meta-Learner diz que a chance de WIN é < 45%, anulamos.
+        # [FASE 24] VETO ADICIONAL: Filtro de Indecisão (Meta-Learner Neutral)
         veto_reason = None
-        if meta_proba < 0.45:
+        # Se o Meta-Learner estiver indeciso (perto de 0.5), vetamos o sinal para evitar overtrading
+        # [ANTIVIBE-CODING] - Só aplicamos o veto de incerteza se o modelo estiver carregado.
+        # Se estiver em modo Pass-Through (model=None), meta_proba é sempre 0.5, mas não devemos vetar.
+        if self.meta_learner.model is not None and (0.45 < meta_proba < 0.55):
             direction = "NEUTRAL"
-            veto_reason = "META-FILTER"
-            logging.info(f"🛡️ META-FILTER VETO: Probabilidade {meta_proba:.2%} abaixo do limiar de 45%. Sinal ignorado.")
+            veto_reason = "META-FILTER-NEUTRAL"
+            logging.info(f"🛡️ META-FILTER: Sinal neutralizado por incerteza estatística (Prob: {meta_proba:.2%})")
         else:
             # 5. Direção — threshold padrão 85, rebaixado se convicção VERY_HIGH
             # [FASE 2] quantile_confidence permite entrada com score >= 80 em sinais de alta convicção
@@ -557,31 +566,57 @@ class InferenceEngine:
     def _predict_sync(self, dataframe):
         """Lógica de inferência unificada para múltiplos canais."""
         try:
-            # 1. Pre-processing: O dataframe já vem normalizado da bridge
-            # Filtramos as colunas necessárias para o PatchTST (OHLCV)
-            # Se vier da bridge de produção, as colunas já estão ordenadas.
-            # Se vier do backtest, garantimos a ordem.
+            # 1. Pre-processing e Feature Engineering (SOTA 8-Channels)
             try:
-                # Tenta colunas padrão da B3/MT5
-                cols = ['open', 'high', 'low', 'close', 'tick_volume']
-                numeric_df = dataframe[cols]
-            except:
-                # Fallback: pega apenas as primeiras 5 colunas numéricas ou 1 se for o caso
-                all_numeric = dataframe.select_dtypes(include=[np.number])
-                c_in = 5 if all_numeric.shape[1] >= 5 else 1
-                numeric_df = all_numeric.iloc[:, :c_in]
+                required_cols = ['open', 'high', 'low', 'close', 'tick_volume', 'cvd', 'ofi', 'volume_ratio']
                 
-            input_data = numeric_df.values[-60:]
+                # Check column presence safely
+                if all(col in dataframe.columns for col in required_cols):
+                    numeric_df = dataframe[required_cols]
+                else:
+                    logging.debug(f"⚠️ Column mismatch. Columns present: {list(dataframe.columns)}")
+                    df = dataframe.copy()
+                    
+                    # Ensure OHLCV exist (essential)
+                    base_cols = ['open', 'high', 'low', 'close']
+                    for col in base_cols:
+                        if col not in df.columns:
+                            df[col] = df.get('price', 0.0) # Fallback to single price or 0
+                    
+                    # Standardize volume
+                    v_col = 'tick_volume' if 'tick_volume' in df.columns else 'real_volume' if 'real_volume' in df.columns else df.columns[4] if len(df.columns) > 4 else None
+                    df['tick_volume'] = df[v_col] if v_col else 0.0
+                    
+                    # Heurística de Microestrutura (Fase 20)
+                    body = df['close'] - df['open']
+                    high_low = df['high'] - df['low'] + 1e-8
+                    df['cvd'] = (df['tick_volume'] * body.apply(lambda x: 1 if x > 0 else -1 if x < 0 else 0)).cumsum()
+                    df['ofi'] = body / high_low
+                    df['volume_ratio'] = df['tick_volume'] / (df['tick_volume'].rolling(20).mean() + 1e-8)
+                    
+                    df = df.fillna(0.0)
+                    numeric_df = df[required_cols]
+                    
+            except Exception as e_feat:
+                logging.error(f"❌ Feature Engineering CRITICAL failure: {repr(e_feat)}")
+                # Ultimo recurso: Gerar colunas base OHLCV+indicadores zerados a partir do que tivermos
+                safe_df = pd.DataFrame(index=range(len(dataframe)))
+                for col in ['open', 'high', 'low', 'close']:
+                    safe_df[col] = dataframe.get(col, 0.0)
+                safe_df['tick_volume'] = 0.0
+                safe_df['cvd'] = 0.0
+                safe_df['ofi'] = 0.0
+                safe_df['volume_ratio'] = 1.0
+                numeric_df = safe_df
+                
+            input_data = numeric_df.values[-60:].copy()
             
             # [FASE 28] NORMALIZAÇÃO DINÂMICA (Log-Returns por Janela)
             # Se os dados contêm valores > 10 (preços brutos), aplicamos log-returns
-            if np.max(np.abs(input_data)) > 10.0:
-                # Calculamos log-returns para as 60 velas (usando a 61ª anterior se possível, 
-                # mas aqui simulamos com diff sobre a própria janela)
-                # Para evitar perda de 1 vela, usamos log(x / x[0]) ou diff
-                # O ideal para PatchTST treinado é Diferenciação Simples:
-                input_data = np.diff(input_data, axis=0, prepend=input_data[0:1])
-                #logging.debug("🧠 INFERENCE: Diferenciação local aplicada.")
+            if np.max(np.abs(input_data[:, :4])) > 10.0:
+                # Aplicamos diferenciação apenas nas colunas de preço (OHLC)
+                # As colunas de volume e indicadores (CVD/OFI) já são estacionárias ou tratadas
+                input_data[:, :4] = np.diff(input_data[:, :4], axis=0, prepend=input_data[0:1, :4])
             
             # [AI PERSISTENCE GUARD] ALWAYS use float32. 
             # FP16 triggers 'Cast' errors in the RevIN layer when using DirectML (AMD).

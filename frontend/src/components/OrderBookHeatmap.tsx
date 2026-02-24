@@ -17,38 +17,26 @@ interface OrderBook {
 
 export function OrderBookHeatmap() {
   const { data, connected } = useTradingStore();
-  const [book, setBook] = useState<OrderBook>({ bids: [], asks: [] });
-  const [maxVol, setMaxVol] = useState(1);
+  const [simulatedBook, setSimulatedBook] = useState<OrderBook>({
+    bids: [],
+    asks: [],
+  });
   const [isSimulated, setIsSimulated] = useState(true);
 
+  // Fallback Simulation Logic (Só roda se não houver MT5)
   useEffect(() => {
-    // Se tiver dados reais do book e estiver conectado
     if (
       connected &&
       data?.book &&
       (data.book.bids.length > 0 || data.book.asks.length > 0)
     ) {
       setIsSimulated(false);
-
-      // Limitar a 10 níveis para visualização limpa
-      const limitedBids = data.book.bids.slice(0, 10);
-      const limitedAsks = data.book.asks.slice(0, 10);
-
-      setBook({ bids: limitedBids, asks: limitedAsks });
-
-      const maxV = Math.max(
-        ...limitedBids.map((b) => b.volume),
-        ...limitedAsks.map((a) => a.volume),
-        10, // Evitar div por zero
-      );
-      setMaxVol(maxV);
       return;
     }
 
-    // Fallback: Simulação se não houver conexão MT5
     setIsSimulated(true);
     const interval = setInterval(() => {
-      const basePrice = data?.price || 115000; // Usa preço real como base se tiver, senão fixo
+      const basePrice = data?.price || 115000;
       const newBids = Array.from({ length: 10 }).map((_, i) => ({
         price: basePrice - i * 5,
         volume: Math.floor(Math.random() * 100) + 10,
@@ -57,18 +45,30 @@ export function OrderBookHeatmap() {
         price: basePrice + (i + 1) * 5,
         volume: Math.floor(Math.random() * 100) + 10,
       }));
-
-      const maxV = Math.max(
-        ...newBids.map((b) => b.volume),
-        ...newAsks.map((a) => a.volume),
-      );
-
-      setBook({ bids: newBids, asks: newAsks });
-      setMaxVol(maxV);
+      setSimulatedBook({ bids: newBids, asks: newAsks });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [data, connected]);
+  }, [connected, data?.book, data?.price]);
+
+  // Derived Data (Heatmap)
+  const { book, maxVol } = React.useMemo(() => {
+    const currentBook =
+      !isSimulated && data?.book
+        ? {
+            bids: data.book.bids.slice(0, 10),
+            asks: data.book.asks.slice(0, 10),
+          }
+        : simulatedBook;
+
+    const maxV = Math.max(
+      ...currentBook.bids.map((b) => b.volume),
+      ...currentBook.asks.map((a) => a.volume),
+      10,
+    );
+
+    return { book: currentBook, maxVol: maxV };
+  }, [isSimulated, data?.book, simulatedBook]);
 
   const getIntensity = (vol: number) => {
     const opacity = 0.2 + (vol / maxVol) * 0.8;

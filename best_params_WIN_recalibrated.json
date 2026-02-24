@@ -1,0 +1,10 @@
+{
+    "params": {
+        "sl_dist": 200,
+        "tp_dist": 80,
+        "vol_spike_mult": 1.5,
+        "be_trigger": 40,
+        "be_lock": 20
+    },
+    "pnl_today": 180.0
+}

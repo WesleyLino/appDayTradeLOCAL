@@ -39,8 +39,8 @@ async def run_optimized_validation():
     params['aggressive_mode'] = True  # Ativa v_mult_eff = v_mult * 0.8 (1.5 * 0.8 = 1.2)
     
     print("\n" + "="*85)
-    print(f"🚀 VALIDAÇÃO DE OTIMIZAÇÃO SOTA: 30 DIAS INDIVIDUAIS (MT5)")
-    print(f"Config: Trailing 70pts | BE 50pts | Flux 1.2x | Lotes: 3.0")
+    print("🚀 VALIDAÇÃO DE OTIMIZAÇÃO SOTA: 30 DIAS INDIVIDUAIS (MT5)")
+    print("Config: Trailing 70pts | BE 50pts | Flux 1.2x | Lotes: 3.0")
     print("="*85 + "\n")
 
     # 2. Carregar dados do MT5
@@ -115,7 +115,7 @@ async def run_optimized_validation():
     avg_wr = sum(r['win_rate'] for r in results) / len(results) if results else 0
     
     print("-" * 85)
-    print(f"📊 RESUMO ESTRATÉGIA OTIMIZADA")
+    print("📊 RESUMO ESTRATÉGIA OTIMIZADA")
     print(f"LUCRO TOTAL ACUMULADO:...... R$ {total_net:.2f} (Vs R$ 72.00 anterior)")
     print(f"MÉDIA POR DIA:.............. R$ {avg_day:.2f}")
     print(f"DIAS POSITIVOS:............. {profitable_days} / 30 ({(profitable_days/30)*100:.1f}%)")

@@ -32,7 +32,7 @@ async def run_production_audit():
     params['aggressive_mode'] = True # Validade do fluxo 1.2x
     
     print("\n" + "="*85)
-    print(f"🕵️ AUDITORIA DE CONFIGURAÇÃO DE PRODUÇÃO (1 DIA - MT5)")
+    print("🕵️ AUDITORIA DE CONFIGURAÇÃO DE PRODUÇÃO (1 DIA - MT5)")
     print(f"Capital: R$ {initial_capital:.2f} | Lotes: 3.0 | SOTA Trailing: {params['trailing_trigger']}pts")
     print(f"Breakeven: {params['be_trigger']}pts | Flux Filter: {params['vol_spike_mult']}x")
     print("="*85 + "\n")
@@ -87,7 +87,7 @@ async def run_production_audit():
     max_dd = report.get('max_drawdown', 0)
     
     print("\n" + "-"*40)
-    print(f"💰 RESULTADO FINANCEIRO")
+    print("💰 RESULTADO FINANCEIRO")
     print(f"Lucro/Prejuízo: R$ {total_pnl:.2f}")
     print(f"Taxa de Acerto: {wr:.1f}% ({wins}/{len(trades)})")
     print(f"Drawdown Max:   {max_dd:.2f}%")
@@ -95,12 +95,12 @@ async def run_production_audit():
 
     # 5. Oportunidades Perdidas (Shadow Signals)
     shadow = report.get('shadow_signals', {'filtered_by_ai': 0, 'filtered_by_flux': 0})
-    print(f"\n🚫 OPORTUNIDADES FILTRADAS (Potential Signals)")
+    print("\n🚫 OPORTUNIDADES FILTRADAS (Potential Signals)")
     print(f"Bloqueadas por IA (AlphaX Score < 85):  {shadow['filtered_by_ai']}")
     print(f"Bloqueadas por FLUXO (Micro-vol < 1.2x): {shadow['filtered_by_flux']}")
     
     # 6. Diagnóstico e Sugestões
-    print(f"\n📝 DIAGNÓSTICO SOTA")
+    print("\n📝 DIAGNÓSTICO SOTA")
     if total_pnl > 0:
         print("✅ Configuração ATUAL é lucrativa para este cenário.")
     else:

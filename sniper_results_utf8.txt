@@ -1,0 +1,56 @@
+﻿
+--- [TEST] SNIPER FLUX: Sniper (No Limits) ---
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 1000.00
+Saldo Final:   R$ 1053.00
+Lucro L├¡quido: R$ 53.00
+Total Trades:  20
+Win Rate:      45.0%
+Profit Factor: 1.16
+Max Drawdown:  12.00%
+
+Relat├│rio Visual salvo em: backend/backtest_report.html
+==================================================
+
+--- [TEST] SNIPER FLUX: Sniper (Limit 3 Trades) ---
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 1000.00
+Saldo Final:   R$ 1053.00
+Lucro L├¡quido: R$ 53.00
+Total Trades:  20
+Win Rate:      45.0%
+Profit Factor: 1.16
+Max Drawdown:  12.00%
+
+Relat├│rio Visual salvo em: backend/backtest_report.html
+==================================================
+
+--- [TEST] SNIPER FLUX: Sniper Pro (Flux + Limit 3) ---
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 1000.00
+Saldo Final:   R$ 981.00
+Lucro L├¡quido: R$ -19.00
+Total Trades:  14
+Win Rate:      42.9%
+Profit Factor: 0.92
+Max Drawdown:  9.00%
+
+Relat├│rio Visual salvo em: backend/backtest_report.html
+==================================================
+
+=====================================================================================
+CEN├üRIO PROFISSIONAL           | LUCRO      | DD       | PF     | TRADES | WR    
+-------------------------------------------------------------------------------------
+Sniper (No Limits)             | R$    53.00 |  12.00% | 1.16 |     20 |  45.0%
+Sniper (Limit 3 Trades)        | R$    53.00 |  12.00% | 1.16 |     20 |  45.0%
+Sniper Pro (Flux + Limit 3)    | R$   -19.00 |   9.00% | 0.92 |     14 |  42.9%
+=====================================================================================

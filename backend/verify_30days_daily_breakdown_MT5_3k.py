@@ -37,7 +37,7 @@ async def run_daily_breakdown():
     params['force_lots'] = 3
     
     print("\n" + "="*85)
-    print(f"🕵️ ANÁLISE DE CONSISTÊNCIA: 30 DIAS INDIVIDUAIS (MT5)")
+    print("🕵️ ANÁLISE DE CONSISTÊNCIA: 30 DIAS INDIVIDUAIS (MT5)")
     print(f"Ativo: WIN$ | Capital Base: R$ {initial_capital_per_day:.2f} | Lotes: 3.0")
     print("="*85 + "\n")
 
@@ -128,7 +128,7 @@ async def run_daily_breakdown():
     profitable_days = len([r for r in results if r['pnl'] > 0])
     
     print("-" * 85)
-    print(f"📊 RESUMO 30 DIAS INDIVIDUAIS")
+    print("📊 RESUMO 30 DIAS INDIVIDUAIS")
     print(f"LUCRO TOTAL ACUMULADO:...... R$ {total_net:.2f}")
     print(f"MÉDIA POR DIA:.............. R$ {avg_day:.2f}")
     print(f"DIAS POSITIVOS:............. {profitable_days} / 30 ({(profitable_days/30)*100:.1f}%)")

@@ -48,7 +48,7 @@ async def run_deep_audit():
     print("RESULTADO DA AUDITORIA DE ESTRATEGIA")
     print("="*85)
     
-    print(f"\n[+] PONTOS FORTES:")
+    print("\n[+] PONTOS FORTES:")
     print(f"- ROI Mensal: {((report['final_balance']-3000)/3000)*100:.1f}% (Excelente para R$ 3k)")
     print(f"- Drawdown: {report['max_drawdown']:.2f}% (Baixo risco sistemico)")
     if len(winning_trades) > 0:
@@ -57,17 +57,17 @@ async def run_deep_audit():
         print(f"- Media de Perda: R$ {losing_trades['pnl_fin'].mean():.2f}")
     print(f"- Relacao Ganho/Perda: {abs(winning_trades['pnl_fin'].mean()/losing_trades['pnl_fin'].mean()):.2f}x (O SOTA Trailing funciona!)")
 
-    print(f"\n[-] PONTOS NEGATIVOS:")
+    print("\n[-] PONTOS NEGATIVOS:")
     print(f"- Taxa de Acerto (WR): {report['win_rate']:.1f}% (Pode ser estressante para iniciantes)")
-    print(f"- Dependencia de 'Big Moves': O lucro vem de poucos trades longos.")
+    print("- Dependencia de 'Big Moves': O lucro vem de poucos trades longos.")
 
-    print(f"\n[!] OPORTUNIDADES FILTRADAS (SHADOW SIGNALS):")
+    print("\n[!] OPORTUNIDADES FILTRADAS (SHADOW SIGNALS):")
     print(f"- Total de Sinais Bloqueados: {shadow['total_missed']}")
     print(f"- Bloqueados por IA (Baixa Confianca): {shadow['filtered_by_ai']}")
     print(f"- Bloqueados por Fluxo (Sem Volume): {shadow['filtered_by_flux']}")
     print(f"- Distribuicao Tiers (Confianca IA): {shadow['tiers']}")
 
-    print(f"\n[*] MELHORIAS RECOMENDADAS:")
+    print("\n[*] MELHORIAS RECOMENDADAS:")
     print("1. Reduzir Filtro de Fluxo em Regimes de Tendencia (Trend Maestro): Muitos sinais filtrados podem ser lucrativos em tendencia forte.")
     print("2. Ajuste de Trailing Trigger: Ativar o trailing um pouco antes (ex: 70 pts) pode garantir lucro em scalps rapidos.")
     print("3. Filtro de Horario: Evitar trades apos as 17:00 (Maior volatilidade erratica).")

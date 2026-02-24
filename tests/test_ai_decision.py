@@ -11,6 +11,11 @@ from backend.ai_core import AICore
 class TestAIDecision(unittest.TestCase):
     def setUp(self):
         self.ai = AICore()
+        # Mock Meta-Learner to avoid dependency on local model file during unit tests
+        # Setting model to None triggers the fallback: final_score = ai_score_raw
+        from unittest.mock import MagicMock
+        self.ai.meta_learner = MagicMock()
+        self.ai.meta_learner.model = None 
 
     def test_strong_buy_signal(self):
         """Testa um cenário de compra forte onde todos indicadores são positivos."""

@@ -16,6 +16,7 @@ import {
   WifiOff,
   Activity,
   Bot,
+  ListTodo,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -48,8 +49,8 @@ export function TradingDashboard() {
   const isHighLatency = (data?.latency_ms ?? 0) > 300;
 
   // Derived Metrics
-  const aiScore = data?.risk_status?.ai_score ?? 0;
-  const aiDirection = data?.risk_status?.ai_direction ?? "NEUTRAL";
+  const aiScore = data?.ai_prediction?.score ?? 0;
+  const aiDirection = data?.ai_prediction?.direction ?? "NEUTRAL";
 
   const isObiOk = Math.abs(data?.obi ?? 0) > 0.2; // Exemplo de threshold
   const isConfidenceOk = (data?.ai_confidence ?? 0) > 0.6;
@@ -64,6 +65,23 @@ export function TradingDashboard() {
   // Autonomous State
   const [autonomousMode, setAutonomousMode] = useState(false);
   const [isUpdatingAuto, setIsUpdatingAuto] = useState(false);
+  const [isSniperActive, setIsSniperActive] = useState(false);
+  // Mapeamento de Cores por Tipo
+  const LOG_COLORS = {
+    success: "text-emerald-400",
+    warning: "text-amber-400",
+    error: "text-red-400",
+    info: "text-blue-400",
+  };
+
+  // Monitor de eventos (Simulação Autônoma)
+  useEffect(() => {
+    if (data?.risk_status?.sniper?.last_trade_time) {
+      // Aqui poderíamos capturar eventos reais do backend se ele enviasse um array de logs.
+      // Como o backend envia estados, vamos simular a inserção baseada em mudanças de estado se necessário,
+      // ou apenas preparar o local para logs manuais se o backend enviasse um campo 'last_event'.
+    }
+  }, [data?.risk_status?.sniper]);
 
   const toggleAutonomous = async () => {
     if (isUpdatingAuto) return;
@@ -435,85 +453,245 @@ export function TradingDashboard() {
           <TradingChart />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 glass rounded-2xl shadow-lg flex flex-col gap-2">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
-                Sentimento (Gemini)
-              </span>
+            <div className="p-5 glass rounded-2xl shadow-xl flex flex-col gap-4 min-h-[180px] border border-white/10">
               <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
-                  {(typeof data?.sentiment === "object"
-                    ? data.sentiment.score
-                    : (data?.sentiment ?? 0)
-                  ).toFixed(2)}
+                <span className="text-[11px] text-muted-foreground uppercase tracking-widest font-bold flex items-center gap-2">
+                  <Bot size={16} className="text-primary animate-pulse" />
+                  Sentimento do Mercado (Gemini IA)
                 </span>
-                <TrendingUp
-                  className={cn(
-                    "w-6 h-6",
-                    (typeof data?.sentiment === "object"
-                      ? data.sentiment.score
-                      : (data?.sentiment ?? 0)) > 0
-                      ? "text-emerald-400"
-                      : "text-red-400",
-                  )}
-                />
+                <div className="flex items-center gap-3 bg-white/5 px-3 py-1 rounded-full border border-white/5">
+                  <span className="text-2xl font-black bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
+                    {sentimentValue.toFixed(2)}
+                  </span>
+                  <TrendingUp
+                    className={cn(
+                      "w-5 h-5",
+                      sentimentValue > 0 ? "text-emerald-400" : "text-red-400",
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="flex-1 space-y-3 overflow-y-auto max-h-[120px] custom-scrollbar pr-2">
+                {data?.sentiment &&
+                typeof data.sentiment === "object" &&
+                Array.isArray(data.sentiment.headlines) &&
+                data.sentiment.headlines.length > 0 ? (
+                  data.sentiment.headlines.map((item: any, idx: number) => {
+                    const impactMap: Record<
+                      string,
+                      { label: string; color: string }
+                    > = {
+                      BULLISH: {
+                        label: "ALTISTA",
+                        color:
+                          "text-emerald-400 bg-emerald-500/20 border-emerald-500/20",
+                      },
+                      BEARISH: {
+                        label: "BAIXISTA",
+                        color: "text-red-400 bg-red-500/20 border-red-500/20",
+                      },
+                      NEUTRAL: {
+                        label: "NEUTRO",
+                        color:
+                          "text-zinc-400 bg-zinc-500/20 border-zinc-500/20",
+                      },
+                    };
+                    const impact = impactMap[item.impact] || impactMap.NEUTRAL;
+
+                    return (
+                      <div
+                        key={idx}
+                        className="flex flex-col gap-2 p-3 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:border-primary/30 hover:bg-white/[0.06] transition-all duration-300 group"
+                      >
+                        <div className="flex justify-between items-start gap-4">
+                          <p className="text-xs font-semibold leading-relaxed text-zinc-200 group-hover:text-white transition-colors">
+                            {typeof item === "string" ? item : item.headline}
+                          </p>
+                          <span
+                            className={cn(
+                              "text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider shrink-0 border",
+                              impact.color,
+                            )}
+                          >
+                            {impact.label}
+                          </span>
+                        </div>
+
+                        {item.relevance !== undefined && (
+                          <div className="flex items-center gap-3 mt-1">
+                            <div className="flex items-center gap-1.5 min-w-[60px]">
+                              <span className="text-[9px] text-muted-foreground font-medium">
+                                Relevância:
+                              </span>
+                              <span className="text-[9px] font-mono font-bold text-primary">
+                                {(item.relevance * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                            <div className="h-1 flex-1 bg-white/5 rounded-full overflow-hidden">
+                              <div
+                                className={cn(
+                                  "h-full transition-all duration-1000 ease-out",
+                                  item.impact === "BULLISH"
+                                    ? "bg-emerald-500/60 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                                    : item.impact === "BEARISH"
+                                      ? "bg-red-500/60 shadow-[0_0_10px_rgba(239,68,68,0.3)]"
+                                      : "bg-primary/40",
+                                )}
+                                style={{
+                                  width: `${(item.relevance * 100).toFixed(0)}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full py-4 gap-3 opacity-60">
+                    <div className="relative">
+                      <Activity
+                        size={24}
+                        className="animate-spin text-primary/40"
+                      />
+                      <Bot
+                        size={12}
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary"
+                      />
+                    </div>
+                    <p className="text-[10px] text-zinc-400 font-medium italic tracking-wide">
+                      Processando panorama global em tempo real...
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Termômetro Blue Chips (New Quant Feature) */}
-            <div className="p-4 glass rounded-2xl shadow-lg flex flex-col gap-2">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
-                Blue Chips (IBOV)
-              </span>
+            {/* Termômetro Blue Chips (New Quant Feature) */}
+            <div className="p-4 glass rounded-2xl shadow-lg flex flex-col gap-3 min-h-[180px]">
               <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold flex items-center gap-2">
+                  <Activity
+                    size={14}
+                    className={cn(
+                      "text-primary",
+                      (data?.risk_status?.synthetic_index ?? 0) !== 0 &&
+                        "animate-pulse",
+                    )}
+                  />
+                  Blue Chips (IBOV)
+                </span>
                 <span
                   className={cn(
-                    "text-3xl font-bold bg-clip-text text-transparent",
-                    (data?.risk_status?.synthetic_index ??
-                      data?.synthetic_index ??
-                      0) > 0
-                      ? "bg-gradient-to-r from-emerald-400 to-emerald-600"
-                      : (data?.risk_status?.synthetic_index ??
-                            data?.synthetic_index ??
-                            0) < 0
-                        ? "bg-gradient-to-r from-red-400 to-red-600"
-                        : "bg-gradient-to-r from-gray-400 to-gray-600",
-                  )}
-                >
-                  {(
-                    data?.risk_status?.synthetic_index ??
-                    data?.synthetic_index ??
-                    0
-                  ).toFixed(2)}
-                  %
-                </span>
-                <Activity
-                  className={cn(
-                    "w-6 h-6",
-                    (data?.risk_status?.synthetic_index ??
-                      data?.synthetic_index ??
-                      0) > 0.1
-                      ? "text-emerald-400 animate-pulse"
-                      : (data?.risk_status?.synthetic_index ??
-                            data?.synthetic_index ??
-                            0) < -0.1
-                        ? "text-red-400 animate-pulse"
+                    "text-lg font-black font-mono",
+                    (data?.risk_status?.synthetic_index ?? 0) > 0
+                      ? "text-emerald-400"
+                      : (data?.risk_status?.synthetic_index ?? 0) < 0
+                        ? "text-red-400"
                         : "text-muted-foreground",
                   )}
-                />
+                >
+                  {(data?.risk_status?.synthetic_index ?? 0).toFixed(2)}%
+                </span>
               </div>
-              <span className="text-[10px] text-muted-foreground">
-                {(data?.risk_status?.synthetic_index ??
-                  data?.synthetic_index ??
-                  0) > 0.1
-                  ? "Suporte de Alta"
-                  : (data?.risk_status?.synthetic_index ??
-                        data?.synthetic_index ??
-                        0) < -0.1
-                    ? "Pressão de Venda"
-                    : "Neutro"}
-              </span>
+
+              <div className="flex-1 grid grid-cols-1 gap-2 overflow-y-auto max-h-[120px] custom-scrollbar pr-1">
+                {data?.risk_status?.bluechips ? (
+                  Object.entries(data.risk_status.bluechips).map(
+                    ([ticker, change]: [string, any]) => (
+                      <div
+                        key={ticker}
+                        className="flex items-center justify-between p-2 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] transition-all group"
+                      >
+                        <span className="text-[11px] font-bold text-zinc-300 group-hover:text-primary transition-colors">
+                          {ticker}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-12 h-1 bg-white/5 rounded-full overflow-hidden">
+                            <div
+                              className={cn(
+                                "h-full transition-all duration-1000",
+                                change > 0
+                                  ? "bg-emerald-500/50"
+                                  : change < 0
+                                    ? "bg-red-500/50"
+                                    : "bg-zinc-500/20",
+                              )}
+                              style={{
+                                width: `${Math.min(100, Math.max(5, Math.abs(change * 20)))}%`,
+                              }}
+                            />
+                          </div>
+                          <span
+                            className={cn(
+                              "text-[10px] font-mono font-black min-w-[45px] text-right",
+                              change > 0
+                                ? "text-emerald-400"
+                                : change < 0
+                                  ? "text-red-400"
+                                  : "text-zinc-500",
+                            )}
+                          >
+                            {change > 0 ? "+" : ""}
+                            {change.toFixed(2)}%
+                          </span>
+                        </div>
+                      </div>
+                    ),
+                  )
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full gap-2 opacity-40">
+                    <Activity size={16} className="animate-spin" />
+                    <span className="italic text-[9px]">
+                      Sincronizando IBOV...
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="md:col-span-2">
+
+            {/* Log de Execução Autônoma (Simulation Focus) */}
+            <div className="md:col-span-2 p-4 glass rounded-2xl shadow-lg flex flex-col gap-3 min-h-[120px]">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-2">
+                  <ListTodo size={14} className="text-primary" />
+                  Log de Execução Autônoma
+                </span>
+                <span className="text-[9px] text-emerald-400/70 animate-pulse">
+                  SIMULAÇÃO ATIVA
+                </span>
+              </div>
+              <div className="flex-1 font-mono text-[10px] space-y-1 overflow-y-auto max-h-[80px] custom-scrollbar">
+                {data?.logs && data.logs.length > 0 ? (
+                  data.logs.map((log: any) => (
+                    <div
+                      key={log.id}
+                      className={cn(
+                        "flex gap-2 transition-all animate-in slide-in-from-left-2 duration-300",
+                        LOG_COLORS[log.type as keyof typeof LOG_COLORS] ||
+                          "text-muted-foreground",
+                      )}
+                    >
+                      <span className="opacity-50 shrink-0">[{log.time}]</span>
+                      <span className="font-bold shrink-0">
+                        [{log.type.toUpperCase()}]
+                      </span>
+                      <span>{log.msg}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex gap-2 text-muted-foreground italic">
+                    <span>
+                      Aguardando sinais de alta confiança (&gt;85%)...
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="md:col-span-1">
               <FlowMeter />
             </div>
           </div>

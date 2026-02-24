@@ -39,9 +39,9 @@ async def run_optimized_potential_analysis():
     params['be_lock'] = 15.0       # Trava de lucro maior no BE
     
     print("\n" + "="*70)
-    print(f"🚀 ANÁLISE OTIMIZADA DE POTENCIAL - QUANTUMTRADE PRO")
+    print("🚀 ANÁLISE OTIMIZADA DE POTENCIAL - QUANTUMTRADE PRO")
     print(f"Instrumento: WIN$ (Mini Índice) | Capital: R$ {initial_capital:.2f}")
-    print(f"Estratégia: SOTA Optimized (Base 3 Lotes + Anti-Martingale)")
+    print("Estratégia: SOTA Optimized (Base 3 Lotes + Anti-Martingale)")
     print("="*70 + "\n")
 
     # 2. Configurar o Backtester (600 candles ~ 1 dia M1)
@@ -99,7 +99,7 @@ async def run_optimized_potential_analysis():
 
         report_path = "backend/deep_potential_3k_OPTIMIZED_report.txt"
         with open(report_path, 'w') as f:
-            f.write(f"DEEP POTENTIAL ANALYSIS - OPTIMIZED - WIN$ - R$ 3000\n")
+            f.write("DEEP POTENTIAL ANALYSIS - OPTIMIZED - WIN$ - R$ 3000\n")
             json.dump(report, f, indent=4, cls=CustomEncoder)
             
         print(f"✅ Relatório otimizado salvo em: {report_path}")

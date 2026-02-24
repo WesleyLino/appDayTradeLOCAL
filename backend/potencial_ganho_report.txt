@@ -1,0 +1,35 @@
+RELATÓRIO DE POTENCIAL DE GANHO - WIN$
+Data Execução: 2026-02-22 10:39:41
+Janela: 19/02/2026 17:50 - 20/02/2026 18:24
+
+{
+    "final_balance": 1025.0,
+    "total_pnl": 25.0,
+    "trades": [
+        {
+            "entry_time": "2026-02-20T12:02:00",
+            "exit_time": "2026-02-20T12:04:00",
+            "side": "sell",
+            "entry": 191995.0,
+            "exit": 191880.0,
+            "lots": 1,
+            "pnl_points": 115.0,
+            "pnl_fin": 23.0,
+            "reason": "SL"
+        },
+        {
+            "entry_time": "2026-02-20T15:33:00",
+            "exit_time": "2026-02-20T15:35:00",
+            "side": "sell",
+            "entry": 193165.0,
+            "exit": 193155.0,
+            "lots": 1,
+            "pnl_points": 10.0,
+            "pnl_fin": 2.0,
+            "reason": "SL"
+        }
+    ],
+    "win_rate": 100.0,
+    "profit_factor": Infinity,
+    "max_drawdown": 0.0
+}

@@ -605,7 +605,7 @@ class MT5Bridge:
 
                 if tick and rates is not None and len(rates) > 0:
                     open_price = rates[0]['open']
-                    current_price = tick.last
+                    current_price = tick.last if tick.last > 0 else (tick.bid if tick.bid > 0 else tick.ask)
                     
                     if open_price > 0:
                         variation = ((current_price - open_price) / open_price) * 100
