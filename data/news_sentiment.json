@@ -1,18 +1,13 @@
 {
-  "score": 0.5,
+  "score": -0.7,
   "reliability": "high",
-  "risk_classification": "MEDIUM",
-  "fact_check": "Mercados europeus fecharam em alta recorde, impulsionados por resultados corporativos e expectativas de tecnologia. Empresas espec\u00edficas tiveram movimentos significativos ap\u00f3s balan\u00e7os, aquisi\u00e7\u00f5es ou lan\u00e7amentos de produtos com IA. Um oficial do Fed comentou sobre o impacto da IA no trabalho, sem implica\u00e7\u00f5es imediatas para a pol\u00edtica monet\u00e1ria.",
+  "risk_classification": "HIGH",
+  "fact_check": "Problemas t\u00e9cnicos na CME Group representam risco operacional imediato para mercados financeiros. Ouro em alta devido a tarifas e geopol\u00edtica indica avers\u00e3o ao risco. EUA permitem revenda de petr\u00f3leo venezuelano a Cuba, impactando din\u00e2mica de oferta. Balan\u00e7os corporativos (CDK, Marcopolo) e eventos espec\u00edficos de empresas (CASI, Incannex) mostram volatilidade setorial.",
   "news": [
     {
-      "headline": "Barkin, do Fed, diz que n\u00e3o se pode concluir que IA substituir\u00e1 trabalhadores",
-      "relevance": 0.2,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "C&A (CEAB3) sobe ap\u00f3s balan\u00e7o do 4\u00ba trimestre",
+      "headline": "EUA permitir\u00e3o revenda de petr\u00f3leo venezuelano a Cuba, diz Departamento do Tesouro",
       "relevance": 0.6,
-      "impact": "BULLISH"
+      "impact": "NEUTRAL"
     },
     {
       "headline": "Mercados Financeiros - \u00daltimas Not\u00edcias | InfoMoney",
@@ -20,40 +15,45 @@
       "impact": "NEUTRAL"
     },
     {
-      "headline": "A\u00e7\u00f5es da UiPath caem ap\u00f3s aquisi\u00e7\u00e3o da Vercept pela Anthropic",
-      "relevance": 0.5,
+      "headline": "A\u00e7\u00f5es da CDK Global da Brookfield registram queda de 18% nos lucros devido a custos",
+      "relevance": 0.4,
       "impact": "BEARISH"
     },
     {
-      "headline": "A\u00e7\u00f5es da Digi International sobem com lan\u00e7amento de integra\u00e7\u00e3o de IA",
+      "headline": "Balan\u00e7o da Marcopolo (POMO4): Resili\u00eancia em meio \u00e0 desacelera\u00e7\u00e3o?",
       "relevance": 0.5,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Ra\u00edzen: aporte bilion\u00e1rio vem a\u00ed?",
-      "relevance": 0.3,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "A\u00e7\u00f5es europeias fecham em alta recorde com impulso do HSBC e al\u00edvio dos receios com IA",
-      "relevance": 0.8,
-      "impact": "BULLISH"
+      "headline": "Ouro sobe com tarifas e geopol\u00edtica; CME informa problemas t\u00e9cnicos",
+      "relevance": 0.9,
+      "impact": "BEARISH"
     },
     {
-      "headline": "A\u00e7\u00f5es da Crexendo sobem com an\u00fancio de parceria com a AppDirect",
-      "relevance": 0.5,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "A\u00e7\u00f5es da Netskope sobem com classifica\u00e7\u00e3o Outperform da FBN Securities",
+      "headline": "Barkin, do Fed, diz que n\u00e3o se pode concluir de fato que IA substituir\u00e1 trabalhadores",
       "relevance": 0.1,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Bolsas da Europa fecham em alta com expectativas de resultados da Nvidia",
-      "relevance": 0.7,
-      "impact": "BULLISH"
+      "headline": "Larry Summers renuncia \u00e0 Harvard devido a liga\u00e7\u00f5es com Epstein",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "A\u00e7\u00f5es da CASI Pharmaceuticals despencam ap\u00f3s notifica\u00e7\u00e3o de exclus\u00e3o da Nasdaq",
+      "relevance": 0.4,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Expert Trader XP anuncia Tom Hougaard e Ralph Acampora para 1\u00aa edi\u00e7\u00e3o",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "A\u00e7\u00f5es da Incannex Healthcare despencam ap\u00f3s an\u00fancio de grupamento",
+      "relevance": 0.4,
+      "impact": "BEARISH"
     }
   ],
-  "timestamp": 1772044675.4809003
+  "timestamp": 1772048266.5596046
 }

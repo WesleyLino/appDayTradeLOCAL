@@ -660,18 +660,16 @@ async def websocket_endpoint(websocket: WebSocket):
                                     continue
                                 
                                 is_wdo = "WDO" in symbol or "DOL" in symbol
-                                # Configuração Trailing (Poderia vir do Config/Risk)
-                                trigger_pts = 5.0 if is_wdo else 70.0 # Gatilho para iniciar (Otimizado)
-                                step_pts = 2.0 if is_wdo else 20.0 # Distância do trailing (70-50=20) (Otimizado)
+                                # Gatilho e Step puxados do RiskManager (v22 Gold)
+                                trigger_pts = risk.trailing_trigger if not is_wdo else 5.0
+                                step_pts = risk.trailing_step if not is_wdo else 2.0
                                 
                                 current_price = last_price
                                 if pos.type == bridge.mt5.POSITION_TYPE_BUY:
                                     profit_pts = current_price - pos.price_open
                                     if profit_pts >= trigger_pts:
                                         new_sl = current_price - step_pts
-                                        # Se novo SL for maior que o atual (subir o stop)
                                         if new_sl > pos.sl:
-                                            # Anti-Violinada no SL Dinâmico
                                             new_sl = risk._apply_anti_violinada(symbol, new_sl, "buy")
                                             await asyncio.to_thread(bridge.update_sltp, pos.ticket, new_sl, pos.tp)
                                             logging.info(f"TRAILING STOP (BUY): SL movido para {new_sl}")
@@ -680,9 +678,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                     profit_pts = pos.price_open - current_price
                                     if profit_pts >= trigger_pts:
                                         new_sl = current_price + step_pts
-                                        # Se novo SL for menor que o atual (descer o stop)
                                         if pos.sl == 0 or new_sl < pos.sl:
-                                             # Anti-Violinada no SL Dinâmico
                                             new_sl = risk._apply_anti_violinada(symbol, new_sl, "sell")
                                             await asyncio.to_thread(bridge.update_sltp, pos.ticket, new_sl, pos.tp)
                                             logging.info(f"TRAILING STOP (SELL): SL movido para {new_sl}")
@@ -703,7 +699,6 @@ async def websocket_endpoint(websocket: WebSocket):
                             logging.warning(f"AUTÔNOMO BLOQUEADO: {macro_msg}")
                         else:
                             # EXECUÇÃO AUTORIZADA
-                            # [RESTAURAÇÃO MACRO] Log detalhado da composição do score
                             brk = decision.get("breakdown", {})
                             log_msg = (
                                 f"🚀 [SCORE MACRO: {ai_total_score:.1f}] Disparando {side.upper()} | "
@@ -722,11 +717,9 @@ async def websocket_endpoint(websocket: WebSocket):
                                 order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
                                 logging.info("🎯 SNIPER MODE: AGGRESSIVE LIMIT ORDER")
                                 
-                                # Obter Tick Fresco para a ordem
                                 tick_info = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
                                 current_order_price = tick_info.ask if side == "buy" else tick_info.bid
                                 
-                                # [SOTA] Volatility Sizing
                                 point_value = 10.0 if "WDO" in symbol or "DOL" in symbol else 0.20
                                 sota_lots = risk.calculate_volatility_sizing(account['balance'], current_atr, point_value)
                                 final_lots = max(1, int(sota_lots))
@@ -735,17 +728,14 @@ async def websocket_endpoint(websocket: WebSocket):
                                 params["symbol"] = symbol
                                 params["comment"] = "AUTO SNIPER"
                                 
-                                # Execução Resiliente (Trata Requotes)
                                 if risk.dry_run:
                                     logging.warning(f"DRY-RUN: Simulando Ordem SNIPER LIMIT {side.upper()} de {final_lots} lotes @ {current_order_price}")
-                                    # Criação de um mock result válido
                                     class MockResult:
                                         retcode = bridge.mt5.TRADE_RETCODE_DONE
                                         price = current_order_price
                                         order = 888888
                                     result = MockResult()
                                 else:
-                                    # Sniper Limit: Enviamos no Ask (Compra) ou Bid (Venda) para garantir execução rápida
                                     result = await asyncio.to_thread(
                                         bridge.place_limit_order, 
                                         symbol, order_type, current_order_price, final_lots, 
@@ -757,9 +747,8 @@ async def websocket_endpoint(websocket: WebSocket):
                                     order_ticket = result.order
                                     mode_tag = "SIMULATION_SNIPER" if risk.dry_run else "AUTO_SNIPER"
                                     
-                                    # --- SNIPER TTL (3 segundos) ---
                                     filled = False
-                                    for _ in range(6): # 6 x 0.5s = 3s
+                                    for _ in range(6): 
                                         await asyncio.sleep(0.5)
                                         status = await asyncio.to_thread(bridge.check_order_status, order_ticket)
                                         if status == "FILLED":
@@ -782,17 +771,10 @@ async def websocket_endpoint(websocket: WebSocket):
                                     add_operational_log(f"Falha Execução Sniper: {msg}", "error")
 
                             else:
-                                # --- PASSIVE ENTRY: LIMIT ORDER (HFT SOTA) ---
                                 order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
                                 logging.info("🛡️ PASSIVE ENTRY: LIMIT ORDER (Top Book)")
                                 
-                                # Pegar Preço Do Topo do Book (Comprar no Bid, Vender no Ask)
-                                # Isso garante spread a favor, mas risco de não executar
                                 tick_info = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
-                                # IMPORTANTE: Limit Buy é abaixo do preço atual (Bid), Limit Sell é acima (Ask)?
-                                # Não! Limit Buy deve ser <= Ask. Se colocarmos no Bid, estamos na fila passiva.
-                                # Se colocarmos no Ask, vira Market praticamente.
-                                # Estratégia HFT: Colocar no BID (para compra) ou ASK (para venda) e esperar ser agredido.
                                 limit_price = tick_info.bid if side == "buy" else tick_info.ask
                                 
                                 valid_comp, reason_comp = await asyncio.to_thread(bridge.validate_order_compliance, symbol, limit_price)
@@ -800,14 +782,9 @@ async def websocket_endpoint(websocket: WebSocket):
                                 if not valid_comp:
                                      logging.warning(f"BLOCK Compliance: {reason_comp}")
                                 else:
-
-                                    # [SOTA] Volatility Sizing
                                     point_value = 10.0 if "WDO" in symbol or "DOL" in symbol else 0.20
                                     sota_lots = risk.calculate_volatility_sizing(account['balance'], current_atr, point_value)
-                                    
-                                    # Ajuste fino de lotes (step)
                                     vol_step = tick_info.volume_step if hasattr(tick_info, 'volume_step') else 1.0
-                                    # Arredondar para o step mais próximo
                                     final_lots = round(sota_lots / vol_step) * vol_step
                                     final_lots = max(vol_step, final_lots)
                                     
@@ -817,7 +794,6 @@ async def websocket_endpoint(websocket: WebSocket):
                                     params["symbol"] = symbol
                                     params["comment"] = "AUTO_HFT_LIMIT"
 
-                                    # Enviar Ordem Limitada
                                     if risk.dry_run:
                                         logging.warning(f"DRY-RUN: Simulando Ordem LIMIT {side.upper()} de {final_lots} lotes @ {limit_price}")
                                         class MockResultLimit:
@@ -837,13 +813,11 @@ async def websocket_endpoint(websocket: WebSocket):
                                         mode_tag = "SIMULACAO_LIMITE_PENDENTE" if risk.dry_run else "PENDENTE"
                                         logging.info(f"Ordem {mode_tag} Aberta: {order_ticket}. Aguardando 5s...")
                                         
-                                        # --- HFT TTL LOOP (3 segundos) ---
                                         filled = False
-                                        for _ in range(6): # 6x 0.5s = 3s
+                                        for _ in range(6): 
                                             await asyncio.sleep(0.5)
                                             status = await asyncio.to_thread(bridge.check_order_status, order_ticket)
                                             
-                                            # [UX] Enviar Heartbeat para Frontend não congelar e mostrar status
                                             try:
                                                 hb_packet = {
                                                     "symbol": symbol,
@@ -853,7 +827,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                                     "logs": trade_logs,
                                                     "risk_status": {
                                                         "ai_score": ai_total_score,
-                                                        "allow_autonomous": risk.allow_autonomous, # [ANTIVIBE-CODING] - Persistência Heartbeat
+                                                        "allow_autonomous": risk.allow_autonomous,
                                                         "order_status": "PENDING_HFT",
                                                         "ticket": order_ticket
                                                     },
@@ -862,7 +836,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                                 }
                                                 await websocket.send_json(hb_packet)
                                             except Exception:
-                                                pass # Ignorar erros de socket no loop rápido
+                                                pass
 
                                             if status == "FILLED":
                                                 filled = True
@@ -872,7 +846,6 @@ async def websocket_endpoint(websocket: WebSocket):
                                                 break
                                             elif status == "CANCELED":
                                                 logging.warning(f"Ordem {order_ticket} cancelada externamente.")
-                                                add_operational_log(f"Ordem {order_ticket} cancelada externamente.", "warning")
                                                 break
                                         
                                         if not filled:
@@ -880,43 +853,33 @@ async def websocket_endpoint(websocket: WebSocket):
                                             cancel_success = await asyncio.to_thread(bridge.cancel_order, order_ticket)
                                             
                                             if not cancel_success:
-                                                # RACE CONDITION CHECK:
-                                                # Se falhou cancelar, pode ter sido executada no último milissegundo.
-                                                logging.warning(f"Falha ao cancelar {order_ticket}. Verificando se foi executada (Race Condition)...")
+                                                logging.warning(f"Falha ao cancelar {order_ticket}. Verificando Race Condition...")
                                                 final_status = await asyncio.to_thread(bridge.check_order_status, order_ticket)
-                                                
                                                 if final_status == "FILLED":
-                                                    logging.info(f"RACE CONDITION WIN: Ordem {order_ticket} foi executada no limite do tempo!")
-                                                    add_operational_log(f"RACE CONDITION WIN: {side.upper()} {final_lots} lotes preenchidos!", "success")
+                                                    logging.info(f"RACE CONDITION WIN: Ordem {order_ticket} preenchida!")
+                                                    add_operational_log(f"RACE CONDITION WIN: {side.upper()} {final_lots} lotes!", "success")
                                                     persistence.save_trade(symbol, side, limit_price, final_lots, "AUTO_LIMIT_FILLED_RACE")
                                                 else:
-                                                    logging.error(f"Ordem {order_ticket} presa em estado incerto: {final_status}")
                                                     add_operational_log(f"Erro cancelamento TTL: {order_ticket}", "error")
                                             else:
-                                                logging.info(f"Ordem {order_ticket} cancelada com sucesso (TTL).")
-                                                add_operational_log(f"HFT TTL: {order_ticket} cancelada por timeout (sem fill).", "info")
-
-                                            # Opcional: Aqui poderíamos agredir a mercado (Chase), mas HFT puro evita isso. 
-                                            # Vamos abortar para preservar a vantagem estatística.
+                                                add_operational_log(f"HFT TTL: {order_ticket} cancelada (sem fill).", "info")
                                     else:
                                         msg = result.comment if result else "Timeout/None"
                                         logging.error(f"Falha ao enviar Limit Order: {msg}")
                 
-                # LOG DE BLOQUEIO ALTA CONFIANÇA
                 elif risk.allow_autonomous and ai_total_score >= 82:
                      if not market_ok:
-                         logging.info(f"SINAL FORTE BLOQUEADO (RISCO MERCADO): {market_condition['reason']}")
+                         logging.info(f"SINAL FORTE BLOQUEADO: {market_condition['reason']}")
                          add_operational_log(f"OPORTUNIDADE VETADA (Mercado): {market_condition['reason']}", "warning")
                      elif not risk_ok:
-                         logging.info(f"SINAL FORTE BLOQUEADO (MONEY MANAGEMENT): {risk_msg}")
+                         logging.info(f"SINAL FORTE BLOQUEADO: {risk_msg}")
                          add_operational_log(f"OPORTUNIDADE VETADA (Limites): {risk_msg}", "warning")
                      elif not time_allowed:
-                         pass # Horário bloqueado é comum, não poluir log
+                         pass
                      else:
-                         # Bloqueado por conformidade ou outro motivo não capturado acima
                          add_operational_log(f"SINAL ANALISADO ({ai_total_score}%): Aguardando Confluência L2", "info")
 
-                # 4. Dados de Compliance (Limites) e Performance - Ciclo Lento (a cada ~1s)
+                # 4. Dados de Compliance e Performance (Cycle 1s)
                 if loop_count % 10 == 0 or 'session_limits' not in locals():
                     info = await asyncio.to_thread(bridge.mt5.symbol_info, symbol)
                     session_limits = {
@@ -924,8 +887,6 @@ async def websocket_endpoint(websocket: WebSocket):
                         "upper": getattr(info, 'session_price_limit_max', 0.0) if info else 0,
                         "ref": getattr(info, 'session_price_ref', 0.0) if info else 0
                     }
-                    # [ANTIVIBE-CODING] - Sincronização de Performance Histórica MT5
-                    # Isso garante que Win Rate, Gross Profit e Gross Loss sejam reais.
                     try:
                         perf_mt5 = await asyncio.to_thread(bridge.get_trading_performance)
                         risk.total_trades = perf_mt5["total_trades"]
@@ -936,10 +897,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     except Exception as e:
                         logging.error(f"Erro ao sincronizar performance MT5: {repr(e)}")
 
-                # 5. Enviar Pacote ao Frontend (Consolidado)
+                # 5. Enviar Pacote ao Frontend
                 try:
-                    # Camada Macro (já processada no ciclo lento)
-                    # [ANTIVIBE-CODING] - Contrato de Payload WebSocket (Não alterar sem autorização)
                     packet = {
                         "symbol": str(symbol),
                         "price": float(last_price),
@@ -961,7 +920,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "risk_status": {
                             "time_ok": time_allowed,
                             "loss_ok": risk_ok,
-                            "allow_autonomous": risk.allow_autonomous, # [ANTIVIBE-CODING] - Sincronização de Estado
+                            "allow_autonomous": risk.allow_autonomous,
                             "profit_day": float(total_daily_profit),
                             "atr": float(current_atr),
                             "performance": risk.get_performance_metrics(),
@@ -972,7 +931,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             "synthetic_index": float(synthetic_idx),
                             "bluechips": bluechips if isinstance(bluechips, dict) else {},
                             "psr": float(current_psr),
-                            "regime": int(regime), # [ANTIVIBE-CODING] - Mapeamento de Regimes (0, 1, 2)
+                            "regime": int(regime),
                             "sniper": {
                                 "running": sniper_bot.running,
                                 "consecutive_wins": sniper_bot.consecutive_wins,
@@ -983,18 +942,12 @@ async def websocket_endpoint(websocket: WebSocket):
                         "timestamp": (datetime.utcnow() - timedelta(hours=3)).timestamp(),
                         "logs": trade_logs
                     }
-                    logging.debug("Preparando pacote para envio...")
                     await websocket.send_json(packet)
-                    logging.debug("Pacote enviado via WebSocket.")
-                except (WebSocketDisconnect, RuntimeError) as ws_err:
-                    err_msg = str(ws_err).lower()
-                    if isinstance(ws_err, WebSocketDisconnect) or "closed" in err_msg or "connect" in err_msg:
-                        logging.info("WebSocket Cliente desconectado. Encerrando worker.")
-                        break
-                    logging.error(f"Erro de comunicação WS: {ws_err}")
+                except (WebSocketDisconnect, RuntimeError):
+                    logging.info("WebSocket Cliente desconectado.")
+                    break
                 except Exception as packet_e:
                     logging.error(f"Erro ao processar/enviar pacote WS: {packet_e}")
-                    traceback.print_exc()
                 
                 persistence.save_state("last_obi", float(obi))
                 persistence.save_state("latency_ms", float(latency_ms))
@@ -1002,7 +955,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 # 6. Housekeeping (10s)
                 if time_module.time() - last_cleanup_time > 10: 
                     last_cleanup_time = time_module.time()
-                    
                     try:
                         base_asset = "WDO" if "WDO" in symbol or "DOL" in symbol else "WIN"
                         new_symbol = bridge.get_current_symbol(base_asset)
@@ -1011,129 +963,78 @@ async def websocket_endpoint(websocket: WebSocket):
                             symbol = new_symbol
                             await asyncio.to_thread(panic_close_all) 
                             continue
-                    except Exception as e:
-                        logging.error(f"Erro Auto-Rollover: {e}")
+                    except Exception: pass
     
                     orders = await asyncio.to_thread(bridge.mt5.orders_get, symbol=symbol)
                     if orders:
                         now_ts = time_module.time()
                         for order in orders:
                             if (now_ts - order.time_setup) > 60:
-                                req = {
-                                    "action": bridge.mt5.TRADE_ACTION_REMOVE,
-                                    "order": order.ticket,
-                                    "symbol": symbol,
-                                }
+                                req = {"action": bridge.mt5.TRADE_ACTION_REMOVE, "order": order.ticket, "symbol": symbol}
                                 await asyncio.to_thread(bridge.mt5.order_send, req)
-                                logging.info(f"Cleanup: Cancelando ordem velha {order.ticket}")
     
-                # Loop control
                 await asyncio.sleep(0.01)
-            
-            except asyncio.CancelledError:
-                raise # Respeitar shutdown
+            except asyncio.CancelledError: raise
             except Exception as e:
-                logging.error(f"Erro (recuperável) no loop principal: {e}", exc_info=True)
-                await asyncio.sleep(1) # Backoff para não floodar logs
-    except WebSocketDisconnect:
-        logging.info("WebSocket desconectado.")
+                logging.error(f"Erro no loop principal: {e}")
+                await asyncio.sleep(1)
+    except WebSocketDisconnect: pass
     except Exception as e:
-        logging.critical(f"Erro fatal no loop principal: {e}")
+        logging.critical(f"Erro fatal: {e}")
         await websocket.close()
 
 @app.post("/config/autonomous")
 async def toggle_autonomous(enabled: bool):
-    """Ativa ou desativa a execução automática de ordens."""
     risk.allow_autonomous = enabled
     logging.info(f"Modo Autônomo: {'ATIVO' if enabled else 'INATIVO'}")
     return {"status": "success", "autonomous": enabled}
 
 @app.post("/config/sniper/start")
 async def start_sniper():
-    """Inicia o processamento do Sniper Bot em background."""
     global bot_task
-    if sniper_bot.running:
-        return {"status": "error", "message": "Bot already running"}
-    
+    if sniper_bot.running: return {"status": "error", "message": "Bot already running"}
     bot_task = asyncio.create_task(sniper_bot.run())
-    logging.info("🎯 Sniper Bot iniciado via API.")
     return {"status": "success"}
 
 @app.post("/config/sniper/stop")
 async def stop_sniper():
-    """Para o Sniper Bot."""
     sniper_bot.stop()
-    logging.info("🛑 Sniper Bot parado via API.")
     return {"status": "success"}
 
 @app.get("/performance")
 async def get_performance():
-    """Retorna métricas de performance do dia."""
     try:
-        # [ANTIVIBE-CODING] - Unificação Performance
         perf = risk.get_performance_metrics()
-        return {
-            "status": "success",
-            "data": perf
-        }
+        return {"status": "success", "data": perf}
     except Exception as e:
-        logging.error(f"Erro em /performance: {repr(e)}")
         return {"status": "error", "data": {}, "detail": repr(e)}
-
 
 @app.post("/order")
 async def place_order(req: OrderRequest):
-    """Endpoint para receber ordens do frontend."""
-    logging.info(f"Requisição de ordem recebida: {req.dict()}")
     side = req.side.lower()
-    volume = float(req.volume) # Garantir float para o bridge.mt5
-    # 0. Kill Switch / Panic Mode
+    volume = float(req.volume)
     if side in ["close_all", "panic"]:
-        logging.warning("Ordem de PÂNICO recebida via API.")
         panic_close_all()
         return {"status": "success", "message": "PANIC_TRIGGERED"}
-
-    if not bridge.connected:
-        return {"status": "error", "message": "MT5 não conectado"}
-
-    # 1. Validações de risco
-    if not risk.is_time_allowed():
-        return {"status": "error", "message": "Horário não permitido"}
-        
+    if not bridge.connected: return {"status": "error", "message": "MT5 não conectado"}
+    if not risk.is_time_allowed(): return {"status": "error", "message": "Horário não permitido"}
     account_info = bridge.mt5.account_info()
     if not risk.check_daily_loss(account_info.profit if account_info else 0):
         return {"status": "error", "message": "Limite de perda diária atingido"}
-
-    # 2. Preparar Ordem (B3 usa Netting)
     symbol = bridge.get_current_symbol("WIN")
     order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
-    price = bridge.mt5.symbol_info_tick(symbol).ask if side == "buy" else bridge.mt5.symbol_info_tick(symbol).bid
-    
-    # Validação Compliance (Túneis)
+    tick = bridge.mt5.symbol_info_tick(symbol)
+    price = tick.ask if side == "buy" else tick.bid
     valid, reason = bridge.validate_order_compliance(symbol, price)
-    if not valid:
-        logging.warning(f"Ordem rejeitada por compliance: {reason}")
-        return {"status": "error", "message": reason}
-
+    if not valid: return {"status": "error", "message": reason}
     params = risk.get_order_params(symbol, order_type, price, int(volume))
     params["symbol"] = symbol
-    
-    # B3 OCO: Adicionar Stop Loss e Take Profit se definido no RiskManager
-    # (Em modo Netting, SL/TP são modificações da posição ou via ordens pendentes complexas)
-    # Aqui usamos o SL/TP padrão do get_order_params
-    
-    # 3. Enviar Ordem
     result = bridge.mt5.order_send(params)
-    
     if result.retcode != bridge.mt5.TRADE_RETCODE_DONE:
-        logging.error(f"Erro ao enviar ordem: {result.comment}")
         return {"status": "error", "message": f"Erro MT5: {result.comment}"}
-
     persistence.save_trade(symbol, side, price, volume)
-    persistence.save_state("last_trade", f"{side} {volume} at {price}")
     return {"status": "success", "order_id": result.order}
 
 if __name__ == "__main__":
     import uvicorn
-    # [ANTIVIBE-CODING] - Host 0.0.0.0 para acessibilidade e Porta 8000
     uvicorn.run(app, host="0.0.0.0", port=8000)
