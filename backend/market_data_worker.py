@@ -24,9 +24,32 @@ class MarketDataWorker:
             logging.debug("📊 MarketDataWorker: Coletando dados lentos...")
             
             # 1. Blue Chips e Sincronização Multi-Ativo
-            # Usamos o símbolo base WIN$ para o worker, mas o bridge lida com isso
             bluechips = await asyncio.to_thread(self.bridge.get_bluechips_data)
             
+            # Cálculo do Índice Sintético (Média das Variações das Blue Chips)
+            # Cálculo do Índice Sintético Ponderado (Plano Mestre 2.0)
+            synthetic_index = 0.0
+            if bluechips and isinstance(bluechips, dict):
+                weights = {
+                    "VALE3": 0.14,
+                    "PETR4": 0.12,
+                    "ITUB4": 0.10,
+                    "BBDC4": 0.10,
+                    "ELET3": 0.05
+                }
+                weighted_sum = 0.0
+                total_weight = 0.0
+                for ticker, v in bluechips.items():
+                    try:
+                        val = float(str(v).replace("%", "").strip())
+                        weight = weights.get(ticker, 0.05)
+                        weighted_sum += val * weight
+                        total_weight += weight
+                    except (ValueError, TypeError):
+                        continue
+                if total_weight > 0:
+                    synthetic_index = weighted_sum / total_weight
+
             # 2. Dados Macro
             macro_data = await asyncio.to_thread(self.bridge.get_macro_data)
             
@@ -40,6 +63,7 @@ class MarketDataWorker:
             context = {
                 "timestamp": time.time(),
                 "bluechips": bluechips if isinstance(bluechips, dict) else {},
+                "synthetic_index": float(synthetic_index),
                 "macro": macro_data if isinstance(macro_data, dict) else {"score": 0.0, "reason": "No data"},
                 "calendar": {
                     "volatility_expected": vol_expected,
@@ -47,6 +71,7 @@ class MarketDataWorker:
                 },
                 "settlement_price": float(settlement_price or 0.0)
             }
+
 
             # Escrita Atômica
             temp_path = self.output_path + ".tmp"

@@ -6,12 +6,14 @@ import time as time_module
 # [ANTIVIBE-CODING] - Buffer circular para o Dashboard
 trade_logs = []
 MAX_LOGS = 50
+log_id_counter = 0
 
 def add_operational_log(msg: str, log_type: str = "info"):
-    global trade_logs
+    global trade_logs, log_id_counter
+    log_id_counter += 1
     timestamp = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M:%S")
     trade_logs.insert(0, {
-        "id": f"{time_module.time()}-{log_type}", # Changed time.time() to time_module.time() to avoid conflict
+        "id": f"{time_module.time()}-{log_type}-{log_id_counter}",
         "time": timestamp,
         "msg": msg,
         "type": log_type
@@ -325,10 +327,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     # 1.2 Atuallização via Cache (Background Worker)
                     ctx = load_market_context()
                     bluechips = ctx.get("bluechips", {})
+                    synthetic_idx = ctx.get("synthetic_index", 0.0)
                     macro_change = ctx.get("macro", {"score": 0.0, "reason": "Background data"})
                     vol_expected = ctx.get("calendar", {}).get("volatility_expected", False)
                     vol_reason = ctx.get("calendar", {}).get("reason", "")
                     settlement_price = ctx.get("settlement_price", 0.0)
+
                     
                     # Multi-data fallback (usado para correlações/índices sintéticos)
                     # No HFT v2.1, o worker deveria prover isso, mas para manter compatibilidade:
@@ -604,7 +608,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 # Blue Chips Influence - Otimizado: USA CACHE
                 # bluechips buscado no ciclo lento
-                synthetic_idx = micro_analyzer.calculate_synthetic_index(bluechips)
+                # synthetic_idx = micro_analyzer.calculate_synthetic_index(bluechips) # [DÉJÀ VU] Comentado para usar o valor oficial do MarketDataWorker
                 
                 # Se Blue Chips estão fortemente contra, reduz o score
                 if ai_direction == "BUY" and synthetic_idx < -0.05:
