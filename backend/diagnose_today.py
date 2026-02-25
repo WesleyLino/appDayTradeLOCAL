@@ -136,7 +136,7 @@ async def diagnose_today():
     with open('backend/detailed_diagnostic_report.json', 'w') as f:
         json.dump(report, f, indent=4, default=str)
         
-    print(f"✅ Diagnóstico Completo Gerado.")
+    print("✅ Diagnóstico Completo Gerado.")
     print(f"SOTA: R$ {bal_sota - 3000:.2f} | RECAL: R$ {bal_recal - 3000:.2f}")
 
 if __name__ == "__main__":

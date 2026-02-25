@@ -62,42 +62,46 @@ export function TradingDashboard() {
 
   const isAuthorized = riskOk && isObiOk && isConfidenceOk;
 
-  // Autonomous State
+  // [ANTIVIBE-CODING] - Sincronização de Estado Autônomo via WebSocket
   const [autonomousMode, setAutonomousMode] = useState(false);
   const [isUpdatingAuto, setIsUpdatingAuto] = useState(false);
-  const [isSniperActive, setIsSniperActive] = useState(false);
+
+  // Sincroniza estado local com dado do servidor quando o pacote chega
+  useEffect(() => {
+    // [ANTIVIBE-CODING] - Proteção contra pacotes parciais (Hb)
+    if (
+      data?.risk_status &&
+      data.risk_status.allow_autonomous !== undefined &&
+      !isUpdatingAuto
+    ) {
+      setAutonomousMode(data.risk_status.allow_autonomous);
+    }
+  }, [data?.risk_status?.allow_autonomous, isUpdatingAuto]);
+
+  const toggleAutonomous = async () => {
+    if (isUpdatingAuto) return;
+    setIsUpdatingAuto(true);
+
+    const newState = !autonomousMode;
+    const response = await setAutonomous(newState);
+
+    if (response?.status === "success") {
+      // O estado será atualizado pelo próximo pacote de WebSocket via useEffect
+      setAutonomousMode(newState);
+    } else {
+      console.error("Falha ao alterar Modo Autônomo na rede");
+    }
+
+    // Delay curto para evitar flickering antes do próximo tick do WS
+    setTimeout(() => setIsUpdatingAuto(false), 500);
+  };
+
   // Mapeamento de Cores por Tipo
   const LOG_COLORS = {
     success: "text-emerald-400",
     warning: "text-amber-400",
     error: "text-red-400",
     info: "text-blue-400",
-  };
-
-  // Monitor de eventos (Simulação Autônoma)
-  useEffect(() => {
-    if (data?.risk_status?.sniper?.last_trade_time) {
-      // Aqui poderíamos capturar eventos reais do backend se ele enviasse um array de logs.
-      // Como o backend envia estados, vamos simular a inserção baseada em mudanças de estado se necessário,
-      // ou apenas preparar o local para logs manuais se o backend enviasse um campo 'last_event'.
-    }
-  }, [data?.risk_status?.sniper]);
-
-  const toggleAutonomous = async () => {
-    if (isUpdatingAuto) return;
-    setIsUpdatingAuto(true);
-
-    // Dispara o estado desejado para a inteligência em Python
-    const newState = !autonomousMode;
-    const response = await setAutonomous(newState);
-
-    if (response?.status === "success") {
-      setAutonomousMode(newState);
-    } else {
-      console.error("Falha ao alterar Modo Autônomo na rede");
-    }
-
-    setIsUpdatingAuto(false);
   };
 
   // Sniper Bot State (Mapped to backend telemetry)

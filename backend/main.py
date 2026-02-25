@@ -2,6 +2,16 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import time as time_module
+import os
+import json
+import logging
+import asyncio
+import traceback
+from typing import Optional, List, Dict
+from fastapi.middleware.cors import CORSMiddleware
+import pandas as pd
+import numpy as np
+
 # --- CONFIGURAÇÃO DE LOGS OPERACIONAIS ---
 # [ANTIVIBE-CODING] - Buffer circular para o Dashboard
 trade_logs = []
@@ -23,10 +33,8 @@ def add_operational_log(msg: str, log_type: str = "info"):
 
 # Inicialização do Log
 add_operational_log("Sistema HFT Sniper Inicializado", "info")
-import os
-import json
 load_dotenv()
-from typing import Optional
+
 # --- MONKEY-PATCH PARA CONFLITO ONNX/BEARTYPE ---
 try:
     import onnxscript.values as v
@@ -36,9 +44,6 @@ try:
 except ImportError:
     pass
 # -----------------------------------------------
-from fastapi.middleware.cors import CORSMiddleware
-import asyncio
-import logging
 from backend.mt5_bridge import MT5Bridge
 from backend.risk_manager import RiskManager
 from backend.ai_core import AICore, InferenceEngine
@@ -46,11 +51,7 @@ from backend.persistence import PersistenceManager
 from backend.rl_agent import PPOAgent # HFT v2.0
 from backend.microstructure_analyzer import MicrostructureAnalyzer # HFT v2.0
 from backend.news_collector import NewsCollector
-import pandas as pd
-import numpy as np
 from backend.data_collector import DataCollector
-import time as time_module
-import traceback
 # Configuração de Logs Unificada
 logging.basicConfig(
     level=logging.DEBUG,
@@ -64,7 +65,6 @@ from backend.sentiment_analyzer import SentimentAnalyzer
 from backend.calendar_manager import CalendarManager
 from backend.news_sentiment_worker import NewsSentimentWorker 
 from backend.market_data_worker import MarketDataWorker # Novo Worker de Dados de Mercado
-from datetime import datetime, timedelta
 from pydantic import BaseModel
 
 class OrderRequest(BaseModel):
@@ -853,6 +853,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                                     "logs": trade_logs,
                                                     "risk_status": {
                                                         "ai_score": ai_total_score,
+                                                        "allow_autonomous": risk.allow_autonomous, # [ANTIVIBE-CODING] - Persistência Heartbeat
                                                         "order_status": "PENDING_HFT",
                                                         "ticket": order_ticket
                                                     },
@@ -915,7 +916,7 @@ async def websocket_endpoint(websocket: WebSocket):
                          # Bloqueado por conformidade ou outro motivo não capturado acima
                          add_operational_log(f"SINAL ANALISADO ({ai_total_score}%): Aguardando Confluência L2", "info")
 
-                # 4. Dados de Compliance (Limites) - Ciclo Lento (a cada ~1s)
+                # 4. Dados de Compliance (Limites) e Performance - Ciclo Lento (a cada ~1s)
                 if loop_count % 10 == 0 or 'session_limits' not in locals():
                     info = await asyncio.to_thread(bridge.mt5.symbol_info, symbol)
                     session_limits = {
@@ -923,6 +924,17 @@ async def websocket_endpoint(websocket: WebSocket):
                         "upper": getattr(info, 'session_price_limit_max', 0.0) if info else 0,
                         "ref": getattr(info, 'session_price_ref', 0.0) if info else 0
                     }
+                    # [ANTIVIBE-CODING] - Sincronização de Performance Histórica MT5
+                    # Isso garante que Win Rate, Gross Profit e Gross Loss sejam reais.
+                    try:
+                        perf_mt5 = await asyncio.to_thread(bridge.get_trading_performance)
+                        risk.total_trades = perf_mt5["total_trades"]
+                        risk.wins = int(perf_mt5["total_trades"] * (perf_mt5["win_rate"] / 100))
+                        risk.gross_profit = perf_mt5["gross_profit"]
+                        risk.gross_loss = perf_mt5["gross_loss"]
+                        risk.daily_profit = perf_mt5["net_profit"]
+                    except Exception as e:
+                        logging.error(f"Erro ao sincronizar performance MT5: {repr(e)}")
 
                 # 5. Enviar Pacote ao Frontend (Consolidado)
                 try:
@@ -949,8 +961,10 @@ async def websocket_endpoint(websocket: WebSocket):
                         "risk_status": {
                             "time_ok": time_allowed,
                             "loss_ok": risk_ok,
+                            "allow_autonomous": risk.allow_autonomous, # [ANTIVIBE-CODING] - Sincronização de Estado
                             "profit_day": float(total_daily_profit),
                             "atr": float(current_atr),
+                            "performance": risk.get_performance_metrics(),
                             "uncertainty_range": float(ai_predict_data.get("uncertainty_norm", 0.0) if isinstance(ai_predict_data, dict) else 0.0),
                             "lower_bound": float(ai_predict_data.get("lower_bound_norm", last_price) if isinstance(ai_predict_data, dict) else last_price),
                             "upper_bound": float(ai_predict_data.get("upper_bound_norm", last_price) if isinstance(ai_predict_data, dict) else last_price),
@@ -1056,20 +1070,11 @@ async def stop_sniper():
 async def get_performance():
     """Retorna métricas de performance do dia."""
     try:
-        # Lê o que existe no RiskManager (sem total_trades/daily_profit — esses são do MT5)
+        # [ANTIVIBE-CODING] - Unificação Performance
+        perf = risk.get_performance_metrics()
         return {
             "status": "success",
-            "data": {
-                "total_trades": getattr(risk, "total_trades", 0),
-                "win_rate": getattr(risk, "win_rate", 0.0),
-                "profit_factor": 0.0,
-                "gross_profit": max(0.0, float(getattr(risk, "daily_profit", 0.0))),
-                "gross_loss": abs(min(0.0, float(getattr(risk, "daily_profit", 0.0)))),
-                "net_profit": float(getattr(risk, "daily_profit", 0.0)),
-                "max_daily_loss_limit": float(risk.max_daily_loss),
-                "dry_run": risk.dry_run,
-                "allow_autonomous": risk.allow_autonomous,
-            }
+            "data": perf
         }
     except Exception as e:
         logging.error(f"Erro em /performance: {repr(e)}")
@@ -1130,4 +1135,5 @@ async def place_order(req: OrderRequest):
 
 if __name__ == "__main__":
     import uvicorn
+    # [ANTIVIBE-CODING] - Host 0.0.0.0 para acessibilidade e Porta 8000
     uvicorn.run(app, host="0.0.0.0", port=8000)

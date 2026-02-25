@@ -76,7 +76,7 @@ async def run_mt5_analysis_24feb():
     print(f"- Sinais Potenciais Detectados: {shadow.get('v22_candidates', 0)}")
     print(f"- Trades Executados           : {len(trades)}")
     print(f"- Sinais Filtrados (Seguranca): {shadow.get('v22_candidates', 0) - len(trades)}")
-    print(f"\nBreakdown de Filtros:")
+    print("\nBreakdown de Filtros:")
     print(f"- Bloqueados por Fluxo        : {shadow.get('filtered_by_flux', 0)}")
     print(f"- Bloqueados por IA           : {shadow.get('filtered_by_ai', 0)}")
     print(f"- Falhas por Componentes      : {shadow.get('component_fail', {})}")

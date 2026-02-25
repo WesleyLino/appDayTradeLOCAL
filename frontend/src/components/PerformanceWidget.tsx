@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { useTradingStore } from "@/hooks/use-trading-ws";
+
 interface PerformanceData {
   total_trades: number;
   win_rate: number;
@@ -20,6 +22,7 @@ interface PerformanceData {
 }
 
 export function PerformanceWidget() {
+  const wsData = useTradingStore((state) => state.data);
   const [data, setData] = useState<PerformanceData>({
     total_trades: 0,
     win_rate: 0.0,
@@ -35,8 +38,8 @@ export function PerformanceWidget() {
     try {
       setLoading(true);
       setError(null);
-      // Backend roda na 8000
-      const response = await fetch("http://localhost:8000/performance");
+      // [ANTIVIBE-CODING] - Binding 127.0.0.1
+      const response = await fetch("http://127.0.0.1:8000/performance");
       const result = await response.json();
 
       if (result.status === "success" && result.data) {
@@ -51,6 +54,13 @@ export function PerformanceWidget() {
       setLoading(false);
     }
   };
+
+  // [ANTIVIBE-CODING] - Sincronização em Tempo Real (WebSocket)
+  useEffect(() => {
+    if (wsData?.risk_status?.performance) {
+      setData(wsData.risk_status.performance as PerformanceData);
+    }
+  }, [wsData]);
 
   useEffect(() => {
     fetchPerformance();

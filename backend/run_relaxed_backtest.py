@@ -57,7 +57,7 @@ async def run_analysis():
     
     # Analisar o que aconteceu nos bastidores
     shadow = tester.shadow_signals
-    print(f"\nESTATISTICAS DE FILTRO (SHADOW):")
+    print("\nESTATISTICAS DE FILTRO (SHADOW):")
     print(f"- Total Sinais V22 Detectados: {shadow.get('total_missed', 0)}")
     print(f"- Candidatos V22 (RSI+BB):     {shadow.get('v22_candidates', 0)}")
     print(f"- Negados pela IA:            {shadow.get('filtered_by_ai', 0)}")
@@ -67,7 +67,7 @@ async def run_analysis():
     # Analisar o Dataframe para ver por que V22 não disparou
     try:
         df = tester.data # Usa o dataframe com indicadores calculados
-        print(f"\nESTATISTICAS DO MERCADO (INDICADORES REAIS):")
+        print("\nESTATISTICAS DO MERCADO (INDICADORES REAIS):")
         print(f"- Candles Processados: {len(df)}")
         print(f"- RSI Range: {df['rsi'].min():.1f} a {df['rsi'].max():.1f}")
         print(f"- ATR Range: {df['atr_current'].min():.1f} a {df['atr_current'].max():.1f}")

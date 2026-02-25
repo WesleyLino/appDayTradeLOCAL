@@ -1,12 +1,13 @@
 {
-  "timestamp": 1771977250.7241793,
+  "timestamp": 1772045050.8310459,
   "bluechips": {
-    "VALE3": 0.38,
-    "PETR4": 1.83,
-    "ITUB4": 1.11,
-    "BBDC4": 0.38,
+    "VALE3": 0.93,
+    "PETR4": -1.0,
+    "ITUB4": -1.92,
+    "BBDC4": -1.44,
     "ELET3": 2.27
   },
+  "synthetic_index": -0.41627450980392156,
   "macro": {
     "score": 0.0,
     "reason": "No data"

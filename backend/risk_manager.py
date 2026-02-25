@@ -31,6 +31,13 @@ class RiskManager:
         # [FASE 28] DYNAMIC PARAMS CACHE
         self.dynamic_params = {} # Carregado via load_optimized_params
 
+        # [PERFORMANCE METRICS]
+        self.total_trades = 0
+        self.wins = 0
+        self.gross_profit = 0.0
+        self.gross_loss = 0.0
+        self.daily_profit = 0.0
+
     def is_time_allowed(self):
         """Verifica se o horário atual é permitido para operar."""
         now = datetime.now().time()
@@ -139,10 +146,30 @@ class RiskManager:
         if side == "buy" and macro_change_pct < -0.5:
              return False, f"Macro Bearish (S&P500 {macro_change_pct:.2f}%)"
              
-        if side == "sell" and macro_change_pct > 0.5:
-             return False, f"Macro Bullish (S&P500 {macro_change_pct:.2f}%)"
-             
         return True, "Macro OK"
+
+    def record_trade_result(self, pnl):
+        """Atualiza as métricas de performance após um trade."""
+        self.total_trades += 1
+        self.daily_profit += pnl
+        if pnl > 0:
+            self.wins += 1
+            self.gross_profit += pnl
+        else:
+            self.gross_loss += abs(pnl)
+
+    def get_performance_metrics(self):
+        """Retorna métricas calculadas."""
+        win_rate = (self.wins / self.total_trades * 100) if self.total_trades > 0 else 0.0
+        profit_factor = (self.gross_profit / self.gross_loss) if self.gross_loss > 0 else (self.gross_profit if self.total_trades > 0 else 0.0)
+        return {
+            "total_trades": self.total_trades,
+            "win_rate": round(win_rate, 2),
+            "profit_factor": round(profit_factor, 2),
+            "gross_profit": round(self.gross_profit, 2),
+            "gross_loss": round(self.gross_loss, 2),
+            "net_profit": round(self.daily_profit, 2)
+        }
 
     def check_daily_loss(self, total_profit):
         """

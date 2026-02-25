@@ -1,0 +1,224 @@
+2026-02-24 09:14:05,159 - INFO - 📅 Novo dia detectado. Resetando trades: 2026-02-23 -> 2026-02-24
+2026-02-24 09:36:53,063 - INFO - 🚀 Inicializando Sniper Bot WIN (Foco: R$ 3000 Capital)...
+2026-02-24 09:36:53,067 - INFO - Símbolo alvo: WINJ26 | MODO: DRY RUN
+2026-02-24 09:36:53,067 - INFO - 🎯 SniperBot: Parâmetros SOTA aplicados: RSI=14, VolSpike=1.2, Janela=10:00:00-15:00:00
+2026-02-24 10:04:53,092 - INFO - 🚀 Inicializando Sniper Bot WIN (Foco: R$ 3000 Capital)...
+2026-02-24 10:04:53,094 - INFO - Símbolo alvo: WINJ26 | MODO: DRY RUN
+2026-02-24 10:04:53,094 - INFO - 🎯 SniperBot: Parâmetros SOTA aplicados: RSI=14, VolSpike=1.2, Janela=10:00:00-15:00:00
+2026-02-24 10:34:30,915 - INFO - [AI] direction=NEUTRAL score=35.2 conf=NORMAL flux=-0.32 reg=0 sent=0.20
+2026-02-24 10:34:30,915 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 35.2
+2026-02-24 10:34:31,145 - INFO - [AI] direction=NEUTRAL score=34.8 conf=NORMAL flux=-0.37 reg=0 sent=0.20
+2026-02-24 10:34:31,146 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 34.8
+2026-02-24 10:34:31,248 - INFO - [AI] direction=NEUTRAL score=33.7 conf=NORMAL flux=-0.41 reg=0 sent=0.20
+2026-02-24 10:34:31,249 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 33.7
+2026-02-24 10:34:31,478 - INFO - [AI] direction=NEUTRAL score=33.5 conf=NORMAL flux=-0.43 reg=0 sent=0.20
+2026-02-24 10:34:31,478 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 33.5
+2026-02-24 10:34:31,587 - INFO - [AI] direction=NEUTRAL score=33.9 conf=NORMAL flux=-0.39 reg=0 sent=0.20
+2026-02-24 10:34:31,587 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 33.9
+2026-02-24 10:34:31,861 - INFO - [AI] direction=NEUTRAL score=33.6 conf=NORMAL flux=-0.42 reg=0 sent=0.20
+2026-02-24 10:34:31,861 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 33.6
+2026-02-24 10:34:32,135 - INFO - [AI] direction=NEUTRAL score=35.1 conf=NORMAL flux=-0.34 reg=0 sent=0.20
+2026-02-24 10:34:32,135 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 35.1
+2026-02-24 10:34:32,334 - INFO - [AI] direction=NEUTRAL score=34.9 conf=NORMAL flux=-0.35 reg=0 sent=0.20
+2026-02-24 10:34:32,334 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 34.9
+2026-02-24 10:34:32,467 - INFO - [AI] direction=NEUTRAL score=34.6 conf=NORMAL flux=-0.37 reg=0 sent=0.20
+2026-02-24 10:34:32,469 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 34.6
+2026-02-24 10:34:32,676 - INFO - [AI] direction=NEUTRAL score=34.7 conf=NORMAL flux=-0.37 reg=0 sent=0.20
+2026-02-24 10:34:32,677 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 34.7
+2026-02-24 10:34:32,852 - INFO - [AI] direction=NEUTRAL score=32.1 conf=NORMAL flux=-0.52 reg=0 sent=0.20
+2026-02-24 10:34:32,853 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 32.1
+2026-02-24 10:34:33,975 - INFO - [AI] direction=NEUTRAL score=31.9 conf=NORMAL flux=-0.54 reg=0 sent=0.20
+2026-02-24 10:34:33,975 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 31.9
+2026-02-24 10:34:34,608 - INFO - [AI] direction=NEUTRAL score=35.3 conf=NORMAL flux=-0.31 reg=0 sent=0.20
+2026-02-24 10:34:34,609 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 35.3
+2026-02-24 10:34:34,778 - INFO - [AI] direction=NEUTRAL score=32.1 conf=NORMAL flux=-0.52 reg=0 sent=0.20
+2026-02-24 10:34:34,779 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 32.1
+2026-02-24 10:34:34,902 - INFO - [AI] direction=NEUTRAL score=32.0 conf=NORMAL flux=-0.53 reg=0 sent=0.20
+2026-02-24 10:34:34,902 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 32.0
+2026-02-24 10:34:35,222 - INFO - [AI] direction=NEUTRAL score=33.5 conf=NORMAL flux=-0.43 reg=0 sent=0.20
+2026-02-24 10:34:35,222 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 33.5
+2026-02-24 10:34:35,430 - INFO - [AI] direction=NEUTRAL score=33.4 conf=NORMAL flux=-0.44 reg=0 sent=0.20
+2026-02-24 10:34:35,431 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 33.4
+2026-02-24 10:34:35,708 - INFO - [AI] direction=NEUTRAL score=33.3 conf=NORMAL flux=-0.45 reg=0 sent=0.20
+2026-02-24 10:34:35,708 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 33.3
+2026-02-24 10:34:36,004 - INFO - [AI] direction=NEUTRAL score=33.9 conf=NORMAL flux=-0.39 reg=0 sent=0.20
+2026-02-24 10:34:36,004 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 33.9
+2026-02-24 10:34:47,181 - INFO - [AI] direction=NEUTRAL score=35.1 conf=NORMAL flux=-0.32 reg=0 sent=0.20
+2026-02-24 10:34:47,182 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 35.1
+2026-02-24 10:34:47,962 - INFO - [AI] direction=NEUTRAL score=35.1 conf=NORMAL flux=-0.33 reg=0 sent=0.20
+2026-02-24 10:34:47,964 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 35.1
+2026-02-24 10:35:40,992 - INFO - [AI] direction=NEUTRAL score=34.7 conf=NORMAL flux=-0.37 reg=0 sent=0.20
+2026-02-24 10:35:40,993 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 34.7
+2026-02-24 10:35:41,155 - INFO - [AI] direction=NEUTRAL score=32.2 conf=NORMAL flux=-0.51 reg=0 sent=0.20
+2026-02-24 10:35:41,155 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 32.2
+2026-02-24 10:35:50,619 - INFO - [AI] direction=NEUTRAL score=37.5 conf=NORMAL flux=-0.32 reg=0 sent=0.70
+2026-02-24 10:35:50,619 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 37.5
+2026-02-24 10:35:50,811 - INFO - [AI] direction=NEUTRAL score=37.1 conf=NORMAL flux=-0.35 reg=0 sent=0.70
+2026-02-24 10:35:50,812 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 37.1
+2026-02-24 10:35:53,225 - INFO - [AI] direction=NEUTRAL score=37.4 conf=NORMAL flux=-0.32 reg=0 sent=0.70
+2026-02-24 10:35:53,226 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 37.4
+2026-02-24 12:05:52,893 - INFO - [AI] direction=NEUTRAL score=31.0 conf=NORMAL flux=-0.40 reg=0 sent=0.10
+2026-02-24 12:05:52,893 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 31.0
+2026-02-24 12:05:53,055 - INFO - [AI] direction=NEUTRAL score=30.4 conf=NORMAL flux=-0.42 reg=0 sent=0.10
+2026-02-24 12:05:53,055 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.4
+2026-02-24 12:05:53,232 - INFO - [AI] direction=NEUTRAL score=30.2 conf=NORMAL flux=-0.44 reg=0 sent=0.10
+2026-02-24 12:05:53,233 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.2
+2026-02-24 12:05:54,645 - INFO - [AI] direction=NEUTRAL score=32.6 conf=NORMAL flux=-0.30 reg=0 sent=0.10
+2026-02-24 12:05:54,646 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 32.6
+2026-02-24 12:05:54,861 - INFO - [AI] direction=NEUTRAL score=31.4 conf=NORMAL flux=-0.36 reg=0 sent=0.10
+2026-02-24 12:05:54,861 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 31.4
+2026-02-24 12:05:54,989 - INFO - [AI] direction=NEUTRAL score=30.6 conf=NORMAL flux=-0.55 reg=0 sent=0.10
+2026-02-24 12:05:54,989 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.6
+2026-02-24 12:05:55,306 - INFO - [AI] direction=NEUTRAL score=29.6 conf=NORMAL flux=-0.50 reg=0 sent=0.10
+2026-02-24 12:05:55,307 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 29.6
+2026-02-24 12:05:55,410 - INFO - [AI] direction=NEUTRAL score=30.4 conf=NORMAL flux=-0.42 reg=0 sent=0.10
+2026-02-24 12:05:55,411 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.4
+2026-02-24 12:05:55,646 - INFO - [AI] direction=NEUTRAL score=29.5 conf=NORMAL flux=-0.50 reg=0 sent=0.10
+2026-02-24 12:05:55,646 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 29.5
+2026-02-24 12:06:28,834 - INFO - [AI] direction=NEUTRAL score=31.0 conf=NORMAL flux=-0.42 reg=0 sent=0.10
+2026-02-24 12:06:28,834 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 31.0
+2026-02-24 12:06:28,966 - INFO - [AI] direction=NEUTRAL score=30.9 conf=NORMAL flux=-0.43 reg=0 sent=0.10
+2026-02-24 12:06:28,966 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.9
+2026-02-24 12:06:29,137 - INFO - [AI] direction=NEUTRAL score=33.1 conf=NORMAL flux=-0.31 reg=0 sent=0.10
+2026-02-24 12:06:29,137 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 33.1
+2026-02-24 12:06:29,618 - INFO - [AI] direction=NEUTRAL score=31.7 conf=NORMAL flux=-0.39 reg=0 sent=0.10
+2026-02-24 12:06:29,618 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 31.7
+2026-02-24 12:06:29,741 - INFO - [AI] direction=NEUTRAL score=32.0 conf=NORMAL flux=-0.37 reg=0 sent=0.10
+2026-02-24 12:06:29,741 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 32.0
+2026-02-24 12:06:29,981 - INFO - [AI] direction=NEUTRAL score=31.0 conf=NORMAL flux=-0.58 reg=0 sent=0.10
+2026-02-24 12:06:29,982 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 31.0
+2026-02-24 12:06:30,102 - INFO - [AI] direction=NEUTRAL score=31.5 conf=NORMAL flux=-0.53 reg=0 sent=0.10
+2026-02-24 12:06:30,102 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 31.5
+2026-02-24 12:06:44,329 - INFO - [AI] direction=NEUTRAL score=30.0 conf=NORMAL flux=-0.52 reg=0 sent=0.10
+2026-02-24 12:06:44,329 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.0
+2026-02-24 12:06:44,423 - INFO - [AI] direction=NEUTRAL score=30.2 conf=NORMAL flux=-0.50 reg=0 sent=0.10
+2026-02-24 12:06:44,423 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.2
+2026-02-24 12:06:49,003 - INFO - [AI] direction=NEUTRAL score=31.2 conf=NORMAL flux=-0.56 reg=0 sent=0.10
+2026-02-24 12:06:49,003 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 31.2
+2026-02-24 12:06:49,561 - INFO - [AI] direction=NEUTRAL score=30.5 conf=NORMAL flux=-0.64 reg=0 sent=0.10
+2026-02-24 12:06:49,561 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.5
+2026-02-24 12:06:50,273 - INFO - [AI] direction=NEUTRAL score=31.6 conf=NORMAL flux=-0.52 reg=0 sent=0.10
+2026-02-24 12:06:50,274 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 31.6
+2026-02-24 12:06:50,586 - INFO - [AI] direction=NEUTRAL score=31.6 conf=NORMAL flux=-0.52 reg=0 sent=0.10
+2026-02-24 12:06:50,586 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 31.6
+2026-02-24 12:06:50,698 - INFO - [AI] direction=NEUTRAL score=31.0 conf=NORMAL flux=-0.58 reg=0 sent=0.10
+2026-02-24 12:06:50,698 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 31.0
+2026-02-24 12:06:50,935 - INFO - [AI] direction=NEUTRAL score=31.1 conf=NORMAL flux=-0.57 reg=0 sent=0.10
+2026-02-24 12:06:50,935 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 31.1
+2026-02-24 12:06:51,222 - INFO - [AI] direction=NEUTRAL score=30.7 conf=NORMAL flux=-0.63 reg=0 sent=0.10
+2026-02-24 12:06:51,222 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.7
+2026-02-24 12:06:51,429 - INFO - [AI] direction=NEUTRAL score=30.2 conf=NORMAL flux=-0.50 reg=0 sent=0.10
+2026-02-24 12:06:51,429 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.2
+2026-02-24 12:06:51,558 - INFO - [AI] direction=NEUTRAL score=30.9 conf=NORMAL flux=-0.59 reg=0 sent=0.10
+2026-02-24 12:06:51,559 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.9
+2026-02-24 12:06:51,876 - INFO - [AI] direction=NEUTRAL score=30.2 conf=NORMAL flux=-0.50 reg=0 sent=0.10
+2026-02-24 12:06:51,876 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.2
+2026-02-24 12:06:52,061 - INFO - [AI] direction=NEUTRAL score=30.3 conf=NORMAL flux=-0.49 reg=0 sent=0.10
+2026-02-24 12:06:52,061 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.3
+2026-02-24 12:06:52,203 - INFO - [AI] direction=NEUTRAL score=30.4 conf=NORMAL flux=-0.48 reg=0 sent=0.10
+2026-02-24 12:06:52,203 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.4
+2026-02-24 12:14:41,560 - INFO - [AI] direction=NEUTRAL score=32.7 conf=NORMAL flux=-0.33 reg=0 sent=0.20
+2026-02-24 12:14:41,561 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 32.7
+2026-02-24 12:14:47,750 - INFO - [AI] direction=NEUTRAL score=30.2 conf=NORMAL flux=-0.48 reg=0 sent=0.20
+2026-02-24 12:14:47,750 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 30.2
+2026-02-24 12:14:56,081 - INFO - [AI] direction=NEUTRAL score=32.2 conf=NORMAL flux=-0.37 reg=0 sent=0.20
+2026-02-24 12:14:56,083 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 32.2
+2026-02-24 12:14:56,846 - INFO - [AI] direction=NEUTRAL score=32.8 conf=NORMAL flux=-0.32 reg=0 sent=0.20
+2026-02-24 12:14:56,846 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 32.8
+2026-02-24 12:47:47,952 - INFO - [AI] direction=NEUTRAL score=28.4 conf=NORMAL flux=-0.59 reg=0 sent=0.00
+2026-02-24 12:47:47,953 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 28.4
+2026-02-24 12:47:48,318 - INFO - [AI] direction=NEUTRAL score=29.1 conf=NORMAL flux=-0.52 reg=0 sent=0.00
+2026-02-24 12:47:48,318 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 29.1
+2026-02-24 12:47:48,701 - INFO - [AI] direction=NEUTRAL score=28.6 conf=NORMAL flux=-0.57 reg=0 sent=0.00
+2026-02-24 12:47:48,702 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 28.6
+2026-02-24 12:47:48,809 - INFO - [AI] direction=NEUTRAL score=29.1 conf=NORMAL flux=-0.52 reg=0 sent=0.00
+2026-02-24 12:47:48,811 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 29.1
+2026-02-24 13:31:50,455 - INFO - [AI] direction=NEUTRAL score=26.5 conf=NORMAL flux=-0.33 reg=0 sent=0.00
+2026-02-24 13:31:50,457 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 26.5
+2026-02-24 13:31:50,835 - INFO - [AI] direction=NEUTRAL score=26.9 conf=NORMAL flux=-0.30 reg=0 sent=0.00
+2026-02-24 13:31:50,835 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 26.9
+2026-02-24 13:31:51,778 - INFO - [AI] direction=NEUTRAL score=26.0 conf=NORMAL flux=-0.40 reg=0 sent=0.00
+2026-02-24 13:31:51,778 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 26.0
+2026-02-24 13:31:52,638 - INFO - [AI] direction=NEUTRAL score=25.6 conf=NORMAL flux=-0.43 reg=0 sent=0.00
+2026-02-24 13:31:52,638 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 25.6
+2026-02-24 13:31:52,775 - INFO - [AI] direction=NEUTRAL score=25.5 conf=NORMAL flux=-0.45 reg=0 sent=0.00
+2026-02-24 13:31:52,775 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 25.5
+2026-02-24 13:31:53,116 - INFO - [AI] direction=NEUTRAL score=26.7 conf=NORMAL flux=-0.31 reg=0 sent=0.00
+2026-02-24 13:31:53,117 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 26.7
+2026-02-24 13:43:17,394 - INFO - 🚀 Inicializando Sniper Bot WIN (Foco: R$ 3000 Capital)...
+2026-02-24 13:43:17,395 - INFO - Símbolo alvo: WINJ26 | MODO: DRY RUN
+2026-02-24 13:43:17,395 - INFO - 🎯 SniperBot: Parâmetros SOTA aplicados: RSI=14, VolSpike=1.2, Janela=10:00:00-15:00:00
+2026-02-24 14:09:42,453 - INFO - [AI] direction=NEUTRAL score=28.7 conf=NORMAL flux=-0.37 reg=0 sent=0.80
+2026-02-24 14:09:42,453 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 28.7
+2026-02-24 14:09:42,855 - INFO - [AI] direction=NEUTRAL score=28.2 conf=NORMAL flux=-0.42 reg=0 sent=0.80
+2026-02-24 14:09:42,855 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 28.2
+2026-02-24 14:09:43,266 - INFO - [AI] direction=NEUTRAL score=28.4 conf=NORMAL flux=-0.40 reg=0 sent=0.80
+2026-02-24 14:09:43,267 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 28.4
+2026-02-24 14:09:43,672 - INFO - [AI] direction=NEUTRAL score=28.6 conf=NORMAL flux=-0.38 reg=0 sent=0.80
+2026-02-24 14:09:43,672 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 28.6
+2026-02-24 14:09:44,068 - INFO - [AI] direction=NEUTRAL score=28.5 conf=NORMAL flux=-0.39 reg=0 sent=0.80
+2026-02-24 14:09:44,069 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 28.5
+2026-02-24 14:09:45,261 - INFO - [AI] direction=NEUTRAL score=29.0 conf=NORMAL flux=-0.34 reg=0 sent=0.80
+2026-02-24 14:09:45,261 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 29.0
+2026-02-24 14:09:55,388 - INFO - [AI] direction=NEUTRAL score=71.0 conf=NORMAL flux=-0.31 reg=0 sent=0.80
+2026-02-24 14:09:55,388 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 71.0
+2026-02-24 14:09:55,823 - INFO - [AI] direction=NEUTRAL score=29.2 conf=NORMAL flux=-0.32 reg=0 sent=0.80
+2026-02-24 14:09:55,824 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 29.2
+2026-02-24 14:09:56,223 - INFO - [AI] direction=NEUTRAL score=28.9 conf=NORMAL flux=-0.35 reg=0 sent=0.80
+2026-02-24 14:09:56,224 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 28.9
+2026-02-24 14:09:56,342 - INFO - [AI] direction=NEUTRAL score=29.0 conf=NORMAL flux=-0.34 reg=0 sent=0.80
+2026-02-24 14:09:56,342 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 29.0
+2026-02-24 14:11:14,980 - INFO - [AI] direction=NEUTRAL score=28.7 conf=NORMAL flux=-0.48 reg=0 sent=0.80
+2026-02-24 14:11:14,981 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 28.7
+2026-02-24 14:36:55,737 - INFO - [AI] direction=NEUTRAL score=27.5 conf=NORMAL flux=-0.44 reg=0 sent=0.80
+2026-02-24 14:36:55,737 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.5
+2026-02-24 14:36:55,918 - INFO - [AI] direction=NEUTRAL score=27.5 conf=NORMAL flux=-0.44 reg=0 sent=0.80
+2026-02-24 14:36:55,919 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.5
+2026-02-24 14:36:56,164 - INFO - [AI] direction=NEUTRAL score=27.6 conf=NORMAL flux=-0.44 reg=0 sent=0.80
+2026-02-24 14:36:56,164 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.6
+2026-02-24 14:39:37,112 - INFO - [AI] direction=NEUTRAL score=27.0 conf=NORMAL flux=-0.49 reg=0 sent=0.80
+2026-02-24 14:39:37,112 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.0
+2026-02-24 14:39:37,496 - INFO - [AI] direction=NEUTRAL score=28.5 conf=NORMAL flux=-0.35 reg=0 sent=0.80
+2026-02-24 14:39:37,497 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 28.5
+2026-02-24 14:39:37,992 - INFO - [AI] direction=NEUTRAL score=28.2 conf=NORMAL flux=-0.37 reg=0 sent=0.80
+2026-02-24 14:39:37,993 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 28.2
+2026-02-24 14:39:38,432 - INFO - [AI] direction=NEUTRAL score=28.5 conf=NORMAL flux=-0.34 reg=0 sent=0.80
+2026-02-24 14:39:38,432 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 28.5
+2026-02-24 14:39:38,878 - INFO - [AI] direction=NEUTRAL score=71.4 conf=NORMAL flux=-0.32 reg=0 sent=0.80
+2026-02-24 14:39:38,878 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 71.4
+2026-02-24 14:39:39,316 - INFO - [AI] direction=NEUTRAL score=71.5 conf=NORMAL flux=-0.31 reg=0 sent=0.80
+2026-02-24 14:39:39,316 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 71.5
+2026-02-24 14:39:39,552 - INFO - [AI] direction=NEUTRAL score=28.6 conf=NORMAL flux=-0.33 reg=0 sent=0.80
+2026-02-24 14:39:39,553 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 28.6
+2026-02-24 14:39:39,784 - INFO - [AI] direction=NEUTRAL score=71.5 conf=NORMAL flux=-0.30 reg=0 sent=0.80
+2026-02-24 14:39:39,784 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 71.5
+2026-02-24 14:39:40,118 - INFO - [AI] direction=NEUTRAL score=71.5 conf=NORMAL flux=-0.30 reg=0 sent=0.80
+2026-02-24 14:39:40,118 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 71.5
+2026-02-24 14:39:40,710 - INFO - [AI] direction=NEUTRAL score=27.6 conf=NORMAL flux=-0.44 reg=0 sent=0.80
+2026-02-24 14:39:40,711 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.6
+2026-02-24 14:39:40,948 - INFO - [AI] direction=NEUTRAL score=27.6 conf=NORMAL flux=-0.43 reg=0 sent=0.80
+2026-02-24 14:39:40,949 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.6
+2026-02-24 14:39:41,222 - INFO - [AI] direction=NEUTRAL score=27.7 conf=NORMAL flux=-0.43 reg=0 sent=0.80
+2026-02-24 14:39:41,222 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.7
+2026-02-24 14:39:41,549 - INFO - [AI] direction=NEUTRAL score=27.6 conf=NORMAL flux=-0.43 reg=0 sent=0.80
+2026-02-24 14:39:41,549 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.6
+2026-02-24 14:39:41,725 - INFO - [AI] direction=NEUTRAL score=27.6 conf=NORMAL flux=-0.43 reg=0 sent=0.80
+2026-02-24 14:39:41,725 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.6
+2026-02-24 14:39:42,005 - INFO - [AI] direction=NEUTRAL score=27.6 conf=NORMAL flux=-0.43 reg=0 sent=0.80
+2026-02-24 14:39:42,008 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.6
+2026-02-24 14:39:42,233 - INFO - [AI] direction=NEUTRAL score=27.6 conf=NORMAL flux=-0.43 reg=0 sent=0.80
+2026-02-24 14:39:42,233 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.6
+2026-02-24 14:39:42,650 - INFO - [AI] direction=NEUTRAL score=27.6 conf=NORMAL flux=-0.43 reg=0 sent=0.80
+2026-02-24 14:39:42,651 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.6
+2026-02-24 14:39:42,908 - INFO - [AI] direction=NEUTRAL score=27.8 conf=NORMAL flux=-0.41 reg=0 sent=0.80
+2026-02-24 14:39:42,908 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.8
+2026-02-24 14:39:43,301 - INFO - [AI] direction=NEUTRAL score=27.5 conf=NORMAL flux=-0.44 reg=0 sent=0.80
+2026-02-24 14:39:43,301 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 27.5
+2026-02-24 14:39:43,752 - INFO - [AI] direction=NEUTRAL score=71.5 conf=NORMAL flux=-0.30 reg=0 sent=0.80
+2026-02-24 14:39:43,752 - INFO - [AI VETO] Sinal ignorado. AI: NEUTRAL | Score: 71.5
+2026-02-24 16:21:18,118 - INFO - 🚀 Inicializando Sniper Bot WIN (Foco: R$ 3000 Capital)...
+2026-02-24 16:21:18,118 - INFO - Símbolo alvo: WINJ26 | MODO: DRY RUN
+2026-02-24 16:21:18,118 - INFO - 🎯 SniperBot: Parâmetros SOTA aplicados: RSI=14, VolSpike=1.2, Janela=10:00:00-15:00:00
+2026-02-24 17:26:11,889 - INFO - 🚀 Inicializando Sniper Bot WIN (Foco: R$ 3000 Capital)...
+2026-02-24 17:26:11,889 - INFO - Símbolo alvo: WINJ26 | MODO: DRY RUN
+2026-02-24 17:26:11,889 - INFO - 🎯 SniperBot: Parâmetros SOTA aplicados: RSI=14, VolSpike=1.2, Janela=10:00:00-15:00:00
