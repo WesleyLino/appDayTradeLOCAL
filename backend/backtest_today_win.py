@@ -44,7 +44,7 @@ async def run_validated_backtest():
     bt.position = None
     bt.trades_history = []
     
-    logging.info(f"📊 Iniciando Backtest Validado para 23/02 | Saldo: R$ 3.000,00 | Alvos Curtos")
+    logging.info("📊 Iniciando Backtest Validado para 23/02 | Saldo: R$ 3.000,00 | Alvos Curtos")
     
     for i in range(len(df_today)):
         row = df_today.iloc[i]
@@ -86,7 +86,7 @@ async def run_validated_backtest():
     print("\n" + "="*50)
     print("🏆 RESULTADO FINAL VALIDADO - 23/02 (PROVA DE RECALIBRAÇÃO)")
     print("="*50)
-    print(f"Saldo Inicial: R$ 3000.00")
+    print("Saldo Inicial: R$ 3000.00")
     print(f"Saldo Final:   R$ {bt.balance:.2f}")
     print(f"Lucro Líquido: R$ {bt.balance - 3000.0:.2f}")
     print(f"Total Trades:  {len(bt.trades_history)}")
