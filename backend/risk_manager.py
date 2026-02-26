@@ -146,6 +146,9 @@ class RiskManager:
         if side == "buy" and macro_change_pct < -0.5:
              return False, f"Macro Bearish (S&P500 {macro_change_pct:.2f}%)"
              
+        if side == "sell" and macro_change_pct > 0.5:
+             return False, f"Macro Bullish (S&P500 {macro_change_pct:.2f}%)"
+             
         return True, "Macro OK"
 
     def record_trade_result(self, pnl):
@@ -272,11 +275,11 @@ class RiskManager:
         return False
 
 
-    def get_order_params(self, symbol, type, price, volume, current_atr=None):
+    def get_order_params(self, symbol, type, price, volume, current_atr=None, regime=None):
         """
         Retorna parâmetros calculados para envio de ordem OCO (One Cancels Other).
         Detecta automaticamente se é WIN ou WDO para definir stops.
-        Agora suporta alvos dinâmicos baseados no ATR para adaptação à volatilidade.
+        Agora suporta alvos dinâmicos baseados no ATR e Regime para adaptação à volatilidade.
         """
         import MetaTrader5 as mt5
         
@@ -284,10 +287,16 @@ class RiskManager:
         # PRIORIDADE 1: Alvos Dinâmicos baseados em ATR (Se disponível)
         if current_atr and current_atr > 0:
             # Multiplicadores baseados na recalibração vencedora de 23/02
-            # TP = ~100 pts quando ATR está em ~100-120
-            # SL = ~130 pts
+            # [PRO-MAX] Ajuste por Regime
             tp_mult = 1.0 
             sl_mult = 1.3
+
+            if regime == 1: # Tendência Clara: Buscar alvos maiores
+                tp_mult = 1.5
+                logging.info("📈 REGIME TENDÊNCIA: Alvo TP expandido (1.5x ATR)")
+            elif regime == 0: # Indefinido/Lateral: Alvos Curtos
+                tp_mult = 0.8
+                logging.info("⚖️ REGIME LATERAL: Alvo TP reduzido (0.8x ATR)")
             
             sl_points = float(current_atr * sl_mult)
             tp_points = float(current_atr * tp_mult)

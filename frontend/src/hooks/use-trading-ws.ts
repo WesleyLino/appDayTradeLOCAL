@@ -23,11 +23,16 @@ interface TradeData {
   regime?: number;
   latency_ms: number;
   synthetic_index?: number;
+  macro?: {
+    score: number;
+    reason: string;
+  };
   ai_prediction?: {
     forecast: number;
     confidence?: number;
     score?: number;
     direction?: string;
+    lot_multiplier?: number;
   };
   sota?: {
     forecast: number;

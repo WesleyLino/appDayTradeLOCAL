@@ -340,7 +340,7 @@ class BacktestPro:
                     
                     # Predição PatchTST (Agora com normalização automática no AICore)
                     patchtst_data = 0.0
-                    if self.ai.inference_engine is not True:
+                    if self.ai.inference_engine is not None:
                         # Extrair janela para predição
                         window_data = data.iloc[i-64:i] # PatchTST usa 64 velas
                         if len(window_data) == 64:
@@ -351,6 +351,10 @@ class BacktestPro:
                     vol_val = float(log_returns.tail(20).std() * np.sqrt(252 * 480))
                     if not np.isfinite(vol_val): vol_val = 0.0
 
+                    # AI Decision (Passando OFI se disponível)
+                    # No backtest OHLCV, simulamos OFI como 0.5 * sentiment para manter consistência
+                    sim_ofi = (sentiment_score * 0.5) if sentiment_score != 0 else 0.0
+                    
                     ai_decision = self.ai.calculate_decision(
                         obi=obi,
                         sentiment=sentiment_score,
@@ -358,7 +362,8 @@ class BacktestPro:
                         regime=current_regime,
                         atr=atr_current,
                         volatility=vol_val,
-                        hour=row.name.hour
+                        hour=row.name.hour,
+                        ofi=sim_ofi
                     )
                     
                     direction = ai_decision['direction']
@@ -379,6 +384,8 @@ class BacktestPro:
                         logging.debug(f"🤖 AI Decision: {ai_decision}")
                         vol_spike_eff = vol_spike # No modo IA usamos volume puro
                         ai_stability = 0.99 # IA emitiu sinal, assume estabilidade
+                    elif (rsi < 30 and row['close'] < lower_bb) or (rsi > 70 and row['close'] > upper_bb):
+                        logging.debug(f"💤 AI NEUTRAL (Candidate Filtered by AI Uncertainty/Meta): {ai_decision.get('uncertainty', 0)*100:.1f}% uncertainty")
 
                 # --- [LEGACY] INTELIGÊNCIA DO SUCESSO: REGIME MAESTRO & SCALPING ADAPTATION ---
                 else:
@@ -430,15 +437,12 @@ class BacktestPro:
                     v22_buy = v22_reversion_buy or v22_trend_buy or v22_scalp_buy
                     v22_sell = v22_reversion_sell or v22_trend_sell or v22_scalp_sell
 
-                    # Debug tracking (Who triggered or why it failed)
-                    if cond_rsi_buy and cond_bb_buy:
-                        self.shadow_signals['v22_candidates'] += 1
-                        if not cond_vol_buy: self.shadow_signals['component_fail']['volume'] += 1
-                        if v22_reversion_buy: self.shadow_signals['total_missed'] += 1 # Base signal ok
-
-                    # Ajustar flags para filtros abaixo
-                    vol_spike_eff = vol_spike_eff
                     ai_stability = min(0.99, 0.70) # Placeholder para fluxo legado
+
+                # [PHASE 2] Audit Tracking Sync: Contamos candidatos v22 independentemente do modo
+                # Isso permite ver no relatório de auditoria quantos sinais a IA vetou.
+                if (rsi < 30 and row['close'] < lower_bb) or (rsi > 70 and row['close'] > upper_bb):
+                    self.shadow_signals['v22_candidates'] += 1
 
                 # Filtros Operacionais
                 t_start = datetime.strptime(self.opt_params['start_time'], "%H:%M").time()
@@ -456,14 +460,16 @@ class BacktestPro:
                 vol_stable = vol_min < atr_current < vol_max
 
                 # AI Filter (SOTA Stability)
-                # No backtest, simulamos a confiança da IA com base no RSI e Volume (Proxy)
-                # Em um cenário real, isso viria do PatchTST. Aqui usamos uma heurística de 'Confluência'.
-                test_side = "buy" if v22_buy else ("sell" if v22_sell else None)
-                base_confidence = 0.70
-                if vol_spike_eff: base_confidence += 0.15
-                if (test_side == "buy" and rsi < 25) or (test_side == "sell" and rsi > 75): base_confidence += 0.10
+                # Se estiver usando AI Core, respeitamos a decisão e estabilidade real do modelo
+                if not use_ai_core:
+                    # No modo legado, simulamos a confiança da IA com base no RSI e Volume (Proxy)
+                    # Isso evita que o modo legado seja "perfeito" demais sem filtros.
+                    test_side = "buy" if v22_buy else ("sell" if v22_sell else None)
+                    base_confidence = 0.70
+                    if vol_spike_eff: base_confidence += 0.15
+                    if (test_side == "buy" and rsi < 25) or (test_side == "sell" and rsi > 75): base_confidence += 0.10
+                    ai_stability = min(0.99, base_confidence)
                 
-                ai_stability = min(0.99, base_confidence)
                 ai_filter_ok = ai_stability >= self.opt_params['confidence_threshold']
                 
                 # Sentiment Filter (V2.5)
@@ -475,7 +481,7 @@ class BacktestPro:
 
                 # Flux Filter (Proxy para Backtest CSV)
                 flux_ok = True
-                if self.opt_params.get('use_flux_filter', False):
+                if not use_ai_core and self.opt_params.get('use_flux_filter', False):
                     flux_ok = row['tick_volume'] > (vol_sma * self.opt_params.get('flux_imbalance_threshold', 1.2))
                 
                 # Tracking Detalhado de Oportunidades Perdidas
@@ -505,10 +511,15 @@ class BacktestPro:
                 if (v22_buy or v22_sell) and time_ok and risk_ok and limit_ok and vol_stable and cooldown_ok and ai_filter_ok and sentiment_ok and flux_ok:
                     side = "buy" if v22_buy else "sell"
                     
-                    # --- [DYNAMIC ATR TARGETS] ---
-                    # Replica a lógica do RiskManager em O(1)
+                    # --- [DYNAMIC ATR TARGETS V3] ---
+                    # Replica a lógica do RiskManager ajustada por regime
                     tp_mult = 1.0 
                     sl_mult = 1.3
+
+                    if current_regime == 1: # Trend
+                        tp_mult = 1.5
+                    elif current_regime == 0: # Lateral
+                        tp_mult = 0.8
                     
                     # ATR atual já calculado no início do loop: row['atr_current']
                     raw_tp = atr_current * tp_mult
@@ -535,6 +546,10 @@ class BacktestPro:
                     else:
                         target_lot = self.opt_params.get('base_lot', 1)
                     
+                    # [NEW ASSERTIVENESS] Aplicar o lot_multiplier do AI-Core
+                    ai_multiplier = ai_decision.get('lot_multiplier', 1.0) if use_ai_core else 1.0
+                    target_lot = max(1, round(target_lot * ai_multiplier))
+                    
                     self.position = {
                         'side': side,
                         'entry_price': row['close'],
@@ -559,9 +574,13 @@ class BacktestPro:
             self.timestamps.append(row.name)
 
         logging.info("🏁 Simulação concluída.")
+        if self.position:
+            # Força o fechamento da última posição para fins de relatório final no backtest
+            self._close_trade(row['close'], 'END_OF_SIM', row.name)
         return self.generate_report()
 
     def _close_trade(self, price, reason, exit_time):
+        if not self.position: return
         pos = self.position
         pnl_points = (price - pos['entry_price']) if pos['side'] == 'buy' else (pos['entry_price'] - price)
         
@@ -569,27 +588,32 @@ class BacktestPro:
         mult = 0.20 if "WIN" in self.symbol else 10.0
         pnl_fin = pnl_points * pos['lots'] * mult
         
-        # Atualiza métricas de lote dinâmico
+        # Auditoria Financeira
+        self.balance += pnl_fin
+        self.daily_pnl += pnl_fin
+        
+        # Registrar Trade
+        trade_data = {
+            'entry_time': pos['time'],
+            'exit_time': exit_time,
+            'side': pos['side'],
+            'entry_price': pos['entry_price'],
+            'exit_price': price,
+            'lots': pos['lots'],
+            'pnl_pts': pnl_points,
+            'pnl_fin': pnl_fin,
+            'reason': reason
+        }
+        self.trades.append(trade_data)
+        
+        # Atualiza métricas de lote dinâmico tracker
         if pnl_fin > 0:
             self.consecutive_wins += 1
         else:
             self.consecutive_wins = 0
-
-        self.balance += pnl_fin
-        self.daily_pnl += pnl_fin
-        self.trades.append({
-            'entry_time': pos['time'],
-            'exit_time': exit_time,
-            'side': pos['side'],
-            'entry': pos['entry_price'],
-            'exit': price,
-            'lots': pos['lots'],
-            'pnl_points': pnl_points,
-            'pnl_fin': pnl_fin,
-            'reason': reason
-        })
+            
         self.position = None
-
+        self.last_trade_time = exit_time # Garante cooldown no backtest
     def generate_report(self):
         df_trades = pd.DataFrame(self.trades)
         if df_trades.empty:

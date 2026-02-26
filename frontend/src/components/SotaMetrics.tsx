@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { BrainCircuit, Activity, ShieldCheck, Gauge } from "lucide-react";
+import { BrainCircuit, Gauge, Scale, ShieldCheck, Globe } from "lucide-react";
 
 interface SotaMetricsProps {
   forecast?: number;
@@ -13,6 +13,8 @@ interface SotaMetricsProps {
   regime?: number;
   psr?: number;
   syntheticIndex?: number;
+  macroIndex?: number;
+  lotMultiplier?: number;
 }
 
 export function SotaMetrics({
@@ -24,13 +26,9 @@ export function SotaMetrics({
   regime = 0,
   psr = 0,
   syntheticIndex = 0,
+  macroIndex = 0,
+  lotMultiplier = 1.0,
 }: SotaMetricsProps) {
-  // Normalizar OFI para barra de progresso (-1000 a 1000 -> 0 a 100)
-  const ofiProgress = Math.min(
-    Math.max(((weightedOfi + 1000) / 2000) * 100, 0),
-    100,
-  );
-
   const getRegimeLabel = (r: number) => {
     switch (r) {
       case 0:
@@ -44,7 +42,6 @@ export function SotaMetrics({
     }
   };
 
-  // PSR Display Logic: Se for exatamente 1.0, costuma ser o estado inicial antes de 30 amostras
   const isPsrCalibrating = psr === 1.0;
 
   return (
@@ -64,6 +61,14 @@ export function SotaMetrics({
           <span>
             {isPsrCalibrating ? "CALIBRATING..." : `${(psr * 100).toFixed(2)}%`}
           </span>
+        </div>
+
+        {/* Current Exposure (Lot Multiplier) */}
+        <div className="flex items-center justify-between text-[10px] uppercase tracking-tighter text-emerald-400 font-bold bg-emerald-500/10 px-2 py-1 rounded">
+          <div className="flex items-center gap-1">
+            <Scale className="w-3 h-3" /> Exposição Atual
+          </div>
+          <span className="font-mono">{lotMultiplier.toFixed(2)}x</span>
         </div>
 
         {/* Forecast & Confidence */}
@@ -127,7 +132,7 @@ export function SotaMetrics({
 
         {/* Synthetic Index (Blue Chips) */}
         <div className="pt-2 border-t border-white/5 space-y-1 text-xs">
-          <div className="flex justify-between  uppercase tracking-tighter text-muted-foreground">
+          <div className="flex justify-between uppercase tracking-tighter text-muted-foreground">
             <span>Blue Chips Synth Index</span>
             <span
               className={
@@ -142,7 +147,30 @@ export function SotaMetrics({
             <div
               className={`absolute top-0 bottom-0 transition-all duration-700 ${syntheticIndex >= 0 ? "bg-emerald-500/50 left-1/2" : "bg-red-500/50 right-1/2"}`}
               style={{
-                width: `${Math.min(Math.abs(syntheticIndex) * 50, 50)}%`,
+                width: `${Math.min(Math.abs(syntheticIndex) * 100, 50)}%`,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Macro Sentiment (S&P 500) */}
+        <div className="pt-2 border-t border-white/5 space-y-1 text-xs">
+          <div className="flex justify-between uppercase tracking-tighter text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Globe className="w-3 h-3 text-blue-400" /> S&P 500 Macro
+            </span>
+            <span
+              className={macroIndex >= 0 ? "text-blue-400" : "text-amber-400"}
+            >
+              {macroIndex >= 0 ? "+" : ""}
+              {macroIndex.toFixed(2)}%
+            </span>
+          </div>
+          <div className="h-1 w-full bg-white/5 rounded-full relative overflow-hidden">
+            <div
+              className={`absolute top-0 bottom-0 transition-all duration-700 ${macroIndex >= 0 ? "bg-blue-500/50 left-1/2" : "bg-amber-500/50 right-1/2"}`}
+              style={{
+                width: `${Math.min(Math.abs(macroIndex) * 100, 50)}%`,
               }}
             />
           </div>

@@ -406,6 +406,25 @@ class MT5Bridge:
         df['time'] = df['time'] - timedelta(hours=3)
         return df
 
+    def get_market_data_range(self, symbol, timeframe, date_from, date_to):
+        """Coleta candles entre duas datas específicas."""
+        if not self.connected: return pd.DataFrame()
+        
+        # Ajuste de timezone (MT5 usa UTC/Server, convertemos para datetime)
+        # B3 HFT: Adicionamos 3 horas para compensar o ajuste feito no get_market_data
+        # ou trabalhamos puramente em timestamps.
+        
+        rates = mt5.copy_rates_range(symbol, timeframe, date_from, date_to)
+        if rates is None or len(rates) == 0:
+            logging.warning(f"Sem candles entre {date_from} e {date_to} para {symbol}")
+            return pd.DataFrame()
+            
+        df = pd.DataFrame(rates)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+        df['time'] = df['time'] - timedelta(hours=3) # Alinhamento Brasília
+        df.set_index('time', inplace=True)
+        return df
+
     def get_synchronized_multi_asset_data(self, symbols, n_candles=60):
         """
         Coleta e sincroniza dados de múltiplos ativos para inferência multi-variável.

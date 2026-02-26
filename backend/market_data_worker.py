@@ -10,7 +10,7 @@ class MarketDataWorker:
     Worker para coleta de dados lentos em background.
     Responsável por atualizar Blue Chips, Macro, Ajuste e Calendário.
     """
-    def __init__(self, bridge, calendar, interval=10):
+    def __init__(self, bridge, calendar, interval=2): # [ANTIVIBE-CODING]
         self.bridge = bridge
         self.calendar = calendar
         self.interval = interval
@@ -64,7 +64,7 @@ class MarketDataWorker:
                 "timestamp": time.time(),
                 "bluechips": bluechips if isinstance(bluechips, dict) else {},
                 "synthetic_index": float(synthetic_index),
-                "macro": macro_data if isinstance(macro_data, dict) else {"score": 0.0, "reason": "No data"},
+                "macro": {"score": float(macro_data), "reason": "S&P 500 Change"} if isinstance(macro_data, (int, float)) else macro_data,
                 "calendar": {
                     "volatility_expected": vol_expected,
                     "reason": str(vol_reason)

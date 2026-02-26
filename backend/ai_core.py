@@ -32,6 +32,11 @@ class AICore:
         self.meta_learner = MetaLearner() 
         self.inference_engine = None # Injetado pelo main.py
 
+        # [NEW CONFIGURABLE PARAMETERS - HIGH GAIN RESEARCH]
+        self.uncertainty_threshold_base = 0.25 # [ANTIVIBE-CODING] Default Seguro
+        self.lot_multiplier_partial = 0.25     # [ANTIVIBE-CODING] Default Seguro
+        self.uncertainty_high_conviction_cap = 4.0 # 400%
+
     def fetch_latest_news(self):
         """
         Coleta notícias de 'backend/news_feed.txt' para análise de sentimento.
@@ -212,7 +217,7 @@ class AICore:
         except Exception as e:
             return 0
 
-    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0):
+    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, ofi=0.0):
         """
         Calcula a decisão final de trading baseada em múltiplos fatores ponderados.
         
@@ -270,28 +275,79 @@ class AICore:
             norm_patchtst = (patchtst_score - 0.5) * 2
         
         # [HFT v2.1 FIX] Calcular incerteza relativa (%)
-        uncertainty_rel = abs(uncertainty_abs / forecast_ref)
+        # [PHASE 2] Normalização Robusta: Evita explosão do ratio quando forecast é pequeno
+        # Para modelos SOTA em sigma-space (PatchTST), o ruído base é maior.
+        # Usamos 0.50 como piso (50% do range) para evitar divisões por valores ínfimos.
+        uncertainty_rel = abs(uncertainty_abs / max(0.50, abs(norm_patchtst)))
 
-        # [VETO POR INCERTEZA] Se PatchTST estiver muito incerto (>5% range relativo), usamos Fail-Safe
-        if uncertainty_rel > 0.05: 
-            logging.warning(f"CONFORMAL FAIL-SAFE: Incerteza Alta ({uncertainty_rel*100:.2f}%). Neutralizando PatchTST.")
-            norm_patchtst = 0.0 # Neutraliza contribuição da IA
-            patchtst_score["score"] = 0.5 # Para o breakdown
-            veto_reason = "HIGH_UNCERTAINTY_FAILSAFE"
-            # Não abortamos mais a decisão, deixamos Sentiment/OBI/Meta-Learner operarem
+        # [VETO POR INCERTEZA - REFINADO]
+        # Base threshold agora usa variável de instância para calibração dinâmica.
+        uncertainty_threshold = self.uncertainty_threshold_base
+        lot_multiplier = 1.0
+        veto_reason = None
+
+        # 1. Check for Confluence (Sentiment + OBI)
+        strong_confluence = (sentiment > 0.6 and obi > 1.2) or (sentiment < -0.6 and obi < -1.2)
+        if strong_confluence:
+            logging.info("🎯 CONFLUENCE DETECTED: Expanding uncertainty threshold.")
+            uncertainty_threshold = max(uncertainty_threshold, 0.40)
+
+        # [PHASE 2] Regime-Aware Thresholds
+        if regime == 2: # Ruído / Alta Vol
+            logging.info("🌪️ HIGH VOLATILITY REGIME: Adapting uncertainty threshold.")
+            uncertainty_threshold = max(uncertainty_threshold, 0.35)
+
+        # 2. Check for Flow Override (OFI)
+        strong_flow = abs(ofi) > 2.5
+        if strong_flow:
+            logging.info(f"🌊 FLOW OVERRIDE (OFI={ofi:.2f}): Expanding uncertainty threshold.")
+            uncertainty_threshold = max(uncertainty_threshold, 0.35)
+
+        # [PHASE 2] Confidence Override (Quantum Convicção)
+        # Se os quantis sugerem altíssima assimetria, dobramos o threshold de incerteza
+        if quantile_confidence == "VERY_HIGH":
+            logging.info("⚡ VERY HIGH CONFIDENCE DETECTED: Scaling uncertainty threshold (x2.0).")
+            uncertainty_threshold *= 2.0
+
+        if uncertainty_rel > uncertainty_threshold: 
+            # [PHASE 2] Ultra-Conservative Entry: Permite entrada mínima em incerteza extrema se convicção for alta
+            if quantile_confidence == "VERY_HIGH" and uncertainty_rel < self.uncertainty_high_conviction_cap: 
+                logging.warning(f"🛡️ ULTRA-CONSERVATIVE ENTRY: High uncertainty ({uncertainty_rel*100:.2f}%) but VERY_HIGH confidence. Lot multiplier set to {self.lot_multiplier_partial}x.")
+                lot_multiplier = self.lot_multiplier_partial
+            else:
+                logging.warning(f"CONFORMAL FAIL-SAFE: Incerteza Alta ({uncertainty_rel*100:.2f}% > {uncertainty_threshold*100:.0f}%). Neutralizando.")
+                norm_patchtst = 0.0 # Neutraliza contribuição da IA
+                if isinstance(patchtst_score, dict):
+                    patchtst_score["score"] = 0.5 
+                veto_reason = "HIGH_UNCERTAINTY_FAILSAFE"
+        else:
+            # 3. Partial Exposure Logic (Ajustado para o novo range sigma)
+            if 0.15 < uncertainty_rel <= 0.35:
+                logging.info(f"⚖️ PARTIAL EXPOSURE: uncertainty_rel={uncertainty_rel*100:.2f}%. Applying 0.5x multiplier.")
+                lot_multiplier = 0.5
+            
+            # Recalcular score norm se estava neutralizado
+            norm_patchtst = (patchtst_score.get("score", 0.5) if isinstance(patchtst_score, dict) else patchtst_score - 0.5) * 2
+            if isinstance(norm_patchtst, complex): norm_patchtst = norm_patchtst.real
         
-        # 2. Pesos Dinâmicos (Restauração Macro: IA Proativa)
-        w_sent = 0.40
-        w_obi = 0.30
-        w_patchtst = 0.30
+        # [PHASE 3] Dynamic Weights (Backtest-Aware)
+        # Se OBI e Sentiment forem zero (comum em backtest OHLCV), redistribuímos o peso para o Transformer.
+        w_sent = 0.30
+        w_obi = 0.20
+        w_patchtst = 0.50
 
-        if regime == 0: # Consolidação / Ruído -> Equilíbrio Fluxo/Predição
-            w_obi = 0.50
-            w_patchtst = 0.30
+        if abs(sentiment) < 0.001 and abs(obi) < 0.01:
+            # Modo Backtest ou 'Clean Mode': Transformer assume 85% do peso
+            w_patchtst = 0.85
+            w_sent = 0.08
+            w_obi = 0.07
+        elif regime == 0: # Consolidação
+            w_obi = 0.40
+            w_patchtst = 0.40
             w_sent = 0.20
-        elif regime == 1: # Tendência Clara -> Maximizar Transformer
-            w_obi = 0.20
-            w_patchtst = 0.70
+        elif regime == 1: # Tendência
+            w_obi = 0.15
+            w_patchtst = 0.75
             w_sent = 0.10
         
         # 3. Cálculo do Sinal Composto (AI_Score Bruto)
@@ -329,15 +385,19 @@ class AICore:
                 logging.warning(f"Meta-Learner fallback: Usando raw signal (Motive: {e})")
                 meta_score = ai_score_raw
 
-        # A decisão final é uma média ponderada entre o Sinal Bruto (Macro) e o Meta-Learner
-        final_score = (ai_score_raw * 0.4) + (meta_score * 0.6)
+        # A decisão final é uma média ponderada entre o Sinal Bruto (Macro) e o Meta-Learner.
+        # [REFINAMENTO 25/02] MATH FIX: Se o Meta-Learner está neutro, ele não deve impedir o gatilho.
+        # Aumentamos o peso do Sinal Bruto (Macro) para 60% quando o Meta-Learner é incerto.
+        if self.meta_learner.model is not None and (0.48 <= meta_proba <= 0.52):
+             final_score = (ai_score_raw * 0.7) + (meta_score * 0.3)
+        else:
+             final_score = (ai_score_raw * 0.4) + (meta_score * 0.6)
         
         # [FASE 24] VETO ADICIONAL: Filtro de Indecisão (Meta-Learner Neutral)
         veto_reason = None
-        # Se o Meta-Learner estiver indeciso (perto de 0.5), vetamos o sinal para evitar overtrading
-        # [ANTIVIBE-CODING] - Só aplicamos o veto de incerteza se o modelo estiver carregado.
-        # Se estiver em modo Pass-Through (model=None), meta_proba é sempre 0.5, mas não devemos vetar.
-        if self.meta_learner.model is not None and (0.45 < meta_proba < 0.55):
+        # [ANTIVIBE-CODING] - Só aplicamos o veto se o modelo estiver carregado e for EXTREMAMENTE incerto.
+        # Relaxamos a faixa de veto de [0.45, 0.55] para [0.49, 0.51] para permitir sinais fortes em backtest.
+        if self.meta_learner.model is not None and (0.49 < meta_proba < 0.51):
             direction = "NEUTRAL"
             veto_reason = "META-FILTER-NEUTRAL"
             logging.info(f"🛡️ META-FILTER: Sinal neutralizado por incerteza estatística (Prob: {meta_proba:.2%})")
@@ -357,7 +417,9 @@ class AICore:
         return {
             "score": final_score,
             "direction": direction,
+            "lot_multiplier": lot_multiplier, # [NEW ASSERTIVENESS]
             "forecast": float(forecast_ref),
+            "uncertainty": uncertainty_rel, # Incluido para auditoria
             "quantile_confidence": quantile_confidence,  # NORMAL | HIGH | VERY_HIGH
             "breakdown": {
                 "obi_contribution": obi * w_obi,
@@ -664,16 +726,29 @@ class InferenceEngine:
             # q10, q50, q90 para o WIN$ (coluna 0)
             q10, q50, q90 = preds[-1, 0], preds[-1, 1], preds[-1, 2]
             
-            trend_score = 0.5 + (q50 - input_data[-1, 0]) * 2
+            # [FASE 28] SCALING DINÂMICO: Se os dados foram diferenciados, q50 é um log-return.
+            # Multiplicador 2.0 era insuficiente para WIN$ (retornos de 0.0005-0.002).
+            # Usamos 200.0 como fator de escala para que 0.2% de retorno predito leve ao score 0.9.
+            current_val = input_data[-1, 0]
+            diff_pred = q50 - current_val
+            
+            # Score centralizado em 0.5. 
+            trend_score = 0.5 + (diff_pred * 200.0) 
             final_score = max(0.0, min(1.0, trend_score))
+            
+            # Cálculo de Incerteza (Spread da distribuição Conformal)
+            uncertainty = float(abs(q90 - q10))
             
             return {
                 "score": float(final_score),
                 "forecast_norm": float(q50),
                 "lower_bound_norm": float(q10),
                 "upper_bound_norm": float(q90),
-                "uncertainty_norm": float(q90 - q10),
-                "confidence": 0.95
+                "uncertainty_norm": uncertainty,
+                "confidence": 0.95,
+                "q10": float(q10),
+                "q50": float(q50),
+                "q90": float(q90)
             }
             
         except Exception as e:

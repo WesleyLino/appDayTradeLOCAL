@@ -13,6 +13,23 @@ import pandas as pd
 import numpy as np
 
 # --- CONFIGURAÇÃO DE LOGS OPERACIONAIS ---
+import logging.handlers
+from logging.handlers import RotatingFileHandler
+
+# Reduzindo verbosidade e implementando rotação para evitar arquivos gigantes (max 10MB)
+log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+log_file = "backend/trading_bridge.log"
+rotating_handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5, encoding='utf-8')
+rotating_handler.setFormatter(log_formatter)
+
+logging.basicConfig(
+    level=logging.INFO, # V22/V23 standard: INFO para produção, DEBUG para dev local
+    handlers=[
+        rotating_handler,
+        logging.StreamHandler()
+    ]
+)
+
 # [ANTIVIBE-CODING] - Buffer circular para o Dashboard
 trade_logs = []
 MAX_LOGS = 50
@@ -52,15 +69,8 @@ from backend.rl_agent import PPOAgent # HFT v2.0
 from backend.microstructure_analyzer import MicrostructureAnalyzer # HFT v2.0
 from backend.news_collector import NewsCollector
 from backend.data_collector import DataCollector
-# Configuração de Logs Unificada
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("backend/ws_debug_final.log", encoding='utf-8'),
-        logging.StreamHandler()
-    ]
-)
+# Configuração de Logs Unificada já definida no topo (RotatingFileHandler)
+
 from backend.sentiment_analyzer import SentimentAnalyzer
 from backend.calendar_manager import CalendarManager
 from backend.news_sentiment_worker import NewsSentimentWorker 
@@ -79,10 +89,17 @@ class SniperStatus(BaseModel):
 
 app = FastAPI()
 
-# Permite acesso do frontend Next.js local
+# Permite acesso do frontend Next.js local (Ajustado para Windows CORS explicitly)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+        "http://10.0.0.169:3000" # IP de Rede Detectado
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -169,6 +186,19 @@ async def startup_event():
             add_operational_log("Worker de Dados Macro/BlueChips Ativado", "success")
         except Exception as e:
             logging.error(f"Erro ao iniciar MarketDataWorker: {e}")
+
+        # [NEW] CARREGAMENTO DE PARÂMETROS HIGH GAIN (SOTA v3)
+        try:
+            hp_path = os.path.join("backend", "high_gain_parameters.json")
+            if os.path.exists(hp_path):
+                with open(hp_path, "r") as f:
+                    hp = json.load(f)
+                    ai.uncertainty_threshold_base = hp.get("threshold", 0.25)
+                    ai.lot_multiplier_partial = hp.get("multiplier", 0.25)
+                    logging.info(f"🏆 HIGH GAIN PARAMS LOADED: Threshold={ai.uncertainty_threshold_base}, Mult={ai.lot_multiplier_partial}")
+                    add_operational_log(f"Calibragem High Gain Ativada (Thr: {ai.uncertainty_threshold_base})", "success")
+        except Exception as e:
+            logging.error(f"Erro ao carregar High Gain Params: {e}")
 
         # keyboard.add_hotkey('ctrl+q', lambda: panic_close_all())
         # logging.info("Kill Switch ativo: Pressione Ctrl+Q para ZERAR TUDO.")
@@ -323,15 +353,17 @@ async def websocket_endpoint(websocket: WebSocket):
                         asyncio.to_thread(bridge.mt5.account_info),
                         asyncio.to_thread(bridge.get_daily_realized_profit)
                     )
-                    
-                    # 1.2 Atuallização via Cache (Background Worker)
-                    ctx = load_market_context()
-                    bluechips = ctx.get("bluechips", {})
-                    synthetic_idx = ctx.get("synthetic_index", 0.0)
-                    macro_change = ctx.get("macro", {"score": 0.0, "reason": "Background data"})
-                    vol_expected = ctx.get("calendar", {}).get("volatility_expected", False)
-                    vol_reason = ctx.get("calendar", {}).get("reason", "")
-                    settlement_price = ctx.get("settlement_price", 0.0)
+                
+                # 1.2 Atuallização via Cache (Background Worker) - SEMPRE ATUALIZAR (HFT Optimization)
+                ctx = load_market_context() # [ANTIVIBE-CODING]
+                bluechips = ctx.get("bluechips", {})
+                synthetic_idx = ctx.get("synthetic_index", 0.0)
+                macro_change = ctx.get("macro", {"score": 0.0, "reason": "Background data"})
+                vol_expected = ctx.get("calendar", {}).get("volatility_expected", False)
+                vol_reason = ctx.get("calendar", {}).get("reason", "")
+                settlement_price = ctx.get("settlement_price", 0.0)
+
+                if loop_count % 5 == 1:
 
                     
                     # Multi-data fallback (usado para correlações/índices sintéticos)
@@ -690,11 +722,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     logging.warning("Check Force Close: 17:50 atingido.")
 
                 # --- LÓGICA DE DECISÃO DE TRADE (RESTAURAÇÃO MACRO) ---
-                if risk.allow_autonomous and ai_total_score >= 85 and risk_ok and market_ok and time_allowed:
+                is_threshold_met = ai_total_score >= 85 or ai_total_score <= 15
+                if risk.allow_autonomous and is_threshold_met and risk_ok and market_ok and time_allowed:
                     if ai_direction in ["BUY", "SELL"]:
                         side = "buy" if ai_direction == "BUY" else "sell"
                         
-                        macro_ok, macro_msg = risk.check_macro_filter(side, macro_change)
+                        macro_ok, macro_msg = risk.check_macro_filter(side, macro_change.get("score", 0.0))
                         if not macro_ok:
                             logging.warning(f"AUTÔNOMO BLOQUEADO: {macro_msg}")
                         else:
@@ -709,7 +742,8 @@ async def websocket_endpoint(websocket: WebSocket):
                             logging.info(log_msg)
                             
                             is_sniper = False
-                            if ai_total_score > 90:
+                            is_high_conviction = ai_total_score > 90 or ai_total_score < 10
+                            if is_high_conviction:
                                 if (side == "buy" and cvd_val >= 300) or (side == "sell" and cvd_val <= -300):
                                     is_sniper = True
                             
@@ -722,9 +756,12 @@ async def websocket_endpoint(websocket: WebSocket):
                                 
                                 point_value = 10.0 if "WDO" in symbol or "DOL" in symbol else 0.20
                                 sota_lots = risk.calculate_volatility_sizing(account['balance'], current_atr, point_value)
-                                final_lots = max(1, int(sota_lots))
                                 
-                                params = risk.get_order_params(symbol, order_type, current_order_price, final_lots, current_atr=current_atr)
+                                # [SOTA v3] Aplicar Multiplicador de Lotes da IA (Exposição Parcial)
+                                ai_multiplier = decision.get("lot_multiplier", 1.0)
+                                final_lots = max(1, int(sota_lots * ai_multiplier))
+                                
+                                params = risk.get_order_params(symbol, order_type, current_order_price, final_lots, current_atr=current_atr, regime=regime)
                                 params["symbol"] = symbol
                                 params["comment"] = "AUTO SNIPER"
                                 
@@ -784,13 +821,16 @@ async def websocket_endpoint(websocket: WebSocket):
                                 else:
                                     point_value = 10.0 if "WDO" in symbol or "DOL" in symbol else 0.20
                                     sota_lots = risk.calculate_volatility_sizing(account['balance'], current_atr, point_value)
+                                    
+                                    # [SOTA v3] Aplicar Multiplicador de Lotes da IA (Exposição Parcial)
+                                    ai_multiplier = decision.get("lot_multiplier", 1.0)
                                     vol_step = tick_info.volume_step if hasattr(tick_info, 'volume_step') else 1.0
-                                    final_lots = round(sota_lots / vol_step) * vol_step
+                                    final_lots = round((sota_lots * ai_multiplier) / vol_step) * vol_step
                                     final_lots = max(vol_step, final_lots)
                                     
                                     logging.info(f"[SOTA] HFT Limit: {final_lots} lotes @ {limit_price}")
 
-                                    params = risk.get_order_params(symbol, order_type, limit_price, final_lots, current_atr=current_atr)
+                                    params = risk.get_order_params(symbol, order_type, limit_price, final_lots, current_atr=current_atr, regime=regime)
                                     params["symbol"] = symbol
                                     params["comment"] = "AUTO_HFT_LIMIT"
 
@@ -829,7 +869,9 @@ async def websocket_endpoint(websocket: WebSocket):
                                                         "ai_score": ai_total_score,
                                                         "allow_autonomous": risk.allow_autonomous,
                                                         "order_status": "PENDING_HFT",
-                                                        "ticket": order_ticket
+                                                        "ticket": order_ticket,
+                                                        "synthetic_index": float(synthetic_idx),
+                                                        "bluechips": bluechips if isinstance(bluechips, dict) else {} # [ANTIVIBE-CODING]
                                                     },
                                                     "account": account,
                                                     "timestamp": time_module.time()
@@ -909,6 +951,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             "score": float(sentiment_score),
                             "headlines": headlines
                         },
+                        "macro": macro_change if isinstance(macro_change, dict) else {"score": float(macro_change), "reason": "S&P 500"},
                         "calendar": {
                             "volatility_expected": vol_expected,
                             "reason": str(vol_reason)
@@ -1029,7 +1072,7 @@ async def place_order(req: OrderRequest):
     if not valid: return {"status": "error", "message": reason}
     params = risk.get_order_params(symbol, order_type, price, int(volume))
     params["symbol"] = symbol
-    result = bridge.mt5.order_send(params)
+    result = await asyncio.to_thread(bridge.mt5.order_send, params)
     if result.retcode != bridge.mt5.TRADE_RETCODE_DONE:
         return {"status": "error", "message": f"Erro MT5: {result.comment}"}
     persistence.save_trade(symbol, side, price, volume)

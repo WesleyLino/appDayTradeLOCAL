@@ -41,6 +41,8 @@ export function TradingDashboard() {
     regime: data?.risk_status?.regime ?? 0,
     psr: data?.risk_status?.psr ?? 0,
     syntheticIndex: data?.risk_status?.synthetic_index ?? 0,
+    macroIndex: data?.macro?.score ?? 0,
+    lotMultiplier: data?.ai_prediction?.lot_multiplier ?? 1.0,
   };
 
   const riskOk = data?.risk_status.time_ok && data?.risk_status.loss_ok;
