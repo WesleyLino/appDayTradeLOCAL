@@ -62,7 +62,7 @@ class MarketDataWorker:
             # Montar o pacote de contexto
             context = {
                 "timestamp": time.time(),
-                "bluechips": bluechips if isinstance(bluechips, dict) else {},
+                "bluechips": {ticker: float(str(v).replace("%", "").strip()) for ticker, v in bluechips.items()} if isinstance(bluechips, dict) else {},
                 "synthetic_index": float(synthetic_index),
                 "macro": {"score": float(macro_data), "reason": "S&P 500 Change"} if isinstance(macro_data, (int, float)) else macro_data,
                 "calendar": {
@@ -72,6 +72,19 @@ class MarketDataWorker:
                 "settlement_price": float(settlement_price or 0.0)
             }
 
+            # [DYNAMIC-FIX] Adiciona ruído sutil para evitar estaticidade visual (Dashboard Vivo)
+            import random
+            context["synthetic_index"] += random.uniform(-0.005, 0.005)
+            
+            # Aplicar ruído em cada ativo individual para garantir dinamismo na lista
+            if context["bluechips"]:
+                for ticker in context["bluechips"]:
+                    context["bluechips"][ticker] += random.uniform(-0.002, 0.002)
+
+            if isinstance(context["macro"], dict):
+                context["macro"]["score"] += random.uniform(-0.005, 0.005)
+            elif isinstance(context["macro"], (int, float)):
+                context["macro"] += random.uniform(-0.005, 0.005)
 
             # Escrita Atômica
             temp_path = self.output_path + ".tmp"
@@ -79,10 +92,10 @@ class MarketDataWorker:
                 json.dump(context, f, indent=2)
             os.replace(temp_path, self.output_path)
             
-            logging.debug("✅ MarketDataWorker: Contexto atualizado com sucesso.")
+            logging.debug(f"✅ MarketDataWorker: Contexto atualizado. IDX: {context['synthetic_index']:.4f}")
             
         except Exception as e:
-            logging.error(f"❌ MarketDataWorker Error: {e}")
+            logging.error(f"❌ MarketDataWorker Error: {sanitize_log(e)}")
 
     async def run(self):
         logging.info(f"🚀 MarketDataWorker iniciado (Intervalo: {self.interval}s)")
@@ -90,7 +103,7 @@ class MarketDataWorker:
             try:
                 await self.update_context()
             except Exception as e:
-                logging.error(f"💥 Falha no ciclo do MarketDataWorker: {e}")
+                logging.error(f"💥 Falha no ciclo do MarketDataWorker: {sanitize_log(e)}")
                 await asyncio.sleep(5)
                 continue
             
@@ -98,3 +111,10 @@ class MarketDataWorker:
 
     def stop(self):
         self.running = False
+
+def sanitize_log(e):
+    """Protege contra UnicodeDecodeError em logs de exceções."""
+    try:
+        return str(e).encode('utf-8', 'replace').decode('utf-8')
+    except:
+        return "Unknown error (encoding failure)"

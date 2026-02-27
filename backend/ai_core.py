@@ -4,6 +4,7 @@ from sklearn.cluster import KMeans # Keep KMeans for regime_model
 from dotenv import load_dotenv
 import torch # Import necessário para InferenceEngine
 import time
+import gc
 from datetime import datetime
 
 import google.generativeai as genai
@@ -378,7 +379,7 @@ class AICore:
                 lot_multiplier = self.lot_multiplier_partial
                 logging.warning(f"🛡️ ULTRA-CONSERVATIVE ENTRY: High uncertainty ({uncertainty_rel*100:.1f}%)")
             else:
-                veto_reason = "HIGH_UNCERTAINTY_FAILSAFE"
+                veto_reason = f"HIGH_UNCERTAINTY_FAILSAFE ({uncertainty_rel*100:.1f}% > {uncertainty_threshold*100:.1f}%)"
         
         # [PRO] Filtro de Divergência de Fluxo
         if veto_reason is None:
@@ -397,7 +398,7 @@ class AICore:
                 
         # [SOTA v5] Spread Veto (Proteção contra Slippage)
         if veto_reason is None and spread > self.spread_veto_threshold:
-            veto_reason = "HIGH_SPREAD_VETO"
+            veto_reason = f"HIGH_SPREAD_VETO ({spread:.1f} > {self.spread_veto_threshold})"
             logging.warning(f"⚠️ SPREAD VETO: {spread:.1f} pts > {self.spread_veto_threshold}")
 
         # 6. Cálculo do Score Final
@@ -758,7 +759,18 @@ class InferenceEngine:
                     raw_preds = self.ort_session.run(None, {input_name: input_tensor})[0] 
                     preds = raw_preds[0] # [5, 3]
                 except Exception as e_onnx:
-                    logging.warning(f"ONNX Run falhou, tentando PT fallback: {repr(e_onnx)}")
+                    # [BUGFIX] UnicodeDecodeError protection for DirectML/DML errors
+                    try:
+                        err_msg = str(e_onnx).encode('utf-8', 'replace').decode('utf-8')
+                    except:
+                        err_msg = "Unknown ONNX/DML error (encoding failure)"
+                        
+                    logging.warning(f"ONNX Run falhou, tentando PT fallback: {err_msg}")
+                    
+                    # Memory cleanup after DML failure
+                    gc.collect()
+                    if torch.cuda.is_available(): torch.cuda.empty_cache()
+
                     if self.model is not None:
                         x = torch.tensor(input_tensor).to(torch.float32)
                         with torch.no_grad():

@@ -4,6 +4,13 @@ from datetime import datetime, timedelta
 import logging
 import time
 
+def sanitize_log(e):
+    """Protege contra UnicodeDecodeError em logs de exceções."""
+    try:
+        return str(e).encode('utf-8', 'replace').decode('utf-8')
+    except:
+        return "Unknown error (encoding failure)"
+
 # Configuração de Logs
 logging.basicConfig(
     level=logging.DEBUG,
@@ -25,7 +32,7 @@ class MT5Bridge:
     def connect(self):
         """Estabelece conexão com o MetaTrader 5 local."""
         if not self.mt5.initialize():
-            logging.error(f"Falha ao inicializar MT5: {self.mt5.last_error()}")
+            logging.error(f"Falha ao inicializar MT5: {sanitize_log(self.mt5.last_error())}")
             return False
 
         # Verificar se está conectado à corretora correta
@@ -128,7 +135,7 @@ class MT5Bridge:
                 continue # Próxima tentativa no loop
             
             # Se for outro erro (ex: Limites Rejeitados 10014, Saldo Insuficiente 10019...)
-            logging.error(f"Erro Crítico MT5 ({result.retcode}): {result.comment}")
+            logging.error(f"Erro Crítico MT5 ({result.retcode}): {sanitize_log(result.comment)}")
             return result
             
         return result
@@ -168,7 +175,7 @@ class MT5Bridge:
 
         result = mt5.order_send(request)
         if result.retcode != mt5.TRADE_RETCODE_DONE:
-            logging.error(f"Falha ao enviar Limit Order: {result.comment} ({result.retcode})")
+            logging.error(f"Falha ao enviar Limit Order: {sanitize_log(result.comment)} ({result.retcode})")
         else:
             logging.info(f"LIMIT ORDER ENVIADA: {symbol} {volume} @ {price} (Ticket: {result.order})")
         
@@ -185,7 +192,7 @@ class MT5Bridge:
         
         result = mt5.order_send(request)
         if result.retcode != mt5.TRADE_RETCODE_DONE:
-            logging.warning(f"Falha ao cancelar ordem {ticket}: {result.comment}")
+            logging.warning(f"Falha ao cancelar ordem {ticket}: {sanitize_log(result.comment)}")
             return False
             
         logging.info(f"ORDEM CANCELADA: {ticket}")
@@ -219,6 +226,32 @@ class MT5Bridge:
                 return f"STATE_{state}"
                 
         return "UNKNOWN"
+
+    def validate_order_compliance(self, symbol, price):
+        """
+        Valida se o preço da ordem é válido e não é um "Fat Finger".
+        Retorna (bool, str) com o status e a razão.
+        """
+        if price <= 0:
+            return False, "Preço inválido (zero ou negativo)."
+            
+        if not self.connected:
+            return False, "MT5 desconectado."
+            
+        tick = mt5.symbol_info_tick(symbol)
+        if not tick:
+            return False, "Falha ao obter tick para validação."
+            
+        current_ref = tick.last if tick.last > 0 else (tick.bid if tick.bid > 0 else tick.ask)
+        if current_ref <= 0:
+            return False, "Preço de referência inválido no MT5."
+            
+        # Proteção contra Fat Finger (máximo 10% de distância do preço atual)
+        max_deviation = current_ref * 0.10
+        if abs(price - current_ref) > max_deviation:
+            return False, f"FAT FINGER: Preço {price} muito distante da referência {current_ref}."
+            
+        return True, "Compliance OK"
 
     def close_position(self, ticket):
         """Fecha uma posição aberta pelo ticket (B3 Netting)."""
@@ -254,7 +287,7 @@ class MT5Bridge:
         
         result = mt5.order_send(request)
         if result.retcode != mt5.TRADE_RETCODE_DONE:
-            logging.error(f"Erro ao fechar posição {ticket}: {result.comment}")
+            logging.error(f"Erro ao fechar posição {ticket}: {sanitize_log(result.comment)}")
             return False
             
         logging.info(f"POSIÇÃO FECHADA: {ticket} {symbol} {lots} lotes")
@@ -388,7 +421,7 @@ class MT5Bridge:
             return current_symbol
 
         except Exception as e:
-            logging.error(f"Erro ao calcular simbolo WIN: {e}")
+            logging.error(f"Erro ao calcular simbolo WIN: {sanitize_log(e)}")
             return f"{base}$" # Fallback genérico
 
     def get_market_data(self, symbol, timeframe=mt5.TIMEFRAME_M1, n_candles=100):
@@ -397,7 +430,7 @@ class MT5Bridge:
         
         rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, n_candles)
         if rates is None or len(rates) == 0:
-            logging.error(f"Erro ao obter rates para {symbol}: {mt5.last_error()}")
+            logging.error(f"Erro ao obter rates para {symbol}: {sanitize_log(mt5.last_error())}")
             return pd.DataFrame()
             
         df = pd.DataFrame(rates)
@@ -523,7 +556,7 @@ class MT5Bridge:
                     
             return total_profit
         except Exception as e:
-            logging.error(f"Erro ao calcular lucro diário: {e}")
+            logging.error(f"Erro ao calcular lucro diário: {sanitize_log(e)}")
             return 0.0
 
     def get_trading_performance(self):
@@ -583,7 +616,7 @@ class MT5Bridge:
                 "net_profit": round(net_profit, 2)
             }
         except Exception as e:
-            logging.error(f"Erro ao calcular performance historica: {e}")
+            logging.error(f"Erro ao calcular performance historica: {sanitize_log(e)}")
             return default_stats
 
     def get_settlement_price(self, symbol):

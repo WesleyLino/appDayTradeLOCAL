@@ -141,8 +141,8 @@ export function TradingDashboard() {
       {isHighLatency && (
         <div className="w-full bg-loss/10 border border-loss text-loss py-2 px-4 rounded-lg flex items-center justify-center gap-2 animate-pulse font-bold shadow-lg ring-1 ring-loss/50">
           <Activity size={20} />
-          ALERTA DE ALTA LATÊNCIA ({data?.latency_ms.toFixed(1)}ms) - RISCO DE
-          EXECUÇÃO
+          ALERTA DE ALTA LATÊNCIA ({(data?.latency_ms ?? 0).toFixed(1)}ms) -
+          RISCO DE EXECUÇÃO
         </div>
       )}
 
@@ -196,12 +196,12 @@ export function TradingDashboard() {
             <p
               className={cn(
                 "text-2xl font-mono font-bold tracking-tight",
-                (data?.risk_status.profit_day ?? 0) >= 0
+                (data?.risk_status?.profit_day ?? 0) >= 0
                   ? "text-emerald-400 text-shadow-glow-green"
                   : "text-red-400 text-shadow-glow-red",
               )}
             >
-              R$ {data?.risk_status.profit_day.toFixed(2) ?? "0.00"}
+              R$ {data?.risk_status?.profit_day?.toFixed(2) ?? "0.00"}
             </p>
           </div>
           <div className="text-right">
@@ -397,9 +397,7 @@ export function TradingDashboard() {
                   </span>
                 </li>
                 <li className="flex justify-between items-center">
-                  <span className="text-muted-foreground">
-                    Limite de Perda (R$ 200)
-                  </span>
+                  <span className="text-muted-foreground">Limite de Perda</span>
                   <span
                     className={cn(
                       "px-2 py-0.5 rounded text-[10px] font-bold border",
@@ -408,7 +406,7 @@ export function TradingDashboard() {
                         : "bg-red-500/10 text-red-400 border-red-500/20",
                     )}
                   >
-                    {data?.risk_status.loss_ok ? "OK" : "ATINGIDO"}
+                    {data?.risk_status?.loss_ok ? "OK" : "ATINGIDO"}
                   </span>
                 </li>
 
@@ -641,7 +639,7 @@ export function TradingDashboard() {
                             )}
                           >
                             {change > 0 ? "+" : ""}
-                            {change.toFixed(2)}%
+                            {Number(change || 0).toFixed(2)}%
                           </span>
                         </div>
                       </div>

@@ -48,6 +48,13 @@ def add_operational_log(msg: str, log_type: str = "info"):
     if len(trade_logs) > MAX_LOGS:
         del trade_logs[MAX_LOGS:]
 
+def sanitize_log(e):
+    """Protege contra UnicodeDecodeError em logs de exceções."""
+    try:
+        return str(e).encode('utf-8', 'replace').decode('utf-8')
+    except:
+        return "Unknown error (encoding failure)"
+
 # Inicialização do Log
 add_operational_log("Sistema HFT Sniper Inicializado", "info")
 load_dotenv()
@@ -171,7 +178,7 @@ async def startup_event():
         
         # Iniciar NewsSentimentWorker em background
         try:
-            sentiment_worker = NewsSentimentWorker(interval=300) # 5 minutos para economizar API
+            sentiment_worker = NewsSentimentWorker(interval=60) # 1 minuto para testes de dinamismo
             asyncio.create_task(sentiment_worker.run())
             logging.info("🚀 NewsSentimentWorker iniciado com sucesso.")
             add_operational_log("Worker de Sentimento (Gemini) Ativado", "success")
@@ -209,23 +216,26 @@ async def startup_event():
         logging.critical("CRITICAL STARTUP ERROR", exc_info=True)
         # sys.exit(1) # Let uvicorn handle it? No, explicit exit is better if stuck.
 
-def panic_close_all():
-    """Zera todas as posições abertas imediatamente."""
+async def panic_close_all():
+    """Zera todas as posições abertas imediatamente (Execução Assíncrona)."""
     # Evita spam do botão de pânico se já estiver ativado
-    current_status = persistence.get_state("panic_status")
+    current_status = await asyncio.to_thread(persistence.get_state, "panic_status")
     if current_status == "CLOSED_ALL":
         return
         
     logging.warning("!!! BOTÃO DE PÂNICO ACIONADO !!!")
     if bridge.connected:
-        mt5 = bridge.mt5
-        positions = mt5.positions_get()
-        if positions:
-            for pos in positions:
-                # B3 Netting: Enviar ordem oposta via close_position (Centralizado)
-                bridge.close_position(pos.ticket)
-        
-        persistence.save_state("panic_status", "CLOSED_ALL")
+        def _close_all_sync():
+            mt5 = bridge.mt5
+            positions = mt5.positions_get()
+            if positions:
+                for pos in positions:
+                    # B3 Netting: Enviar ordem oposta via close_position (Centralizado)
+                    bridge.close_position(pos.ticket)
+            return True
+
+        await asyncio.to_thread(_close_all_sync)
+        await asyncio.to_thread(persistence.save_state, "panic_status", "CLOSED_ALL")
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -285,6 +295,8 @@ async def websocket_endpoint(websocket: WebSocket):
         synthetic_idx = 0.0
         prev_total_profit = 0.0
         prev_daily_realized = 0.0 # [REFINAMENTO 26/02] Tracking para Cooldown de IA
+        session_limits = {"lower": 0, "upper": 0, "ref": 0} # [HFT v3] Persistent session limits
+
         
         logging.info("Entrando no loop principal do WebSocket...")
         while True:
@@ -737,7 +749,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         logging.error(f"Erro no Trailing/Time Stop: {e}")
 
                 if risk.should_force_close():
-                    await asyncio.to_thread(panic_close_all)
+                    await panic_close_all()
                     logging.warning("Check Force Close: 17:50 atingido.")
 
                 # --- LÓGICA DE DECISÃO DE TRADE (RESTAURAÇÃO MACRO) ---
@@ -892,12 +904,16 @@ async def websocket_endpoint(websocket: WebSocket):
                                                     "risk_status": {
                                                         "ai_score": ai_total_score,
                                                         "allow_autonomous": risk.allow_autonomous,
+                                                        "time_ok": time_allowed,
+                                                        "loss_ok": risk_ok,
                                                         "order_status": "PENDING_HFT",
                                                         "ticket": order_ticket,
                                                         "synthetic_index": float(synthetic_idx),
-                                                        "bluechips": bluechips if isinstance(bluechips, dict) else {} # [ANTIVIBE-CODING]
+                                                        "bluechips": bluechips if isinstance(bluechips, dict) else {},
+                                                        "limits": session_limits
                                                     },
                                                     "account": account,
+
                                                     "timestamp": time_module.time()
                                                 }
                                                 await websocket.send_json(hb_packet)
@@ -946,13 +962,14 @@ async def websocket_endpoint(websocket: WebSocket):
                          add_operational_log(f"SINAL ANALISADO ({ai_total_score}%): Aguardando Confluência L2", "info")
 
                 # 4. Dados de Compliance e Performance (Cycle 1s)
-                if loop_count % 10 == 0 or 'session_limits' not in locals():
+                if loop_count % 10 == 0:
                     info = await asyncio.to_thread(bridge.mt5.symbol_info, symbol)
                     session_limits = {
                         "lower": getattr(info, 'session_price_limit_min', 0.0) if info else 0,
                         "upper": getattr(info, 'session_price_limit_max', 0.0) if info else 0,
                         "ref": getattr(info, 'session_price_ref', 0.0) if info else 0
                     }
+
                     try:
                         perf_mt5 = await asyncio.to_thread(bridge.get_trading_performance)
                         risk.total_trades = perf_mt5["total_trades"]
@@ -990,7 +1007,9 @@ async def websocket_endpoint(websocket: WebSocket):
                             "allow_autonomous": risk.allow_autonomous,
                             "profit_day": float(total_daily_profit),
                             "atr": float(current_atr),
+                            "limits": session_limits, # [HFT v3] Trading Tunnels
                             "performance": risk.get_performance_metrics(),
+
                             "uncertainty_range": float(ai_predict_data.get("uncertainty_norm", 0.0) if isinstance(ai_predict_data, dict) else 0.0),
                             "lower_bound": float(ai_predict_data.get("lower_bound_norm", last_price) if isinstance(ai_predict_data, dict) else last_price),
                             "upper_bound": float(ai_predict_data.get("upper_bound_norm", last_price) if isinstance(ai_predict_data, dict) else last_price),
@@ -1028,7 +1047,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         if new_symbol and new_symbol != symbol and "$" not in new_symbol:
                             logging.warning(f"🔄 ROLLOVER: {symbol} -> {new_symbol}")
                             symbol = new_symbol
-                            await asyncio.to_thread(panic_close_all) 
+                            await panic_close_all() 
                             continue
                     except Exception: pass
     
@@ -1043,11 +1062,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 await asyncio.sleep(0.01)
             except asyncio.CancelledError: raise
             except Exception as e:
-                logging.error(f"Erro no loop principal: {e}")
+                logging.error(f"Erro no loop principal: {sanitize_log(e)}")
                 await asyncio.sleep(1)
     except WebSocketDisconnect: pass
     except Exception as e:
-        logging.critical(f"Erro fatal: {e}")
+        logging.critical(f"Erro fatal: {sanitize_log(e)}")
         await websocket.close()
 
 @app.post("/config/autonomous")
@@ -1059,7 +1078,7 @@ async def toggle_autonomous(enabled: bool):
 @app.post("/config/sniper/start")
 async def start_sniper():
     global bot_task
-    if sniper_bot.running: return {"status": "error", "message": "Bot already running"}
+    if sniper_bot.running: return {"status": "error", "message": "O robô já está em execução"}
     bot_task = asyncio.create_task(sniper_bot.run())
     return {"status": "success"}
 
@@ -1078,28 +1097,47 @@ async def get_performance():
 
 @app.post("/order")
 async def place_order(req: OrderRequest):
+    start_order = time_module.perf_counter()
     side = req.side.lower()
     volume = float(req.volume)
+    
     if side in ["close_all", "panic"]:
-        panic_close_all()
-        return {"status": "success", "message": "PANIC_TRIGGERED"}
+        await panic_close_all()
+        return {"status": "success", "message": "PANICO_ACIONADO"}
+        
     if not bridge.connected: return {"status": "error", "message": "MT5 não conectado"}
     if not risk.is_time_allowed(): return {"status": "error", "message": "Horário não permitido"}
-    account_info = bridge.mt5.account_info()
+    
+    # [OTIMIZAÇÃO HFT] Envolvendo todas as chamadas MT5 em threads para evitar lentidão no event loop
+    account_info = await asyncio.to_thread(bridge.mt5.account_info)
     if not risk.check_daily_loss(account_info.profit if account_info else 0):
         return {"status": "error", "message": "Limite de perda diária atingido"}
-    symbol = bridge.get_current_symbol("WIN")
+        
+    symbol = await asyncio.to_thread(bridge.get_current_symbol, "WIN")
     order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
-    tick = bridge.mt5.symbol_info_tick(symbol)
+    
+    tick = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
+    if tick is None: return {"status": "error", "message": "Falha ao obter preço (Tick Nulo)"}
+    
     price = tick.ask if side == "buy" else tick.bid
-    valid, reason = bridge.validate_order_compliance(symbol, price)
+    
+    # Validação e Parâmetros (Pode ser intensivo em CPU ou acessar MT5 internamente)
+    valid, reason = await asyncio.to_thread(bridge.validate_order_compliance, symbol, price)
     if not valid: return {"status": "error", "message": reason}
-    params = risk.get_order_params(symbol, order_type, price, int(volume))
+    
+    params = await asyncio.to_thread(risk.get_order_params, symbol, order_type, price, int(volume))
     params["symbol"] = symbol
+    
+    # Envio Real da Ordem
     result = await asyncio.to_thread(bridge.mt5.order_send, params)
+    
+    latency = (time_module.perf_counter() - start_order) * 1000
+    logging.info(f"⚡ PIPELINE_ORDEM: Lado={side}, Vol={volume}, Resultado={result.retcode}, Latencia={latency:.2f}ms")
+    
     if result.retcode != bridge.mt5.TRADE_RETCODE_DONE:
-        return {"status": "error", "message": f"Erro MT5: {result.comment}"}
-    persistence.save_trade(symbol, side, price, volume)
+        return {"status": "error", "message": f"Erro MT5: {sanitize_log(result.comment)}"}
+        
+    await asyncio.to_thread(persistence.save_trade, symbol, side, price, volume)
     return {"status": "success", "order_id": result.order}
 
 if __name__ == "__main__":

@@ -19,6 +19,13 @@ logger.setLevel(logging.INFO)
 logger.addHandler(log_handler)
 logger.addHandler(logging.StreamHandler())
 
+def sanitize_log(e):
+    """Protege contra UnicodeDecodeError em logs de exceções."""
+    try:
+        return str(e).encode('utf-8', 'replace').decode('utf-8')
+    except:
+        return "Unknown error (encoding failure)"
+
 class SniperBotWIN:
     def __init__(self, bridge=None, risk=None, ai=None, dry_run=True):
         self.bridge = bridge or MT5Bridge()
@@ -99,12 +106,14 @@ class SniperBotWIN:
         rs = gain / loss.replace(0, 0.000001)
         return 100 - (100 / (1 + rs))
 
-    async def execute_trade(self, side, quantile_confidence="NORMAL", tp_multiplier=1.0):
+    async def execute_trade(self, side, quantile_confidence="NORMAL", tp_multiplier=1.0, current_atr=None, regime=None):
         """Coordena o envio de ORDEM LIMITADA (Passive Entry) com Cancelamento Tático.
         Args:
             side: 'buy' ou 'sell'
             quantile_confidence: 'NORMAL' | 'HIGH' | 'VERY_HIGH' — calibra o tamanho do lote.
             tp_multiplier: Fator de ajuste de TP por spread (SOTA v5).
+            current_atr: Volatilidade atual para alvos adaptativos.
+            regime: Regime de mercado detectado (0=Lateral, 1=Tendência, 2=Ruído).
         """
         tick = self.bridge.mt5.symbol_info_tick(self.symbol)
         if not tick: return False
@@ -134,6 +143,8 @@ class SniperBotWIN:
             self.bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else self.bridge.mt5.ORDER_TYPE_SELL_LIMIT,
             limit_price, 
             lots, 
+            current_atr=current_atr,
+            regime=regime,
             tp_multiplier=tp_multiplier
         )
 
@@ -418,7 +429,13 @@ class SniperBotWIN:
                         )
 
                         if ai_ok:
-                            if await self.execute_trade(side, quantile_confidence=quantile_confidence):
+                            if await self.execute_trade(
+                                side, 
+                                quantile_confidence=quantile_confidence, 
+                                tp_multiplier=ai_decision.get("tp_multiplier", 1.0),
+                                current_atr=atr,
+                                regime=regime
+                            ):
                                 logger.info(f"[SNIPER] Disparado! Lotes: {quantile_confidence} | P-Score: {ai_score:.1f}. Cooldown.")
                                 self.last_trade_time = datetime.now()
                         else:
@@ -430,7 +447,7 @@ class SniperBotWIN:
                 await asyncio.sleep(0.1) # Loop de alta frequência (100ms) para Sniper
                 
             except Exception as e:
-                logger.error(f"Erro no loop do Sniper: {e}")
+                logger.error(f"Erro no loop do Sniper: {sanitize_log(e)}")
                 await asyncio.sleep(5)
 
     def stop(self):
