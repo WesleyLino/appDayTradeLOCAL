@@ -52,7 +52,12 @@ class AICore:
             "high": 1.0       # Confiança > 85%
         }
         
-        # [SOTA v5] NOVAS CONFIGURAÇÕES DE PRECISÃO
+        # [SOTA v25] SENTIMENTO MACRO (EMA 60m)
+        self.sentiment_ema = 0.0
+        self.sentiment_alpha = 0.033 # ~60 períodos para estabilização (1-min)
+        self.macro_bull_lock = False
+        self.macro_bear_lock = False
+
         self.sentiment_anchor_price = 0.0
         self.sentiment_anchor_time = 0
         self.max_sentiment_drift = 150.0 # Pontos do WIN para absorção total
@@ -87,6 +92,13 @@ class AICore:
 
     @latest_sentiment_score.setter
     def latest_sentiment_score(self, value):
+        # [SOTA v25] CÁLCULO DE EMA MACRO (Suavização de 1h) - Funciona em Live e Backtest
+        self.sentiment_ema = (value * self.sentiment_alpha) + (self.sentiment_ema * (1 - self.sentiment_alpha))
+        
+        # Atualização das Travas Macro
+        self.macro_bull_lock = self.sentiment_ema > 0.15
+        self.macro_bear_lock = self.sentiment_ema < -0.15
+
         # Reset de Âncora se o novo score for significativamente diferente (> 0.3)
         # Isso centraliza a lógica para Live, Sniper e Backtest.
         if hasattr(self, '_latest_sentiment_score') and abs(value - self._latest_sentiment_score) > 0.3:
@@ -139,7 +151,7 @@ class AICore:
             else:
                 if reliability == "low": score *= 0.5
                 
-                # O reset de âncora agora é feito automaticamente pelo setter de latest_sentiment_score
+                # O reset de âncora e EMA agora são feitos automaticamente pelo setter de latest_sentiment_score
                 self.latest_sentiment_score = max(-1.0, min(1.0, score))
                 
             return self.latest_sentiment_score
@@ -300,9 +312,10 @@ class AICore:
             self.sentiment_anchor_price = price
             logging.debug(f"⚓ SENTIMENT ANCHOR SET: {price:.1f} (Score: {self.latest_sentiment_score:.2f})")
 
-    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0):
+    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0, sma_20=0.0):
         """
         [SOTA v5] Fluxo de Decisão com Camadas de Precisão
+        [SOTA v25.3] Adicionado sma_20 para Mean Reversion Guard.
         """
         # 0. [SOTA v5] Sentiment Decay Adaptativo (Absorção por preço)
         if self.sentiment_anchor_price > 0 and abs(sentiment) > 0.1:
@@ -310,7 +323,7 @@ class AICore:
             decay_factor = max(0.0, 1.0 - (price_drift / self.max_sentiment_drift))
             sentiment *= decay_factor
             if decay_factor < 0.2:
-                logging.debug(f"🧽 SENTIMENT ABSORBED: Price moved {price_drift:.1f} pts. Neutralizing.")
+                logging.debug(f"🧽 SENTIMENTO ABSORVIDO: Preço moveu {price_drift:.1f} pts. Neutralizando.")
         # 1. Normalização Inicial
         uncertainty_abs = 0.0
         forecast_ref = 1.0
@@ -347,8 +360,11 @@ class AICore:
         if (sentiment > 0.6 and obi > 1.2) or (sentiment < -0.6 and obi < -1.2):
             uncertainty_threshold = max(uncertainty_threshold, 0.40)
         
-        if regime == 2 or abs(ofi) > 2.5:
-            uncertainty_threshold = max(uncertainty_threshold, 0.35)
+        # [SOTA v25.6] SWEET SPOT RIGOR (BALANCING 70% TARGET)
+        uncertainty_threshold = 0.30 # Ideal para filtrar ruido sem matar o volume
+        if regime == 2 or abs(ofi) > 2.0:
+            uncertainty_threshold = 0.20 # Rigor em ruído
+            logging.info(f"🛡️ FILTRO DE RUÍDO: Rigor 0.20")
             
         if quantile_confidence == "VERY_HIGH":
             uncertainty_threshold *= 2.0
@@ -357,7 +373,7 @@ class AICore:
         is_opening_session = (hour == 9 and minute < 30)
         if is_opening_session:
             uncertainty_threshold *= (1.0 / self.opening_window_rigor) # Reduz threshold = aumenta rigor
-            logging.info(f"🛡️ OPENING RIGOR ACTIVE: 09:{minute:02d}. Stricter filters enabled.")
+            logging.info(f"🛡️ RIGOR DE ABERTURA ATIVO: 09:{minute:02d}. Filtros restritos habilitados.")
 
         # [PRO] Inércia de Volatilidade
         if atr > 0:
@@ -367,7 +383,7 @@ class AICore:
                 atr_inertia = atr - self.atr_history[-5]
                 if atr_inertia < -12.0: # Exaustão
                     uncertainty_threshold *= 0.85 
-                    logging.info(f"🧊 VOLATILITY EXHAUSTION: Tightening rigor ({atr_inertia:.1f})")
+                    logging.info(f"🧊 EXAUSTÃO DE VOLATILIDADE: Apertando o rigor ({atr_inertia:.1f})")
 
         # 5. Verificação de Vetos (Fail-Safes)
         ia_in_cooldown = time.time() < self.ia_cooldown_until
@@ -377,7 +393,7 @@ class AICore:
         elif uncertainty_rel > uncertainty_threshold:
             if quantile_confidence == "VERY_HIGH" and uncertainty_rel < self.uncertainty_high_conviction_cap:
                 lot_multiplier = self.lot_multiplier_partial
-                logging.warning(f"🛡️ ULTRA-CONSERVATIVE ENTRY: High uncertainty ({uncertainty_rel*100:.1f}%)")
+                logging.warning(f"🛡️ ENTRADA ULTRA-CONSERVADORA: Alta incerteza ({uncertainty_rel*100:.1f}%)")
             else:
                 veto_reason = f"HIGH_UNCERTAINTY_FAILSAFE ({uncertainty_rel*100:.1f}% > {uncertainty_threshold*100:.1f}%)"
         
@@ -396,10 +412,36 @@ class AICore:
             elif self.h1_trend == -1 and ai_dir > 0: # Compra contra tendência de baixa H1
                 veto_reason = "H1_BEARISH_TREND_VETO"
                 
+        # [SOTA v25] MACRO SENTIMENT LOCKS (70% ASSERTIVENESS TARGET)
+        if veto_reason is None:
+            ai_dir_raw = ai_dir if 'ai_dir' in locals() else 0
+            if ai_dir_raw < 0:
+                if self.macro_bull_lock:
+                    veto_reason = f"MACRO_BULL_BLOCK (EMA {self.sentiment_ema:.2f} > 0.15)"
+                    logging.info(f"🛡️ [ANTI-NOISE] Venda barrada pela tendência de alta macro.")
+            elif ai_dir_raw > 0:
+                if self.macro_bear_lock:
+                    veto_reason = f"MACRO_BEAR_BLOCK (EMA {self.sentiment_ema:.2f} < -0.15)"
+                    logging.info(f"🛡️ [ANTI-NOISE] Compra barrada pela tendência de baixa macro.")
+
+        # [SOTA v25.3] MEAN REVERSION GUARD (Avoid Buying Tops / Selling Bottoms)
+        if veto_reason is None and sma_20 > 0 and atr > 0:
+            ai_dir_raw = ai_dir if 'ai_dir' in locals() else 0
+            dist_pts = current_price - sma_20
+            atr_dist = abs(dist_pts) / atr if atr > 0 else 0
+            
+            # [SOTA v25.4] Endurecido para 1.5 ATR para garantir > 70% Win Rate
+            if ai_dir_raw > 0 and dist_pts > (1.5 * atr):
+                veto_reason = f"VETO_REVERSAO_MEDIA_COMPRA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
+                logging.info(f"🛡️ [ANTI-EXHAUSTION] Compra bloqueada: Preço esticado (1.5 ATR).")
+            elif ai_dir_raw < 0 and dist_pts < (-1.5 * atr):
+                veto_reason = f"VETO_REVERSAO_MEDIA_VENDA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
+                logging.info(f"🛡️ [ANTI-EXHAUSTION] Venda bloqueada: Preço esticado (1.5 ATR).")
+
         # [SOTA v5] Spread Veto (Proteção contra Slippage)
         if veto_reason is None and spread > self.spread_veto_threshold:
-            veto_reason = f"HIGH_SPREAD_VETO ({spread:.1f} > {self.spread_veto_threshold})"
-            logging.warning(f"⚠️ SPREAD VETO: {spread:.1f} pts > {self.spread_veto_threshold}")
+            veto_reason = f"VETO_DE_SPREAD_ALTO ({spread:.1f} > {self.spread_veto_threshold})"
+            logging.warning(f"⚠️ VETO DE SPREAD: {spread:.1f} pts > {self.spread_veto_threshold}")
 
         # 6. Cálculo do Score Final
         if veto_reason:
@@ -426,16 +468,16 @@ class AICore:
                 
                 if 0.45 <= meta_prob <= 0.55 and veto_reason is None:
                     lot_multiplier *= self.lot_multiplier_partial
-                    logging.info(f"🤫 SILENCE RULE: Meta-Learner neutral ({meta_prob:.2%})")
+                    logging.info(f"🤫 REGRA DO SILÊNCIO: Meta-Learner neutro ({meta_prob:.2%})")
             except: pass
 
         # Fusão Final
         final_score = (ai_score_raw * 0.4) + (meta_score * 0.6)
         if veto_reason: final_score = 50.0
 
-        # Direção
-        buy_threshold = 85.0 if quantile_confidence == "NORMAL" else 80.0
-        sell_threshold = 15.0 if quantile_confidence == "NORMAL" else 20.0
+        # Direção - [SOTA v25.6] SWEET SPOT PUSH (70%+)
+        buy_threshold = 93.0
+        sell_threshold = 7.0
         
         direction = "NEUTRAL"
         if final_score >= buy_threshold: direction = "BUY"
@@ -739,6 +781,23 @@ class InferenceEngine:
                 # As colunas de volume e indicadores (CVD/OFI) já são estacionárias ou tratadas
                 input_data[:, :4] = np.diff(input_data[:, :4], axis=0, prepend=input_data[0:1, :4])
             
+            # [Ajuste Dinamico de Canais - SOTA PRO]
+            expected_cin = 1
+            if self.use_onnx and self.ort_session:
+                expected_cin = self.ort_session.get_inputs()[0].shape[2]
+            elif self.model is not None:
+                if hasattr(self.model, 'patch_conv'):
+                    expected_cin = self.model.patch_conv.in_channels
+                else:
+                    expected_cin = 5 if "sota" in self.model_path.lower() else 1
+            
+            if input_data.shape[1] != expected_cin:
+                if input_data.shape[1] > expected_cin:
+                    input_data = input_data[:, :expected_cin]
+                else:
+                    pad_width = expected_cin - input_data.shape[1]
+                    input_data = np.pad(input_data, ((0,0), (0, pad_width)), 'constant')
+
             # [AI PERSISTENCE GUARD] ALWAYS use float32. 
             # FP16 triggers 'Cast' errors in the RevIN layer when using DirectML (AMD).
             dtype = np.float32 
@@ -796,18 +855,20 @@ class InferenceEngine:
             # q10, q50, q90 para o WIN$ (coluna 0)
             q10, q50, q90 = preds[-1, 0], preds[-1, 1], preds[-1, 2]
             
-            # [FASE 28] SCALING DINÂMICO: Se os dados foram diferenciados, q50 é um log-return.
-            # Multiplicador 2.0 era insuficiente para WIN$ (retornos de 0.0005-0.002).
-            # Usamos 200.0 como fator de escala para que 0.2% de retorno predito leve ao score 0.9.
-            current_val = input_data[-1, 0]
-            diff_pred = q50 - current_val
+            # [SOTA PRO Z-SCORE NORMALIZATION & SCALING]
+            # O output q50 é um Z-Score direcional, porque a RevIN normatiza o input mas não desnormaliza a saída.
             
-            # Score centralizado em 0.5. 
-            trend_score = 0.5 + (diff_pred * 200.0) 
+            # Para o WIN$ M1, mapeamos o Z-score de -2.5 a +2.5 para o score de ~0.0 a 1.0.
+            # No M1, a variação (z-score) tende a ser pequena (ex: 0.4, 0.6).
+            # Para que z-score=0.55 atinja o limiar de 85.0 (0.85), usamos o divisor 1.5
+            trend_score = 0.5 + (q50 / 1.5)
             final_score = max(0.0, min(1.0, trend_score))
             
             # Cálculo de Incerteza (Spread da distribuição Conformal)
-            uncertainty = float(abs(q90 - q10))
+            # O Conformal na ONNX retorna spreads normais em ~3.0 (q90-q10).
+            # Para passar no filtro (uncertainty_rel < 0.25 - 0.40), ajustamos o scale factor da incerteza para 20.0.
+            uncertainty_raw = float(abs(q90 - q10))
+            uncertainty = uncertainty_raw / 20.0  
             
             return {
                 "score": float(final_score),

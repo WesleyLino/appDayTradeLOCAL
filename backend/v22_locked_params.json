@@ -18,7 +18,8 @@
     "trailing_lock": 50.0,
     "trailing_step": 20.0,
     "use_ai_core": false,
-    "cooldown_minutes": 15
+    "cooldown_minutes": 10,
+    "adaptive_flux_active": true
   },
   "anti_vibe_seal": "20260223_GOLDEN_V22_LOCKED"
 }

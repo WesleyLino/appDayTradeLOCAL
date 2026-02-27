@@ -299,8 +299,12 @@ class BacktestPro:
                     self.last_trade_time = row.name
 
             # [SOTA v5] Simulação de Spread Dinâmico (1.0 a 3.5 pts)
-            current_spread = 1.0 + (row['high'] - row['low']) * 0.1
-            current_spread = min(4.0, max(1.0, current_spread))
+            fixed_spread = self.opt_params.get('spread')
+            if fixed_spread is not None:
+                current_spread = fixed_spread
+            else:
+                current_spread = 1.0 + (row['high'] - row['low']) * 0.1
+                current_spread = min(4.0, max(1.0, current_spread))
             
             # [SOTA v5] Sincronizar Âncora de Sentimento (Price-Based Decay)
             self.ai.update_sentiment_anchor(row['close'])
@@ -324,9 +328,11 @@ class BacktestPro:
                 v_mult = self.opt_params['vol_spike_mult']
                 vol_spike = row['tick_volume'] > (vol_sma * v_mult)
                 
-                # 2.2 Filtros de Tendência
                 # Gatilhos Alpha V22 (Counter-Trend Sniper)
-                cooldown_ok = (row.name - self.last_trade_time) >= timedelta(minutes=15)
+                # [SOTA v24] Cooldown Dinâmico por Convicção
+                last_conf = self.trades[-1].get('quantile_confidence', 'NORMAL') if self.trades else 'NORMAL'
+                cooldown_min = 5 if last_conf == 'VERY_HIGH' else 10
+                cooldown_ok = (row.name - self.last_trade_time) >= timedelta(minutes=cooldown_min)
                 
                 # --- ADAPTIVE REGIME CORTEX ---
                 # OBI is approximated as 0.0 in OHLCV backtester
@@ -375,7 +381,8 @@ class BacktestPro:
                         minute=row.name.minute, # [SOTA v5] Sincronia de minuto
                         ofi=sim_ofi,
                         current_price=row['close'], # [SOTA v5] Sincronia de preco
-                        spread=current_spread # [SOTA v5] Sincronia de spread
+                        spread=current_spread, # [SOTA v5] Sincronia de spread
+                        sma_20=row['sma_20']
                     )
                     
                     direction = ai_decision['direction']
@@ -393,11 +400,11 @@ class BacktestPro:
                     
                     # Log de auditoria interna
                     if v22_buy or v22_sell:
-                        logging.debug(f"🤖 AI Decision: {ai_decision}")
+                        logging.debug(f"🤖 Decisão da IA: {ai_decision}")
                         vol_spike_eff = vol_spike # No modo IA usamos volume puro
-                        ai_stability = 0.99 # IA emitiu sinal, assume estabilidade
+                        ai_stability = ai_decision.get('score', 50.0) / 100.0 # [SOTA v25.4] Usa score real para o filtro de confianca do auditor
                     elif (rsi < 30 and row['close'] < lower_bb) or (rsi > 70 and row['close'] > upper_bb):
-                        logging.debug(f"💤 AI NEUTRAL (Candidate Filtered by AI Uncertainty/Meta): {ai_decision.get('uncertainty', 0)*100:.1f}% uncertainty")
+                        logging.debug(f"💤 IA NEUTRA (Candidato Filtrado por Incerteza da IA/Meta): {ai_decision.get('uncertainty', 0)*100:.1f}% de incerteza")
 
                 # --- [LEGACY] INTELIGÊNCIA DO SUCESSO: REGIME MAESTRO & SCALPING ADAPTATION ---
                 else:
@@ -408,11 +415,16 @@ class BacktestPro:
                     # Sinais V22 (Estratégia de Reversão de Volatilidade - Mean Reversion)
                     cond_rsi_buy = (rsi < 30)
                     cond_bb_buy = (row['close'] < lower_bb)
-                    cond_vol_buy = (row['tick_volume'] > vol_sma * self.opt_params['vol_spike_mult'])
-                    
                     cond_rsi_sell = (rsi > 70)
                     cond_bb_sell = (row['close'] > upper_bb)
-                    cond_vol_sell = (row['tick_volume'] > vol_sma * self.opt_params['vol_spike_mult'])
+                    
+                    # [SOTA v23] FLUXO ADAPTATIVO: Se ATR > 200, reduz threshold para 1.05
+                    current_flux_thresh = self.opt_params['flux_imbalance_threshold']
+                    if self.opt_params.get('adaptive_flux_active', False) and atr_current > 200:
+                        current_flux_thresh = 1.05
+                        
+                    cond_vol_buy = (row['tick_volume'] > vol_sma * current_flux_thresh)
+                    cond_vol_sell = (row['tick_volume'] > vol_sma * current_flux_thresh)
 
                     v22_reversion_buy = cond_rsi_buy and cond_bb_buy and cond_vol_buy
                     v22_reversion_sell = cond_rsi_sell and cond_bb_sell and cond_vol_sell
@@ -518,11 +530,14 @@ class BacktestPro:
                         # self.shadow_signals['filtered_by_sentiment'] = ...
 
                 if (v22_buy or v22_sell) and not (time_ok and risk_ok and limit_ok and vol_stable and cooldown_ok and ai_filter_ok and sentiment_ok and flux_ok):
-                    logging.debug(f"⚠️ Signal BLOCKED at {row.name}: time={time_ok}, risk={risk_ok}, limit={limit_ok}, vol_stable={vol_stable}, cooldown={cooldown_ok}, ai={ai_filter_ok}, flux={flux_ok}")
+                    logging.debug(f"⚠️ Signal BLOCKED at {row.name}: time={time_ok}, risk={risk_ok}, limit={limit_ok}, vol_stable={vol_stable}, cooldown={cooldown_ok}, ai={ai_filter_ok}, flux={flux_ok}, sent={sentiment_ok}")
 
                 if (v22_buy or v22_sell) and time_ok and risk_ok and limit_ok and vol_stable and cooldown_ok and ai_filter_ok and sentiment_ok and flux_ok:
                     side = "buy" if v22_buy else "sell"
                     
+                    # [SOTA v25] FILTRO DE RUÍDO CENTRALIZADO NO AI CORE (macro_bull_lock / macro_bear_lock)
+                    # O veto já foi processado dentro do calculate_decision e refletido no v22_buy/v22_sell.
+
                     # --- [DYNAMIC ATR TARGETS V3] ---
                     # Replica a lógica do RiskManager ajustada por regime
                     tp_mult = 1.0 
@@ -530,6 +545,8 @@ class BacktestPro:
 
                     if current_regime == 1: # Trend
                         tp_mult = 1.5
+                        # [SOTA v24] ALVO ADAPTATIVO: +20% TP se alinhado com Ultra Tendência
+                        tp_mult *= 1.2
                     elif current_regime == 0: # Lateral
                         tp_mult = 0.8
                     
@@ -619,7 +636,8 @@ class BacktestPro:
             'lots': pos['lots'],
             'pnl_pts': pnl_points,
             'pnl_fin': pnl_fin,
-            'reason': reason
+            'reason': reason,
+            'quantile_confidence': pos.get('quantile_confidence', 'NORMAL')
         }
         self.trades.append(trade_data)
         

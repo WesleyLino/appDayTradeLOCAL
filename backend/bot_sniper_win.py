@@ -331,7 +331,11 @@ class SniperBotWIN:
                 # 2.1 Cooldown Check (Não bloqueante)
                 if self.last_trade_time:
                     elapsed = (datetime.now() - self.last_trade_time).total_seconds()
-                    if elapsed < 120: # 2 min de cooldown
+                    # [SOTA v24] Cooldown Dinâmico por Convicção
+                    # VERY_HIGH: 5 min (300s), NORMAL/HIGH: 10 min (600s)
+                    is_very_high = self.persistence.get_state("last_quantile_confidence") == "VERY_HIGH"
+                    cooldown_limit = 300 if is_very_high else 600
+                    if elapsed < cooldown_limit:
                         await asyncio.sleep(1)
                         continue
 
@@ -383,8 +387,14 @@ class SniperBotWIN:
                 self.ai.update_sentiment_anchor(last_row['close'])
                 
                 # 6. Lógica Sniper (Aggressive Bollinger Style)
-                buy_cond = rsi < 30 and curr_vol > (avg_vol * self.vol_spike_mult)
-                sell_cond = rsi > 70 and curr_vol > (avg_vol * self.vol_spike_mult)
+                # [SOTA v23] FLUXO ADAPTATIVO: Se ATR > 200, reduz threshold para 1.05
+                current_flux_mult = self.vol_spike_mult
+                if atr > 200:
+                    current_flux_mult = 1.05
+                    logger.info(f"🔥 ALTA TENDÊNCIA (ATR {atr:.1f}): Filtro de Fluxo reduzido para {current_flux_mult}")
+                
+                buy_cond = rsi < 30 and curr_vol > (avg_vol * current_flux_mult)
+                sell_cond = rsi > 70 and curr_vol > (avg_vol * current_flux_mult)
                 
                 # 7. FILTRO DE FLUXO (L2 PRESSURE) + AI VETO
                 if buy_cond or sell_cond:
@@ -413,7 +423,8 @@ class SniperBotWIN:
                             hour=now.hour,
                             minute=now.minute,
                             current_price=last_row['close'],
-                            spread=live_spread
+                            spread=live_spread,
+                            sma_20=last_row['sma_20']
                         )
                         
                         ai_direction = ai_decision.get("direction", "NEUTRAL")
@@ -424,18 +435,29 @@ class SniperBotWIN:
                                 (side == "sell" and ai_direction == "SELL")
 
                         logger.info(
-                            f"[AI] direction={ai_direction} score={ai_score:.1f} "
-                            f"conf={quantile_confidence} flux={pressure:.2f} reg={regime} sent={sentiment_score:.2f}"
+                            f"[IA] direção={ai_direction} score={ai_score:.1f} "
+                            f"conf={quantile_confidence} fluxo={pressure:.2f} reg={regime} sent={sentiment_score:.2f}"
                         )
 
                         if ai_ok:
+                            # [SOTA v25] FILTRO DE RUÍDO CENTRALIZADO NO AI CORE (macro_bull_lock / macro_bear_lock)
+                            # O veto já foi processado dentro do calculate_decision e refletido no ai_ok.
+
+                            # [SOTA v24] ALVO ADAPTATIVO: +20% TP se alinhado com Ultra Tendência
+                            final_tp_mult = ai_decision.get("tp_multiplier", 1.0)
+                            if regime == 1 and ((side == "buy" and ai_direction == "BUY") or (side == "sell" and ai_direction == "SELL")):
+                                final_tp_mult *= 1.2
+                                logger.info(f"📈 [ULTRA TENDÊNCIA] Alvo expandido: Multiplicador TP -> {final_tp_mult:.2f}")
+
                             if await self.execute_trade(
                                 side, 
                                 quantile_confidence=quantile_confidence, 
-                                tp_multiplier=ai_decision.get("tp_multiplier", 1.0),
+                                tp_multiplier=final_tp_mult,
                                 current_atr=atr,
                                 regime=regime
                             ):
+                                # Salvar confiança para próximo cooldown
+                                self.persistence.save_state("last_quantile_confidence", quantile_confidence)
                                 logger.info(f"[SNIPER] Disparado! Lotes: {quantile_confidence} | P-Score: {ai_score:.1f}. Cooldown.")
                                 self.last_trade_time = datetime.now()
                         else:

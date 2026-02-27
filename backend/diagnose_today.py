@@ -111,7 +111,7 @@ async def diagnose_today():
     df['lower_bb'] = df['sma_20'] - 2.0 * df['std_20']
     df['vol_sma'] = df['tick_volume'].rolling(20).mean()
     
-    df_today = df[df.index.strftime('%Y-%m-%d') == '2026-02-23'].copy()
+    df_today = df[df.index.strftime('%Y-%m-%d') == '2026-02-27'].copy()
     
     # 1. Config SOTA
     params_sota = {
