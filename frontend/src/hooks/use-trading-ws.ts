@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { create } from "zustand";
+import { API_CONFIG } from "@/lib/api-config";
 
 interface TradeData {
   symbol: string;
@@ -113,8 +114,8 @@ export const useTradingStore = create<TradingStore>((set) => ({
   setConnected: (connected) => set({ connected }),
 }));
 
-// [ANTIVIBE-CODING] - Binding 127.0.0.1 fix para evitar "Failed to fetch" no Windows
-export function useTradingWebSocket(url: string = "ws://127.0.0.1:8000/ws") {
+// [ANTIVIBE-CODING] - Resolução dinâmica de URL para evitar "Failed to fetch" no Windows
+export function useTradingWebSocket(url: string = API_CONFIG.ws) {
   const setData = useTradingStore((state) => state.setData);
   const setConnected = useTradingStore((state) => state.setConnected);
   const socketRef = useRef<WebSocket | null>(null);
@@ -158,7 +159,7 @@ export function useTradingWebSocket(url: string = "ws://127.0.0.1:8000/ws") {
   const sendOrder = async (side: string, volume: number = 1.0) => {
     try {
       // [ANTIVIBE-CODING] - Endpoint de envio de ordens
-      const response = await fetch("http://127.0.0.1:8000/order", {
+      const response = await fetch(`${API_CONFIG.http}/order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ side, volume }),
@@ -173,7 +174,7 @@ export function useTradingWebSocket(url: string = "ws://127.0.0.1:8000/ws") {
   const setAutonomous = async (enabled: boolean) => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/config/autonomous?enabled=${enabled}`,
+        `${API_CONFIG.http}/config/autonomous?enabled=${enabled}`,
         {
           method: "POST",
         },
@@ -187,12 +188,9 @@ export function useTradingWebSocket(url: string = "ws://127.0.0.1:8000/ws") {
 
   const startSniper = async () => {
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/config/sniper/start",
-        {
-          method: "POST",
-        },
-      );
+      const response = await fetch(`${API_CONFIG.http}/config/sniper/start`, {
+        method: "POST",
+      });
       return await response.json();
     } catch (error) {
       console.error("Sniper Start Error:", error);
@@ -202,7 +200,7 @@ export function useTradingWebSocket(url: string = "ws://127.0.0.1:8000/ws") {
 
   const stopSniper = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/config/sniper/stop", {
+      const response = await fetch(`${API_CONFIG.http}/config/sniper/stop`, {
         method: "POST",
       });
       return await response.json();

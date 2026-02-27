@@ -99,11 +99,12 @@ class SniperBotWIN:
         rs = gain / loss.replace(0, 0.000001)
         return 100 - (100 / (1 + rs))
 
-    async def execute_trade(self, side, quantile_confidence="NORMAL"):
+    async def execute_trade(self, side, quantile_confidence="NORMAL", tp_multiplier=1.0):
         """Coordena o envio de ORDEM LIMITADA (Passive Entry) com Cancelamento Tático.
         Args:
             side: 'buy' ou 'sell'
             quantile_confidence: 'NORMAL' | 'HIGH' | 'VERY_HIGH' — calibra o tamanho do lote.
+            tp_multiplier: Fator de ajuste de TP por spread (SOTA v5).
         """
         tick = self.bridge.mt5.symbol_info_tick(self.symbol)
         if not tick: return False
@@ -126,9 +127,23 @@ class SniperBotWIN:
             self._save_state()
             return True
 
+        # [FASE 28] Obter Parâmetros de Risco OCO
+        # SOTA v5: Injetamos o TP Multiplier calculado pela IA
+        params = self.risk.get_order_params(
+            self.symbol, 
+            self.bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else self.bridge.mt5.ORDER_TYPE_SELL_LIMIT,
+            limit_price, 
+            lots, 
+            tp_multiplier=tp_multiplier
+        )
+
         # Enviar Ordem Limitada
-        order_type = self.bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else self.bridge.mt5.ORDER_TYPE_SELL_LIMIT
-        result = self.bridge.place_limit_order(self.symbol, order_type, limit_price, lots, comment="SNIPER_SOTA_LIMIT")
+        order_type = params['type']
+        result = self.bridge.place_limit_order(
+            self.symbol, order_type, limit_price, lots, 
+            sl=params['sl'], tp=params['tp'],
+            comment="SNIPER_SOTA_LIMIT"
+        )
         
         if result and result.retcode == self.bridge.mt5.TRADE_RETCODE_DONE:
             order_ticket = result.order
@@ -353,6 +368,8 @@ class SniperBotWIN:
 
                 # Atualizar Sentimento (Lê do JSON do Worker)
                 sentiment_score = await self.ai.update_sentiment()
+                # [SOTA v5] Sincronizar Âncora de Sentimento para o Bot Snipers
+                self.ai.update_sentiment_anchor(last_row['close'])
                 
                 # 6. Lógica Sniper (Aggressive Bollinger Style)
                 buy_cond = rsi < 30 and curr_vol > (avg_vol * self.vol_spike_mult)
@@ -371,6 +388,10 @@ class SniperBotWIN:
                         # Busca predição profunda do PatchTST
                         patchtst_data = await self.ai.predict_with_patchtst(self.ai.inference_engine, df)
 
+                        # [SOTA v5] Cálculo de Spread Normalizado
+                        tick = self.bridge.mt5.symbol_info_tick(self.symbol)
+                        live_spread = (tick.ask - tick.bid) / 5.0 if tick else 1.0
+
                         ai_decision = self.ai.calculate_decision(
                             obi=pressure,
                             sentiment=sentiment_score,
@@ -378,7 +399,10 @@ class SniperBotWIN:
                             regime=regime,
                             atr=atr,
                             volatility=volatility,
-                            hour=now.hour
+                            hour=now.hour,
+                            minute=now.minute,
+                            current_price=last_row['close'],
+                            spread=live_spread
                         )
                         
                         ai_direction = ai_decision.get("direction", "NEUTRAL")

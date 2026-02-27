@@ -298,6 +298,13 @@ class BacktestPro:
                     self._close_trade(row['close'], 'TIME', row.name)
                     self.last_trade_time = row.name
 
+            # [SOTA v5] Simulação de Spread Dinâmico (1.0 a 3.5 pts)
+            current_spread = 1.0 + (row['high'] - row['low']) * 0.1
+            current_spread = min(4.0, max(1.0, current_spread))
+            
+            # [SOTA v5] Sincronizar Âncora de Sentimento (Price-Based Decay)
+            self.ai.update_sentiment_anchor(row['close'])
+
             # 2. Lógica de Entrada (Se estiver zerado)
             if not self.position:
                 # --- INDICADORES ALPHA V21 (Pré-calculados) ---
@@ -337,6 +344,8 @@ class BacktestPro:
                     sentiment_score = 0.0
                     if self.sentiment_stream and row.name in self.sentiment_stream:
                         sentiment_score = self.sentiment_stream[row.name]
+                        # [SOTA v5] Atualiza o score interno do AI para que o Decay atue sobre o valor real do candle
+                        self.ai.latest_sentiment_score = sentiment_score
                     
                     # Predição PatchTST (Agora com normalização automática no AICore)
                     patchtst_data = 0.0
@@ -357,13 +366,16 @@ class BacktestPro:
                     
                     ai_decision = self.ai.calculate_decision(
                         obi=obi,
-                        sentiment=sentiment_score,
+                        sentiment=self.ai.latest_sentiment_score, # Usa score com decay v5
                         patchtst_score=patchtst_data,
                         regime=current_regime,
                         atr=atr_current,
                         volatility=vol_val,
                         hour=row.name.hour,
-                        ofi=sim_ofi
+                        minute=row.name.minute, # [SOTA v5] Sincronia de minuto
+                        ofi=sim_ofi,
+                        current_price=row['close'], # [SOTA v5] Sincronia de preco
+                        spread=current_spread # [SOTA v5] Sincronia de spread
                     )
                     
                     direction = ai_decision['direction']
@@ -531,6 +543,11 @@ class BacktestPro:
                     else: # Padrão WIN
                         dyn_tp_pts = max(100.0, min(400.0, raw_tp))
                         dyn_sl_pts = max(100.0, min(300.0, raw_sl))
+
+                    # [SOTA v5] Aplicação do Multiplicador de Precisão (Spread-Adjusted)
+                    tp_multiplier = ai_decision.get('tp_multiplier', 1.0) if use_ai_core else 1.0
+                    if tp_multiplier != 1.0:
+                        dyn_tp_pts *= tp_multiplier
                     
                     sl = row['close'] - dyn_sl_pts if side == "buy" else row['close'] + dyn_sl_pts
                     tp = row['close'] + dyn_tp_pts if side == "buy" else row['close'] - dyn_tp_pts
@@ -546,7 +563,7 @@ class BacktestPro:
                     else:
                         target_lot = self.opt_params.get('base_lot', 1)
                     
-                    # [NEW ASSERTIVENESS] Aplicar o lot_multiplier do AI-Core
+                    # [SOTA v5] Aplicar multiplicador de assertividade da IA
                     ai_multiplier = ai_decision.get('lot_multiplier', 1.0) if use_ai_core else 1.0
                     target_lot = max(1, round(target_lot * ai_multiplier))
                     

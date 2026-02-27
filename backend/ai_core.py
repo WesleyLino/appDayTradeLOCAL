@@ -4,6 +4,7 @@ from sklearn.cluster import KMeans # Keep KMeans for regime_model
 from dotenv import load_dotenv
 import torch # Import necessário para InferenceEngine
 import time
+from datetime import datetime
 
 import google.generativeai as genai
 import os
@@ -19,7 +20,7 @@ load_dotenv()
 
 class AICore:
     def __init__(self):
-        self.latest_sentiment_score = 0.0
+        self._latest_sentiment_score = 0.0 # [SOTA v5] Valor real (atras do decorator)
         self.obi_ema = 0.5 # Valor inicial neutro
         self.ema_alpha = 0.2 # Fator de suavização
         self.regime_model = KMeans(n_clusters=3, n_init=10)
@@ -36,6 +37,26 @@ class AICore:
         self.uncertainty_threshold_base = 0.25 # [ANTIVIBE-CODING] Default Seguro
         self.lot_multiplier_partial = 0.25     # [ANTIVIBE-CODING] Default Seguro
         self.uncertainty_high_conviction_cap = 4.0 # 400%
+        
+        # [REFINAMENTO 26/02] Controle de Cooldown e Estabilidade
+        self.consecutive_losses = 0
+        self.ia_cooldown_until = 0 # Timestamp
+        self.atr_history = [] # Para calculo de inercia de volatilidade
+        
+        # [SOTA v4] NOVAS CONFIGURAÇÕES DE ASSERTIVIDADE
+        self.h1_trend = 0 # -1 (Baixa), 0 (Neutro), 1 (Alta)
+        self.prob_lot_tiers = {
+            "low": 0.25,      # Confiança 70-75%
+            "medium": 0.75,   # Confiança 75-85%
+            "high": 1.0       # Confiança > 85%
+        }
+        
+        # [SOTA v5] NOVAS CONFIGURAÇÕES DE PRECISÃO
+        self.sentiment_anchor_price = 0.0
+        self.sentiment_anchor_time = 0
+        self.max_sentiment_drift = 150.0 # Pontos do WIN para absorção total
+        self.opening_window_rigor = 1.5   # Multiplicador de rigor 09:00-09:30
+        self.spread_veto_threshold = 3.5  # Veto se spread > 3.5 pts
 
     def fetch_latest_news(self):
         """
@@ -57,6 +78,20 @@ class AICore:
 
     # [Fase 27] Lógica evaluate_opportunity removida. 
     # O Bot agora decide usando calculate_decision diretamente para maior controle de parâmetros.
+
+    # [SOTA v5] Property para Sincronização Automática de Âncora
+    @property
+    def latest_sentiment_score(self):
+        return self._latest_sentiment_score
+
+    @latest_sentiment_score.setter
+    def latest_sentiment_score(self, value):
+        # Reset de Âncora se o novo score for significativamente diferente (> 0.3)
+        # Isso centraliza a lógica para Live, Sniper e Backtest.
+        if hasattr(self, '_latest_sentiment_score') and abs(value - self._latest_sentiment_score) > 0.3:
+            self.sentiment_anchor_price = 0.0
+            logging.debug(f"⚓ SOTA v5: Sentiment Anchor Reset (Delta > 0.3). New Score: {value:.2f}")
+        self._latest_sentiment_score = value
 
     async def update_sentiment(self):
         """
@@ -102,6 +137,8 @@ class AICore:
                 self.latest_sentiment_score = 0.0
             else:
                 if reliability == "low": score *= 0.5
+                
+                # O reset de âncora agora é feito automaticamente pelo setter de latest_sentiment_score
                 self.latest_sentiment_score = max(-1.0, min(1.0, score))
                 
             return self.latest_sentiment_score
@@ -217,223 +254,244 @@ class AICore:
         except Exception as e:
             return 0
 
-    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, ofi=0.0):
+    def calculate_probabilistic_lot(self, score, quantile_confidence):
         """
-        Calcula a decisão final de trading baseada em múltiplos fatores ponderados.
+        [SOTA v4] Calcula o multiplicador de lote baseado na convicção da IA.
+        """
+        # Se quantile_confidence for NORMAL, o rigor é maior
+        if quantile_confidence == "NORMAL":
+            if score >= 90 or score <= 10: return self.prob_lot_tiers["high"]
+            if score >= 85 or score <= 15: return self.prob_lot_tiers["medium"]
+            return self.prob_lot_tiers["low"]
         
-        Args:
-            obi: Order Book Imbalance (-1.0 a 1.0)
-            sentiment: Análise de Notícias (-1.0 a 1.0)
-            patchtst_score: Predição de Preço (0.0 a 1.0, onde >0.5 é Alta)
-            regime: Regime de mercado (0: Baixa Vol, 1: Tendência, 2: Ruído)
-            atr: Average True Range (para Meta-Learner)
-            volatility: Volatilidade (para Meta-Learner)
-            hour: Hora do dia (para Meta-Learner)
+        # Se for HIGH/VERY_HIGH, autoriza mais exposição
+        if score >= 85 or score <= 15: return self.prob_lot_tiers["high"]
+        return self.prob_lot_tiers["medium"]
+
+    def update_h1_trend(self, h1_data):
+        """
+        [SOTA v4] Atualiza o viés de tendência do tempo superior (H1).
+        H1 Data: DataFrame com dados M15/H1.
+        """
+        if h1_data is None or len(h1_data) < 2:
+            self.h1_trend = 0
+            return
             
-        Returns:
-            dict: {
-                "score": float (0-100),
-                "direction": str ("BUY" | "SELL" | "NEUTRAL"),
-                "breakdown": dict (detalhes do cálculo)
-            }
-        """
-        # 1. Normalização de Inputs para Range (-1.0 a 1.0)
-        # OBI já é -1 a 1
-        # Sentiment já é -1 a 1
+        last_close = h1_data['close'].iloc[-1]
+        prev_close = h1_data['close'].iloc[-2]
         
-        # PatchTST vem 0.0 a 1.0 (0.5 é neutro).
+        # Heurística simples: Preço acima/abaixo da média de 20 períodos em H1
+        ma20 = h1_data['close'].rolling(20).mean().iloc[-1] if len(h1_data) >= 20 else last_close
+        
+        if last_close > ma20 * 1.002: # 0.2% acima da média
+            self.h1_trend = 1 # Alta
+        elif last_close < ma20 * 0.998: # 0.2% abaixo da média
+            self.h1_trend = -1 # Baixa
+        else:
+            self.h1_trend = 0 # Neutro
+
+    def update_sentiment_anchor(self, price):
+        """
+        [SOTA v5] Define o preço âncora para o decaimento de sentimento.
+        Chamado pelo loop principal (TradingBridge ou BacktestPro).
+        """
+        if self.sentiment_anchor_price == 0 and abs(self.latest_sentiment_score) > 0.1:
+            self.sentiment_anchor_price = price
+            logging.debug(f"⚓ SENTIMENT ANCHOR SET: {price:.1f} (Score: {self.latest_sentiment_score:.2f})")
+
+    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0):
+        """
+        [SOTA v5] Fluxo de Decisão com Camadas de Precisão
+        """
+        # 0. [SOTA v5] Sentiment Decay Adaptativo (Absorção por preço)
+        if self.sentiment_anchor_price > 0 and abs(sentiment) > 0.1:
+            price_drift = abs(current_price - self.sentiment_anchor_price)
+            decay_factor = max(0.0, 1.0 - (price_drift / self.max_sentiment_drift))
+            sentiment *= decay_factor
+            if decay_factor < 0.2:
+                logging.debug(f"🧽 SENTIMENT ABSORBED: Price moved {price_drift:.1f} pts. Neutralizing.")
+        # 1. Normalização Inicial
         uncertainty_abs = 0.0
         forecast_ref = 1.0
-        # Quantis Q10/Q50/Q90 para calibração de convicção
         q10 = q50 = q90 = None
-        quantile_confidence = "NORMAL"  # NORMAL | HIGH | VERY_HIGH
+        quantile_confidence = "NORMAL"
         
         if isinstance(patchtst_score, dict):
             uncertainty_abs = patchtst_score.get("uncertainty_norm", 0.0)
             forecast_ref = patchtst_score.get("forecast_norm", 1.0)
             if forecast_ref == 0: forecast_ref = 1.0
-
-            # [FASE 2] Extrair quantis se disponíveis no forecast
-            q10 = patchtst_score.get("q10", None)
-            q50 = patchtst_score.get("q50", None)
-            q90 = patchtst_score.get("q90", None)
+            q10, q50, q90 = patchtst_score.get("q10"), patchtst_score.get("q50"), patchtst_score.get("q90")
 
             if q10 is not None and q50 is not None and q90 is not None:
-                spread_up   = abs(q90 - q50)   # Potencial de alta
-                spread_down = abs(q50 - q10)   # Potencial de queda
-                # Convicção VERY_HIGH: banda assimétrica >20% superior ao outro lado
-                if spread_up   > spread_down * 1.2 and spread_up   > 0.01:
-                    quantile_confidence = "VERY_HIGH"   # BUY com alta convicção
-                elif spread_down > spread_up   * 1.2 and spread_down > 0.01:
-                    quantile_confidence = "VERY_HIGH"   # SELL com alta convicção
-                elif max(spread_up, spread_down) > 0.005:
-                    quantile_confidence = "HIGH"
-                # Senão permanece "NORMAL"
+                spread_up, spread_down = abs(q90 - q50), abs(q50 - q10)
+                if spread_up > spread_down * 1.35 and spread_up > 0.01: quantile_confidence = "VERY_HIGH"
+                elif spread_down > spread_up * 1.35 and spread_down > 0.01: quantile_confidence = "VERY_HIGH"
+                elif max(spread_up, spread_down) > 0.005: quantile_confidence = "HIGH"
 
             norm_patchtst = (patchtst_score.get("score", 0.5) - 0.5) * 2
         else:
             norm_patchtst = (patchtst_score - 0.5) * 2
         
-        # [HFT v2.1 FIX] Calcular incerteza relativa (%)
-        # [PHASE 2] Normalização Robusta: Evita explosão do ratio quando forecast é pequeno
-        # Para modelos SOTA em sigma-space (PatchTST), o ruído base é maior.
-        # Usamos 0.50 como piso (50% do range) para evitar divisões por valores ínfimos.
+        # 2. Incerteza Relativa
         uncertainty_rel = abs(uncertainty_abs / max(0.50, abs(norm_patchtst)))
-
-        # [VETO POR INCERTEZA - REFINADO]
-        # Base threshold agora usa variável de instância para calibração dinâmica.
+        
+        # 3. EMA de OBI para Filtro de Divergência
+        self.obi_ema = (obi * self.ema_alpha) + (self.obi_ema * (1 - self.ema_alpha))
+        
+        # 4. Threshold de Incerteza e Rigor Adaptativo
         uncertainty_threshold = self.uncertainty_threshold_base
         lot_multiplier = 1.0
         veto_reason = None
 
-        # 1. Check for Confluence (Sentiment + OBI)
-        strong_confluence = (sentiment > 0.6 and obi > 1.2) or (sentiment < -0.6 and obi < -1.2)
-        if strong_confluence:
-            logging.info("🎯 CONFLUENCE DETECTED: Expanding uncertainty threshold.")
+        if (sentiment > 0.6 and obi > 1.2) or (sentiment < -0.6 and obi < -1.2):
             uncertainty_threshold = max(uncertainty_threshold, 0.40)
-
-        # [PHASE 2] Regime-Aware Thresholds
-        if regime == 2: # Ruído / Alta Vol
-            logging.info("🌪️ HIGH VOLATILITY REGIME: Adapting uncertainty threshold.")
+        
+        if regime == 2 or abs(ofi) > 2.5:
             uncertainty_threshold = max(uncertainty_threshold, 0.35)
-
-        # 2. Check for Flow Override (OFI)
-        strong_flow = abs(ofi) > 2.5
-        if strong_flow:
-            logging.info(f"🌊 FLOW OVERRIDE (OFI={ofi:.2f}): Expanding uncertainty threshold.")
-            uncertainty_threshold = max(uncertainty_threshold, 0.35)
-
-        # [PHASE 2] Confidence Override (Quantum Convicção)
-        # Se os quantis sugerem altíssima assimetria, dobramos o threshold de incerteza
-        if quantile_confidence == "VERY_HIGH":
-            logging.info("⚡ VERY HIGH CONFIDENCE DETECTED: Scaling uncertainty threshold (x2.0).")
-            uncertainty_threshold *= 2.0
-
-        if uncertainty_rel > uncertainty_threshold: 
-            # [PHASE 2] Ultra-Conservative Entry: Permite entrada mínima em incerteza extrema se convicção for alta
-            if quantile_confidence == "VERY_HIGH" and uncertainty_rel < self.uncertainty_high_conviction_cap: 
-                logging.warning(f"🛡️ ULTRA-CONSERVATIVE ENTRY: High uncertainty ({uncertainty_rel*100:.2f}%) but VERY_HIGH confidence. Lot multiplier set to {self.lot_multiplier_partial}x.")
-                lot_multiplier = self.lot_multiplier_partial
-            else:
-                logging.warning(f"CONFORMAL FAIL-SAFE: Incerteza Alta ({uncertainty_rel*100:.2f}% > {uncertainty_threshold*100:.0f}%). Neutralizando.")
-                norm_patchtst = 0.0 # Neutraliza contribuição da IA
-                if isinstance(patchtst_score, dict):
-                    patchtst_score["score"] = 0.5 
-                veto_reason = "HIGH_UNCERTAINTY_FAILSAFE"
-        else:
-            # 3. Partial Exposure Logic (Ajustado para o novo range sigma)
-            if 0.15 < uncertainty_rel <= 0.35:
-                logging.info(f"⚖️ PARTIAL EXPOSURE: uncertainty_rel={uncertainty_rel*100:.2f}%. Applying 0.5x multiplier.")
-                lot_multiplier = 0.5
             
-            # Recalcular score norm se estava neutralizado
-            norm_patchtst = (patchtst_score.get("score", 0.5) if isinstance(patchtst_score, dict) else patchtst_score - 0.5) * 2
-            if isinstance(norm_patchtst, complex): norm_patchtst = norm_patchtst.real
-        
-        # [PHASE 3] Dynamic Weights (Backtest-Aware)
-        # Se OBI e Sentiment forem zero (comum em backtest OHLCV), redistribuímos o peso para o Transformer.
-        w_sent = 0.30
-        w_obi = 0.20
-        w_patchtst = 0.50
+        if quantile_confidence == "VERY_HIGH":
+            uncertainty_threshold *= 2.0
+            
+        # [SOTA v5] Meta-Learner Fine-Tuning: Filtro de Abertura (09:00 - 09:30)
+        is_opening_session = (hour == 9 and minute < 30)
+        if is_opening_session:
+            uncertainty_threshold *= (1.0 / self.opening_window_rigor) # Reduz threshold = aumenta rigor
+            logging.info(f"🛡️ OPENING RIGOR ACTIVE: 09:{minute:02d}. Stricter filters enabled.")
 
-        if abs(sentiment) < 0.001 and abs(obi) < 0.01:
-            # Modo Backtest ou 'Clean Mode': Transformer assume 85% do peso
-            w_patchtst = 0.85
-            w_sent = 0.08
-            w_obi = 0.07
-        elif regime == 0: # Consolidação
-            w_obi = 0.40
-            w_patchtst = 0.40
-            w_sent = 0.20
-        elif regime == 1: # Tendência
-            w_obi = 0.15
-            w_patchtst = 0.75
-            w_sent = 0.10
-        
-        # 3. Cálculo do Sinal Composto (AI_Score Bruto)
-        composite_signal = (obi * w_obi) + (norm_patchtst * w_patchtst) + (sentiment * w_sent)
-        
-        # 4. Score Final (Magnitude Absoluta 0-100)
-        # Convert composite_signal (-1 to 1) to a 0-100 scale
-        ai_score_raw = (composite_signal + 1) * 50
-        ai_score_raw = max(0.0, min(100.0, ai_score_raw))
+        # [PRO] Inércia de Volatilidade
+        if atr > 0:
+            self.atr_history.append(atr)
+            if len(self.atr_history) > 10: self.atr_history.pop(0)
+            if len(self.atr_history) >= 5:
+                atr_inertia = atr - self.atr_history[-5]
+                if atr_inertia < -12.0: # Exaustão
+                    uncertainty_threshold *= 0.85 
+                    logging.info(f"🧊 VOLATILITY EXHAUSTION: Tightening rigor ({atr_inertia:.1f})")
 
-        # --- HFT v2.0: Meta-Learner (XGBoost) para refinar a decisão ---
-        # Features esperadas: [ATR, OBI, Sentiment, Volatility, Hour, AI_Score (0-1)]
-        meta_features = [atr, obi, sentiment, volatility, hour, ai_score_raw / 100.0]
+        # 5. Verificação de Vetos (Fail-Safes)
+        ia_in_cooldown = time.time() < self.ia_cooldown_until
         
-        # [HFT v2.1] Sanitize inputs: substituir NaN ou Inf por 0.0 para evitar crash no XGBoost
-        meta_features = [x if np.isfinite(x) else 0.0 for x in meta_features]
-        
-        # [HFT v2.1] Fallback se o modelo não estiver treinado/carregado
-        if self.meta_learner.model is None:
-            # Em modo Pass-Through, o Meta-Score não interfere na decisão primária
-            meta_score = ai_score_raw
-        else:
-            try:
-                meta_proba = self.meta_learner.predict_proba(meta_features) # Returns probability 0.0-1.0
-                
-                # [ANTIVIBE-CODING] Mapeamento de score sensível à direção
-                # Se o sinal bruto for de VENDA (score < 50), meta_proba de 1.0 (ganho) deve gerar um meta_score de 0 (venda forte).
-                # Se o sinal bruto for de COMPRA (score > 50), meta_proba de 1.0 (ganho) deve gerar um meta_score de 100 (compra forte).
-                if ai_score_raw >= 50.0:
-                    meta_score = meta_proba * 100.0
-                else:
-                    meta_score = (1.0 - meta_proba) * 100.0
-
-            except Exception as e:
-                logging.warning(f"Meta-Learner fallback: Usando raw signal (Motive: {e})")
-                meta_score = ai_score_raw
-
-        # A decisão final é uma média ponderada entre o Sinal Bruto (Macro) e o Meta-Learner.
-        # [REFINAMENTO 25/02] MATH FIX: Se o Meta-Learner está neutro, ele não deve impedir o gatilho.
-        # Aumentamos o peso do Sinal Bruto (Macro) para 60% quando o Meta-Learner é incerto.
-        if self.meta_learner.model is not None and (0.48 <= meta_proba <= 0.52):
-             final_score = (ai_score_raw * 0.7) + (meta_score * 0.3)
-        else:
-             final_score = (ai_score_raw * 0.4) + (meta_score * 0.6)
-        
-        # [FASE 24] VETO ADICIONAL: Filtro de Indecisão (Meta-Learner Neutral)
-        veto_reason = None
-        # [ANTIVIBE-CODING] - Só aplicamos o veto se o modelo estiver carregado e for EXTREMAMENTE incerto.
-        # Relaxamos a faixa de veto de [0.45, 0.55] para [0.49, 0.51] para permitir sinais fortes em backtest.
-        if self.meta_learner.model is not None and (0.49 < meta_proba < 0.51):
-            direction = "NEUTRAL"
-            veto_reason = "META-FILTER-NEUTRAL"
-            logging.info(f"🛡️ META-FILTER: Sinal neutralizado por incerteza estatística (Prob: {meta_proba:.2%})")
-        else:
-            # 5. Direção — threshold padrão 85, rebaixado se convicção VERY_HIGH
-            # [FASE 2] quantile_confidence permite entrada com score >= 80 em sinais de alta convicção
-            buy_threshold  = 85.0 if quantile_confidence == "NORMAL" else 80.0
-            sell_threshold = 15.0 if quantile_confidence == "NORMAL" else 20.0
-
-            if final_score >= buy_threshold:
-                direction = "BUY"
-            elif final_score <= sell_threshold:
-                direction = "SELL"
+        if ia_in_cooldown:
+            veto_reason = "IA_COOLDOWN_VETO"
+        elif uncertainty_rel > uncertainty_threshold:
+            if quantile_confidence == "VERY_HIGH" and uncertainty_rel < self.uncertainty_high_conviction_cap:
+                lot_multiplier = self.lot_multiplier_partial
+                logging.warning(f"🛡️ ULTRA-CONSERVATIVE ENTRY: High uncertainty ({uncertainty_rel*100:.1f}%)")
             else:
-                direction = "NEUTRAL"
+                veto_reason = "HIGH_UNCERTAINTY_FAILSAFE"
+        
+        # [PRO] Filtro de Divergência de Fluxo
+        if veto_reason is None:
+            ai_dir = np.sign(norm_patchtst)
+            obi_dir = np.sign(self.obi_ema)
+            if abs(self.obi_ema) > 1.5 and ai_dir != 0 and ai_dir != obi_dir:
+                veto_reason = "FLOW_DIVERGENCE_VETO"
+
+        # [SOTA v4] Filtro Direcional H1 (Regime Maestro)
+        if veto_reason is None:
+            ai_dir = np.sign(norm_patchtst)
+            if self.h1_trend == 1 and ai_dir < 0: # Venda contra tendência de alta H1
+                veto_reason = "H1_BULLISH_TREND_VETO"
+            elif self.h1_trend == -1 and ai_dir > 0: # Compra contra tendência de baixa H1
+                veto_reason = "H1_BEARISH_TREND_VETO"
+                
+        # [SOTA v5] Spread Veto (Proteção contra Slippage)
+        if veto_reason is None and spread > self.spread_veto_threshold:
+            veto_reason = "HIGH_SPREAD_VETO"
+            logging.warning(f"⚠️ SPREAD VETO: {spread:.1f} pts > {self.spread_veto_threshold}")
+
+        # 6. Cálculo do Score Final
+        if veto_reason:
+            norm_patchtst = 0.0
+            lot_multiplier = 0.0 # Zerar lote se vetado
+        
+        # Dinâmica de Pesos
+        w_sent, w_obi, w_patchtst = 0.30, 0.20, 0.50
+        if abs(sentiment) < 0.001 and abs(obi) < 0.01:
+            w_patchtst, w_sent, w_obi = 0.85, 0.08, 0.07
+        elif regime == 0: w_obi, w_patchtst, w_sent = 0.40, 0.40, 0.20
+        elif regime == 1: w_obi, w_patchtst, w_sent = 0.15, 0.75, 0.10
+
+        composite_signal = (obi * w_obi) + (norm_patchtst * w_patchtst) + (sentiment * w_sent)
+        ai_score_raw = max(0.0, min(100.0, (composite_signal + 1) * 50))
+
+        # 7. Meta-Learner (The Silence Rule)
+        meta_score = ai_score_raw
+        if self.meta_learner.model is not None:
+            try:
+                meta_features = [atr, obi, sentiment, volatility, hour, ai_score_raw / 100.0]
+                meta_prob = self.meta_learner.predict_proba([meta_features])[0]
+                meta_score = (ai_score_raw if ai_score_raw >= 50 else (1.0 - meta_prob) * 100) # Simplificado para exemplo
+                
+                if 0.45 <= meta_prob <= 0.55 and veto_reason is None:
+                    lot_multiplier *= self.lot_multiplier_partial
+                    logging.info(f"🤫 SILENCE RULE: Meta-Learner neutral ({meta_prob:.2%})")
+            except: pass
+
+        # Fusão Final
+        final_score = (ai_score_raw * 0.4) + (meta_score * 0.6)
+        if veto_reason: final_score = 50.0
+
+        # Direção
+        buy_threshold = 85.0 if quantile_confidence == "NORMAL" else 80.0
+        sell_threshold = 15.0 if quantile_confidence == "NORMAL" else 20.0
+        
+        direction = "NEUTRAL"
+        if final_score >= buy_threshold: direction = "BUY"
+        elif final_score <= sell_threshold: direction = "SELL"
+        
+        # [SOTA v5] Lot Sizing Probabilístico e Ajuste de Abertura
+        if veto_reason is None and direction != "NEUTRAL":
+            lot_multiplier = self.calculate_probabilistic_lot(final_score, quantile_confidence)
+            if is_opening_session:
+                lot_multiplier *= 0.5 # Força exposição reduzida na abertura
+                logging.info(f"⏳ REDUCED LOT FOR OPENING: {lot_multiplier:.2f}x")
+            
+        # [SOTA v5] Spread-Adjusted Take Profit (Compensation)
+        tp_adj = 1.0
+        if spread > 1.0:
+            tp_adj = 1.0 + (spread / 100.0) # Aumenta TP proporcionalmente ao custo
+            logging.debug(f"🎯 SPREAD-ADJUSTED TP: +{spread:.1f} pts compensation ({tp_adj:.2f}x)")
 
         return {
-            "score": final_score,
+            "score": float(final_score),
             "direction": direction,
-            "lot_multiplier": lot_multiplier, # [NEW ASSERTIVENESS]
+            "lot_multiplier": float(lot_multiplier),
+            "tp_multiplier": float(tp_adj),
+            "veto": veto_reason,
             "forecast": float(forecast_ref),
-            "uncertainty": uncertainty_rel, # Incluido para auditoria
-            "quantile_confidence": quantile_confidence,  # NORMAL | HIGH | VERY_HIGH
+            "uncertainty": float(uncertainty_rel),
+            "quantile_confidence": quantile_confidence,
+            "h1_trend": self.h1_trend,
             "breakdown": {
-                "obi_contribution": obi * w_obi,
-                "patchtst_contribution": norm_patchtst * w_patchtst,
-                "sentiment_contribution": sentiment * w_sent,
-                "raw_signal": composite_signal,
-                "ai_score_raw": ai_score_raw,
-                "meta_score": meta_score,
+                "obi_contribution": float(obi * w_obi),
+                "patchtst_contribution": float(norm_patchtst * w_patchtst),
+                "sentiment_contribution": float(sentiment * w_sent),
+                "raw_signal": float(ai_score_raw),
+                "meta_score": float(meta_score),
                 "q10": q10,
                 "q50": q50,
                 "q90": q90,
-                "veto": veto_reason
+                "veto": veto_reason,
+                "ia_cooldown": ia_in_cooldown
             }
         }
+    
+    def record_result(self, pnl: float):
+        """
+        Registra o resultado de um trade para controle de cooldown.
+        2 perdas consecutivas ativam cooldown de 15 minutos.
+        """
+        if pnl < 0:
+            self.consecutive_losses += 1
+            if self.consecutive_losses >= 2:
+                self.ia_cooldown_until = time.time() + (15 * 60)
+                logging.warning(f"!!! COOLDOWN ATIVADO: 2 perdas consecutivas. IA suspensa ate {datetime.fromtimestamp(self.ia_cooldown_until).strftime('%H:%M:%S')}")
+        else:
+            self.consecutive_losses = 0
+            if time.time() < self.ia_cooldown_until:
+                logging.info(">>> Cooldown resetado antecipadamente por lucro.")
+                self.ia_cooldown_until = 0
         
     async def predict_with_patchtst(self, inference_engine, dataframe):
         """Usa o motor de inferência para obter a predição do PatchTST."""

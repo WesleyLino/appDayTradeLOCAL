@@ -1,16 +1,16 @@
 {
-  "timestamp": 1772052284.4587893,
+  "timestamp": 1772150979.6099045,
   "bluechips": {
-    "VALE3": 1.31,
-    "PETR4": -0.7,
-    "ITUB4": -1.63,
-    "BBDC4": -1.95,
+    "VALE3": 0.3,
+    "PETR4": 0.79,
+    "ITUB4": -0.25,
+    "BBDC4": -0.99,
     "ELET3": 2.27
   },
-  "synthetic_index": -0.28450980392156855,
+  "synthetic_index": 0.24764705882352944,
   "macro": {
-    "score": 0.0,
-    "reason": "No data"
+    "score": -0.6249551038000144,
+    "reason": "S&P 500 Change"
   },
   "calendar": {
     "volatility_expected": false,

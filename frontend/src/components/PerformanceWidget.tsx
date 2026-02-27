@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { useTradingStore } from "@/hooks/use-trading-ws";
+import { API_CONFIG } from "@/lib/api-config";
 
 interface PerformanceData {
   total_trades: number;
@@ -38,8 +39,8 @@ export function PerformanceWidget() {
     try {
       setLoading(true);
       setError(null);
-      // [ANTIVIBE-CODING] - Binding 127.0.0.1
-      const response = await fetch("http://127.0.0.1:8000/performance");
+      // [ANTIVIBE-CODING] - Usando resolução dinâmica de URL
+      const response = await fetch(`${API_CONFIG.http}/performance`);
       const result = await response.json();
 
       if (result.status === "success" && result.data) {

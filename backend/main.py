@@ -89,7 +89,7 @@ class SniperStatus(BaseModel):
 
 app = FastAPI()
 
-# Permite acesso do frontend Next.js local (Ajustado para Windows CORS explicitly)
+# [ANTIVIBE-CODING] - Liberação de CORS para Sincronização Dinâmica (v3.2)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -231,6 +231,7 @@ def panic_close_all():
 async def shutdown_event():
     bridge.disconnect()
 
+# [ANTIVIBE-CODING] - Endpoint Crítico de WebSocket (v3.2)
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -283,6 +284,7 @@ async def websocket_endpoint(websocket: WebSocket):
         regime = 0
         synthetic_idx = 0.0
         prev_total_profit = 0.0
+        prev_daily_realized = 0.0 # [REFINAMENTO 26/02] Tracking para Cooldown de IA
         
         logging.info("Entrando no loop principal do WebSocket...")
         while True:
@@ -353,6 +355,12 @@ async def websocket_endpoint(websocket: WebSocket):
                         asyncio.to_thread(bridge.mt5.account_info),
                         asyncio.to_thread(bridge.get_daily_realized_profit)
                     )
+                    
+                    # [REFINAMENTO 26/02] Detecção de Fechamento de Trade para Cooldown
+                    if daily_realized != prev_daily_realized:
+                        pnl_trade = daily_realized - prev_daily_realized
+                        ai.record_result(pnl_trade)
+                        prev_daily_realized = daily_realized
                 
                 # 1.2 Atuallização via Cache (Background Worker) - SEMPRE ATUALIZAR (HFT Optimization)
                 ctx = load_market_context() # [ANTIVIBE-CODING]
@@ -391,6 +399,9 @@ async def websocket_endpoint(websocket: WebSocket):
                                     news = sent_data.get("news", [])
                                     headlines = news if news else [sent_data.get("fact_check", "No news summary available")]
                                     ai.latest_sentiment_score = sentiment_score
+                                    # [SOTA v5] Sincronizar Âncora de Sentimento no Ciclo Lento
+                                    if last_price > 0:
+                                        ai.update_sentiment_anchor(last_price)
                                     logging.debug(f"Sentimento carregado: {sentiment_score} | Notícias: {len(news)}")
                             else:
                                 sentiment_score = 0.0
@@ -519,6 +530,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 regime = ai.detect_regime(volatility, obi)
                 # macro_change movido para o ciclo lento
                 
+                # [SOTA v5] Cálculo de Spread Normalizado (WIN: 5 pts = 1.0)
+                live_spread = 1.0
+                if tick_info:
+                    live_spread = (tick_info.ask - tick_info.bid) / 5.0 # Normalizado para escala SOTA v5
+                
                  # Score Final (0-100) e Direção
                 decision = ai.calculate_decision(
                     obi, 
@@ -527,7 +543,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     regime,
                     atr=current_atr,
                     volatility=volatility,
-                    hour=current_hour
+                    hour=current_hour,
+                    minute=now.minute,
+                    current_price=last_price,
+                    spread=live_spread
                 )
                 ai_total_score = decision["score"]
                 ai_direction = decision["direction"]
@@ -757,11 +776,16 @@ async def websocket_endpoint(websocket: WebSocket):
                                 point_value = 10.0 if "WDO" in symbol or "DOL" in symbol else 0.20
                                 sota_lots = risk.calculate_volatility_sizing(account['balance'], current_atr, point_value)
                                 
-                                # [SOTA v3] Aplicar Multiplicador de Lotes da IA (Exposição Parcial)
+                                # [SOTA v5] Aplicar Multiplicador de Lotes da IA (Exposição Parcial)
                                 ai_multiplier = decision.get("lot_multiplier", 1.0)
+                                tp_multiplier = decision.get("tp_multiplier", 1.0)
                                 final_lots = max(1, int(sota_lots * ai_multiplier))
                                 
-                                params = risk.get_order_params(symbol, order_type, current_order_price, final_lots, current_atr=current_atr, regime=regime)
+                                params = risk.get_order_params(
+                                    symbol, order_type, current_order_price, final_lots, 
+                                    current_atr=current_atr, regime=regime,
+                                    tp_multiplier=tp_multiplier
+                                )
                                 params["symbol"] = symbol
                                 params["comment"] = "AUTO SNIPER"
                                 

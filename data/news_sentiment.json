@@ -1,59 +1,54 @@
 {
-  "score": -0.7,
+  "score": -0.4,
   "reliability": "high",
-  "risk_classification": "HIGH",
-  "fact_check": "Problemas t\u00e9cnicos na CME Group representam risco operacional imediato para mercados financeiros. Ouro em alta devido a tarifas e geopol\u00edtica indica avers\u00e3o ao risco. EUA permitem revenda de petr\u00f3leo venezuelano a Cuba, impactando din\u00e2mica de oferta. Balan\u00e7os corporativos (CDK, Marcopolo) e eventos espec\u00edficos de empresas (CASI, Incannex) mostram volatilidade setorial.",
+  "risk_classification": "MEDIUM",
+  "fact_check": "B3 e Axia reportam lucros robustos no 4T. No entanto, o Ibovespa fechou em leve queda, influenciado por Vale, e Wall Street recuou devido \u00e0 desacelera\u00e7\u00e3o do setor de tecnologia e IA. A a\u00e7\u00e3o da WEG tamb\u00e9m registrou queda ap\u00f3s seus resultados.",
   "news": [
     {
-      "headline": "EUA permitir\u00e3o revenda de petr\u00f3leo venezuelano a Cuba, diz Departamento do Tesouro",
+      "headline": "B3 (B3SA3) registra lucro l\u00edquido de R$ 1,5 bi no 4T, alta de 21,9%.",
+      "relevance": 0.8,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Axia reporta lucro de R$ 13,7 bi no 4T, impulsionado por reconhecimento fiscal.",
       "relevance": 0.6,
-      "impact": "NEUTRAL"
+      "impact": "BULLISH"
     },
     {
-      "headline": "Mercados Financeiros - \u00daltimas Not\u00edcias | InfoMoney",
-      "relevance": 0.0,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "A\u00e7\u00f5es da CDK Global da Brookfield registram queda de 18% nos lucros devido a custos",
-      "relevance": 0.4,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Balan\u00e7o da Marcopolo (POMO4): Resili\u00eancia em meio \u00e0 desacelera\u00e7\u00e3o?",
-      "relevance": 0.5,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Ouro sobe com tarifas e geopol\u00edtica; CME informa problemas t\u00e9cnicos",
+      "headline": "Ibovespa fecha em leve queda, influenciado por Vale e foco em balan\u00e7os.",
       "relevance": 0.9,
       "impact": "BEARISH"
     },
     {
-      "headline": "Barkin, do Fed, diz que n\u00e3o se pode concluir de fato que IA substituir\u00e1 trabalhadores",
-      "relevance": 0.1,
+      "headline": "A\u00e7\u00f5es da Neurogene sobem 30% ap\u00f3s status de terapia inovadora do FDA (EUA).",
+      "relevance": 0.2,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Larry Summers renuncia \u00e0 Harvard devido a liga\u00e7\u00f5es com Epstein",
-      "relevance": 0.1,
+      "headline": "Dell Technologies avan\u00e7a 11% com resultados e proje\u00e7\u00f5es otimistas (EUA).",
+      "relevance": 0.2,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "A\u00e7\u00f5es da CASI Pharmaceuticals despencam ap\u00f3s notifica\u00e7\u00e3o de exclus\u00e3o da Nasdaq",
-      "relevance": 0.4,
+      "headline": "Wall St em queda com desacelera\u00e7\u00e3o do rali tech e IA p\u00f3s-resultados Nvidia.",
+      "relevance": 0.8,
       "impact": "BEARISH"
     },
     {
-      "headline": "Expert Trader XP anuncia Tom Hougaard e Ralph Acampora para 1\u00aa edi\u00e7\u00e3o",
+      "headline": "WEG (WEGE3) cai ap\u00f3s resultados e rebaixamento de analistas.",
+      "relevance": 0.7,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Mercados Financeiros - \u00daltimas Not\u00edcias (InfoMoney).",
       "relevance": 0.0,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "A\u00e7\u00f5es da Incannex Healthcare despencam ap\u00f3s an\u00fancio de grupamento",
-      "relevance": 0.4,
-      "impact": "BEARISH"
+      "headline": "Anthropic desafia Pent\u00e1gono sobre limites de IA em guerra.",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
     }
   ],
-  "timestamp": 1772048266.5596046
+  "timestamp": 1772150808.035492
 }

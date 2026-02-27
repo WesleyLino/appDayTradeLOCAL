@@ -12,13 +12,13 @@ class TestOCOLogic(unittest.TestCase):
 
     def test_win_buy_oco(self):
         # WIN Buy at 120000
-        # Expected: SL 130 pts (119870), TP 400 pts (120400)
-        # Anti-Violinada (WIN): TP 120400 (round 100) -> 120385 (front-run resistance)
+        # Expected: SL 130 pts (119870), TP 100 pts (120100)
+        # Anti-Violinada (WIN): TP 120100 (round 100) -> 120085 (front-run resistance)
         # SL 119870 (not round 100) -> 119870 (unchanged)
         params = self.risk.get_order_params("WINJ24", mt5.ORDER_TYPE_BUY_LIMIT, 120000.0, 1)
         
         self.assertEqual(params['sl'], 119870.0)
-        self.assertEqual(params['tp'], 120385.0) # Adjusted (120400 - 15)
+        self.assertEqual(params['tp'], 120085.0) # Adjusted (120100 - 15)
         self.assertEqual(params['type'], mt5.ORDER_TYPE_BUY_LIMIT)
 
     def test_wdo_sell_oco(self):

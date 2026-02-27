@@ -275,11 +275,12 @@ class RiskManager:
         return False
 
 
-    def get_order_params(self, symbol, type, price, volume, current_atr=None, regime=None):
+    def get_order_params(self, symbol, type, price, volume, current_atr=None, regime=None, tp_multiplier=1.0):
         """
         Retorna parâmetros calculados para envio de ordem OCO (One Cancels Other).
         Detecta automaticamente se é WIN ou WDO para definir stops.
         Agora suporta alvos dinâmicos baseados no ATR e Regime para adaptação à volatilidade.
+        [SOTA v5] Suporta tp_multiplier para compensação de spread.
         """
         import MetaTrader5 as mt5
         
@@ -301,16 +302,6 @@ class RiskManager:
             sl_points = float(current_atr * sl_mult)
             tp_points = float(current_atr * tp_mult)
             
-            # Limites de segurança (Sanity Check)
-            if "WIN" in symbol:
-                sl_points = max(100.0, min(300.0, sl_points))
-                tp_points = max(100.0, min(400.0, tp_points))
-            elif "WDO" in symbol or "DOL" in symbol:
-                sl_points = max(3.0, min(15.0, sl_points))
-                tp_points = max(5.0, min(30.0, tp_points))
-            
-            logging.info(f"⚡ RISK DYNAMO: Alvos dinâmicos via ATR ({current_atr:.1f}): SL={sl_points:.1f}, TP={tp_points:.1f}")
-            
         # PRIORIDADE 2: Parâmetros Otimizados dinamicamente via JSON
         elif symbol in self.dynamic_params:
             d_params = self.dynamic_params[symbol]
@@ -326,6 +317,20 @@ class RiskManager:
         else:
             sl_points = 0.0
             tp_points = 0.0
+
+        # [SOTA v5] Aplicação do Multiplicador de Precisão (Spread-Adjusted)
+        if tp_multiplier != 1.0 and tp_points > 0:
+            old_tp = tp_points
+            tp_points *= tp_multiplier
+            logging.info(f"🎯 SOTA v5 PRECISION: TP Adjusted by Spread Component: {old_tp:.1f} -> {tp_points:.1f} (Mult: {tp_multiplier:.3f})")
+
+        # Limites de segurança (Sanity Check)
+        if "WIN" in symbol:
+            sl_points = max(100.0, min(300.0, sl_points))
+            tp_points = max(100.0, min(400.0, tp_points))
+        elif "WDO" in symbol or "DOL" in symbol:
+            sl_points = max(3.0, min(15.0, sl_points))
+            tp_points = max(5.0, min(30.0, tp_points))
 
         sl = 0.0
         tp = 0.0

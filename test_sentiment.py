@@ -1,29 +1,25 @@
-import google.generativeai as genai
+import asyncio
 import os
 import json
 import logging
-from dotenv import load_dotenv
+from backend.news_sentiment_worker import NewsSentimentWorker
 
-load_dotenv()
-
-api_key = os.getenv("GOOGLE_API_KEY")
-if not api_key:
-    print("❌ No API Key found.")
-    exit(1)
-
-genai.configure(api_key=api_key)
-
-def test():
-    print("Testing Gemini 1.5-Flash...")
-    model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"response_mime_type": "application/json"})
+async def test_worker():
+    logging.basicConfig(level=logging.INFO)
+    print("Iniciando Teste de Sentimento...")
+    worker = NewsSentimentWorker()
+    await worker.analyze_sentiment()
     
-    prompt = "Classify sentiment of: 'The market is crashing, sell everything!'. Output JSON: { 'score': -1.0 to 1.0 }"
-    
-    try:
-        response = model.generate_content(prompt)
-        print(f"Response: {response.text}")
-    except Exception as e:
-        print(f"❌ Error: {e}")
+    if os.path.exists(worker.output_path):
+        with open(worker.output_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            print("--- RESULTADO DO TESTE ---")
+            print(f"Score: {data.get('score')}")
+            print(f"Risco: {data.get('risk_classification')}")
+            print(f"Timestamp: {data.get('timestamp')}")
+            print("--------------------------")
+    else:
+        print("ERRO: Arquivo de sentimento não gerado.")
 
 if __name__ == "__main__":
-    test()
+    asyncio.run(test_worker())
