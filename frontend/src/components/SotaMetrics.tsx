@@ -54,9 +54,9 @@ export function SotaMetrics({
       </CardHeader>
       <CardContent className="grid gap-4">
         {/* PSR Reliability */}
-        <div className="flex items-center justify-between text-[10px] uppercase tracking-tighter text-blue-400 font-bold bg-blue-500/10 px-2 py-1 rounded">
-          <div className="flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3" /> PSR Reliability
+        <div className="flex items-center justify-between text-[11px] uppercase tracking-tighter text-blue-400 font-bold bg-blue-500/10 px-2.5 py-1.5 rounded-lg border border-blue-500/10">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5" /> PSR Reliability
           </div>
           <span>
             {isPsrCalibrating ? "CALIBRATING..." : `${(psr * 100).toFixed(2)}%`}
@@ -64,9 +64,9 @@ export function SotaMetrics({
         </div>
 
         {/* Current Exposure (Lot Multiplier) */}
-        <div className="flex items-center justify-between text-[10px] uppercase tracking-tighter text-emerald-400 font-bold bg-emerald-500/10 px-2 py-1 rounded">
-          <div className="flex items-center gap-1">
-            <Scale className="w-3 h-3" /> Exposição Atual
+        <div className="flex items-center justify-between text-[11px] uppercase tracking-tighter text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/10">
+          <div className="flex items-center gap-1.5">
+            <Scale className="w-3.5 h-3.5" /> Exposição Atual
           </div>
           <span className="font-mono">{lotMultiplier.toFixed(2)}x</span>
         </div>

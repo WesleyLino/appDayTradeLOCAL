@@ -46,6 +46,33 @@ class RiskManager:
                 return False
         return True
 
+    def validate_environmental_risk(self, ping_ms, spread_points, max_ping=150.0, max_spread=15.0):
+        """
+        Avalia se a conectividade com a B3 está estável e se o mercado possui liquidez básica (Não-Estressado).
+        Bloqueia envios com lógicas Anti-Slippage.
+        """
+        if ping_ms is not None and ping_ms > max_ping:
+            return False, f"Ping Muito Alto/Latência Severa (B3): {ping_ms:.1f}ms (Aceitável: <= {max_ping}ms)"
+            
+        if spread_points is not None and spread_points > max_spread:
+             return False, f"Spread Alargado (Vazio de Liquidez/Notícia/Leilão): {spread_points} pts (Aceitável: <= {max_spread} pts)"
+             
+        return True, "Ambiente (Ping/Spread) OK"
+
+    def check_equity_kill_switch(self, current_equity, starting_equity):
+        """
+        O Botão de Pânico Incondicional.
+        Puxa a leitura bruta de Equity (Capital Líquido com Ordens Flutuantes) e desliga a máquina se exceder Max Daily Loss.
+        """
+        if current_equity <= 0 or starting_equity <= 0:
+            return True, "Kill Switch: Ignorado (Sem dados de Equity base)"
+            
+        drawdown_value = starting_equity - current_equity
+        if drawdown_value >= self.max_daily_loss:
+            return False, f"KILL SWITCH ATIVADO: Drawdown Extremo (Flutuante). Perca Atual: R$ {drawdown_value:.2f} >= Limite Master: R$ {self.max_daily_loss:.2f}"
+            
+        return True, "Equity Seguro"
+
     def calculate_psr(self, returns_list, benchmark_sr=0.0):
         """
         Calcula o Probabilistic Sharpe Ratio (PSR).

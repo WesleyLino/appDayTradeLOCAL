@@ -89,6 +89,50 @@ class MT5Bridge:
             
         return True
 
+    def get_latency_and_spread(self, symbol):
+        """
+        Retorna o ping atual da corretora (em ms) e o spread instantâneo do ativo (em pontos).
+        Útil para o 'Ping Filter' e 'Spread Filter' do Risk Manager.
+        Returns: (ping_ms, spread_points) ou (None, None) em caso de erro.
+        """
+        if not self.connected: return None, None
+        
+        try:
+            terminal_info = mt5.terminal_info()
+            symbol_info = mt5.symbol_info(symbol)
+            
+            if terminal_info is None or symbol_info is None:
+                return None, None
+                
+            ping_ms = terminal_info.ping_last / 1000.0  # Ping no MT5 geralmente vem em microsegundos
+            spread_points = symbol_info.spread
+            
+            return ping_ms, spread_points
+        except Exception as e:
+            logging.error(f"Erro ao obter Latência/Spread: {sanitize_log(e)}")
+            return None, None
+
+    def get_account_health(self):
+        """
+        Coleta a saúde financeira instantânea da conta.
+        Returns: Dict com 'equity' (Patrimônio Líquido com posições abertas) e 'margin_free'.
+        """
+        if not self.connected: return {"equity": 0.0, "margin_free": 0.0, "balance": 0.0}
+        
+        try:
+            acc_info = mt5.account_info()
+            if acc_info is None:
+                return {"equity": 0.0, "margin_free": 0.0, "balance": 0.0}
+                
+            return {
+                "equity": acc_info.equity,
+                "margin_free": acc_info.margin_free,
+                "balance": acc_info.balance
+            }
+        except Exception as e:
+            logging.error(f"Erro ao obter Saúde da Conta (Equity/Margin): {sanitize_log(e)}")
+            return {"equity": 0.0, "margin_free": 0.0, "balance": 0.0}
+
     def place_resilient_order(self, params, max_retries=3):
         """
         Envia ordem com lógica de retentativa para Requotes (10004) e Price Change (10006).
@@ -620,19 +664,29 @@ class MT5Bridge:
             return default_stats
 
     def get_settlement_price(self, symbol):
-        """Retorna o preço de ajuste (Settlement) do dia anterior."""
+        """
+        Retorna o preço de ajuste (Settlement) da B3 para o símbolo (Geralmente do dia anterior).
+        O Ajuste funciona como um ímã de liquidez (suporte/resistência fortíssimo).
+        """
         if not self.connected: return 0.0
         
-        info = mt5.symbol_info(symbol)
-        if not info: return 0.0
-        
-        # Tenta pegar do session_price_ref (geralmente é o ajuste na B3) usando getattr para segurança
-        # Se o atributo não existir ou for zero, tenta pegar o prev_close
-        settlement = getattr(info, 'session_price_ref', 0.0)
-        if settlement <= 0:
-             settlement = getattr(info, 'prev_close', 0.0)
-             
-        return settlement
+        try:
+            info = mt5.symbol_info(symbol)
+            if not info: return 0.0
+            
+            # session_price_settlement é o campo correto e oficial do preço de ajuste no MT5 da B3
+            settlement = getattr(info, 'session_price_settlement', 0.0)
+            
+            # Fallback se a corretora ainda não injetou o dado diário
+            if settlement <= 0:
+                 settlement = getattr(info, 'session_price_ref', 0.0)
+            if settlement <= 0:
+                 settlement = getattr(info, 'prev_close', 0.0)
+                 
+            return settlement
+        except Exception as e:
+            logging.error(f"Erro ao obter Preço de Ajuste (Settlement) para {symbol}: {sanitize_log(e)}")
+            return 0.0
 
     def get_bluechips_data(self):
         """
@@ -721,26 +775,35 @@ class MT5Bridge:
 
     def get_bulk_ticks(self, symbol, n=1000):
         """
-        Coleta os últimos N ticks para análise de microestrutura (CVD).
-        Retorna DataFrame com flags de agressão.
+        Coleta os últimos N ticks para análise de microestrutura (CVD e Tape Reading).
+        Retorna DataFrame com flags de agressão e o ratio (Volume Agressor Compra / Venda).
         """
         if not self.connected:
-            return None
-            
-        # copy_ticks_from(symbol, from_date, count, flags)
-        # Usamos time.time() * 1000 se fosse data, mas copy_ticks_from pede data datetime ou timestamp?
-        # Melhor usar copy_ticks_from com data futura (pra pegar os últimos) ou copy_ticks_range?
-        # mt5.copy_ticks_from(symbol, datetime.now(), n, mt5.COPY_TICKS_ALL) pega DO PASSADO a partir da data.
-        # Então datetime.now() pega os últimos N.
-        
-        ticks = mt5.copy_ticks_from(symbol, datetime.utcnow(), n, mt5.COPY_TICKS_ALL)
-        if ticks is None:
-            logging.error(f"Erro ao obter ticks para {symbol}: {mt5.last_error()}")
             return pd.DataFrame()
             
-        df = pd.DataFrame(ticks)
-        df['time'] = pd.to_datetime(df['time'], unit='s') - timedelta(hours=3)
-        return df
+        try:
+            # mt5.copy_ticks_from(symbol, datetime.now(), n, mt5.COPY_TICKS_ALL) pega DO PASSADO a partir da data.
+            ticks = mt5.copy_ticks_from(symbol, datetime.utcnow(), n, mt5.COPY_TICKS_ALL)
+            if ticks is None or len(ticks) == 0:
+                return pd.DataFrame()
+                
+            df = pd.DataFrame(ticks)
+            df['time_dt'] = pd.to_datetime(df['time'], unit='s') - timedelta(hours=3)
+            
+            # Interpretação das Flags de Agressão da B3
+            # mt5.TICK_FLAG_BUY = 32 (Agressão de Compra - Tomou no Ask)
+            # mt5.TICK_FLAG_SELL = 64 (Agressão de Venda - Bateu no Bid)
+            
+            def get_aggressor(flag):
+                if flag & mt5.TICK_FLAG_BUY: return 'BUY'
+                if flag & mt5.TICK_FLAG_SELL: return 'SELL'
+                return 'UNKNOWN'
+                
+            df['aggressor'] = df['flags'].apply(get_aggressor)
+            return df
+        except Exception as e:
+            logging.error(f"Erro na extração em massa de Ticks para {symbol}: {sanitize_log(e)}")
+            return pd.DataFrame()
 
     # get_order_book unificado no topo
 

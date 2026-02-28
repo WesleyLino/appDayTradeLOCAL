@@ -630,7 +630,7 @@ export function TradingDashboard() {
                           </div>
                           <span
                             className={cn(
-                              "text-[10px] font-mono font-black min-w-[45px] text-right",
+                              "text-[11px] font-mono font-black min-w-[55px] text-right tabular-nums tracking-tighter",
                               change > 0
                                 ? "text-emerald-400"
                                 : change < 0
@@ -678,7 +678,9 @@ export function TradingDashboard() {
                           "text-muted-foreground",
                       )}
                     >
-                      <span className="opacity-50 shrink-0">[{log.time}]</span>
+                      <span className="text-zinc-400 font-medium shrink-0">
+                        [{log.time}]
+                      </span>
                       <span className="font-bold shrink-0">
                         [{log.type.toUpperCase()}]
                       </span>

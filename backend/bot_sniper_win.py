@@ -322,6 +322,28 @@ class SniperBotWIN:
                     await asyncio.sleep(5)
                     continue
 
+                # 1.1 Coleta da Saúde de Execução e Ambiental (NOVO HFT DEFENSE)
+                ping_ms, spread_points = self.bridge.get_latency_and_spread(self.symbol)
+                env_ok, env_msg = self.risk.validate_environmental_risk(ping_ms, spread_points, max_ping=150.0, max_spread=15.0)
+                
+                if not env_ok:
+                    logger.warning(f"🛡️ [BLOQUEIO AMBIENTAL] {env_msg}")
+                    await asyncio.sleep(2) # Pausa leve pra esperar a B3/Rede normalizar
+                    continue
+                
+                # 1.2 Kill Switch Financeiro Global
+                acc_health = self.bridge.get_account_health()
+                current_equity = acc_health.get('equity', 0.0)
+                # O saldo base ideal pode vir da persistence, mas usando current_balance provisório
+                starting_balance = 3000.0  
+                
+                eq_ok, eq_msg = self.risk.check_equity_kill_switch(current_equity, starting_balance)
+                if not eq_ok:
+                    logger.error(f"💀 [FALHA CRÍTICA] {eq_msg}")
+                    # Encerra o loop completamente
+                    self.stop()
+                    break
+
                 # 2. Janela de Operação Sniper
                 if not (self.start_time <= now_time <= self.end_time):
                     # Fora da janela, apenas aguarda (ou fecha se necessário)
@@ -381,6 +403,9 @@ class SniperBotWIN:
                 # Detectar Regime (Contínuo para manter histórico)
                 regime = self.ai.detect_regime(volatility, pressure)
 
+                # Busca Tática: Preço de Ajuste (Settlement)
+                settlement_price = self.bridge.get_settlement_price(self.symbol)
+
                 # Atualizar Sentimento (Lê do JSON do Worker)
                 sentiment_score = await self.ai.update_sentiment()
                 # [SOTA v5] Sincronizar Âncora de Sentimento para o Bot Snipers
@@ -396,6 +421,21 @@ class SniperBotWIN:
                 buy_cond = rsi < 30 and curr_vol > (avg_vol * current_flux_mult)
                 sell_cond = rsi > 70 and curr_vol > (avg_vol * current_flux_mult)
                 
+                # Regra Adicional HFT: Se preço atual estiver muito perto do Ajuste (Settlement), evita ir contra o ímã
+                current_price = last_row['close']
+                dist_to_settlement = abs(current_price - settlement_price) if settlement_price > 0 else 999.0
+                
+                # Se estiver colado no ajuste (ex: menos de 50 pontos), reforçar cautela
+                if dist_to_settlement < 50.0 and settlement_price > 0:
+                     # Se vou comprar acima do ajuste, é perigoso (ajuste vai puxar pra baixo)
+                     if buy_cond and current_price > settlement_price:
+                          logger.info("🛡️ [HFT TÁTICO] Compra barrada: Preço testando Ajuste por cima (Puxada).")
+                          buy_cond = False
+                     # Se vou vender abaixo do ajuste, é perigoso (ajuste empurra pra cima)
+                     if sell_cond and current_price < settlement_price:
+                          logger.info("🛡️ [HFT TÁTICO] Venda barrada: Preço testando Ajuste por baixo (Suporte).")
+                          sell_cond = False
+
                 # 7. FILTRO DE FLUXO (L2 PRESSURE) + AI VETO
                 if buy_cond or sell_cond:
                     side = "buy" if buy_cond else "sell"

@@ -11,11 +11,11 @@ export function FlowMeter() {
   const percentage = ((obi + 1) / 2) * 100;
 
   return (
-    <div className="flex flex-col items-center p-4 bg-black/20 backdrop-blur-xl rounded-xl border border-white/5 shadow-sm">
-      <span className="text-sm font-medium text-muted-foreground mb-2">
+    <div className="flex flex-col items-center p-4 bg-zinc-900/60 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg min-h-[120px] justify-center">
+      <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-4">
         Fluxo OBI (Microestrutura)
       </span>
-      <div className="relative w-full h-4 bg-muted rounded-full overflow-hidden">
+      <div className="relative w-full h-4 bg-black/40 rounded-full overflow-hidden border border-white/5">
         <div
           className={cn(
             "absolute top-0 left-0 h-full transition-all duration-500 ease-out",
