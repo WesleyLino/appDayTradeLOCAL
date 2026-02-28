@@ -1,120 +1,72 @@
-@import "tailwindcss";
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
-
-  --color-profit: #10b981;
-  --color-loss: #f43f5e;
-  --color-neutral: #71717a;
-
-  --font-sans:
-    var(--font-outfit), ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   :root {
-    --background: #ffffff;
-    --foreground: #09090b;
-    --card: #ffffff;
-    --card-foreground: #09090b;
-    --popover: #ffffff;
-    --popover-foreground: #09090b;
-    --primary: #18181b;
-    --primary-foreground: #fafafa;
-    --secondary: #f4f4f5;
-    --secondary-foreground: #18181b;
-    --muted: #f4f4f5;
-    --muted-foreground: #71717a;
-    --accent: #f4f4f5;
-    --accent-foreground: #18181b;
-    --destructive: #ef4444;
-    --destructive-foreground: #fafafa;
-    --border: #e4e4e7;
-    --input: #e4e4e7;
-    --ring: #18181b;
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
     --radius: 0.5rem;
   }
 
   .dark {
     /* PREMIUM ZINC PALETTE (Deep Dark - Zinc 950 Base) */
-    --background: #09090b; /* Zinc 950 */
-    --foreground: #fafafa; /* Zinc 50 */
-
-    --card: #121215; /* Slightly lighter than bg */
-    --card-foreground: #fafafa;
-
-    --popover: #121215;
-    --popover-foreground: #fafafa;
-
-    --primary: #fafafa;
-    --primary-foreground: #18181b;
-
-    --secondary: #27272a; /* Zinc 800 */
-    --secondary-foreground: #fafafa;
-
-    --muted: #27272a;
-    --muted-foreground: #a1a1aa; /* Zinc 400 */
-
-    --accent: #27272a;
-    --accent-foreground: #fafafa;
-
-    --destructive: #be123c; /* Rose 700 */
-    --destructive-foreground: #fafafa;
-
-    --border: #27272a; /* Zinc 800 */
-    --input: #27272a;
-    --ring: #d4d4d8; /* Zinc 300 */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 5.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 5.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 346.8 77.2% 49.8%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    /* Custom Scrollbar for Webkit */
-    &::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    &::-webkit-scrollbar-track {
-      @apply bg-zinc-950;
-    }
-    &::-webkit-scrollbar-thumb {
-      @apply bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors;
-    }
+  }
+  
+  /* Retirando aninhamento & para compatibilidade nativa PostCSS */
+  body::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  body::-webkit-scrollbar-track {
+    @apply bg-zinc-950;
+  }
+  
+  body::-webkit-scrollbar-thumb {
+    @apply bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors;
   }
 
   /* Selection Highlighting */
@@ -144,7 +96,7 @@
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
   }
 
-  /* Barras de rolagem refinadas, finas e com tema Dark */
+  /* Barras de rolagem refinadas */
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: #3f3f46 transparent;

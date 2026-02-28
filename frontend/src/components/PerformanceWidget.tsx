@@ -24,14 +24,7 @@ interface PerformanceData {
 
 export function PerformanceWidget() {
   const wsData = useTradingStore((state) => state.data);
-  const [data, setData] = useState<PerformanceData>({
-    total_trades: 0,
-    win_rate: 0.0,
-    profit_factor: 0.0,
-    gross_profit: 0.0,
-    gross_loss: 0.0,
-    net_profit: 0.0,
-  });
+  const [fetchedData, setFetchedData] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +37,7 @@ export function PerformanceWidget() {
       const result = await response.json();
 
       if (result.status === "success" && result.data) {
-        setData(result.data);
+        setFetchedData(result.data);
       } else {
         setError(result.message || "Erro ao carregar dados");
       }
@@ -56,19 +49,23 @@ export function PerformanceWidget() {
     }
   };
 
-  // [ANTIVIBE-CODING] - Sincronização em Tempo Real (WebSocket)
-  useEffect(() => {
-    if (wsData?.risk_status?.performance) {
-      setData(wsData.risk_status.performance as PerformanceData);
-    }
-  }, [wsData]);
-
   useEffect(() => {
     fetchPerformance();
     // Atualiza a cada 30 segundos
     const interval = setInterval(fetchPerformance, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Dados consolidados: Prefere WebSocket em tempo real, faz fallback para REST, ou usa default
+  const data = wsData?.risk_status?.performance ||
+    fetchedData || {
+      total_trades: 0,
+      win_rate: 0.0,
+      profit_factor: 0.0,
+      gross_profit: 0.0,
+      gross_loss: 0.0,
+      net_profit: 0.0,
+    };
 
   const isProfit = data.net_profit >= 0;
 

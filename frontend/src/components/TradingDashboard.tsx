@@ -17,6 +17,11 @@ import {
   Activity,
   Bot,
   ListTodo,
+  Info,
+  AlertTriangle,
+  XCircle,
+  CheckCircle,
+  ArrowDown,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -98,12 +103,80 @@ export function TradingDashboard() {
     setTimeout(() => setIsUpdatingAuto(false), 500);
   };
 
-  // Mapeamento de Cores por Tipo
+  // Controle de Estado dos Logs
+  const [logFilter, setLogFilter] = useState<
+    "ALL" | "INFO" | "SUCCESS" | "WARNING" | "ERROR"
+  >("ALL");
+  const [isAutoScroll, setIsAutoScroll] = useState(true);
+  const logContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleLogScroll = () => {
+    if (!logContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = logContainerRef.current;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 10;
+    setIsAutoScroll(isAtBottom);
+  };
+
+  useEffect(() => {
+    if (isAutoScroll && logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+    }
+  }, [data?.logs, isAutoScroll]);
+
+  const filteredLogs =
+    data?.logs?.filter((log: any) => {
+      if (logFilter === "ALL") return true;
+      return log.type.toUpperCase() === logFilter;
+    }) ?? [];
+
+  const formatLogMessage = (msg: string) => {
+    if (!msg) return msg;
+    const parts = msg.split(
+      /(\bCOMPRA\b|\bBUY\b|\bVENDA\b|\bSELL\b|R\$\s?[\d.,]+|[\d.,]+%)/g,
+    );
+
+    return parts.map((part, i) => {
+      if (/COMPRA|BUY/.test(part))
+        return (
+          <span
+            key={i}
+            className="text-emerald-400 font-bold px-1 py-[1px] bg-emerald-500/10 border border-emerald-500/20 rounded-md shadow-sm"
+          >
+            {part}
+          </span>
+        );
+      if (/VENDA|SELL/.test(part))
+        return (
+          <span
+            key={i}
+            className="text-red-400 font-bold px-1 py-[1px] bg-red-500/10 border border-red-500/20 rounded-md shadow-sm"
+          >
+            {part}
+          </span>
+        );
+      if (/R\$|%/.test(part))
+        return (
+          <span key={i} className="text-amber-400 font-bold">
+            {part}
+          </span>
+        );
+      return part;
+    });
+  };
+
+  // Mapeamento de Cores e Ícones por Tipo
   const LOG_COLORS = {
     success: "text-emerald-400",
     warning: "text-amber-400",
     error: "text-red-400",
     info: "text-blue-400",
+  };
+
+  const LOG_ICONS = {
+    success: <CheckCircle size={14} className="text-emerald-400 shrink-0" />,
+    warning: <AlertTriangle size={14} className="text-amber-400 shrink-0" />,
+    error: <XCircle size={14} className="text-red-400 shrink-0" />,
+    info: <Info size={14} className="text-blue-400 shrink-0" />,
   };
 
   // Sniper Bot State (Mapped to backend telemetry)
@@ -657,40 +730,79 @@ export function TradingDashboard() {
             </div>
 
             {/* Log de Execução Autônoma (Simulation Focus) */}
-            <div className="md:col-span-2 p-4 glass rounded-2xl shadow-lg flex flex-col gap-3 min-h-[120px]">
-              <div className="flex items-center justify-between">
+            <div className="md:col-span-2 p-4 glass rounded-2xl shadow-lg flex flex-col gap-3 min-h-[120px] relative">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-2">
                   <ListTodo size={14} className="text-primary" />
                   Log de Execução Autônoma
                 </span>
-                <span className="text-[9px] text-emerald-400/70 animate-pulse">
-                  SIMULAÇÃO ATIVA
-                </span>
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  <div className="flex bg-black/40 p-0.5 rounded-lg border border-white/5">
+                    {["ALL", "INFO", "SUCCESS", "WARNING", "ERROR"].map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setLogFilter(f as any)}
+                        className={cn(
+                          "px-2 py-0.5 text-[9px] font-bold rounded-md transition-all",
+                          logFilter === f
+                            ? "bg-white/10 text-white shadow-sm"
+                            : "text-muted-foreground hover:text-zinc-300",
+                        )}
+                      >
+                        {f === "ALL" ? "TODOS" : f}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-[9px] text-emerald-400/70 animate-pulse border border-emerald-500/20 px-2 py-0.5 bg-emerald-500/10 rounded hidden sm:inline-block">
+                    SIMULAÇÃO
+                  </span>
+                </div>
               </div>
-              <div className="flex-1 font-mono text-[10px] space-y-1 overflow-y-auto max-h-[80px] custom-scrollbar">
-                {data?.logs && data.logs.length > 0 ? (
-                  data.logs.map((log: any) => (
+
+              {!isAutoScroll && filteredLogs.length > 0 && (
+                <button
+                  onClick={() => setIsAutoScroll(true)}
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-indigo-500/90 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg flex items-center gap-1 hover:bg-indigo-600 transition-colors border border-indigo-400/50 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2"
+                >
+                  <ArrowDown size={12} />
+                  NOVOS EVENTOS
+                </button>
+              )}
+
+              <div
+                ref={logContainerRef}
+                onScroll={handleLogScroll}
+                className="flex-1 font-mono text-[10px] space-y-1 overflow-y-auto max-h-[140px] custom-scrollbar pr-2 pb-1 relative"
+              >
+                {filteredLogs.length > 0 ? (
+                  filteredLogs.map((log: any, index: number) => (
                     <div
                       key={log.id}
                       className={cn(
-                        "flex gap-2 transition-all animate-in slide-in-from-left-2 duration-300",
+                        "flex items-start gap-2 p-1.5 rounded transition-all animate-in slide-in-from-left-2 duration-300 border border-transparent group hover:bg-white/[0.04] hover:border-white/[0.05]",
+                        index % 2 !== 0 ? "bg-white/[0.02]" : "",
                         LOG_COLORS[log.type as keyof typeof LOG_COLORS] ||
                           "text-muted-foreground",
                       )}
                     >
-                      <span className="text-zinc-400 font-medium shrink-0">
+                      <span className="text-zinc-500 opacity-60 font-light shrink-0 tabular-nums">
                         [{log.time}]
                       </span>
-                      <span className="font-bold shrink-0">
-                        [{log.type.toUpperCase()}]
+                      {LOG_ICONS[log.type as keyof typeof LOG_ICONS] || (
+                        <Info size={14} className="text-zinc-500 shrink-0" />
+                      )}
+                      <span className="font-medium text-[11px] text-white/90 leading-relaxed tracking-wide flex-1">
+                        {formatLogMessage(log.msg)}
                       </span>
-                      <span>{log.msg}</span>
                     </div>
                   ))
                 ) : (
-                  <div className="flex gap-2 text-muted-foreground italic">
+                  <div className="flex gap-2 text-muted-foreground italic items-center justify-center p-4 opacity-50">
+                    <Activity size={14} className="animate-spin" />
                     <span>
-                      Aguardando sinais de alta confiança (&gt;85%)...
+                      {logFilter !== "ALL"
+                        ? `Nenhum log do tipo ${logFilter} encontrado...`
+                        : "Aguardando sinais de alta confiança (>85%)..."}
                     </span>
                   </div>
                 )}
