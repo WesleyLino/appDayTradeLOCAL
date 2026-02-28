@@ -28,7 +28,6 @@ coverage/
 .env.production.local
 
 # Project Specific
-backend/patchtst_weights.pth
 backend/news_feed.txt
 trading_state.db
 *.db
