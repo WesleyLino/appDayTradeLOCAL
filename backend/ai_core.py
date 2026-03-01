@@ -170,22 +170,26 @@ class AICore:
         if not order_book or (not order_book.get('bids') and not order_book.get('asks')):
             return 0.5
             
-        # 1. OBI (Order Book Imbalance) básico
-        total_bid = sum(item['volume'] for item in order_book.get('bids', []))
-        total_ask = sum(item['volume'] for item in order_book.get('asks', []))
+        # 1. OBI (Order Book Imbalance) com Decaimento Exponencial (Depth-Weighted)
+        # Separamos raw_volume e weighted_volume para evitar corromper o Delta de Cancellation Rate.
+        total_bid_weighted = sum(item['volume'] * (0.9 ** i) for i, item in enumerate(order_book.get('bids', [])))
+        total_ask_weighted = sum(item['volume'] * (0.9 ** i) for i, item in enumerate(order_book.get('asks', [])))
+        
+        total_bid_raw = sum(item['volume'] for item in order_book.get('bids', []))
+        total_ask_raw = sum(item['volume'] for item in order_book.get('asks', []))
         
         current_obi = 0.5
-        if total_bid + total_ask > 0:
-            current_obi = (total_bid - total_ask) / (total_bid + total_ask + 1)
+        if total_bid_weighted + total_ask_weighted > 0:
+            current_obi = (total_bid_weighted - total_ask_weighted) / (total_bid_weighted + total_ask_weighted + 1)
         
         # Suavização EMA
         self.obi_ema = (current_obi * self.ema_alpha) + (self.obi_ema * (1 - self.ema_alpha))
         
         # 2. Detecção de Toxic Flow (Remoção Súbita vs Execução Real)
         if self.prev_book is not None:
-            # Cálculo correto com base na estrutura dict {"bids": [], "asks": []}
-            prev_bid = sum(item['volume'] for item in self.prev_book.get('bids', []))
-            prev_ask = sum(item['volume'] for item in self.prev_book.get('asks', []))
+            # Usamos o RAW aqui, para comparar com a agressão real de mercado e medir lotes físicos cancelados
+            prev_bid_raw = sum(item['volume'] for item in self.prev_book.get('bids', []))
+            prev_ask_raw = sum(item['volume'] for item in self.prev_book.get('asks', []))
             
             # Cálculo exato de agressão (Volume Executado por Lado)
             # time_sales deve ser filtrado se possível, ou usar heurística
@@ -206,8 +210,8 @@ class AICore:
             
             # --- LÓGICA ALPHA-X: CANCELLATION RATE ---
             # Comparamos quanto do volume sumiu (delta) vs quanto foi de fato executado (aggression)
-            delta_bid = max(0, prev_bid - total_bid)
-            delta_ask = max(0, prev_ask - total_ask)
+            delta_bid = max(0, prev_bid_raw - total_bid_raw)
+            delta_ask = max(0, prev_ask_raw - total_ask_raw)
             
             # Cancellation Rate: Proporção do volume removido que NÃO foi trade
             # Se sumiu 1000 e trade foi 100, 900 foram cancelados -> CR = 0.9
@@ -215,8 +219,8 @@ class AICore:
             cr_ask = (delta_ask - buy_aggression_vol) / delta_ask if delta_ask > 0 else 0
 
             # Thresholds Dinâmicos (HFT v2.1)
-            threshold_bid = max(20, total_bid * 0.1)
-            threshold_ask = max(20, total_ask * 0.1)
+            threshold_bid = max(20, total_bid_raw * 0.1)
+            threshold_ask = max(20, total_ask_raw * 0.1)
             
             # [SPOOFING DE COMPRA]: Lotes sumindo no Bid sem agressão correspondente
             if delta_bid > threshold_bid and cr_bid > 0.8:
@@ -312,7 +316,7 @@ class AICore:
             self.sentiment_anchor_price = price
             logging.debug(f"⚓ SENTIMENT ANCHOR SET: {price:.1f} (Score: {self.latest_sentiment_score:.2f})")
 
-    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0, sma_20=0.0):
+    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0, sma_20=0.0, wdo_aggression=0.0):
         """
         [SOTA v5] Fluxo de Decisão com Camadas de Precisão
         [SOTA v25.3] Adicionado sma_20 para Mean Reversion Guard.
@@ -397,7 +401,17 @@ class AICore:
             else:
                 veto_reason = f"HIGH_UNCERTAINTY_FAILSAFE ({uncertainty_rel*100:.1f}% > {uncertainty_threshold*100:.1f}%)"
         
-        # [PRO] Filtro de Divergência de Fluxo
+        # [PRO] Filtro de Divergência de Fluxo Inter-Mercados (WDO vs WIN)
+        if veto_reason is None and wdo_aggression != 0.0:
+            ai_dir = np.sign(norm_patchtst)
+            if ai_dir > 0 and wdo_aggression > 1.5:  
+                veto_reason = "WDO_CROSS_CORRELATION_VETO_BUY_BLOCKED"
+                logging.info("🛡️ VETO INTER-MERCADOS: Compra vetada por fluxo massivo de alta no WDO.")
+            elif ai_dir < 0 and wdo_aggression < -1.5:
+                veto_reason = "WDO_CROSS_CORRELATION_VETO_SELL_BLOCKED"
+                logging.info("🛡️ VETO INTER-MERCADOS: Venda vetada por fluxo massivo de baixa no WDO.")
+
+        # [PRO] Filtro de Divergência Interna de Fluxo
         if veto_reason is None:
             ai_dir = np.sign(norm_patchtst)
             obi_dir = np.sign(self.obi_ema)

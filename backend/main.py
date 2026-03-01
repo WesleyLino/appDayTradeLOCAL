@@ -292,12 +292,12 @@ async def websocket_endpoint(websocket: WebSocket):
         ai_confidence = 0.0
         volatility = 0.0
         regime = 0
-        synthetic_idx = 0.0
         prev_total_profit = 0.0
         prev_daily_realized = 0.0 # [REFINAMENTO 26/02] Tracking para Cooldown de IA
         session_limits = {"lower": 0, "upper": 0, "ref": 0} # [HFT v3] Persistent session limits
-
+        partially_closed_tickets = set() # [FASE 2] Evitar duplo-fechamento parcial
         
+
         logging.info("Entrando no loop principal do WebSocket...")
         while True:
             start_time = time_module.perf_counter()
@@ -325,6 +325,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     if new_symbol and new_symbol != symbol:
                         logging.info(f"Símbolo detectado: {new_symbol}")
                         symbol = new_symbol
+                        # Garante que o MT5 passe a gravar os ticks do ativo correlacionado inter-mercados
+                        cross_sub = "WDO$" if "WIN" in symbol.upper() else "WIN$"
+                        await asyncio.to_thread(bridge.mt5.symbol_select, cross_sub, True)
+                        logging.info(f"Símbolo Secundário (Arbitragem) inscrito no Market Watch: {cross_sub}")
                 
                 logging.debug(f"Step 4: Simbolo Ativo: {symbol}")
 
@@ -341,12 +345,16 @@ async def websocket_endpoint(websocket: WebSocket):
                 if 'loop_count' not in locals(): loop_count = 0
                 loop_count += 1
                 
-                # Coleta Ultra-Rápida (Prioridade 1)
+                # Determinar ativo correlacionado para Arbitragem Estatística (WIN vs WDO)
+                cross_symbol = "WDO$" if "WIN" in symbol.upper() else "WIN$"
+                
+                # Coleta Ultra-Rápida (Prioridade 1) incluindo Cross-Asset
                 t0 = time_module.perf_counter()
-                tick_info, book, tns = await asyncio.gather(
+                tick_info, book, tns, cross_tns = await asyncio.gather(
                     asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol),
                     asyncio.to_thread(bridge.get_order_book, symbol),
-                    asyncio.to_thread(bridge.get_time_and_sales, symbol, n_ticks=50)
+                    asyncio.to_thread(bridge.get_time_and_sales, symbol, n_ticks=50),
+                    asyncio.to_thread(bridge.get_time_and_sales, cross_symbol, n_ticks=50) # Veto Inter-Mercados
                 )
                 dt_gather_fast = (time_module.perf_counter() - t0) * 1000
                 logging.debug(f"P1 Gather Time: {dt_gather_fast:.2f}ms")
@@ -547,7 +555,18 @@ async def websocket_endpoint(websocket: WebSocket):
                 if tick_info:
                     live_spread = (tick_info.ask - tick_info.bid) / 5.0 # Normalizado para escala SOTA v5
                 
-                 # Score Final (0-100) e Direção
+                # --- HFT v2.0: CVD Turbo (Otimizado: Usar tns do gather P1) ---
+                # Reutilizando tns já capturado no início do loop para evitar nova chamada MT5
+                cvd_val = micro_analyzer.calculate_cvd(tns)
+                
+                # Rastreamento de Agressão Cruzada (WDO/WIN) para Veto Inter-Mercados
+                cross_cvd = micro_analyzer.calculate_cvd(cross_tns) if cross_tns is not None else 0.0
+                
+                # Normalização da Agressão Cruzada para a IA (Threshold base do WDO = 50.0)
+                # Assim, um CVD de 75 no WDO gera wdo_aggression_norm de 1.5, triggando o veto.
+                wdo_aggression_norm = (cross_cvd / 50.0) if "WIN" in symbol.upper() else 0.0
+                
+                # Score Final (0-100) e Direção
                 decision = ai.calculate_decision(
                     obi, 
                     ai.latest_sentiment_score, 
@@ -558,17 +577,17 @@ async def websocket_endpoint(websocket: WebSocket):
                     hour=current_hour,
                     minute=now.minute,
                     current_price=last_price,
-                    spread=live_spread
+                    spread=live_spread,
+                    wdo_aggression=wdo_aggression_norm
                 )
                 ai_total_score = decision["score"]
                 ai_direction = decision["direction"]
 
                 # --- ALPHA-X: OFI Ponderado (SOTA) ---
-                # Substituindo Level 2 simples por Weighted OFI
                 wen_ofi_val = micro_analyzer.calculate_wen_ofi(book)
                 
                 if wen_ofi_val > 500 and ai_direction == "BUY":
-                    ai_total_score = min(100.0, ai_total_score + 4.0) # Peso ajustado para SOTA
+                    ai_total_score = min(100.0, ai_total_score + 4.0)
                 elif wen_ofi_val < -500 and ai_direction == "SELL":
                     ai_total_score = min(100.0, ai_total_score + 4.0)
 
@@ -577,10 +596,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     logging.warning(f"ALPHA-X HARD VETO: PSR insuficiente ({current_psr:.4f})")
                     ai_total_score = 50.0
                     ai_direction = "NEUTRAL"
-                
-                # --- HFT v2.0: CVD Turbo (Otimizado: Usar tns do gather P1) ---
-                # Reutilizando tns já capturado no início do loop para evitar nova chamada MT5
-                cvd_val = micro_analyzer.calculate_cvd(tns)
                 
                 cvd_threshold = 50.0 if "WDO" in symbol or "DOL" in symbol else 500.0
                 
@@ -728,8 +743,40 @@ async def websocket_endpoint(websocket: WebSocket):
                                 step_pts = risk.trailing_step if not is_wdo else 2.0
                                 
                                 current_price = last_price
+                                
+                                # Cálculo de lucro atual para o Tick
                                 if pos.type == bridge.mt5.POSITION_TYPE_BUY:
                                     profit_pts = current_price - pos.price_open
+                                else:
+                                    profit_pts = pos.price_open - current_price
+
+                                # --- FASE 2: VELOCITY LIMIT ---
+                                elapsed_sec = time_module.time() - pos.time
+                                is_velocity_limit, vel_reason = risk.check_velocity_limit(profit_pts, elapsed_sec)
+                                if is_velocity_limit:
+                                    logging.warning(f"⚡ VELOCITY LIMIT EXIT: Posição {pos.ticket} fechada precocemente devido a exaustão.")
+                                    await asyncio.to_thread(bridge.close_position, pos.ticket)
+                                    continue
+
+                                # --- FASE 2: SCALED EXITS (PARTIAL TAKE PROFIT) ---
+                                if pos.ticket not in partially_closed_tickets:
+                                    if profit_pts >= risk.partial_profit_points and pos.volume > risk.partial_volume:
+                                        logging.info(f"🎯 PARTIAL PROFIT: Atingiu {profit_pts:.1f} pts. Fechando {risk.partial_volume} lotes de {pos.volume}.")
+                                        success = await asyncio.to_thread(bridge.close_partial_position, pos.ticket, risk.partial_volume)
+                                        
+                                        if success:
+                                            partially_closed_tickets.add(pos.ticket)
+                                            # Break-even automático pós parcial
+                                            if pos.type == bridge.mt5.POSITION_TYPE_BUY and pos.sl < pos.price_open:
+                                                await asyncio.to_thread(bridge.update_sltp, pos.ticket, pos.price_open, pos.tp)
+                                                logging.info(f"🛡️ BREAKEVEN ACIONADO (Pos Parcial BUY): SL em {pos.price_open}")
+                                            elif pos.type == bridge.mt5.POSITION_TYPE_SELL and (pos.sl > pos.price_open or pos.sl == 0):
+                                                await asyncio.to_thread(bridge.update_sltp, pos.ticket, pos.price_open, pos.tp)
+                                                logging.info(f"🛡️ BREAKEVEN ACIONADO (Pos Parcial SELL): SL em {pos.price_open}")
+                                        continue
+
+                                # --- Lógica Original Trailing Stop ---
+                                if pos.type == bridge.mt5.POSITION_TYPE_BUY:
                                     if profit_pts >= trigger_pts:
                                         new_sl = current_price - step_pts
                                         if new_sl > pos.sl:
@@ -738,7 +785,6 @@ async def websocket_endpoint(websocket: WebSocket):
                                             logging.info(f"TRAILING STOP (BUY): SL movido para {new_sl}")
                                             
                                 elif pos.type == bridge.mt5.POSITION_TYPE_SELL:
-                                    profit_pts = pos.price_open - current_price
                                     if profit_pts >= trigger_pts:
                                         new_sl = current_price + step_pts
                                         if pos.sl == 0 or new_sl < pos.sl:

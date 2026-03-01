@@ -1,7 +1,9 @@
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 import logging
 import math
 import numpy as np
+import json
+import os
 
 # [ANTIVIBE-CODING] - Classe Crítica de Risco
 class RiskManager:
@@ -28,6 +30,15 @@ class RiskManager:
         self.be_trigger = 50.0       # Ativa com 50 pontos de lucro (Otimizado)
         self.be_lock = 0.0           # Move para o preço de entrada (0.0 de lucro garantido)
         
+        # [FASE 2] Gestão de Múltiplos Contratos e Saídas Parciais
+        self.base_volume = 2.0       # Lote de entrada padrão (multi-lote para parciais)
+        self.partial_volume = 1.0    # Lote a ser descarregado na primeira parcial
+        self.partial_profit_points = 50.0 # Gatilho em pontos para executar a zeragem parcial
+        
+        # [FASE 2] Velocity Limit (Drawdown Acelerado no Tempo)
+        self.velocity_time_limit_sec = 20.0     # Segundos máximos engatado negativamente
+        self.velocity_drawdown_limit = -30.0    # Pontos negativos que ativam o timeout rápido
+        
         # [FASE 28] DYNAMIC PARAMS CACHE
         self.dynamic_params = {} # Carregado via load_optimized_params
 
@@ -37,6 +48,27 @@ class RiskManager:
         self.gross_profit = 0.0
         self.gross_loss = 0.0
         self.daily_profit = 0.0
+        
+        # [PRO] Blindagem de Calendário Econômico
+        self.calendar_events = []
+        self._load_economic_calendar()
+
+    def _load_economic_calendar(self):
+        """Carrega os dados de calendário econômico (3 estrelas) para ativar Veto de Liquidez (-3min a +3min)."""
+        try:
+            cal_path = os.path.join(os.getcwd(), "data", "economic_calendar.json")
+            if os.path.exists(cal_path):
+                with open(cal_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    for item in data:
+                        if item.get("impact", 0) >= 3:
+                            evt_time = datetime.strptime(item["time"], "%H:%M").time()
+                            t_start = (datetime.combine(datetime.today(), evt_time) - timedelta(minutes=3)).time()
+                            t_end = (datetime.combine(datetime.today(), evt_time) + timedelta(minutes=3)).time()
+                            self.calendar_events.append({"start": t_start, "end": t_end, "event": item["event"]})
+                logging.info(f"📅 ECONOMIC CALENDAR: {len(self.calendar_events)} alertas críticos carregados para Blindagem Ativa.")
+        except Exception as e:
+            logging.error(f"Erro ao carregar economic_calendar.json: {e}")
 
     def is_time_allowed(self):
         """Verifica se o horário atual é permitido para operar."""
@@ -44,6 +76,14 @@ class RiskManager:
         for start, end in self.forbidden_hours:
             if start <= now <= end:
                 return False
+                
+        # [PRO] Blindagem de Calendário Econômico (Veto de Liquidez HFT)
+        if hasattr(self, 'calendar_events'):
+            for event in self.calendar_events:
+                if event["start"] <= now <= event["end"]:
+                    logging.warning(f"🛑 VETO DE CALENDÁRIO ATIVO: Operação blindada devido a {event['event']}")
+                    return False
+                    
         return True
 
     def validate_environmental_risk(self, ping_ms, spread_points, max_ping=150.0, max_spread=15.0):
@@ -72,6 +112,18 @@ class RiskManager:
             return False, f"KILL SWITCH ATIVADO: Drawdown Extremo (Flutuante). Perca Atual: R$ {drawdown_value:.2f} >= Limite Master: R$ {self.max_daily_loss:.2f}"
             
         return True, "Equity Seguro"
+
+    def check_velocity_limit(self, current_profit_points, elapsed_seconds):
+        """
+        [FASE 2] Parede de Exaustão.
+        Se a operação entrou, negativou rapidamente e ficou amarrada no negativo por muito tempo, 
+        aborta a operação precocemente antes do STOP CHEIO.
+        """
+        if elapsed_seconds > self.velocity_time_limit_sec and current_profit_points <= self.velocity_drawdown_limit:
+            logging.warning(f"⏳ VELOCITY LIMIT EXCEDIDO: Operação amarrada em {current_profit_points} pts por {elapsed_seconds:.1f}s. Abortando cedo.")
+            return True, "DRAWDOWN_VELOCITY_LIMIT"
+            
+        return False, "VELOCITY_OK"
 
     def calculate_psr(self, returns_list, benchmark_sr=0.0):
         """

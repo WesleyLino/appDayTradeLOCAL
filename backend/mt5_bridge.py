@@ -337,6 +337,51 @@ class MT5Bridge:
         logging.info(f"POSIÇÃO FECHADA: {ticket} {symbol} {lots} lotes")
         return True
 
+    def close_partial_position(self, ticket, partial_volume):
+        """Fecha parcialmente uma posição aberta pelo ticket (B3 Netting)."""
+        if not self.connected: return False
+        
+        positions = mt5.positions_get(ticket=ticket)
+        if not positions:
+            logging.warning(f"Posição {ticket} não encontrada para fechamento parcial.")
+            return False
+            
+        pos = positions[0]
+        symbol = pos.symbol
+        current_lots = pos.volume
+        
+        if partial_volume >= current_lots:
+            logging.warning(f"Lote parcial solicitado ({partial_volume}) >= lote atual ({current_lots}). Executando fechamento total.")
+            return self.close_position(ticket)
+            
+        order_type = mt5.ORDER_TYPE_SELL if pos.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
+        
+        tick = mt5.symbol_info_tick(symbol)
+        if not tick: return False
+        price = tick.bid if order_type == mt5.ORDER_TYPE_SELL else tick.ask
+        
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": float(partial_volume),
+            "type": order_type,
+            "position": int(ticket),
+            "price": float(price),
+            "deviation": 20,
+            "magic": 123456,
+            "comment": "CLOSE PARTIAL",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC if "WIN" in symbol or "WDO" in symbol else mt5.ORDER_FILLING_RETURN,
+        }
+        
+        result = mt5.order_send(request)
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            logging.error(f"Erro ao fechar parcialmente {ticket}: {sanitize_log(result.comment)}")
+            return False
+            
+        logging.info(f"PARCIAL EXECUTADA: {ticket} {symbol} {partial_volume} lotes (Restantes: {current_lots - partial_volume})")
+        return True
+
     def update_sltp(self, ticket, sl, tp):
         """Atualiza o Stop Loss e Take Profit de uma posição."""
         if not self.connected: return False
