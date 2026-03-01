@@ -171,9 +171,18 @@ class AICore:
             return 0.5
             
         # 1. OBI (Order Book Imbalance) com Decaimento Exponencial (Depth-Weighted)
-        # Separamos raw_volume e weighted_volume para evitar corromper o Delta de Cancellation Rate.
-        total_bid_weighted = sum(item['volume'] * (0.9 ** i) for i, item in enumerate(order_book.get('bids', [])))
-        total_ask_weighted = sum(item['volume'] * (0.9 ** i) for i, item in enumerate(order_book.get('asks', [])))
+        # Sugerido: Nível 1: 1.0, Nível 2: 0.6, Nível 3: 0.3, Nível 4: 0.1
+        weights = [1.0, 0.6, 0.3, 0.1]
+        
+        def get_weighted_volume(items):
+            total = 0
+            for i, item in enumerate(items):
+                weight = weights[i] if i < len(weights) else 0.05 # Longe do book: quase zero
+                total += item['volume'] * weight
+            return total
+
+        total_bid_weighted = get_weighted_volume(order_book.get('bids', []))
+        total_ask_weighted = get_weighted_volume(order_book.get('asks', []))
         
         total_bid_raw = sum(item['volume'] for item in order_book.get('bids', []))
         total_ask_raw = sum(item['volume'] for item in order_book.get('asks', []))
@@ -239,6 +248,10 @@ class AICore:
         
         # Ajusta o OBI final com base no fluxo tóxico
         final_signal = self.obi_ema + self.toxic_flow_score
+        
+        # [AUDITORIA] Log de Pressão OBI Ponderada
+        if abs(final_signal) > 0.4:
+            logging.info(f"🛡️ [OBI-SOTA] Pressão (Ponderada): {final_signal:.2f} | Fluxo Tóxico: {self.toxic_flow_score:.2f}")
         return max(-1.0, min(1.0, final_signal))
 
     def detect_regime(self, volatility, obi):

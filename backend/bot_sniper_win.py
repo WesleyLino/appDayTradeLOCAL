@@ -127,11 +127,17 @@ class SniperBotWIN:
         # HIGH     : 2 contratos (banda Q10/Q90 assimétrica > 5pts)
         # VERY_HIGH: 3 contratos (banda assimétrica > 20% — alta convicção direcional)
         lot_map = {"NORMAL": 1.0, "HIGH": 2.0, "VERY_HIGH": 3.0}
-        lots = lot_map.get(quantile_confidence, 1.0)
-        logger.info(f"[QUANTILE] confidence={quantile_confidence} -> lotes={lots}")
+        base_lots = lot_map.get(quantile_confidence, 1.0)
+        
+        # [ALPHA FORCE] Escalonamento por vitórias consecutivas
+        # Sugerido: Alpha +1. Limitamos a +2 para segurança do capital de R$ 3000.
+        scaling = min(2, self.consecutive_wins)
+        lots = base_lots + scaling
+        
+        logger.info(f"[FORÇA ALPHA] confiança={quantile_confidence} base={base_lots} escalonamento=+{scaling} -> total_lotes={lots}")
         
         if self.risk.dry_run:
-            logger.info(f"🧪 [DRY RUN] LIMIT {side.upper()} Sniper disparado @ {limit_price}")
+            logger.info(f"🧪 [SIMULAÇÃO] LIMIT {side.upper()} Sniper disparado @ {limit_price}")
             self.trade_count += 1
             self._save_state()
             return True
@@ -158,37 +164,40 @@ class SniperBotWIN:
         
         if result and result.retcode == self.bridge.mt5.TRADE_RETCODE_DONE:
             order_ticket = result.order
-            logger.info(f"⏳ [INITIATED] Ordem LIMIT {order_ticket} aberta @ {limit_price}. Aguardando 3s (Tactical TTL)...")
+            # --- CANCELAMENTO TÁTICO (Alpha Fade: 10 segundos) ---
+            timeout_sec = self.risk.alpha_fade_timeout
+            iterations = int(timeout_sec / 0.5)
             
-            # --- CANCELAMENTO TÁTICO (3 segundos) ---
-            for _ in range(6): # 6 x 0.5s = 3s
+            logger.info(f"⏳ [INICIADA] Ordem LIMIT {order_ticket} aberta @ {limit_price}. TTL: {timeout_sec}s...")
+            
+            for _ in range(iterations):
                 await asyncio.sleep(0.5)
                 status = self.bridge.check_order_status(order_ticket)
                 if status == "FILLED":
                     self.trade_count += 1
                     self._save_state()
-                    logger.info(f"🎯 [PROFIT/FILL] {side.upper()} @ {limit_price} | Trade {self.trade_count}/{self.risk.daily_trade_limit}")
+                    logger.info(f"🎯 [EXECUÇÃO] {side.upper()} @ {limit_price} | Trade {self.trade_count}/{self.risk.daily_trade_limit}")
                     return True
                 elif status == "CANCELED":
-                    logger.warning(f"🚫 [REJECTED/CANCELED] Ordem {order_ticket} cancelada externamente.")
+                    logger.warning(f"🚫 [REJEITADA/CANCELADA] Ordem {order_ticket} cancelada externamente.")
                     return False
             
             # Se não executar em 3s, cancela
             logger.info(f"⏱️ TTL Expirou. Cancelando ordem {order_ticket}...")
             if self.bridge.cancel_order(order_ticket):
-                logger.info(f"🛡️ [STOPPED/TTL] Ordem {order_ticket} cancelada (Momento passou).")
+                logger.info(f"🛡️ [CANCELADA/TTL] Ordem {order_ticket} cancelada (Momento passou).")
             else:
-                # Race Condition Check
+                # Verificação de Condição de Corrida (Race Condition)
                 final_status = self.bridge.check_order_status(order_ticket)
                 if final_status == "FILLED":
-                    logger.info(f"🏁 [PROFIT/RACE] Race Condition WIN: {order_ticket} preenchida no limite!")
+                    logger.info(f"🏁 [LUCRO/CORRIDA] Vitória em Condição de Corrida: {order_ticket} preenchida no limite!")
                     self.trade_count += 1
                     self._save_state()
                     return True
             return False
         else:
             msg = result.comment if result else "None"
-            logger.error(f"❌ [REJECTED] Falha ao enviar ordem: {msg}")
+            logger.error(f"❌ [REJEITADA] Falha ao enviar ordem: {msg}")
             return False
 
     async def _check_trade_results(self):
@@ -204,10 +213,10 @@ class SniperBotWIN:
                     profit = last_deal.profit + last_deal.swap + last_deal.commission
                     if profit > 0:
                         self.consecutive_wins += 1
-                        logger.info(f"✨ [PROFIT] Vitória detectada! Lucro: {profit:.2f} | Consecutive Wins: {self.consecutive_wins}")
+                        logger.info(f"✨ [LUCRO] Vitória detectada! Lucro: {profit:.2f} | Vitórias Consecutivas: {self.consecutive_wins}")
                     else:
                         self.consecutive_wins = 0
-                        logger.info(f"📉 [STOPPED/LOSS] Loss ou BE detectado. Lucro: {profit:.2f}. Resetando Alpha Scaling.")
+                        logger.info(f"📉 [PREJUÍZO/STOP] Loss ou BE detectado. Lucro: {profit:.2f}. Resetando Alpha Scaling.")
                     self._save_state()
             self.last_total_trades = stats['total_trades']
 
@@ -221,7 +230,28 @@ class SniperBotWIN:
             # Pular se não houver SL (não deveria acontecer no Sniper)
             if pos.sl == 0: continue
 
+            # 0. Lógica de VELOCITY LIMIT (Drawdown-Acelerado-no-Tempo)
+            # pos.time é Unix Epoch do servidor
+            now_ts = datetime.utcnow().timestamp()
+            elapsed = now_ts - pos.time
+            
             # Cálculo de Lucro em Pontos
+            if pos.type == self.bridge.mt5.POSITION_TYPE_BUY:
+                current_profit = pos.price_current - pos.price_open
+            else:
+                current_profit = pos.price_open - pos.price_current
+            
+            # Verificar Velocity Limit no RiskManager
+            v_ok, v_msg = self.risk.check_velocity_limit(current_profit, elapsed)
+            if v_ok:
+                logger.warning(f"🛡️ [LIMITE VELOCIDADE] {v_msg}: Fechando posição {pos.ticket} precocemente.")
+                if self.risk.dry_run:
+                    logger.info(f"🧪 [SIMULAÇÃO] Fechamento {pos.ticket} por Limite de Velocidade")
+                else:
+                    self.bridge.close_position(pos.ticket)
+                continue
+
+            # 1. Lógica de Breakeven [URGENTE]
             if pos.type == self.bridge.mt5.POSITION_TYPE_BUY:
                 current_profit = pos.price_current - pos.price_open
                 
@@ -278,7 +308,7 @@ class SniperBotWIN:
                 return
 
         self.symbol = self.bridge.get_current_symbol("WIN")
-        logger.info(f"Símbolo alvo: {self.symbol} | MODO: {'DRY RUN' if self.risk.dry_run else 'LIVE'}")
+        logger.info(f"Símbolo alvo: {self.symbol} | MODO: {'SIMULAÇÃO' if self.risk.dry_run else 'REAL'}")
         
         # [FASE 28] APLICAR PARÂMETROS DINÂMICOS SE CARREGADOS
         if self.symbol in self.risk.dynamic_params:
@@ -305,6 +335,9 @@ class SniperBotWIN:
                 
                 # 0.1 Monitorar resultados para Alpha Scaling
                 await self._check_trade_results()
+
+                # 0.2 Alpha Fade Global: Cancela qualquer ordem pendente há mais de 10s
+                self.bridge.cancel_stale_orders(symbol=self.symbol, timeout_seconds=self.risk.alpha_fade_timeout)
 
                 # 1. Reset Diário (Mudança de dia com bot ligado)
                 today = date.today()

@@ -39,6 +39,9 @@ class RiskManager:
         self.velocity_time_limit_sec = 20.0     # Segundos máximos engatado negativamente
         self.velocity_drawdown_limit = -30.0    # Pontos negativos que ativam o timeout rápido
         
+        # [HFT ELITE] Alpha Fade (Decaimento de Ordem)
+        self.alpha_fade_timeout = 10.0          # Segundos antes de cancelar ordem limite não executada
+        
         # [FASE 28] DYNAMIC PARAMS CACHE
         self.dynamic_params = {} # Carregado via load_optimized_params
 
@@ -66,7 +69,7 @@ class RiskManager:
                             t_start = (datetime.combine(datetime.today(), evt_time) - timedelta(minutes=3)).time()
                             t_end = (datetime.combine(datetime.today(), evt_time) + timedelta(minutes=3)).time()
                             self.calendar_events.append({"start": t_start, "end": t_end, "event": item["event"]})
-                logging.info(f"📅 ECONOMIC CALENDAR: {len(self.calendar_events)} alertas críticos carregados para Blindagem Ativa.")
+                logging.info(f"📅 CALENDÁRIO ECONÔMICO: {len(self.calendar_events)} alertas críticos carregados para Blindagem Ativa.")
         except Exception as e:
             logging.error(f"Erro ao carregar economic_calendar.json: {e}")
 
@@ -120,8 +123,8 @@ class RiskManager:
         aborta a operação precocemente antes do STOP CHEIO.
         """
         if elapsed_seconds > self.velocity_time_limit_sec and current_profit_points <= self.velocity_drawdown_limit:
-            logging.warning(f"⏳ VELOCITY LIMIT EXCEDIDO: Operação amarrada em {current_profit_points} pts por {elapsed_seconds:.1f}s. Abortando cedo.")
-            return True, "DRAWDOWN_VELOCITY_LIMIT"
+            logging.warning(f"⏳ LIMITE DE VELOCIDADE EXCEDIDO: Operação amarrada em {current_profit_points} pts por {elapsed_seconds:.1f}s. Abortando cedo.")
+            return True, "LIMITE_VELOCIDADE_DRAWDOWN"
             
         return False, "VELOCITY_OK"
 

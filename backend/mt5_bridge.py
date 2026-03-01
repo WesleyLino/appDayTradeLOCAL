@@ -242,6 +242,31 @@ class MT5Bridge:
         logging.info(f"ORDEM CANCELADA: {ticket}")
         return True
 
+    def cancel_stale_orders(self, symbol=None, timeout_seconds=10.0):
+        """
+        [HFT ELITE - ALPHA FADE]
+        Cancela todas as ordens limitadas que estão no book há mais de 'timeout_seconds'.
+        Garante que sinais obsoletos não fiquem 'pendurados' se o bot travar ou a rede atrasar.
+        """
+        if not self.connected: return
+        
+        try:
+            orders = mt5.orders_get(symbol=symbol) if symbol else mt5.orders_get()
+            if orders is None or len(orders) == 0:
+                return
+                
+            now_ts = datetime.utcnow().timestamp()
+            for order in orders:
+                # time_setup é o timestamp de criação da ordem no servidor (Unix Epoch)
+                setup_time = order.time_setup
+                elapsed = now_ts - setup_time
+                
+                if elapsed > timeout_seconds:
+                    logging.warning(f"🛡️ [DECAIMENTO ALPHA] Cancelando ordem obsoleta {order.ticket} ({order.symbol}) - Excedeu {elapsed:.1f}s")
+                    self.cancel_order(order.ticket)
+        except Exception as e:
+            logging.error(f"Erro em cancel_stale_orders: {sanitize_log(e)}")
+
     def check_order_status(self, ticket):
         """
         Verifica o estado de uma ordem.

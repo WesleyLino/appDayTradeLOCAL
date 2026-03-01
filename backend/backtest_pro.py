@@ -246,6 +246,17 @@ class BacktestPro:
         # 4. Volume SMA
         data['vol_sma'] = data['tick_volume'].rolling(window=20).mean().bfill()
         
+        # [SOTA v25] Microstructure Pre-calculation (Vectorized)
+        logging.info("🔬 Calculando Microestrutura em Vetor (CVD/OFI/Ratio)...")
+        body = data['close'] - data['open']
+        high_low = data['high'] - data['low'] + 1e-8
+        # Simula CVD com base no fechamento do candle
+        data['cvd'] = (data['tick_volume'] * body.apply(lambda x: 1 if x > 0 else -1 if x < 0 else 0)).cumsum()
+        # OFI simplificado para backtest OHLCV
+        data['ofi'] = body / high_low
+        # Volume Ratio (Z-score like)
+        data['volume_ratio'] = data['tick_volume'] / (data['vol_sma'] + 1e-8)
+        
         self.data = data # Expor para debug externo
 
         # 5. Regime Detection (Vectorized)
