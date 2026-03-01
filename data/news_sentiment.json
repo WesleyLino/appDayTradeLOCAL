@@ -1,59 +1,44 @@
 {
-  "score": -0.9,
+  "score": -0.85,
   "reliability": "high",
   "risk_classification": "EXTREME",
-  "fact_check": "Conflito militar direto entre EUA, Israel e Ir\u00e3, com ataques retaliat\u00f3rios em Abu Dhabi. Isso gera amea\u00e7a de ruptura no mercado de g\u00e1s, interrup\u00e7\u00e3o de voos e queda no mercado saudita. A Opep+ anunciou um aumento modesto na produ\u00e7\u00e3o de petr\u00f3leo, mas a preocupa\u00e7\u00e3o com a oferta persiste.",
+  "fact_check": "Ataques militares entre EUA/Israel e Ir\u00e3 confirmados, com danos reportados em Abu Dhabi. Mercados globais reagem com forte avers\u00e3o ao risco, impactando o setor de petr\u00f3leo. Dados econ\u00f4micos importantes (PIB Brasil, trabalho EUA) aguardados na semana. Not\u00edcias corporativas pontuais no setor de tecnologia.",
   "news": [
-    {
-      "headline": "Crise no Ir\u00e3 amea\u00e7a ruptura no mercado de g\u00e1s",
-      "relevance": 0.9,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Barclays projeta IA f\u00edsica como ind\u00fastria trilion\u00e1ria at\u00e9 2035",
-      "relevance": 0.1,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Complexo em Abu Dhabi danificado por ataques retaliat\u00f3rios",
-      "relevance": 0.95,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Not\u00edcias gerais de Mercados Financeiros",
-      "relevance": 0.0,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Opep+ aumenta modestamente produ\u00e7\u00e3o de petr\u00f3leo em meio a ataques ao Ir\u00e3",
-      "relevance": 0.8,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Bolsa da Ar\u00e1bia Saudita (Tadawul All Share) recua 2,18%",
-      "relevance": 0.7,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Conflito no Ir\u00e3 interrompe milhares de voos e agrava caos em viagens",
-      "relevance": 0.85,
-      "impact": "BEARISH"
-    },
     {
       "headline": "EUA e Israel atacam Ir\u00e3",
       "relevance": 1.0,
       "impact": "BEARISH"
     },
     {
-      "headline": "CEO da NVIDIA contesta narrativa de 'apocalipse' no SaaS",
-      "relevance": 0.1,
+      "headline": "Google recebe upgrade; 4 empresas de software rebaixadas por riscos de IA",
+      "relevance": 0.4,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Compradores de petr\u00f3leo avaliam estoques e alternativas devido a conflito no Ir\u00e3",
-      "relevance": 0.8,
+      "headline": "Complexo em Abu Dhabi sofre danos ap\u00f3s ataques retaliat\u00f3rios",
+      "relevance": 0.9,
       "impact": "BEARISH"
+    },
+    {
+      "headline": "Calend\u00e1rio econ\u00f4mico: PIB Brasil e dados de trabalho EUA em foco",
+      "relevance": 0.6,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Mercados se preparam para avers\u00e3o ao risco ap\u00f3s ofensiva contra Ir\u00e3",
+      "relevance": 0.9,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Compradores de petr\u00f3leo avaliam estoques e alternativas devido a conflito no Ir\u00e3",
+      "relevance": 1.0,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "A\u00e7\u00f5es na R\u00fassia fecham em queda; \u00cdndice MOEX sem altera\u00e7\u00f5es",
+      "relevance": 0.2,
+      "impact": "NEUTRAL"
     }
   ],
-  "timestamp": 1772387819.4024348
+  "timestamp": 1772401842.160448
 }

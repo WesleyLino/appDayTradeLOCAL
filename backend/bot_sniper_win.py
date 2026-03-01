@@ -164,8 +164,8 @@ class SniperBotWIN:
         
         if result and result.retcode == self.bridge.mt5.TRADE_RETCODE_DONE:
             order_ticket = result.order
-            # --- CANCELAMENTO TÁTICO (Alpha Fade: 10 segundos) ---
-            timeout_sec = self.risk.alpha_fade_timeout
+            # --- CANCELAMENTO TÁTICO (Alpha Fade Dinâmico - Melhoria E) ---
+            timeout_sec = self.risk.get_alpha_fade_timeout()
             iterations = int(timeout_sec / 0.5)
             
             logger.info(f"⏳ [INICIADA] Ordem LIMIT {order_ticket} aberta @ {limit_price}. TTL: {timeout_sec}s...")
@@ -288,17 +288,32 @@ class SniperBotWIN:
                         self.bridge.update_sltp(pos.ticket, new_sl, pos.tp)
                         logger.info(f"⚡ [BREAKEVEN] SL SELL Protegido: {new_sl} (Lucro: {current_profit:.1f} pts)")
 
-                # 2. Trailing Stop SOTA
-                if current_profit >= self.risk.trailing_trigger:
-                    potential_sl = pos.price_current + (self.risk.trailing_trigger - self.risk.trailing_lock)
+                # [MELHORIA] Scaling Out — Saída Parcial SELL
+                # Se chegou no gatilho de parcial e ainda tem volume > 1 contrato, realiza saída parcial
+                if (current_profit >= self.risk.partial_profit_points
+                        and pos.volume > self.risk.partial_volume
+                        and not self.persistence.get_state(f"partial_done_{pos.ticket}")):
+                    partial_lots = self.risk.partial_volume
+                    if self.risk.dry_run:
+                        logger.info(f"💰 [DRY RUN] Parcial SELL: Fechando {partial_lots} lote(s) @ +{current_profit:.1f} pts (ticket={pos.ticket})")
+                    else:
+                        self.bridge.close_partial(pos.ticket, partial_lots)
+                        logger.info(f"💰 [PARCIAL SELL] {partial_lots} lote(s) realizados @ +{current_profit:.1f} pts. Restante: trailing livre.")
+                    # Marcar para não repetir nesta posição
+                    self.persistence.save_state(f"partial_done_{pos.ticket}", "1")
+
+                # 2. [MELHORIA] Trailing Stop Assimétrico SELL
+                # Ativa mais cedo (40pts) e com passo menor (15pts): mercados caem rápido.
+                if current_profit >= self.risk.trailing_trigger_sell:
+                    potential_sl = pos.price_current + (self.risk.trailing_trigger_sell - self.risk.trailing_lock_sell)
                     potential_sl = self.risk._quantize_price(self.symbol, potential_sl)
                     
-                    if potential_sl < pos.sl - self.risk.trailing_step:
+                    if potential_sl < pos.sl - self.risk.trailing_step_sell:
                         if self.risk.dry_run:
-                            logger.info(f"🛡️ [DRY RUN] Trailing Stop SELL ajustado: {pos.sl} -> {potential_sl}")
+                            logger.info(f"🛡️ [DRY RUN] Trailing Assimétrico SELL ajustado: {pos.sl} -> {potential_sl}")
                         else:
                             self.bridge.update_sltp(pos.ticket, potential_sl, pos.tp)
-                            logger.info(f"⚡ [SOTA TRAILING] SL SELL Movido: {potential_sl} | Flutuante: {current_profit:.1f} pts")
+                            logger.info(f"⚡ [TRAILING ASSIMÉTRICO] SL SELL Movido: {potential_sl} | Flutuante: {current_profit:.1f} pts")
 
     async def run(self):
         logger.info("🚀 Inicializando Sniper Bot WIN (Foco: R$ 3000 Capital)...")
@@ -336,8 +351,8 @@ class SniperBotWIN:
                 # 0.1 Monitorar resultados para Alpha Scaling
                 await self._check_trade_results()
 
-                # 0.2 Alpha Fade Global: Cancela qualquer ordem pendente há mais de 10s
-                self.bridge.cancel_stale_orders(symbol=self.symbol, timeout_seconds=self.risk.alpha_fade_timeout)
+                # 0.2 Alpha Fade Global: Cancela qualquer ordem pendente (Melhoria E)
+                self.bridge.cancel_stale_orders(symbol=self.symbol, timeout_seconds=self.risk.get_alpha_fade_timeout())
 
                 # 1. Reset Diário (Mudança de dia com bot ligado)
                 today = date.today()

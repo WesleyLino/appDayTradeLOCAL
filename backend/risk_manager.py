@@ -21,10 +21,17 @@ class RiskManager:
             (time(16, 55), time(18, 0))  # Fechamento
         ]
         
-        # [SOTA] Trailing Stop Parameters (Default WIN Champion)
+        # [SOTA] Trailing Stop Parameters — BUY (Default WIN Champion)
         self.trailing_trigger = 70.0  # Ativa com 70 pontos (Otimizado)
         self.trailing_lock = 50.0    # Trava 50 pontos iniciais
         self.trailing_step = 20.0    # Move a cada 20 pontos de avanço
+
+        # [MELHORIA] Trailing Stop Assimétrico — SELL
+        # Mercados caem mais rápido do que sobem (pânico reversa antes).
+        # Ativa mais cedo (40pts) e com passo menor (15pts) para encurralar o preço na queda.
+        self.trailing_trigger_sell = 40.0  # Ativa com 40 pontos de lucro na VENDA
+        self.trailing_lock_sell = 30.0     # Trava 30 pontos iniciais na VENDA
+        self.trailing_step_sell = 15.0     # Move a cada 15 pontos de avanço na VENDA
         
         # [URGENTE] Breakeven Parameters
         self.be_trigger = 50.0       # Ativa com 50 pontos de lucro (Otimizado)
@@ -36,11 +43,17 @@ class RiskManager:
         self.partial_profit_points = 50.0 # Gatilho em pontos para executar a zeragem parcial
         
         # [FASE 2] Velocity Limit (Drawdown Acelerado no Tempo)
-        self.velocity_time_limit_sec = 20.0     # Segundos máximos engatado negativamente
+        # [MELHORIA D] Timeout aumentado de 20s para 45s.
+        # Justificativa: um candle M1 no WIN tem 60s. 20s era muito curto e ejeta trades
+        # antes do movimento completar seu ciclo mínimo de formação.
+        self.velocity_time_limit_sec = 45.0     # [MELHORIA D] Era 20s
         self.velocity_drawdown_limit = -30.0    # Pontos negativos que ativam o timeout rápido
-        
+
         # [HFT ELITE] Alpha Fade (Decaimento de Ordem)
-        self.alpha_fade_timeout = 10.0          # Segundos antes de cancelar ordem limite não executada
+        # [MELHORIA E] Alpha Fade dinâmico por horário de pregão.
+        # Período ativo (09:00–12:00): 10s — liquidez alta, ordem não executada rápido = sinal errado.
+        # Período almoço (12:00–15:00): 15s — liquidez menor, movimento mais lento é normal.
+        self.alpha_fade_timeout = 10.0          # [MELHORIA E] Base; ajustado dinâmico em get_alpha_fade_timeout()
         
         # [FASE 28] DYNAMIC PARAMS CACHE
         self.dynamic_params = {} # Carregado via load_optimized_params
@@ -127,6 +140,21 @@ class RiskManager:
             return True, "LIMITE_VELOCIDADE_DRAWDOWN"
             
         return False, "VELOCITY_OK"
+
+    def get_alpha_fade_timeout(self) -> float:
+        """
+        [MELHORIA E] Alpha Fade dinâmico por horário de pregão.
+        Período ativo (09:00–11:59): 10s — liquidez alta, ordem parada = sinal errado.
+        Período almoço (12:00–14:59): 15s — liquidez reduzida, espera extra evita cancelamento prematuro.
+        Demais horários: usa o valor base (10s por padrão).
+        """
+        now = datetime.now()
+        hora = now.hour
+        if 9 <= hora < 12:
+            return 10.0   # Período ativo: cancela rápido
+        elif 12 <= hora < 15:
+            return 15.0   # Almoço: aguarda mais antes de cancelar
+        return self.alpha_fade_timeout  # Fallback para valor configurado
 
     def calculate_psr(self, returns_list, benchmark_sr=0.0):
         """
@@ -371,15 +399,19 @@ class RiskManager:
         if current_atr and current_atr > 0:
             # Multiplicadores baseados na recalibração vencedora de 23/02
             # [PRO-MAX] Ajuste por Regime
-            tp_mult = 1.0 
+            tp_mult = 1.0
             sl_mult = 1.3
 
             if regime == 1: # Tendência Clara: Buscar alvos maiores
                 tp_mult = 1.5
                 logging.info("📈 REGIME TENDÊNCIA: Alvo TP expandido (1.5x ATR)")
-            elif regime == 0: # Indefinido/Lateral: Alvos Curtos
+            elif regime == 0: # Indefinido/Lateral: Alvos Curtos + R:R Equilibrado
+                # [MELHORIA C] sl_mult reduzido de 1.3 para 0.8 em mercado lateral.
+                # Ratio anterior era 0.8 TP / 1.3 SL = 0.61:1 (desfavorável).
+                # Com sl_mult=0.8: ratio 0.8 TP / 0.8 SL = 1:1 (equilibrado).
                 tp_mult = 0.8
-                logging.info("⚖️ REGIME LATERAL: Alvo TP reduzido (0.8x ATR)")
+                sl_mult = 0.8  # [MELHORIA C] Era 1.3
+                logging.info("⚖️ REGIME LATERAL: R:R equilibrado 1:1 (TP=0.8x, SL=0.8x ATR)")
             
             sl_points = float(current_atr * sl_mult)
             tp_points = float(current_atr * tp_mult)

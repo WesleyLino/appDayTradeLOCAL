@@ -41,8 +41,12 @@ class AICore:
         
         # [REFINAMENTO 26/02] Controle de Cooldown e Estabilidade
         self.consecutive_losses = 0
-        self.ia_cooldown_until = 0 # Timestamp
+        self.ia_cooldown_until = 0 # Timestamp (mantido para compatibilidade de log, não usado para bloqueio)
         self.atr_history = [] # Para calculo de inercia de volatilidade
+
+        # [MELHORIA] Quarter-Kelly — Controle dinâmico de exposição por perdas consecutivas
+        self.kelly_lot_multiplier = 1.0  # Multiplicador de lote (1.0=normal, 0.25=reduzido)
+        self.consecutive_wins_kelly = 0  # Acertos consecutivos para restaurar o lote
         
         # [SOTA v4] NOVAS CONFIGURAÇÕES DE ASSERTIVIDADE
         self.h1_trend = 0 # -1 (Baixa), 0 (Neutro), 1 (Alta)
@@ -216,33 +220,42 @@ class AICore:
                 real_volume = buy_aggression_vol + sell_aggression_vol
             else:
                 real_volume = 0
-            
-            # --- LÓGICA ALPHA-X: CANCELLATION RATE ---
-            # Comparamos quanto do volume sumiu (delta) vs quanto foi de fato executado (aggression)
-            delta_bid = max(0, prev_bid_raw - total_bid_raw)
-            delta_ask = max(0, prev_ask_raw - total_ask_raw)
-            
-            # Cancellation Rate: Proporção do volume removido que NÃO foi trade
-            # Se sumiu 1000 e trade foi 100, 900 foram cancelados -> CR = 0.9
-            cr_bid = (delta_bid - sell_aggression_vol) / delta_bid if delta_bid > 0 else 0
-            cr_ask = (delta_ask - buy_aggression_vol) / delta_ask if delta_ask > 0 else 0
 
-            # Thresholds Dinâmicos (HFT v2.1)
-            threshold_bid = max(20, total_bid_raw * 0.1)
-            threshold_ask = max(20, total_ask_raw * 0.1)
-            
-            # [SPOOFING DE COMPRA]: Lotes sumindo no Bid sem agressão correspondente
-            if delta_bid > threshold_bid and cr_bid > 0.8:
-                self.toxic_flow_score = -0.9
-                logging.warning(f"🔥 ALPHA-X SPOOFING: Compra sumiu por cancelamento (CR: {cr_bid:.2f})")
-
-            # [SPOOFING DE VENDA]: Lotes sumindo no Ask sem agressão correspondente
-            elif delta_ask > threshold_ask and cr_ask > 0.8:
-                self.toxic_flow_score = 0.9
-                logging.warning(f"🔥 ALPHA-X SPOOFING: Venda sumiu por cancelamento (CR: {cr_ask:.2f})")
-                
+            # [MELHORIA B] Fallback B3: Genial/MT5 frequentemente retorna flags=0 em ticks.
+            # Se ambos os lados de agressão são zero, os dados de flags são indisponíveis.
+            # Nesse caso, desabilitar Cancel Rate para evitar falsos positivos de spoofing.
+            flags_disponiveis = (buy_aggression_vol > 0 or sell_aggression_vol > 0)
+            if not flags_disponiveis and real_volume == 0:
+                # Dados de agressão indisponíveis — usar apenas OBI puro (sem Cancel Rate)
+                logging.debug("⚠️ [MELHORIA B] Flags B3 ausentes: Cancel Rate desativado. Usando OBI puro.")
+                self.toxic_flow_score *= 0.8  # Decaimento natural sem nova leitura
             else:
-                self.toxic_flow_score *= 0.8 # Decaimento
+                # --- LÓGICA ALPHA-X: CANCELLATION RATE ---
+                # Comparamos quanto do volume sumiu (delta) vs quanto foi de fato executado (aggression)
+                delta_bid = max(0, prev_bid_raw - total_bid_raw)
+                delta_ask = max(0, prev_ask_raw - total_ask_raw)
+
+                # Cancellation Rate: Proporção do volume removido que NÃO foi trade
+                # Se sumiu 1000 e trade foi 100, 900 foram cancelados -> CR = 0.9
+                cr_bid = (delta_bid - sell_aggression_vol) / delta_bid if delta_bid > 0 else 0
+                cr_ask = (delta_ask - buy_aggression_vol) / delta_ask if delta_ask > 0 else 0
+
+                # Thresholds Dinâmicos (HFT v2.1)
+                threshold_bid = max(20, total_bid_raw * 0.1)
+                threshold_ask = max(20, total_ask_raw * 0.1)
+
+                # [SPOOFING DE COMPRA]: Lotes sumindo no Bid sem agressão correspondente
+                if delta_bid > threshold_bid and cr_bid > 0.8:
+                    self.toxic_flow_score = -0.9
+                    logging.warning(f"🔥 ALPHA-X SPOOFING: Compra sumiu por cancelamento (CR: {cr_bid:.2f})")
+
+                # [SPOOFING DE VENDA]: Lotes sumindo no Ask sem agressão correspondente
+                elif delta_ask > threshold_ask and cr_ask > 0.8:
+                    self.toxic_flow_score = 0.9
+                    logging.warning(f"🔥 ALPHA-X SPOOFING: Venda sumiu por cancelamento (CR: {cr_ask:.2f})")
+
+                else:
+                    self.toxic_flow_score *= 0.8  # Decaimento
                 
         self.prev_book = order_book
         
@@ -376,13 +389,15 @@ class AICore:
 
         if (sentiment > 0.6 and obi > 1.2) or (sentiment < -0.6 and obi < -1.2):
             uncertainty_threshold = max(uncertainty_threshold, 0.40)
-        
-        # [SOTA v25.6] SWEET SPOT RIGOR (BALANCING 70% TARGET)
-        uncertainty_threshold = 0.30 # Ideal para filtrar ruido sem matar o volume
+
+        # [MELHORIA A] Threshold dinâmico: preserva o valor calculado acima (base 0.25, até 0.40).
+        # Sobrescrita estática anterior para 0.30 removida — causava perda de sinais válidos
+        # calibrados pela convergência de sentimento+OBI.
+        # Rigor máximo (0.20) aplicado apenas em ruído explícito (regime 2 ou OFI extremo).
         if regime == 2 or abs(ofi) > 2.0:
-            uncertainty_threshold = 0.20 # Rigor em ruído
-            logging.info(f"🛡️ FILTRO DE RUÍDO: Rigor 0.20")
-            
+            uncertainty_threshold = 0.20  # Rigor máximo em ruído e fluxo desequilibrado
+            logging.info(f"🛡️ FILTRO DE RUÍDO: Rigor máximo 0.20 (regime={regime}, |OFI|={abs(ofi):.2f})")
+
         if quantile_confidence == "VERY_HIGH":
             uncertainty_threshold *= 2.0
             
@@ -516,6 +531,14 @@ class AICore:
             if is_opening_session:
                 lot_multiplier *= 0.5 # Força exposição reduzida na abertura
                 logging.info(f"⏳ REDUCED LOT FOR OPENING: {lot_multiplier:.2f}x")
+
+            # [MELHORIA] Quarter-Kelly: aplica fator de redução se ativo (0.25 após 2 perdas)
+            if self.kelly_lot_multiplier < 1.0:
+                lot_multiplier *= self.kelly_lot_multiplier
+                logging.info(
+                    f"⚠️ [QUARTER-KELLY ATIVO] Lote reduzido para {self.kelly_lot_multiplier*100:.0f}% "
+                    f"({lot_multiplier:.2f}x) — aguardando 2 acertos para restaurar."
+                )
             
         # [SOTA v5] Spread-Adjusted Take Profit (Compensation)
         tp_adj = 1.0
@@ -549,19 +572,29 @@ class AICore:
     
     def record_result(self, pnl: float):
         """
-        Registra o resultado de um trade para controle de cooldown.
-        2 perdas consecutivas ativam cooldown de 15 minutos.
+        [MELHORIA] Quarter-Kelly dinâmico substituindo o cooldown de 15 minutos.
+        Após 2 perdas consecutivas, a IA NÃO é suspensa — apenas reduz a exposição
+        para 0.25x (¼ do lote). Restaura para 1.0x somente após 2 acertos consecutivos,
+        garantindo dupla confirmação de que o mercado voltou ao padrão esperado.
         """
         if pnl < 0:
             self.consecutive_losses += 1
+            self.consecutive_wins_kelly = 0  # Reseta os ganhos consecutivos
             if self.consecutive_losses >= 2:
-                self.ia_cooldown_until = time.time() + (15 * 60)
-                logging.warning(f"!!! COOLDOWN ATIVADO: 2 perdas consecutivas. IA suspensa ate {datetime.fromtimestamp(self.ia_cooldown_until).strftime('%H:%M:%S')}")
+                self.kelly_lot_multiplier = 0.25  # [QUARTER-KELLY] Reduz exposição para ¼
+                logging.warning(
+                    f"⚠️ [QUARTER-KELLY] 2 perdas consecutivas. "
+                    f"Exposição reduzida para 25% do lote normal. IA CONTINUA OPERANDO."
+                )
         else:
             self.consecutive_losses = 0
-            if time.time() < self.ia_cooldown_until:
-                logging.info(">>> Cooldown resetado antecipadamente por lucro.")
-                self.ia_cooldown_until = 0
+            self.consecutive_wins_kelly = getattr(self, 'consecutive_wins_kelly', 0) + 1
+            if self.consecutive_wins_kelly >= 2 and getattr(self, 'kelly_lot_multiplier', 1.0) < 1.0:
+                self.kelly_lot_multiplier = 1.0  # [QUARTER-KELLY] Restaura lote completo após 2 acertos
+                logging.info(
+                    f"✅ [QUARTER-KELLY] 2 acertos consecutivos confirmados. "
+                    f"Exposição RESTAURADA para 100% do lote normal."
+                )
         
     async def predict_with_patchtst(self, inference_engine, dataframe):
         """Usa o motor de inferência para obter a predição do PatchTST."""
