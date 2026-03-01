@@ -77,23 +77,22 @@ async def run():
             print(f"⚠️ [{date_str}] Sem dados históricos. Pulando...")
             continue
 
-        # Inicializa o Backtester em Modo Full Potential (Garantia Absoluta de Sinais)
+        # Inicializa o Backtester em Modo Stress Test (Auditoria IA SOTA)
         bt = BacktestPro(
             symbol=SYMBOL,
             initial_balance=INITIAL_BAL + total_pnl,
-            use_ai_core=False,          # Usa modo legado para evitar vetos da IA no teste
-            confidence_threshold=0.0,   
-            use_flux_filter=False,     
-            rsi_period=2,               # Ultra sensível
-            bb_dev=0.1,                 # Bandas coladas no preço
-            vol_spike_mult=0.1,         
+            use_ai_core=True,
+            confidence_threshold=0.50, # Threshold seguro para produção
+            use_flux_filter=True,      
+            rsi_period=14,             
+            bb_dev=2.0,                 
             lot_scaling=True,
-            aggressive_mode=True,
-            start_time="09:00",
-            end_time="17:59",
-            vol_min=0.01,               # Desativa travas de vol
-            vol_max=99999.0,
-            cooldown_minutes=0          # Zero cooldown
+            aggressive_mode=False,
+            start_time="09:05",
+            end_time="17:50",
+            vol_min=20.0, 
+            vol_max=400.0,
+            cooldown_minutes=15         
         )
         
         # Log de sanidade dos dados
