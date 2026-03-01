@@ -801,8 +801,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 # --- LÓGICA DE DECISÃO DE TRADE (RESTAURAÇÃO MACRO) ---
                 is_threshold_met = ai_total_score >= 85 or ai_total_score <= 15
                 if risk.allow_autonomous and is_threshold_met and risk_ok and market_ok and time_allowed:
-                    if ai_direction in ["BUY", "SELL"]:
-                        side = "buy" if ai_direction == "BUY" else "sell"
+                    if ai_direction in ["COMPRA", "VENDA"]:
+                        side = "buy" if ai_direction == "COMPRA" else "sell"
                         
                         macro_ok, macro_msg = risk.check_macro_filter(side, macro_change.get("score", 0.0))
                         if not macro_ok:
@@ -818,15 +818,50 @@ async def websocket_endpoint(websocket: WebSocket):
                             )
                             logging.info(log_msg)
                             
-                            is_sniper = False
-                            is_high_conviction = ai_total_score > 90 or ai_total_score < 10
-                            if is_high_conviction:
-                                if (side == "buy" and cvd_val >= 300) or (side == "sell" and cvd_val <= -300):
-                                    is_sniper = True
+                            exec_strategy = decision.get("execution_strategy", "PASSIVA")
                             
-                            if is_sniper:
+                            if exec_strategy == "MERCADO":
+                                order_type = bridge.mt5.ORDER_TYPE_BUY if side == "buy" else bridge.mt5.ORDER_TYPE_SELL
+                                logging.info(f"⚡ ORDEM A MERCADO AGRESSIVA: Alta Convicção Detectada ({ai_total_score:.1f})")
+                                
+                                # Obter preço do TICK para cálculo de lote
+                                tick_info = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
+                                current_price = tick_info.ask if side == "buy" else tick_info.bid
+                                
+                                point_value = 10.0 if "WDO" in symbol or "DOL" in symbol else 0.20
+                                sota_lots = risk.calculate_volatility_sizing(account['balance'], current_atr, point_value)
+                                
+                                ai_multiplier = decision.get("lot_multiplier", 1.0)
+                                tp_multiplier = decision.get("tp_multiplier", 1.0)
+                                final_lots = max(1, int(sota_lots * ai_multiplier))
+                                
+                                params = risk.get_order_params(
+                                    symbol, order_type, current_price, final_lots, 
+                                    current_atr=current_atr, regime=regime,
+                                    tp_multiplier=tp_multiplier
+                                )
+                                
+                                if risk.dry_run:
+                                    logging.warning(f"DRY-RUN: Simulando Ordem MERCADO {side.upper()} de {final_lots} lotes")
+                                    result = type('Mock', (), {'retcode': bridge.mt5.TRADE_RETCODE_DONE, 'order': 777777})()
+                                else:
+                                    result = await asyncio.to_thread(
+                                        bridge.place_market_order, 
+                                        symbol, order_type, final_lots, 
+                                        sl=params['sl'], tp=params['tp'],
+                                        comment="ALPHA_EXEC_MERCADO"
+                                    )
+                                
+                                if result and result.retcode == bridge.mt5.TRADE_RETCODE_DONE:
+                                    persistence.save_trade(symbol, side, current_price, final_lots, "ALPHA_MERCADO")
+                                    add_operational_log(f"MERCADO SUCESSO: {side.upper()} {final_lots} lotes", "success")
+                                    continue # Pula para o próximo ciclo após execução a mercado
+                                else:
+                                    logging.error(f"Falha na Execução MERCADO: {result.comment if result else 'Timeout'}")
+
+                            elif exec_strategy == "SNIPER":
                                 order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
-                                logging.info("🎯 SNIPER MODE: AGGRESSIVE LIMIT ORDER")
+                                logging.info("🎯 MODO SNIPER: ORDEM LIMITE AGRESSIVA")
                                 
                                 tick_info = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
                                 current_order_price = tick_info.ask if side == "buy" else tick_info.bid

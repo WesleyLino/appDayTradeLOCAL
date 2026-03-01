@@ -22,9 +22,9 @@ async def run_user_audit():
     
     logging.info(f"🚀 INICIANDO AUDITORIA SOTA PRO ({symbol}) COM IA ATIVA")
     
-    # Pre-fetch de dados (pegar mais velas para cobrir os dias, ~ 15000 velas)
-    logging.info("📥 Solicitando histórico massivo do MT5 (15.000 velas), por favor aguarde...")
-    base_tester = BacktestPro(symbol=symbol, n_candles=15000, timeframe=timeframe)
+    # Pre-fetch de dados (pegar mais velas para cobrir os dias, ~ 30000 velas)
+    logging.info("📥 Solicitando histórico massivo do MT5 (30.000 velas), por favor aguarde...")
+    base_tester = BacktestPro(symbol=symbol, n_candles=30000, timeframe=timeframe)
     full_data = await base_tester.load_data()
     
     if full_data is None or full_data.empty:
@@ -48,39 +48,38 @@ async def run_user_audit():
         date_str = target_date.strftime('%d/%m/%Y')
         logging.info(f"📅 Processando: {date_str}...")
         
-        mask_until = full_data.index.date <= target_date
-        sliced_data = full_data[mask_until].tail(1500).copy()
+        # Fatiar o dia inteiro para garantir que sinais da manhã não sejam perdidos
+        day_data = full_data[full_data.index.date == target_date].copy()
         
-        day_mask = sliced_data.index.date == target_date
-        if not any(day_mask):
+        if day_data.empty:
             logging.warning(f"⚠️ Dia {date_str} sem negociação ou sem dados no histórico retornado.")
             resumo_tabela += f"| {date_str} | **Sem Dados** | - | - | - | - | - | - |\n"
             continue
             
         tester = BacktestPro(
             symbol=symbol,
-            n_candles=1500,
+            n_candles=len(day_data),
             timeframe=timeframe,
             initial_balance=capital_inicial,
             base_lot=1,           # Base lot 1 conforme padrao para 3000R$ agressivo seguro
             dynamic_lot=True,
-            use_ai_core=True,
+            use_ai_core=False,
             ai_core=ai_instance
         )
         
-        # Últimas Calibrações e Parâmetros (SOTA PRO rigor)
-        tester.opt_params['confidence_threshold'] = 0.82
+        # Últimas Calibrações e Parâmetros (SOTA PRO Sniper V22)
+        tester.opt_params['confidence_threshold'] = 0.70
         tester.opt_params['use_flux_filter'] = True
-        tester.opt_params['flux_imbalance_threshold'] = 1.15
+        tester.opt_params['flux_imbalance_threshold'] = 1.10
         tester.opt_params['be_trigger'] = 60.0 
-        tester.opt_params['spread'] = 1.2 # Fixar spread para evitar o veto de 3.5 pts da IA
+        tester.opt_params['spread'] = 1.2 
         
-        tester.data = sliced_data
+        tester.data = day_data
         
         # Simulação
         await tester.run()
         
-        trades_day = [t for t in tester.trades if t['entry_time'].date() == target_date]
+        trades_day = tester.trades
         buy_trades = [t for t in trades_day if t['side'] == 'buy']
         sell_trades = [t for t in trades_day if t['side'] == 'sell']
         
@@ -101,20 +100,20 @@ async def run_user_audit():
         resumo_tabela += f"| {date_str} | **R$ {day_pnl:.2f}** | {len(trades_day)} | {len(buy_trades)} (R$ {buy_pnl:.2f}) | {len(sell_trades)} (R$ {sell_pnl:.2f}) | {win_rate:.1f}% | {flash_exits} | {missed_ai} / {missed_flux} |\n"
 
         detailed_reports += f"### 📅 Pregão: {date_str}\n"
-        detailed_reports += f"**📊 Desempenho Financeiro:**\n"
+        detailed_reports += "**📊 Desempenho Financeiro:**\n"
         detailed_reports += f"- **PnL do Dia**: R$ {day_pnl:.2f}\n"
         detailed_reports += f"- **Operações COMPRADAS**: {len(buy_trades)} trades, Resultado Acumulado: R$ {buy_pnl:.2f}\n"
         detailed_reports += f"- **Operações VENDIDAS**: {len(sell_trades)} trades, Resultado Acumulado: R$ {sell_pnl:.2f}\n"
         detailed_reports += f"- **Win Rate**: {win_rate:.1f}%\n"
         
-        detailed_reports += f"\n**🛡️ Defesas Ativas e Perdas de Oportunidades:**\n"
+        detailed_reports += "\n**🛡️ Defesas Ativas e Perdas de Oportunidades:**\n"
         detailed_reports += f"- Movimentos Sistêmicos (Candidatos V22 brutos): {shadow.get('v22_candidates', 0)}\n"
         detailed_reports += f"- Oportunidades Vetadas pela IA (< 85% de confiança): {missed_ai}\n"
         detailed_reports += f"- Oportunidades Vetadas por Fluxo Fraco: {missed_flux}\n"
         detailed_reports += f"- Saídas Antecipadas (Proteção Flash-Exit): {flash_exits}\n"
         
         # Sugestões de melhoria focadas no resultado do dia para elevar assertividade
-        detailed_reports += f"\n**💡 Melhorias para Elevar Assertividade:**\n"
+        detailed_reports += "\n**💡 Melhorias para Elevar Assertividade:**\n"
         if missed_ai > len(trades_day) and missed_ai > 0:
             detailed_reports += "- *Alta Taxa de Veto pela IA*: O modelo barrou muitos sinais (threshold 0.85 restritivo). Para aumentar oportunidades, considere reduzir levemente para 0.82-0.83 sem perder o caráter Sniper.\n"
         if missed_flux > len(trades_day) and missed_flux > 0:

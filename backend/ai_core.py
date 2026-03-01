@@ -62,7 +62,12 @@ class AICore:
         self.sentiment_anchor_time = 0
         self.max_sentiment_drift = 150.0 # Pontos do WIN para absorção total
         self.opening_window_rigor = 1.5   # Multiplicador de rigor 09:00-09:30
-        self.spread_veto_threshold = 3.5  # Veto se spread > 3.5 pts
+        self.spread_veto_threshold = 15.0 # Veto se spread > 15.0 pts (3 ticks do WIN)
+
+        # [ALPHA v1.0] CONFIGURAÇÕES DE FLEXIBILIZAÇÃO
+        self.mean_reversion_threshold = 2.0 # ATR (Semana 2: Flexibilizado de 1.5 para 2.0)
+        self.cooldown_mode = "DYNAMIC"      # DYNAMIC (Lote reduzido - Semana 3) ou HARD (Veto total)
+        self.opening_rigor_enabled = True   # Permite desligar o rigor extra de abertura
 
     def fetch_latest_news(self):
         """
@@ -381,14 +386,14 @@ class AICore:
         uncertainty_threshold = 0.30 # Ideal para filtrar ruido sem matar o volume
         if regime == 2 or abs(ofi) > 2.0:
             uncertainty_threshold = 0.20 # Rigor em ruído
-            logging.info(f"🛡️ FILTRO DE RUÍDO: Rigor 0.20")
+            logging.info("🛡️ FILTRO DE RUÍDO: Rigor 0.20")
             
         if quantile_confidence == "VERY_HIGH":
             uncertainty_threshold *= 2.0
             
         # [SOTA v5] Meta-Learner Fine-Tuning: Filtro de Abertura (09:00 - 09:30)
         is_opening_session = (hour == 9 and minute < 30)
-        if is_opening_session:
+        if is_opening_session and self.opening_rigor_enabled:
             uncertainty_threshold *= (1.0 / self.opening_window_rigor) # Reduz threshold = aumenta rigor
             logging.info(f"🛡️ RIGOR DE ABERTURA ATIVO: 09:{minute:02d}. Filtros restritos habilitados.")
 
@@ -405,14 +410,14 @@ class AICore:
         # 5. Verificação de Vetos (Fail-Safes)
         ia_in_cooldown = time.time() < self.ia_cooldown_until
         
-        if ia_in_cooldown:
+        if ia_in_cooldown and self.cooldown_mode == "HARD":
             veto_reason = "IA_COOLDOWN_VETO"
         elif uncertainty_rel > uncertainty_threshold:
             if quantile_confidence == "VERY_HIGH" and uncertainty_rel < self.uncertainty_high_conviction_cap:
                 lot_multiplier = self.lot_multiplier_partial
                 logging.warning(f"🛡️ ENTRADA ULTRA-CONSERVADORA: Alta incerteza ({uncertainty_rel*100:.1f}%)")
             else:
-                veto_reason = f"HIGH_UNCERTAINTY_FAILSAFE ({uncertainty_rel*100:.1f}% > {uncertainty_threshold*100:.1f}%)"
+                veto_reason = f"ALTA_INCERTEZA_FAILSAFE ({uncertainty_rel*100:.1f}% > {uncertainty_threshold*100:.1f}%)"
         
         # [PRO] Filtro de Divergência de Fluxo Inter-Mercados (WDO vs WIN)
         if veto_reason is None and wdo_aggression != 0.0:
@@ -445,11 +450,11 @@ class AICore:
             if ai_dir_raw < 0:
                 if self.macro_bull_lock:
                     veto_reason = f"MACRO_BULL_BLOCK (EMA {self.sentiment_ema:.2f} > 0.15)"
-                    logging.info(f"🛡️ [ANTI-NOISE] Venda barrada pela tendência de alta macro.")
+                    logging.info("🛡️ [ANTI-NOISE] Venda barrada pela tendência de alta macro.")
             elif ai_dir_raw > 0:
                 if self.macro_bear_lock:
                     veto_reason = f"MACRO_BEAR_BLOCK (EMA {self.sentiment_ema:.2f} < -0.15)"
-                    logging.info(f"🛡️ [ANTI-NOISE] Compra barrada pela tendência de baixa macro.")
+                    logging.info("🛡️ [ANTI-NOISE] Compra barrada pela tendência de baixa macro.")
 
         # [SOTA v25.3] MEAN REVERSION GUARD (Avoid Buying Tops / Selling Bottoms)
         if veto_reason is None and sma_20 > 0 and atr > 0:
@@ -458,12 +463,12 @@ class AICore:
             atr_dist = abs(dist_pts) / atr if atr > 0 else 0
             
             # [SOTA v25.4] Endurecido para 1.5 ATR para garantir > 70% Win Rate
-            if ai_dir_raw > 0 and dist_pts > (1.5 * atr):
-                veto_reason = f"VETO_REVERSAO_MEDIA_COMPRA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
-                logging.info(f"🛡️ [ANTI-EXHAUSTION] Compra bloqueada: Preço esticado (1.5 ATR).")
-            elif ai_dir_raw < 0 and dist_pts < (-1.5 * atr):
-                veto_reason = f"VETO_REVERSAO_MEDIA_VENDA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
-                logging.info(f"🛡️ [ANTI-EXHAUSTION] Venda bloqueada: Preço esticado (1.5 ATR).")
+            if ai_dir_raw > 0 and dist_pts > (self.mean_reversion_threshold * atr):
+                veto_reason = f"VETO_REVERSAO_MEDIA_COMPRA (dist={dist_pts:.1f}, threshold={self.mean_reversion_threshold} ATR)"
+                logging.info(f"🛡️ [ANTI-EXHAUSTION] Compra bloqueada: Preço esticado ({self.mean_reversion_threshold} ATR).")
+            elif ai_dir_raw < 0 and dist_pts < (-self.mean_reversion_threshold * atr):
+                veto_reason = f"VETO_REVERSAO_MEDIA_VENDA (dist={dist_pts:.1f}, threshold={self.mean_reversion_threshold} ATR)"
+                logging.info(f"🛡️ [ANTI-EXHAUSTION] Venda bloqueada: Preço esticado ({self.mean_reversion_threshold} ATR).")
 
         # [SOTA v5] Spread Veto (Proteção contra Slippage)
         if veto_reason is None and spread > self.spread_veto_threshold:
@@ -502,30 +507,42 @@ class AICore:
         final_score = (ai_score_raw * 0.4) + (meta_score * 0.6)
         if veto_reason: final_score = 50.0
 
-        # Direção - [SOTA v25.6] SWEET SPOT PUSH (70%+)
-        buy_threshold = 93.0
-        sell_threshold = 7.0
+        # Direção - [SOTA v25.6] SWEET SPOT PUSH (85-90%+)
+        buy_threshold = 90.0
+        sell_threshold = 10.0
         
         direction = "NEUTRAL"
-        if final_score >= buy_threshold: direction = "BUY"
-        elif final_score <= sell_threshold: direction = "SELL"
+        exec_strategy = "PASSIVA"
         
-        # [SOTA v5] Lot Sizing Probabilístico e Ajuste de Abertura
+        if final_score >= buy_threshold:
+            direction = "COMPRA"
+            exec_strategy = "MERCADO" if final_score >= 95.0 else "SNIPER" if final_score >= 90.0 else "PASSIVA"
+        elif final_score <= sell_threshold:
+            direction = "VENDA"
+            exec_strategy = "MERCADO" if final_score <= 5.0 else "SNIPER" if final_score <= 10.0 else "PASSIVA"
+        
+        # [SOTA v5] Dimensionamento de Lote Probabilístico e Ajuste de Abertura
         if veto_reason is None and direction != "NEUTRAL":
             lot_multiplier = self.calculate_probabilistic_lot(final_score, quantile_confidence)
-            if is_opening_session:
+            if is_opening_session and self.opening_rigor_enabled:
                 lot_multiplier *= 0.5 # Força exposição reduzida na abertura
-                logging.info(f"⏳ REDUCED LOT FOR OPENING: {lot_multiplier:.2f}x")
+                logging.info(f"⏳ LOTE REDUZIDO NA ABERTURA: {lot_multiplier:.2f}x")
             
-        # [SOTA v5] Spread-Adjusted Take Profit (Compensation)
+            # [ALPHA] Redução dinâmica em Cooldown
+            if ia_in_cooldown and self.cooldown_mode == "DYNAMIC":
+                lot_multiplier *= 0.25
+                logging.warning("❄️ [COOLDOWN DINÂMICO] Lote reduzido p/ 25% devido a perdas recentes.")
+            
+        # [SOTA v5] Take Profit Ajustado pelo Spread (Compensação)
         tp_adj = 1.0
         if spread > 1.0:
             tp_adj = 1.0 + (spread / 100.0) # Aumenta TP proporcionalmente ao custo
-            logging.debug(f"🎯 SPREAD-ADJUSTED TP: +{spread:.1f} pts compensation ({tp_adj:.2f}x)")
+            logging.debug(f"🎯 TP AJUSTADO PELO SPREAD: +{spread:.1f} pts compensação ({tp_adj:.2f}x)")
 
         return {
             "score": float(final_score),
             "direction": direction,
+            "execution_strategy": exec_strategy,
             "lot_multiplier": float(lot_multiplier),
             "tp_multiplier": float(tp_adj),
             "veto": veto_reason,
@@ -556,7 +573,7 @@ class AICore:
             self.consecutive_losses += 1
             if self.consecutive_losses >= 2:
                 self.ia_cooldown_until = time.time() + (15 * 60)
-                logging.warning(f"!!! COOLDOWN ATIVADO: 2 perdas consecutivas. IA suspensa ate {datetime.fromtimestamp(self.ia_cooldown_until).strftime('%H:%M:%S')}")
+                logging.warning(f"!!! COOLDOWN ATIVADO: 2 perdas consecutivas. IA operando com lote reduzido ate {datetime.fromtimestamp(self.ia_cooldown_until).strftime('%H:%M:%S')}")
         else:
             self.consecutive_losses = 0
             if time.time() < self.ia_cooldown_until:

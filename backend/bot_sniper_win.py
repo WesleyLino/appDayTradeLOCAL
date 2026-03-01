@@ -53,9 +53,16 @@ class SniperBotWIN:
         self.vol_spike_mult = 1.2 # Sniper Pro: 1.2x (Validated)
         self.last_trade_time = None
         
-        # [FASE 28] Sincronização de Parâmetros Calibrados (Grid Search)
-        self.risk.load_optimized_params("WIN", "best_params_WIN.json")
-        self.risk.load_optimized_params("WINJ26", "best_params_WIN.json") # Fallback para símbolo específico
+        # [FASE 28] Sincronização de Parâmetros Calibrados (COFRE GOLDEN V22)
+        # Prioriza o arquivo travado para a conta de R$ 3000
+        golden_path = "backend/v22_locked_params.json"
+        
+        # Tenta carregar do diretório local ou do backend/
+        if not os.path.exists(golden_path):
+            golden_path = "v22_locked_params.json"
+            
+        self.risk.load_optimized_params("WIN", golden_path)
+        self.risk.load_optimized_params("WINJ26", golden_path)
         
         self._load_state()
         

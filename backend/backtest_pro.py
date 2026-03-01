@@ -309,13 +309,12 @@ class BacktestPro:
                     self._close_trade(row['close'], 'TIME', row.name)
                     self.last_trade_time = row.name
 
-            # [SOTA v5] Simulação de Spread Dinâmico (1.0 a 3.5 pts)
+            # [SOTA v5] Simulação de Spread Dinâmico (Realista para WIN: 5.0 pts = 1 tick)
             fixed_spread = self.opt_params.get('spread')
             if fixed_spread is not None:
                 current_spread = fixed_spread
             else:
-                current_spread = 1.0 + (row['high'] - row['low']) * 0.1
-                current_spread = min(4.0, max(1.0, current_spread))
+                current_spread = 5.0 if "WIN" in self.symbol else 1.0
             
             # [SOTA v5] Sincronizar Âncora de Sentimento (Price-Based Decay)
             self.ai.update_sentiment_anchor(row['close'])
@@ -397,8 +396,8 @@ class BacktestPro:
                     )
                     
                     direction = ai_decision['direction']
-                    v22_buy = direction == "BUY"
-                    v22_sell = direction == "SELL"
+                    v22_buy = direction == "COMPRA"
+                    v22_sell = direction == "VENDA"
                     quantile_confidence = ai_decision.get('quantile_confidence', "NORMAL")
                     
                     regime_tag = f"AI_{direction}_{quantile_confidence}"
@@ -415,7 +414,7 @@ class BacktestPro:
                         vol_spike_eff = vol_spike # No modo IA usamos volume puro
                         ai_stability = ai_decision.get('score', 50.0) / 100.0 # [SOTA v25.4] Usa score real para o filtro de confianca do auditor
                     elif (rsi < 30 and row['close'] < lower_bb) or (rsi > 70 and row['close'] > upper_bb):
-                        logging.debug(f"💤 IA NEUTRA (Candidato Filtrado por Incerteza da IA/Meta): {ai_decision.get('uncertainty', 0)*100:.1f}% de incerteza")
+                        logging.debug(f"💤 IA NEUTRA (Candidato Filtrado por Incerteza da IA/Meta): {ai_decision.get('incerteza', 0)*100:.1f}% de incerteza")
 
                 # --- [LEGACY] INTELIGÊNCIA DO SUCESSO: REGIME MAESTRO & SCALPING ADAPTATION ---
                 else:
@@ -478,6 +477,8 @@ class BacktestPro:
                 # Isso permite ver no relatório de auditoria quantos sinais a IA vetou.
                 if (rsi < 30 and row['close'] < lower_bb) or (rsi > 70 and row['close'] > upper_bb):
                     self.shadow_signals['v22_candidates'] += 1
+                    if i % 100 == 0: # Reduzir log spam
+                        logging.info(f"🔍 DEBUG SIGNAL @ {row.name}: RSI={rsi:.1f}, BB={row['close'] < lower_bb or row['close'] > upper_bb}, VolOK={vol_spike_eff}")
 
                 # Filtros Operacionais
                 t_start = datetime.strptime(self.opt_params['start_time'], "%H:%M").time()
@@ -546,8 +547,17 @@ class BacktestPro:
                 if (v22_buy or v22_sell) and time_ok and risk_ok and limit_ok and vol_stable and cooldown_ok and ai_filter_ok and sentiment_ok and flux_ok:
                     side = "buy" if v22_buy else "sell"
                     
-                    # [SOTA v25] FILTRO DE RUÍDO CENTRALIZADO NO AI CORE (macro_bull_lock / macro_bear_lock)
-                    # O veto já foi processado dentro do calculate_decision e refletido no v22_buy/v22_sell.
+                    # [ALPHA] Lógica de Execução Diferenciada
+                    exec_strat = ai_decision.get('execution_strategy', 'PASSIVA') if use_ai_core else "PASSIVA"
+                    entry_price = row['close']
+                    
+                    if exec_strat == "MERCADO":
+                        # Simula slippage/spread na agressão a mercado
+                        entry_price = row['close'] + (current_spread if v22_buy else -current_spread)
+                        comment = "ALPHA_MERCADO"
+                    else:
+                        comment = "ALPHA_SNIPER"
+                        entry_price = row['close'] # Ordem limite no preço atual (simplificado)
 
                     # --- [DYNAMIC ATR TARGETS V3] ---
                     # Replica a lógica do RiskManager ajustada por regime
@@ -577,8 +587,8 @@ class BacktestPro:
                     if tp_multiplier != 1.0:
                         dyn_tp_pts *= tp_multiplier
                     
-                    sl = row['close'] - dyn_sl_pts if side == "buy" else row['close'] + dyn_sl_pts
-                    tp = row['close'] + dyn_tp_pts if side == "buy" else row['close'] - dyn_tp_pts
+                    sl = entry_price - dyn_sl_pts if side == "buy" else entry_price + dyn_sl_pts
+                    tp = entry_price + dyn_tp_pts if side == "buy" else entry_price - dyn_tp_pts
                     
                     # Lote Dinâmico (Anti-Martingale)
                     # Lote Dinâmico / Fixo
@@ -597,12 +607,13 @@ class BacktestPro:
                     
                     self.position = {
                         'side': side,
-                        'entry_price': row['close'],
+                        'entry_price': entry_price,
                         'sl': sl,
                         'tp': tp,
                         'lots': target_lot,
                         'index': i,
                         'time': row.name,
+                        'comment': comment,
                         'quantile_confidence': quantile_confidence if 'quantile_confidence' in locals() else "NORMAL"
                     }
                     self.daily_trade_count += 1

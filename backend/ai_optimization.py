@@ -122,6 +122,6 @@ if __name__ == "__main__":
     export_to_onnx(
         model_path="backend/patchtst_weights_sota.pth", 
         onnx_path="backend/patchtst_weights_sota_optimized.onnx", 
-        c_in=5, 
+        c_in=1, 
         context_window=60
     )

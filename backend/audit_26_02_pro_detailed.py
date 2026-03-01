@@ -109,7 +109,7 @@ O sistema monitorou o mercado em tempo real e aplicou os filtros de rigor PRO.
     if shadow.get('filtered_by_flux', 0) > 5:
         report_content += "2. **Ajuste de Fluxo**: O desbalanceamento do book (OBI) barrou entradas lucrativas. Considerar reduzir o threshold de fluxo para 1.1 em dias de baixa volatilidade.\n"
 
-    report_content += f"\n## Conclusão de Auditoria\nO teste confirma que o bot operou com rigor PRO. A seletividade atual prioriza a preservação do capital (R$ 3.000) em detrimento do volume de trades."
+    report_content += "\n## Conclusão de Auditoria\nO teste confirma que o bot operou com rigor PRO. A seletividade atual prioriza a preservação do capital (R$ 3.000) em detrimento do volume de trades."
 
     # Salva o relatório
     report_path = os.path.join(os.path.dirname(__file__), "..", "backend", "audit_pro_2602_report.md")

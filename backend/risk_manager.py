@@ -331,26 +331,38 @@ class RiskManager:
         return float(suggested_lots)
 
     def load_optimized_params(self, symbol, json_path):
-        """Carrega parâmetros otimizados (SL, TP, etc) de um arquivo JSON."""
+        """Carrega parâmetros otimizados (SL, TP, etc) de um arquivo JSON (Suporta V22 Golden)."""
         import json
         import os
         if os.path.exists(json_path):
             try:
-                with open(json_path, 'r') as f:
+                with open(json_path, 'r', encoding='utf-8') as f:
                     raw_data = json.load(f)
-                    # O optimizer.py salva no formato {"params": {...}, "profit_factor": ...}
-                    params = raw_data.get("params", raw_data)
                     
-                    # Mapeamento de nomes do optimizer para nomes do SniperBot
+                    # Suporte ao formato v22_locked_params.json (Golden)
+                    if "strategy_params" in raw_data:
+                        params = raw_data["strategy_params"]
+                        logging.info(f"🛡️ RISK: Detectada estrutura GOLDEN V22 para {symbol}.")
+                    else:
+                        # Fallback para o formato do optimizer.py
+                        params = raw_data.get("params", raw_data)
+                    
+                    # Mapeamento robusto de nomes
                     mapped_params = {
-                        "sl": params.get("sl_dist", params.get("sl")),
-                        "tp": params.get("tp_dist", params.get("tp")),
+                        "sl": params.get("sl_dist", params.get("sl", 150.0)),
+                        "tp": params.get("tp_dist", params.get("tp", 400.0)),
                         "rsi_period": params.get("rsi_period"),
-                        "vol_spike_mult": params.get("vol_spike_mult")
+                        "vol_spike_mult": params.get("vol_spike_mult"),
+                        "trailing_trigger": params.get("trailing_trigger"),
+                        "trailing_lock": params.get("trailing_lock")
                     }
                     
+                    # Atualiza os parâmetros internos da classe se os campos existirem no JSON
+                    if mapped_params["trailing_trigger"]: self.trailing_trigger = float(mapped_params["trailing_trigger"])
+                    if mapped_params["trailing_lock"]: self.trailing_lock = float(mapped_params["trailing_lock"])
+                    
                     self.dynamic_params[symbol] = mapped_params
-                    logging.info(f"✅ RISK: Parâmetros para {symbol} mapeados: {mapped_params}")
+                    logging.info(f"✅ RISK: Parâmetros para {symbol} mapeados e aplicados: {mapped_params}")
                     return True
             except Exception as e:
                 logging.error(f"❌ RISK: Erro ao carregar parâmetros de {json_path}: {e}")
