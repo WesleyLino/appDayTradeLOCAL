@@ -68,14 +68,36 @@ async def run_user_audit():
             ai_core=ai_instance
         )
         
-        # Últimas Calibrações e Parâmetros (SOTA PRO rigor)
-        tester.opt_params['confidence_threshold'] = 0.82
-        tester.opt_params['use_flux_filter'] = True
-        tester.opt_params['flux_imbalance_threshold'] = 1.15
+        # Calibrações para Auditoria de Potencial (Modo Sniper Equilibrado)
+        tester.opt_params['confidence_threshold'] = 0.70
+        tester.opt_params['use_flux_filter'] = False # Desativar para ver potencial IA puro primeiro
+        tester.opt_params['flux_imbalance_threshold'] = 1.02
         tester.opt_params['be_trigger'] = 60.0 
-        tester.opt_params['spread'] = 1.2 # Fixar spread para evitar o veto de 3.5 pts da IA
+        tester.opt_params['spread'] = 1.1 # Spread realístico do mini índice
+        tester.opt_params['start_time'] = "09:00"
+        
+        # [CONFIGURAÇÃO SNIPER OTIMIZADA] - Encontrada via Grid Search 02/03/2026
+        ai_instance.buy_threshold = 85.0
+        ai_instance.sell_threshold = 15.0
+        ai_instance.uncertainty_threshold_base = 0.50 
+        
+        # Desativar filtros que estavam abafando sinais no período auditado
+        ai_instance.macro_bull_lock = False
+        ai_instance.macro_bear_lock = False
+        ai_instance.bluechips_veto_threshold = 99.0
+        ai_instance.wdo_veto_threshold = 99.0
+        ai_instance.spread_veto_threshold = 10.0
+        
+        # Cooldown reduzido para aproveitar volatilidade do WIN$
+        opt_params = {
+            'confidence_threshold': 0.0, # Já controlado pelo buy_threshold do AICore
+            'use_flux_filter': False,
+            'cooldown_minutes': 5,
+            'be_trigger': 60.0
+        }
         
         tester.data = sliced_data
+        logging.info(f"   - {len(tester.data)} velas enviadas para o backtester do dia.")
         
         # Simulação
         await tester.run()

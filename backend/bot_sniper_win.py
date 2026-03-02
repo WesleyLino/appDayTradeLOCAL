@@ -1,13 +1,15 @@
 import asyncio
 import logging
+import json
+import os
+import numpy as np
+import pandas as pd
 from logging.handlers import TimedRotatingFileHandler
-from datetime import datetime, time, date
+from datetime import datetime, time, date, timedelta
 from backend.mt5_bridge import MT5Bridge
 from backend.risk_manager import RiskManager
 from backend.ai_core import AICore
 from backend.persistence import PersistenceManager
-import pandas as pd
-import numpy as np
 
 # Configuração de Logs com Rotação Diária
 log_handler = TimedRotatingFileHandler("backend/bot_sniper.log", when="midnight", interval=1, backupCount=7, encoding='utf-8')
@@ -39,6 +41,7 @@ class SniperBotWIN:
         self.persistence = PersistenceManager()
         
         self.symbol = None
+        self.cross_symbol = None # WDO$
         self.trade_count = 0
         self.last_date = None
         self.running = False
@@ -106,6 +109,18 @@ class SniperBotWIN:
         rs = gain / loss.replace(0, 0.000001)
         return 100 - (100 / (1 + rs))
 
+    def get_market_context(self):
+        """Lê o contexto sintético de Blue Chips de data/market_context.json."""
+        try:
+            context_file = "data/market_context.json"
+            if os.path.exists(context_file):
+                with open(context_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    return data.get("synthetic_index", 0.0)
+        except Exception:
+            pass
+        return 0.0
+
     def calculate_vwap_bands(self, df):
         """Calcula VWAP Intraday e Desvio Padrão para detecção de exaustão."""
         # Preço Típico: (H + L + C) / 3
@@ -116,10 +131,31 @@ class SniperBotWIN:
         vwap = (tp * v).cumsum() / v.cumsum()
         
         # Calculamos o desvio padrão em relação à VWAP (Rolling de 20 períodos para volatilidade local)
-        # SOTA v26: Usamos a distância quadrática ponderada se disponível, mas std() local é robusto.
         std = tp.rolling(20).std()
         
         return float(vwap.iloc[-1]), float(std.iloc[-1])
+
+    async def get_cross_asset_aggression(self):
+        """Calcula a agressão líquida do WDO para veto inter-mercados."""
+        if not self.cross_symbol:
+            return 0.0
+        
+        # Coleta os últimos negócios do WDO
+        wdo_tns = await asyncio.to_thread(self.bridge.get_time_and_sales, self.cross_symbol, n_ticks=40)
+        if wdo_tns is None or wdo_tns.empty:
+            return 0.0
+            
+        try:
+            # Flags MT5: 0x100: BUY, 0x200: SELL
+            buy_vol = wdo_tns[wdo_tns['flags'] & 0x100]['volume'].sum() if 'flags' in wdo_tns.columns else 0
+            sell_vol = wdo_tns[wdo_tns['flags'] & 0x200]['volume'].sum() if 'flags' in wdo_tns.columns else 0
+            
+            if buy_vol + sell_vol > 0:
+                # Normaliza entre -1 e 1
+                return (buy_vol - sell_vol) / (buy_vol + sell_vol)
+        except Exception:
+            pass
+        return 0.0
 
     async def execute_trade(self, side, quantile_confidence="NORMAL", ai_score=50.0, tp_multiplier=1.0, current_atr=None, regime=None):
         """Coordena o envio de ORDEM HÍBRIDA (Market vs Limit) baseado na Convicção Institucional.
@@ -283,11 +319,20 @@ class SniperBotWIN:
             v_ok, v_msg = self.risk.check_velocity_limit(current_profit, elapsed)
             if v_ok:
                 logger.warning(f"🛡️ [LIMITE VELOCIDADE] {v_msg}: Fechando posição {pos.ticket} precocemente.")
-                if self.risk.dry_run:
-                    logger.info(f"🧪 [SIMULAÇÃO] Fechamento {pos.ticket} por Limite de Velocidade")
-                else:
-                    self.bridge.close_position(pos.ticket)
+                self.bridge.close_position(pos.ticket)
                 continue
+
+            # 0.1 [TIME-STOP DINÂMICO - MALÍCIA INSTITUCIONAL]
+            # Se a posição está aberta e o mercado lateralizou (ex: 7 min sem atingir 50% do alvo)
+            if elapsed > 420: # 7 minutos
+                tp_points = abs(pos.tp - pos.price_open) if pos.tp > 0 else 200
+                if current_profit < (tp_points * 0.4):
+                    logger.warning(f"⏰ [TIME-STOP] Lateralidade detectada ({elapsed/60:.1f}min). Saindo por tempo para preservar pulmão.")
+                    if self.risk.dry_run:
+                        logger.info(f"🧪 [SIMULAÇÃO] Time-Stop no ticket {pos.ticket}")
+                    else:
+                        self.bridge.close_position(pos.ticket)
+                    continue
 
             # 1. Lógica de Breakeven [URGENTE]
             if pos.type == self.bridge.mt5.POSITION_TYPE_BUY:
@@ -375,7 +420,8 @@ class SniperBotWIN:
                 return
 
         self.symbol = self.bridge.get_current_symbol("WIN")
-        logger.info(f"Símbolo alvo: {self.symbol} | MODO: {'SIMULAÇÃO' if self.risk.dry_run else 'REAL'}")
+        self.cross_symbol = self.bridge.get_current_symbol("WDO")
+        logger.info(f"Símbolos: WIN:{self.symbol}, WDO:{self.cross_symbol} | MODO: {'SIMULAÇÃO' if self.risk.dry_run else 'REAL'}")
         
         # [FASE 28] APLICAR PARÂMETROS DINÂMICOS SE CARREGADOS
         if self.symbol in self.risk.dynamic_params:
@@ -632,12 +678,25 @@ class SniperBotWIN:
                             current_price=last_row['close'],
                             spread=live_spread,
                             vwap=vwap,
-                            vwap_std=vwap_std
+                            vwap_std=vwap_std,
+                            wdo_aggression=await self.get_cross_asset_aggression(),
+                            bluechips_score=self.get_market_context()
                         )
                         
                         ai_direction = ai_decision.get("direction", "NEUTRAL")
-                        quantile_confidence = ai_decision.get("quantile_confidence", "NORMAL")
                         ai_score = ai_decision.get("score", 50.0)
+                        quantile_confidence = ai_decision.get("quantile_confidence", "NORMAL")
+
+                        # [SOTA v26] VETO VWAP: Evitar comprar em topo ou vender em fundo de banda
+                        vwap_val, v_upper, v_lower = self.calculate_vwap_and_bands(df)
+                        if vwap_val:
+                            current_val = last_row['close']
+                            if ai_direction == "BUY" and current_val > v_upper:
+                                logger.warning(f"🛡️ [VETO VWAP] Exaustão de Alta: Preço ({current_val:.0f}) acima da banda superior ({v_upper:.0f})")
+                                ai_direction = "NEUTRAL"
+                            elif ai_direction == "SELL" and current_val < v_lower:
+                                logger.warning(f"🛡️ [VETO VWAP] Exaustão de Baixa: Preço ({current_val:.0f}) abaixo da banda inferior ({v_lower:.0f})")
+                                ai_direction = "NEUTRAL"
 
                         ai_ok = (side == "buy"  and ai_direction == "BUY") or \
                                 (side == "sell" and ai_direction == "SELL")

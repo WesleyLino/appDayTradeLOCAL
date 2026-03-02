@@ -6,7 +6,12 @@ Loading Model: backend/patchtst_optimized.onnx
 Active Providers: ['DmlExecutionProvider', 'CPUExecutionProvider']
 SUCCESS: AMD GPU (DirectML) is ACTIVE.
 Running 100 iterations (Batch=1, Seq=60, Ch=8)...
+<<<<<<< HEAD
 Average Latency: 0.62ms
 Total Time: 0.0616s
+=======
+Average Latency: 0.59ms
+Total Time: 0.0587s
+>>>>>>> SOTA-RIGID-V93-FINAL-SNAPSHOT
 TERMINATED SUCCESSFULLY
 ==================================================
