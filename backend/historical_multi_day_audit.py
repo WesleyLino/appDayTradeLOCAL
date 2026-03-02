@@ -29,7 +29,7 @@ async def run_multi_day_audit():
         print(f"❌ Erro: Arquivo {data_file} não encontrado.")
         return
 
-    print(f"📂 Carregando base de dados maestra (WIN$)...")
+    print("📂 Carregando base de dados maestra (WIN$)...")
     try:
         df_all = pd.read_csv(data_file)
         df_all['time'] = pd.to_datetime(df_all['time'])
@@ -102,7 +102,7 @@ async def run_multi_day_audit():
     with open('backend/historical_multi_day_report.json', 'w') as f:
         json.dump(consolidated_results, f, indent=4, default=str)
         
-    print(f"\n✅ Auditoria Multi-Dia Concluída. Relatório salvo em backend/historical_multi_day_report.json")
+    print("\n✅ Auditoria Multi-Dia Concluída. Relatório salvo em backend/historical_multi_day_report.json")
 
 if __name__ == "__main__":
     asyncio.run(run_multi_day_audit())

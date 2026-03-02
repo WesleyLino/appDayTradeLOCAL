@@ -142,7 +142,7 @@ async def perfect_calibration():
         }
         with open('backend/calibration_27_02.json', 'w') as f:
             json.dump(result, f, indent=4)
-        print(f"✅ Calibragem finalizada! Resultado salvo.")
+        print("✅ Calibragem finalizada! Resultado salvo.")
     else:
         print("❌ Nenhuma combinação lucrativa encontrada para hoje.")
 

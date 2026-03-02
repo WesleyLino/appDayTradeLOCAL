@@ -71,7 +71,7 @@ async def run_audit():
     # Datas solicitadas (Fevereiro 2026)
     target_dates = ["19/02/2026", "20/02/2026", "23/02/2026", "24/02/2026", "25/02/2026", "26/02/2026", "27/02/2026"]
     
-    output_report = f"# 📊 Auditoria AlphaX v2.1: Relatório de Fevereiro 2026\n"
+    output_report = "# 📊 Auditoria AlphaX v2.1: Relatório de Fevereiro 2026\n"
     output_report += f"**Ativo**: {symbol} | **Capital**: R$ {capital:.2f} | **Foco**: Mini Índice (WIN)\n\n"
     output_report += "| Data | PnL Total | Trades | Compra (PnL) | Venda (PnL) | Win Rate | Velocity Exits | Lote Max |\n"
     output_report += "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |\n"
@@ -134,7 +134,7 @@ async def run_audit():
         logging.info(f"✅ Dia {date_str} processado com sucesso.")
 
     final_wr = (total_wins / total_trades_count * 100) if total_trades_count else 0
-    output_report += f"\n\n### 🏆 Resultado Consolidado AlphaX\n"
+    output_report += "\n\n### 🏆 Resultado Consolidado AlphaX\n"
     output_report += f"- **PnL Acumulado (7 Dias)**: R$ {total_pnl:.2f}\n"
     output_report += f"- **Retorno sobre Capital**: {(total_pnl/capital*100):.2f}%\n"
     output_report += f"- **Assertividade Média**: {final_wr:.1f}%\n"

@@ -63,6 +63,12 @@ class AICore:
         self.max_sentiment_drift = 150.0 # Pontos do WIN para absorção total
         self.opening_window_rigor = 1.5   # Multiplicador de rigor 09:00-09:30
         self.spread_veto_threshold = 3.5  # Veto se spread > 3.5 pts
+        
+        # [MALÍCIA INSTITUCIONAL]
+        self.wdo_veto_threshold = 1.8     # Threshold de agressão no WDO para veto
+        self.bluechips_veto_threshold = 0.5 # Threshold de divergência bluechips
+        self.buy_threshold = 93.0         # [ANTIVIBE-CODING] Default Seguro
+        self.sell_threshold = 7.0         # [ANTIVIBE-CODING] Default Seguro
 
     def fetch_latest_news(self):
         """
@@ -329,7 +335,34 @@ class AICore:
             self.sentiment_anchor_price = price
             logging.debug(f"⚓ SENTIMENT ANCHOR SET: {price:.1f} (Score: {self.latest_sentiment_score:.2f})")
 
-    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0, sma_20=0.0, wdo_aggression=0.0):
+    def validate_institutional_flow(self, direction, bluechips_score, wdo_aggression):
+        """
+        [GOD MODE] Validação de Fluxo Institucional (WIN + WDO + Bluechips).
+        Matriz de aprovação baseada na correlação estrutural da B3.
+        """
+        if direction == "NEUTRAL":
+            return True, None
+
+        # 1. Fluxo Interno (Bluechips / Motor do Índice)
+        # bluechips_score: > 0 (Alta), < 0 (Baixa)
+        motor_aligned = (direction == "BUY" and bluechips_score >= -self.bluechips_veto_threshold) or \
+                        (direction == "SELL" and bluechips_score <= self.bluechips_veto_threshold)
+        
+        # 2. Fluxo Macro (WDO / Combustível Cambial)
+        # wdo_aggression: > 0 (Dólar subindo), < 0 (Dólar caindo)
+        # A correlação é INVERSA: WIN BUY -> WDO SELL | WIN SELL -> WDO BUY
+        macro_aligned = (direction == "BUY" and wdo_aggression <= self.wdo_veto_threshold) or \
+                        (direction == "SELL" and wdo_aggression >= -self.wdo_veto_threshold)
+        
+        if not motor_aligned:
+            return False, "DIVERGENCIA_BLUECHIPS (Motor interno desligado)"
+        
+        if not macro_aligned:
+            return False, "DIVERGENCIA_MACRO_WDO (Combustível cambial contra)"
+            
+        return True, "ALINHADO"
+
+    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0, sma_20=0.0, wdo_aggression=0.0, bluechips_score=0.0):
         """
         [SOTA v5] Fluxo de Decisão com Camadas de Precisão
         [SOTA v25.3] Adicionado sma_20 para Mean Reversion Guard.
@@ -381,7 +414,7 @@ class AICore:
         uncertainty_threshold = 0.30 # Ideal para filtrar ruido sem matar o volume
         if regime == 2 or abs(ofi) > 2.0:
             uncertainty_threshold = 0.20 # Rigor em ruído
-            logging.info(f"🛡️ FILTRO DE RUÍDO: Rigor 0.20")
+            logging.info("🛡️ FILTRO DE RUÍDO: Rigor 0.20")
             
         if quantile_confidence == "VERY_HIGH":
             uncertainty_threshold *= 2.0
@@ -424,6 +457,15 @@ class AICore:
                 veto_reason = "WDO_CROSS_CORRELATION_VETO_SELL_BLOCKED"
                 logging.info("🛡️ VETO INTER-MERCADOS: Venda vetada por fluxo massivo de baixa no WDO.")
 
+        # [PRO] Validação Institucional Consolidada (God Mode)
+        if veto_reason is None:
+            ai_dir = np.sign(norm_patchtst)
+            temp_dir = "BUY" if ai_dir > 0 else "SELL" if ai_dir < 0 else "NEUTRAL"
+            flow_ok, flow_msg = self.validate_institutional_flow(temp_dir, bluechips_score, wdo_aggression)
+            if not flow_ok:
+                veto_reason = flow_msg
+                logging.info(f"🛡️ [GOD MODE VETO] {flow_msg}")
+
         # [PRO] Filtro de Divergência Interna de Fluxo
         if veto_reason is None:
             ai_dir = np.sign(norm_patchtst)
@@ -445,11 +487,11 @@ class AICore:
             if ai_dir_raw < 0:
                 if self.macro_bull_lock:
                     veto_reason = f"MACRO_BULL_BLOCK (EMA {self.sentiment_ema:.2f} > 0.15)"
-                    logging.info(f"🛡️ [ANTI-NOISE] Venda barrada pela tendência de alta macro.")
+                    logging.info("🛡️ [ANTI-NOISE] Venda barrada pela tendência de alta macro.")
             elif ai_dir_raw > 0:
                 if self.macro_bear_lock:
                     veto_reason = f"MACRO_BEAR_BLOCK (EMA {self.sentiment_ema:.2f} < -0.15)"
-                    logging.info(f"🛡️ [ANTI-NOISE] Compra barrada pela tendência de baixa macro.")
+                    logging.info("🛡️ [ANTI-NOISE] Compra barrada pela tendência de baixa macro.")
 
         # [SOTA v25.3] MEAN REVERSION GUARD (Avoid Buying Tops / Selling Bottoms)
         if veto_reason is None and sma_20 > 0 and atr > 0:
@@ -460,10 +502,10 @@ class AICore:
             # [SOTA v25.4] Endurecido para 1.5 ATR para garantir > 70% Win Rate
             if ai_dir_raw > 0 and dist_pts > (1.5 * atr):
                 veto_reason = f"VETO_REVERSAO_MEDIA_COMPRA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
-                logging.info(f"🛡️ [ANTI-EXHAUSTION] Compra bloqueada: Preço esticado (1.5 ATR).")
+                logging.info("🛡️ [ANTI-EXHAUSTION] Compra bloqueada: Preço esticado (1.5 ATR).")
             elif ai_dir_raw < 0 and dist_pts < (-1.5 * atr):
                 veto_reason = f"VETO_REVERSAO_MEDIA_VENDA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
-                logging.info(f"🛡️ [ANTI-EXHAUSTION] Venda bloqueada: Preço esticado (1.5 ATR).")
+                logging.info("🛡️ [ANTI-EXHAUSTION] Venda bloqueada: Preço esticado (1.5 ATR).")
 
         # [SOTA v5] Spread Veto (Proteção contra Slippage)
         if veto_reason is None and spread > self.spread_veto_threshold:
@@ -502,9 +544,14 @@ class AICore:
         final_score = (ai_score_raw * 0.4) + (meta_score * 0.6)
         if veto_reason: final_score = 50.0
 
-        # Direção - [SOTA v25.6] SWEET SPOT PUSH (70%+)
-        buy_threshold = 93.0
-        sell_threshold = 7.0
+        # Direção - [MALÍCIA INSTITUCIONAL: Assimetria Direcional]
+        buy_threshold = self.buy_threshold
+        sell_threshold = self.sell_threshold # Vendas em pânico confirmam mais rápido
+        
+        # [SOTA v26] Reduzir rigor de venda se o OBI e WDO confirmarem pânico
+        if wdo_aggression > 1.2 and obi < -0.8:
+            sell_threshold = min(sell_threshold + 5.0, 25.0) # Ser mais sensível no short
+            logging.info(f"📉 [ALPHA PANIC] Threshold de venda reduzido para {sell_threshold:.1f} (Pânico validado)")
         
         direction = "NEUTRAL"
         if final_score >= buy_threshold: direction = "BUY"

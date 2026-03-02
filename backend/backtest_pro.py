@@ -26,7 +26,7 @@ class BacktestPro:
         self.timeframe = timeframe
         self.data_file = data_file
         self.bridge = MT5Bridge()
-        self.ai = AICore()
+        self.ai = kwargs.get('ai_core', AICore())
         # Tenta carregar o motor de inferência (se existir o peso SOTA)
         try:
             self.inference = InferenceEngine(model_path="backend/patchtst_weights_sota.pth")

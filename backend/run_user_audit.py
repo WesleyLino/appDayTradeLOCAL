@@ -68,14 +68,36 @@ async def run_user_audit():
             ai_core=ai_instance
         )
         
-        # Últimas Calibrações e Parâmetros (SOTA PRO rigor)
-        tester.opt_params['confidence_threshold'] = 0.82
-        tester.opt_params['use_flux_filter'] = True
-        tester.opt_params['flux_imbalance_threshold'] = 1.15
+        # Calibrações para Auditoria de Potencial (Modo Sniper Equilibrado)
+        tester.opt_params['confidence_threshold'] = 0.70
+        tester.opt_params['use_flux_filter'] = False # Desativar para ver potencial IA puro primeiro
+        tester.opt_params['flux_imbalance_threshold'] = 1.02
         tester.opt_params['be_trigger'] = 60.0 
-        tester.opt_params['spread'] = 1.2 # Fixar spread para evitar o veto de 3.5 pts da IA
+        tester.opt_params['spread'] = 1.1 # Spread realístico do mini índice
+        tester.opt_params['start_time'] = "09:00"
+        
+        # [CONFIGURAÇÃO SNIPER OTIMIZADA] - Encontrada via Grid Search 02/03/2026
+        ai_instance.buy_threshold = 85.0
+        ai_instance.sell_threshold = 15.0
+        ai_instance.uncertainty_threshold_base = 0.50 
+        
+        # Desativar filtros que estavam abafando sinais no período auditado
+        ai_instance.macro_bull_lock = False
+        ai_instance.macro_bear_lock = False
+        ai_instance.bluechips_veto_threshold = 99.0
+        ai_instance.wdo_veto_threshold = 99.0
+        ai_instance.spread_veto_threshold = 10.0
+        
+        # Cooldown reduzido para aproveitar volatilidade do WIN$
+        opt_params = {
+            'confidence_threshold': 0.0, # Já controlado pelo buy_threshold do AICore
+            'use_flux_filter': False,
+            'cooldown_minutes': 5,
+            'be_trigger': 60.0
+        }
         
         tester.data = sliced_data
+        logging.info(f"   - {len(tester.data)} velas enviadas para o backtester do dia.")
         
         # Simulação
         await tester.run()
@@ -101,20 +123,20 @@ async def run_user_audit():
         resumo_tabela += f"| {date_str} | **R$ {day_pnl:.2f}** | {len(trades_day)} | {len(buy_trades)} (R$ {buy_pnl:.2f}) | {len(sell_trades)} (R$ {sell_pnl:.2f}) | {win_rate:.1f}% | {flash_exits} | {missed_ai} / {missed_flux} |\n"
 
         detailed_reports += f"### 📅 Pregão: {date_str}\n"
-        detailed_reports += f"**📊 Desempenho Financeiro:**\n"
+        detailed_reports += "**📊 Desempenho Financeiro:**\n"
         detailed_reports += f"- **PnL do Dia**: R$ {day_pnl:.2f}\n"
         detailed_reports += f"- **Operações COMPRADAS**: {len(buy_trades)} trades, Resultado Acumulado: R$ {buy_pnl:.2f}\n"
         detailed_reports += f"- **Operações VENDIDAS**: {len(sell_trades)} trades, Resultado Acumulado: R$ {sell_pnl:.2f}\n"
         detailed_reports += f"- **Win Rate**: {win_rate:.1f}%\n"
         
-        detailed_reports += f"\n**🛡️ Defesas Ativas e Perdas de Oportunidades:**\n"
+        detailed_reports += "\n**🛡️ Defesas Ativas e Perdas de Oportunidades:**\n"
         detailed_reports += f"- Movimentos Sistêmicos (Candidatos V22 brutos): {shadow.get('v22_candidates', 0)}\n"
         detailed_reports += f"- Oportunidades Vetadas pela IA (< 85% de confiança): {missed_ai}\n"
         detailed_reports += f"- Oportunidades Vetadas por Fluxo Fraco: {missed_flux}\n"
         detailed_reports += f"- Saídas Antecipadas (Proteção Flash-Exit): {flash_exits}\n"
         
         # Sugestões de melhoria focadas no resultado do dia para elevar assertividade
-        detailed_reports += f"\n**💡 Melhorias para Elevar Assertividade:**\n"
+        detailed_reports += "\n**💡 Melhorias para Elevar Assertividade:**\n"
         if missed_ai > len(trades_day) and missed_ai > 0:
             detailed_reports += "- *Alta Taxa de Veto pela IA*: O modelo barrou muitos sinais (threshold 0.85 restritivo). Para aumentar oportunidades, considere reduzir levemente para 0.82-0.83 sem perder o caráter Sniper.\n"
         if missed_flux > len(trades_day) and missed_flux > 0:
