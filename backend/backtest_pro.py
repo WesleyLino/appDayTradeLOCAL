@@ -471,12 +471,28 @@ class BacktestPro:
                         vwap_std=row['vwap_std']
                     )
                     
-                    direction = ai_decision['direction']
-                    v22_buy = direction == "BUY"
-                    v22_sell = direction == "SELL"
-                    quantile_confidence = ai_decision.get('quantile_confidence', "NORMAL")
+                    # [MODO FUSÃO SOTA] Gatilhos Matemáticos (RSI/BB) + Filtro de Convicção IA
+                    v22_buy_raw = (rsi < 30 and row['close'] < lower_bb) and vol_spike_eff
+                    v22_sell_raw = (rsi > 70 and row['close'] > upper_bb) and vol_spike_eff
                     
-                    regime_tag = f"AI_{direction}_{quantile_confidence}"
+                    self.shadow_signals['v22_candidates'] = self.shadow_signals.get('v22_candidates', 0) + 1
+                    
+                    ai_dir = ai_decision.get('direction', 'NEUTRAL')
+                    ai_score = ai_decision.get('score', 50.0)
+                    ai_stability = ai_score / 100.0
+                    
+                    # Decisão Final: Precisa do gatilho técnico + viés de direção da IA com confiança
+                    v22_buy = v22_buy_raw and (ai_dir == "BUY") and (ai_stability >= self.opt_params['confidence_threshold'])
+                    v22_sell = v22_sell_raw and (ai_dir == "SELL") and (ai_stability >= self.opt_params['confidence_threshold'])
+                    
+                    # Rastreamento de Vetos (Shadow Trading) - Separado por Ponta
+                    if v22_buy_raw and not v22_buy:
+                        self.shadow_signals['buy_vetos_ai'] = self.shadow_signals.get('buy_vetos_ai', 0) + 1
+                    if v22_sell_raw and not v22_sell:
+                        self.shadow_signals['sell_vetos_ai'] = self.shadow_signals.get('sell_vetos_ai', 0) + 1
+                        
+                    quantile_confidence = ai_decision.get('quantile_confidence', "NORMAL")
+                    regime_tag = f"SOTA_SNIPER_{ai_dir}"
                     dyn_sl = self.opt_params['sl_dist']
                     dyn_tp = self.opt_params['tp_dist']
                     
@@ -656,7 +672,8 @@ class BacktestPro:
                         dyn_tp_pts = max(5.0, min(30.0, raw_tp))
                         dyn_sl_pts = max(3.0, min(15.0, raw_sl))
                     else: # Padrão WIN
-                        dyn_tp_pts = max(100.0, min(400.0, raw_tp))
+                        # [ANTIVIBE-CODING] LIMITE EXPANDIDO PARA AUDITORIA DE POTENCIAL
+                        dyn_tp_pts = max(100.0, min(600.0, raw_tp))
                         dyn_sl_pts = max(100.0, min(300.0, raw_sl))
 
                     # [SOTA v5] Aplicação do Multiplicador de Precisão (Spread-Adjusted)
@@ -667,20 +684,24 @@ class BacktestPro:
                     sl = row['close'] - dyn_sl_pts if side == "buy" else row['close'] + dyn_sl_pts
                     tp = row['close'] + dyn_tp_pts if side == "buy" else row['close'] - dyn_tp_pts
                     
-                    # Lote Dinâmico (Anti-Martingale)
-                    # Lote Dinâmico / Fixo
+                    # Lote Dinâmico (SOTA High-Gain)
                     if self.opt_params.get('force_lots'):
                         target_lot = self.opt_params['force_lots']
                     elif self.opt_params.get('dynamic_lot', False):
-                        # Escala a partir do base_lot
+                        # Escala a partir do lote base + vitórias consecutivas
                         base = self.opt_params.get('base_lot', 1)
                         target_lot = min(10, base + self.consecutive_wins)
                     else:
                         target_lot = self.opt_params.get('base_lot', 1)
                     
-                    # [SOTA v5] Aplicar multiplicador de assertividade da IA
+                    # [SOTA v5] Aplicar multiplicador de assertividade da IA (Rigor)
                     ai_multiplier = ai_decision.get('lot_multiplier', 1.0) if use_ai_core else 1.0
                     target_lot = max(1, round(target_lot * ai_multiplier))
+
+                    # [SOTA High-Gain] Multiplicador Agressivo de Lote para Convicção Extrema
+                    # Ativa escala de 2.0x apenas quando a IA tem certeza superior a 85%
+                    if ai_stability >= 0.85 and self.opt_params.get('use_ai_core', False):
+                        target_lot *= 2
                     
                     self.position = {
                         'side': side,

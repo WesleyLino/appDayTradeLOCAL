@@ -2,21 +2,21 @@
 
 ## Resumo Executivo
 - **Capital Inicial**: R$ 3000.00
-- **Saldo Final do Dia**: R$ 2885.95
-- **PnL Total**: **R$ -114.05**
+- **Saldo Final do Dia**: R$ 3000.00
+- **PnL Total**: **R$ 0.00**
 - **Sincronia Sniper**: 100% (Modo Autônomo Ativo)
 
 ## Performance por Direção
 | Direção | Trades | PnL Bruto | Win Rate |
 | :--- | :--- | :--- | :--- |
-| **COMPRA** | 14 | R$ 46.41 | 64.3% |
-| **VENDA** | 12 | R$ -160.46 | 58.3% |
-| **TOTAL** | 26 | R$ -114.05 | 61.5% |
+| **COMPRA** | 0 | R$ 0.00 | 0.0% |
+| **VENDA** | 0 | R$ 0.00 | 0.0% |
+| **TOTAL** | 0 | R$ 0.00 | 0.0% |
 
 ## Análise de Oportunidades (Shadow Trading)
 O sistema monitorou o mercado e aplicou os filtros de rigor PRO.
 
-- **Candidatos V22/SOTA**: 361
+- **Candidatos V22/SOTA**: 385
 - **Sinais Vetados pela IA (Incerteza/Meta)**: 0
 - **Sinais Vetados pelo Fluxo (Book)**: 0
 
