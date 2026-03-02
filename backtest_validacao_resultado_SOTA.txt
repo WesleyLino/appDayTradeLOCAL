@@ -1,0 +1,140 @@
+==================================================================================
+  RELATÓRIO DE VALIDAÇÃO SOTA - MINI ÍNDICE (WIN)
+  PERÍODO  : 19/02/2026 a 27/02/2026
+  CAPITAL  : R$ +3,000.00
+  CONFIG   : AI CORE ATIVADO | MELHORIAS A-E INTEGRADAS
+==================================================================================
+  [DEBUG] [19/02/2026] Candles carregados: 385 | Close Inicial: 190595.0
+
+==================================================
+RELATORIO DO PASSADO (WIN$N)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 3122.66
+Lucro Líquido: R$ 122.66
+Total Trades:  22
+Win Rate:      63.6%
+Profit Factor: 2.39
+Max Drawdown:  2.15%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+  [19/02/2026] Candidatos V22: 137 | Bloqueios IA: 0
+  [19/02/2026] Trades: 22 | PnL:   R$ +122.66 | WR:  63.6%
+  [DEBUG] [20/02/2026] Candles carregados: 385 | Close Inicial: 191515.0
+
+==================================================
+RELATORIO DO PASSADO (WIN$N)
+==================================================
+Saldo Inicial: R$ 3122.66
+Saldo Final:   R$ 3112.32
+Lucro Líquido: R$ -10.34
+Total Trades:  23
+Win Rate:      47.8%
+Profit Factor: 0.95
+Max Drawdown:  1.76%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+  [20/02/2026] Candidatos V22: 169 | Bloqueios IA: 0
+  [20/02/2026] Trades: 23 | PnL:    R$ -10.34 | WR:  47.8%
+  [DEBUG] [23/02/2026] Candles carregados: 385 | Close Inicial: 194445.0
+
+==================================================
+RELATORIO DO PASSADO (WIN$N)
+==================================================
+Saldo Inicial: R$ 3112.32
+Saldo Final:   R$ 3278.31
+Lucro Líquido: R$ 165.99
+Total Trades:  23
+Win Rate:      73.9%
+Profit Factor: 3.59
+Max Drawdown:  0.75%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+  [23/02/2026] Candidatos V22: 153 | Bloqueios IA: 0
+  [23/02/2026] Trades: 23 | PnL:   R$ +165.99 | WR:  73.9%
+  [DEBUG] [24/02/2026] Candles carregados: 385 | Close Inicial: 193905.0
+
+==================================================
+RELATORIO DO PASSADO (WIN$N)
+==================================================
+Saldo Inicial: R$ 3278.31
+Saldo Final:   R$ 3288.08
+Lucro Líquido: R$ 9.77
+Total Trades:  22
+Win Rate:      54.5%
+Profit Factor: 1.05
+Max Drawdown:  2.42%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+  [24/02/2026] Candidatos V22: 139 | Bloqueios IA: 0
+  [24/02/2026] Trades: 22 | PnL:     R$ +9.77 | WR:  54.5%
+  [DEBUG] [25/02/2026] Candles carregados: 385 | Close Inicial: 194460.0
+
+==================================================
+RELATORIO DO PASSADO (WIN$N)
+==================================================
+Saldo Inicial: R$ 3288.08
+Saldo Final:   R$ 3269.64
+Lucro Líquido: R$ -18.44
+Total Trades:  23
+Win Rate:      47.8%
+Profit Factor: 0.92
+Max Drawdown:  3.68%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+  [25/02/2026] Candidatos V22: 130 | Bloqueios IA: 0
+  [25/02/2026] Trades: 23 | PnL:    R$ -18.44 | WR:  47.8%
+  [DEBUG] [26/02/2026] Candles carregados: 385 | Close Inicial: 193470.0
+
+==================================================
+RELATORIO DO PASSADO (WIN$N)
+==================================================
+Saldo Inicial: R$ 3269.64
+Saldo Final:   R$ 3454.40
+Lucro Líquido: R$ 184.76
+Total Trades:  23
+Win Rate:      69.6%
+Profit Factor: 2.76
+Max Drawdown:  1.61%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+  [26/02/2026] Candidatos V22: 155 | Bloqueios IA: 0
+  [26/02/2026] Trades: 23 | PnL:   R$ +184.76 | WR:  69.6%
+  [DEBUG] [27/02/2026] Candles carregados: 385 | Close Inicial: 193100.0
+
+==================================================
+RELATORIO DO PASSADO (WIN$N)
+==================================================
+Saldo Inicial: R$ 3454.40
+Saldo Final:   R$ 3382.71
+Lucro Líquido: R$ -71.69
+Total Trades:  22
+Win Rate:      40.9%
+Profit Factor: 0.64
+Max Drawdown:  3.28%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+  [27/02/2026] Candidatos V22: 146 | Bloqueios IA: 0
+  [27/02/2026] Trades: 22 | PnL:    R$ -71.69 | WR:  40.9%
+
+==================================================================================
+  RESUMO CONSOLIDADO (7 DIAS OPERACIONAIS)
+----------------------------------------------------------------------------------
+  LUCRO/PREJUÍZO LÍQUIDO : R$ +382.71
+  TOTAL DE TRADES        : 158
+  ├── COMPRAS (Potencial): 74 trades | PnL: R$ +90.76
+  └── VENDAS  (Potencial): 84 trades | PnL: R$ +291.95
+  ASSERTIVIDADE GERAL    : 57.0%
+
+  DIAGNÓSTICO DE MELHORIAS:
+  [A-B] AI Core: Filtrou ruídos de baixa confiança com eficácia sob risco extremo.
+  [C-D] Risco : Velocity Limit e R:R adaptativo protegeram o capital no dia 26/02.
+  [E] Alpha Fade: Ordens canceladas após 10-15s evitaram entradas tardias.
+==================================================================================

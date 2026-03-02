@@ -26,7 +26,7 @@ class BacktestPro:
         self.timeframe = timeframe
         self.data_file = data_file
         self.bridge = MT5Bridge()
-        self.ai = AICore()
+        self.ai = kwargs.get('ai_core', AICore())
         # Tenta carregar o motor de inferência (se existir o peso SOTA)
         try:
             self.inference = InferenceEngine(model_path="backend/patchtst_weights_sota.pth")
@@ -74,8 +74,8 @@ class BacktestPro:
             'flux_imbalance_threshold': kwargs.get('flux_imbalance_threshold', locked_params.get('flux_imbalance_threshold', 1.2)), # [ANTIVIBE-CODING]
             'be_trigger': kwargs.get('be_trigger', 50.0),
             'be_lock': kwargs.get('be_lock', 0.0),
-            'base_lot': kwargs.get('base_lot', 1), # [ANTIVIBE-CODING]
-            'use_ai_core': kwargs.get('use_ai_core', locked_params.get('use_ai_core', False)) # [ANTIVIBE-CODING]
+            'base_lot': kwargs.get('base_lot', locked_params.get('base_lot', 1)), # [ANTIVIBE-CODING]
+            'use_ai_core': kwargs.get('use_ai_core', locked_params.get('use_ai_core', True)) # [ANTIVIBE-CODING] v27 Default
         }
 
         # Estado do Backtest
@@ -146,14 +146,15 @@ class BacktestPro:
         sl = position['sl']
         tp = position['tp']
         entry = position['entry_price']
-        
-        trigger_pts = self.opt_params['trailing_trigger']
-        lock_pts = self.opt_params['trailing_lock']
-        step_pts = self.opt_params['trailing_step']
         use_trailing = self.opt_params.get('use_trailing_stop', False)
         
         if side == 'buy':
-            # 1. Lógica de Breakeven [URGENTE]
+            # 1. Lógica de Trailing Stop - BUY (USA PARÂMETROS PADRÃO)
+            trigger_pts = self.opt_params.get('trailing_trigger', 70.0)
+            lock_pts = self.opt_params.get('trailing_lock', 50.0)
+            step_pts = self.opt_params.get('trailing_step', 20.0)
+            
+            # 1.1 Lógica de Breakeven [URGENTE]
             be_trigger = self.opt_params.get('be_trigger', 70.0)
             be_lock = self.opt_params.get('be_lock', 0.0)
             profit_pts_be = row['high'] - entry
@@ -161,7 +162,7 @@ class BacktestPro:
             if profit_pts_be >= be_trigger and position['sl'] < entry:
                 position['sl'] = entry + be_lock
 
-            # 2. Lógica de Trailing Stop SOTA
+            # 1.2 Lógica de Trailing Stop SOTA
             if row['low'] <= sl:
                 return 'SL', sl
 
@@ -175,13 +176,17 @@ class BacktestPro:
                     if new_sl > position['sl'] + step_pts:
                         position['sl'] = new_sl
             
-            # 3. Take Profit Fixo (se Trailing Stop estiver OFF)
-            if not use_trailing:
-                if row['high'] >= tp:
-                    return 'TP', tp
+            # 1.3 Take Profit Fixo (Agora coexistente com Trailing Stop)
+            if row['high'] >= tp:
+                return 'TP', tp
                 
         else: # sell
-            # 1. Lógica de Breakeven [URGENTE]
+            # 1. Lógica de Trailing Stop - SELL (USA ASSIMETRIA V26)
+            trigger_pts = self.opt_params.get('trailing_trigger_sell', 200.0)
+            lock_pts = self.opt_params.get('trailing_lock_sell', 100.0)
+            step_pts = self.opt_params.get('trailing_step_sell', 50.0)
+
+            # 2.1 Lógica de Breakeven [URGENTE]
             be_trigger = self.opt_params.get('be_trigger', 70.0)
             be_lock = self.opt_params.get('be_lock', 0.0)
             profit_pts_be = entry - row['low']
@@ -189,7 +194,7 @@ class BacktestPro:
             if profit_pts_be >= be_trigger and position['sl'] > entry:
                 position['sl'] = entry - be_lock
 
-            # 2. Lógica de Trailing Stop SOTA
+            # 2.2 Lógica de Trailing Stop SOTA
             if row['high'] >= sl:
                 return 'SL', sl
                 
@@ -203,10 +208,27 @@ class BacktestPro:
                     if new_sl < position['sl'] - step_pts:
                         position['sl'] = new_sl
                     
-            if not use_trailing:
-                if row['low'] <= tp:
-                    return 'TP', tp
+            # 2.3 Take Profit Fixo (Agora coexistente com Trailing Stop)
+            if row['low'] <= tp:
+                return 'TP', tp
             
+        # 4. Scaling Out — Saída Parcial [SOTA v26] Real Financeiramente
+        if not position.get('partial_done', False):
+            # Se atingiu o lucro parcial (Ex: 50pts)
+            partial_pts = self.risk.partial_profit_points
+            profit_now = profit_pts_be if side == 'buy' else (entry - row['low'])
+            
+            if profit_now >= partial_pts and position['lots'] >= 2:
+                # Realiza lucro de 1 contrato (metade no caso de base_lot=2)
+                symbol_mult = 0.20 if "WIN" in self.symbol else 10.0
+                partial_pnl = partial_pts * 1 * symbol_mult # 1 contrato de parcial
+                self.balance += partial_pnl
+                self.daily_pnl += partial_pnl
+                
+                position['partial_done'] = True
+                position['lots'] -= 1 # Mantém o restante no trade
+                logging.debug(f"✂️ PARCIAL REALIZADA: +{partial_pnl} R$ (Mantém {position['lots']} lotes)")
+
         return None, None
 
     async def run(self):
@@ -243,8 +265,22 @@ class BacktestPro:
                        (data['low'] - data['close'].shift()).abs()], axis=1).max(axis=1)
         data['atr_current'] = tr.rolling(window=14).mean()
 
+        # [MELHORIA H - V28] EMA30 e EMA90 para Filtro de Tendência Diária
+        data['ema30'] = data['close'].ewm(span=30, adjust=False).mean()
+        data['ema90'] = data['close'].ewm(span=90, adjust=False).mean()
+
         # 4. Volume SMA
         data['vol_sma'] = data['tick_volume'].rolling(window=20).mean().bfill()
+        
+        # [SOTA v26] VWAP Intraday & Bands Pre-calculation
+        tp = (data['high'] + data['low'] + data['close']) / 3
+        v = data['tick_volume']
+        # [SOTA v26] VWAP Intraday & Bands Pre-calculation - Corrigido para estabilidade de Index
+        data['day'] = data.index.date
+        group_v = v.groupby(data['day'])
+        group_tp_v = (tp * v).groupby(data['day'])
+        data['vwap'] = group_tp_v.cumsum() / group_v.cumsum()
+        data['vwap_std'] = tp.rolling(20).std().fillna(0) # Std local de 20p como o bot
         
         # [SOTA v25] Microstructure Pre-calculation (Vectorized)
         logging.info("🔬 Calculando Microestrutura em Vetor (CVD/OFI/Ratio)...")
@@ -339,10 +375,48 @@ class BacktestPro:
                 v_mult = self.opt_params['vol_spike_mult']
                 vol_spike = row['tick_volume'] > (vol_sma * v_mult)
                 
+                # --- MELHORIA H (V28): Filtro de Tendência Diária ---
+                # Na abertura de cada dia, deteta se EMA30 < EMA90 → mercado em baixa.
+                # Nesse caso, BUY fica vetado para evitar counter-trend losses.
+                current_hour = row.name.hour
+                current_minute = row.name.minute
+                is_opening_window = (current_hour == 9 and current_minute <= 44) or (
+                    current_hour < 9)
+                current_ema30 = row['ema30']
+                current_ema90 = row['ema90']
+                if current_date != getattr(self, '_bias_day', None):
+                    # Reset do bias diário na troca de dia
+                    self._bias_diario = 'neutro'
+                    self._bias_day = current_date
+                if is_opening_window:
+                    if current_ema30 < current_ema90 * 0.9998:  # Margem de 0.02% para evitar falsos alertas
+                        self._bias_diario = 'baixa'
+                    elif current_ema30 > current_ema90 * 1.0002:
+                        self._bias_diario = 'alta'
+                    else:
+                        self._bias_diario = 'neutro'
+                bias_veto_buy  = (getattr(self, '_bias_diario', 'neutro') == 'baixa')
+                bias_veto_sell = (getattr(self, '_bias_diario', 'neutro') == 'alta')
+                # [ANTIVIBE-CODING] Filtro de tendência V28 — aprovado pelo usuário em 01/03/2026
+
                 # Gatilhos Alpha V22 (Counter-Trend Sniper)
                 # [SOTA v24] Cooldown Dinâmico por Convicção
+                # [MELHORIA J - V28] VERY_HIGH=3min
+                # [MELHORIA N - V28] Cooldown adaptativo por regime: Tendência=5min, Lateral=9min, Ruído=12min
+                cooldown_base = self.opt_params.get('cooldown_minutes', 7)
                 last_conf = self.trades[-1].get('quantile_confidence', 'NORMAL') if self.trades else 'NORMAL'
-                cooldown_min = 5 if last_conf == 'VERY_HIGH' else 10
+                if last_conf == 'VERY_HIGH':
+                    cooldown_min = 3
+                else:
+                    # Regime adaptativo: 5min tendência, 9min lateral, 12min ruído
+                    _regime_now = row.get('regime', row['regime'] if 'regime' in row else 0)
+                    if _regime_now == 1:   # Tendência clara
+                        cooldown_min = 5
+                    elif _regime_now == 2: # Ruído/alta volatilidade
+                        cooldown_min = 12
+                    else:                  # Lateral / indefinido
+                        cooldown_min = max(cooldown_base, 8)
+                # [ANTIVIBE-CODING] Cooldown adaptativo V28-N — aprovado pelo usuário em 01/03/2026
                 cooldown_ok = (row.name - self.last_trade_time) >= timedelta(minutes=cooldown_min)
                 
                 # --- ADAPTIVE REGIME CORTEX ---
@@ -393,15 +467,32 @@ class BacktestPro:
                         ofi=sim_ofi,
                         current_price=row['close'], # [SOTA v5] Sincronia de preco
                         spread=current_spread, # [SOTA v5] Sincronia de spread
-                        sma_20=row['sma_20']
+                        vwap=row['vwap'],
+                        vwap_std=row['vwap_std']
                     )
                     
-                    direction = ai_decision['direction']
-                    v22_buy = direction == "BUY"
-                    v22_sell = direction == "SELL"
-                    quantile_confidence = ai_decision.get('quantile_confidence', "NORMAL")
+                    # [MODO FUSÃO SOTA] Gatilhos Matemáticos (RSI/BB) + Filtro de Convicção IA
+                    v22_buy_raw = (rsi < 30 and row['close'] < lower_bb) and vol_spike_eff
+                    v22_sell_raw = (rsi > 70 and row['close'] > upper_bb) and vol_spike_eff
                     
-                    regime_tag = f"AI_{direction}_{quantile_confidence}"
+                    self.shadow_signals['v22_candidates'] = self.shadow_signals.get('v22_candidates', 0) + 1
+                    
+                    ai_dir = ai_decision.get('direction', 'NEUTRAL')
+                    ai_score = ai_decision.get('score', 50.0)
+                    ai_stability = ai_score / 100.0
+                    
+                    # Decisão Final: Precisa do gatilho técnico + viés de direção da IA com confiança
+                    v22_buy = v22_buy_raw and (ai_dir == "BUY") and (ai_stability >= self.opt_params['confidence_threshold'])
+                    v22_sell = v22_sell_raw and (ai_dir == "SELL") and (ai_stability >= self.opt_params['confidence_threshold'])
+                    
+                    # Rastreamento de Vetos (Shadow Trading) - Separado por Ponta
+                    if v22_buy_raw and not v22_buy:
+                        self.shadow_signals['buy_vetos_ai'] = self.shadow_signals.get('buy_vetos_ai', 0) + 1
+                    if v22_sell_raw and not v22_sell:
+                        self.shadow_signals['sell_vetos_ai'] = self.shadow_signals.get('sell_vetos_ai', 0) + 1
+                        
+                    quantile_confidence = ai_decision.get('quantile_confidence', "NORMAL")
+                    regime_tag = f"SOTA_SNIPER_{ai_dir}"
                     dyn_sl = self.opt_params['sl_dist']
                     dyn_tp = self.opt_params['tp_dist']
                     
@@ -546,30 +637,43 @@ class BacktestPro:
                 if (v22_buy or v22_sell) and time_ok and risk_ok and limit_ok and vol_stable and cooldown_ok and ai_filter_ok and sentiment_ok and flux_ok:
                     side = "buy" if v22_buy else "sell"
                     
-                    # [SOTA v25] FILTRO DE RUÍDO CENTRALIZADO NO AI CORE (macro_bull_lock / macro_bear_lock)
-                    # O veto já foi processado dentro do calculate_decision e refletido no v22_buy/v22_sell.
+                    # [MELHORIA H - V28] Veto de direção por tendência diária
+                    if side == 'buy' and bias_veto_buy:
+                        self.shadow_signals['total_missed'] = self.shadow_signals.get('total_missed', 0) + 1
+                        self.shadow_signals['filtered_by_bias'] = self.shadow_signals.get('filtered_by_bias', 0) + 1
+                        logging.debug(f"🚫 [H] BUY vetado por tendência diária de BAIXA em {row.name}")
+                        continue
+                    if side == 'sell' and bias_veto_sell:
+                        self.shadow_signals['total_missed'] = self.shadow_signals.get('total_missed', 0) + 1
+                        self.shadow_signals['filtered_by_bias'] = self.shadow_signals.get('filtered_by_bias', 0) + 1
+                        logging.debug(f"🚫 [H] SELL vetado por tendência diária de ALTA em {row.name}")
+                        continue
 
                     # --- [DYNAMIC ATR TARGETS V3] ---
                     # Replica a lógica do RiskManager ajustada por regime
-                    tp_mult = 1.0 
-                    sl_mult = 1.3
+                    tp_mult = self.opt_params.get('tp_mult_regime', 1.0)
+                    sl_mult = self.opt_params.get('sl_mult_regime', 1.3)
 
                     if current_regime == 1: # Trend
-                        tp_mult = 1.5
-                        # [SOTA v24] ALVO ADAPTATIVO: +20% TP se alinhado com Ultra Tendência
-                        tp_mult *= 1.2
+                        tp_mult = 1.6 # Aumentado para 1.6x do ATR ou Alvo
+                        tp_mult *= 1.2 # +20% se Ultra Tendência
                     elif current_regime == 0: # Lateral
-                        tp_mult = 0.8
+                        tp_mult = 0.9 # Proteção
                     
                     # ATR atual já calculado no início do loop: row['atr_current']
-                    raw_tp = atr_current * tp_mult
-                    raw_sl = atr_current * sl_mult
+                    # Se não houver alvos fixos, usa ATR. Se houver, usa o fixo como base de escala.
+                    tp_fixed = self.opt_params.get('tp_dist', 550.0)
+                    sl_fixed = self.opt_params.get('sl_dist', 150.0)
+                    
+                    raw_tp = tp_fixed * tp_mult if tp_fixed > 0 else atr_current * tp_mult
+                    raw_sl = sl_fixed if sl_fixed > 0 else atr_current * sl_mult
 
                     if "WDO" in self.symbol or "DOL" in self.symbol:
                         dyn_tp_pts = max(5.0, min(30.0, raw_tp))
                         dyn_sl_pts = max(3.0, min(15.0, raw_sl))
                     else: # Padrão WIN
-                        dyn_tp_pts = max(100.0, min(400.0, raw_tp))
+                        # [ANTIVIBE-CODING] LIMITE EXPANDIDO PARA AUDITORIA DE POTENCIAL
+                        dyn_tp_pts = max(100.0, min(600.0, raw_tp))
                         dyn_sl_pts = max(100.0, min(300.0, raw_sl))
 
                     # [SOTA v5] Aplicação do Multiplicador de Precisão (Spread-Adjusted)
@@ -580,20 +684,24 @@ class BacktestPro:
                     sl = row['close'] - dyn_sl_pts if side == "buy" else row['close'] + dyn_sl_pts
                     tp = row['close'] + dyn_tp_pts if side == "buy" else row['close'] - dyn_tp_pts
                     
-                    # Lote Dinâmico (Anti-Martingale)
-                    # Lote Dinâmico / Fixo
+                    # Lote Dinâmico (SOTA High-Gain)
                     if self.opt_params.get('force_lots'):
                         target_lot = self.opt_params['force_lots']
                     elif self.opt_params.get('dynamic_lot', False):
-                        # Escala a partir do base_lot
+                        # Escala a partir do lote base + vitórias consecutivas
                         base = self.opt_params.get('base_lot', 1)
                         target_lot = min(10, base + self.consecutive_wins)
                     else:
                         target_lot = self.opt_params.get('base_lot', 1)
                     
-                    # [SOTA v5] Aplicar multiplicador de assertividade da IA
+                    # [SOTA v5] Aplicar multiplicador de assertividade da IA (Rigor)
                     ai_multiplier = ai_decision.get('lot_multiplier', 1.0) if use_ai_core else 1.0
                     target_lot = max(1, round(target_lot * ai_multiplier))
+
+                    # [SOTA High-Gain] Multiplicador Agressivo de Lote para Convicção Extrema
+                    # Ativa escala de 2.0x apenas quando a IA tem certeza superior a 85%
+                    if ai_stability >= 0.85 and self.opt_params.get('use_ai_core', False):
+                        target_lot *= 2
                     
                     self.position = {
                         'side': side,
@@ -603,7 +711,8 @@ class BacktestPro:
                         'lots': target_lot,
                         'index': i,
                         'time': row.name,
-                        'quantile_confidence': quantile_confidence if 'quantile_confidence' in locals() else "NORMAL"
+                        'quantile_confidence': quantile_confidence if 'quantile_confidence' in locals() else "NORMAL",
+                        'execution_mode': ai_decision.get('execution_mode', 'LIMIT') if 'ai_decision' in locals() else 'LIMIT'
                     }
                     self.daily_trade_count += 1
                     logging.info(f"🎯 V22 TRIGGER [{regime_tag}]: {side} @ {row['close']} | Lots: {target_lot}")
@@ -648,9 +757,13 @@ class BacktestPro:
             'pnl_pts': pnl_points,
             'pnl_fin': pnl_fin,
             'reason': reason,
-            'quantile_confidence': pos.get('quantile_confidence', 'NORMAL')
+            'quantile_confidence': pos.get('quantile_confidence', 'NORMAL'),
+            'execution_mode': pos.get('execution_mode', 'LIMIT')
         }
         self.trades.append(trade_data)
+        
+        # [v27] Sincronizar Resultado com Meta-Learner / Quarter-Kelly
+        self.ai.record_result(pnl_fin)
         
         # Atualiza métricas de lote dinâmico tracker
         if pnl_fin > 0:

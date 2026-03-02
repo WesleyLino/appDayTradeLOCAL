@@ -42,9 +42,9 @@ async def run_multi_day_audit():
     total_week_pnl = 0
 
     for target_date in dates_to_test:
-        logging.info(f"\n---------------------------------------------------------")
+        logging.info("\n---------------------------------------------------------")
         logging.info(f"📅 AUDITORIA PARA O DIA: {target_date.strftime('%d/%m/%Y')}")
-        logging.info(f"---------------------------------------------------------")
+        logging.info("---------------------------------------------------------")
         
         # Filtro de dados para o dia alvo com margem de lookback (1500 velas)
         mask_until = full_data.index.date <= target_date
@@ -112,25 +112,25 @@ async def run_multi_day_audit():
 
         # Gerando MD em Português
         day_report = f"## 📅 Data: {target_date.strftime('%d/%m/%Y')}\n\n"
-        day_report += f"### 💰 Performance Financeira\n"
+        day_report += "### 💰 Performance Financeira\n"
         day_report += f"- **PnL Total do Dia**: R$ {day_pnl:.2f}\n"
         day_report += f"- **Taxa de Acerto (Win Rate)**: {(total_wins/len(trades_day)*100) if trades_day else 0:.1f}%\n"
         day_report += f"- **Total de Trades**: {len(trades_day)}\n\n"
         
-        day_report += f"**Desempenho por Direção:**\n"
+        day_report += "**Desempenho por Direção:**\n"
         day_report += f"- **🟩 OPERAÇÕES COMPRADAS**: {len(buy_trades)} | PnL: R$ {buy_pnl:.2f} | Win Rate: {(buy_wins/len(buy_trades)*100) if buy_trades else 0:.1f}%\n"
         day_report += f"- **🟥 OPERAÇÕES VENDIDAS**: {len(sell_trades)} | PnL: R$ {sell_pnl:.2f} | Win Rate: {(sell_wins/len(sell_trades)*100) if sell_trades else 0:.1f}%\n\n"
         
-        day_report += f"### 🛡️ Defesas SOTA V10.0 Ativadas\n"
+        day_report += "### 🛡️ Defesas SOTA V10.0 Ativadas\n"
         day_report += f"- **Flash-Exit (Saída Emergência)**: {flash_exits} acionamentos\n"
         day_report += f"- **Profit Guard (Trava de Lucro)**: {profit_guards} acionamentos\n\n"
 
-        day_report += f"### 📉 Oportunidades Perdidas (Shadow Monitoring)\n"
+        day_report += "### 📉 Oportunidades Perdidas (Shadow Monitoring)\n"
         day_report += f"- **Vetos por Incerteza (IA)**: {shadow.get('filtered_by_ai', 0)}\n"
         day_report += f"- **Vetos por Baixa Liquidez (Fluxo)**: {shadow.get('filtered_by_flux', 0)}\n"
         day_report += f"- **Vetos por Sentimento Macro**: {shadow.get('filtered_by_sentiment', 0)}\n\n"
         
-        day_report += f"### 🛠️ Melhorias Sugeridas\n"
+        day_report += "### 🛠️ Melhorias Sugeridas\n"
         day_report += "\n".join(melhorias) + "\n\n"
         day_report += "---\n"
         

@@ -36,7 +36,6 @@ trading_state.db
 # Large/Generated Files
 extracted_rules.txt
 rules_utf8.txt
-*
 backend/*.log
 backend/*.log.*
 *.log.*

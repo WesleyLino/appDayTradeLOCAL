@@ -10,16 +10,22 @@
     "bb_dev": 2.0,
     "vol_spike_mult": 1.0,
     "use_flux_filter": true,
-    "flux_imbalance_threshold": 1.2,
+    "flux_imbalance_threshold": 0.95,  
     "confidence_threshold": 0.70,
     "sl_dist": 150.0,
-    "tp_dist": 400.0,
-    "trailing_trigger": 70.0,
-    "trailing_lock": 50.0,
-    "trailing_step": 20.0,
+    "tp_dist": 550.0,  
+    "trailing_trigger": 200.0,
+    "trailing_lock": 100.0,
+    "trailing_step": 50.0,
+    "trailing_trigger_sell": 200.0,
+    "trailing_lock_sell": 100.0,
+    "trailing_step_sell": 50.0,
     "use_ai_core": false,
-    "cooldown_minutes": 10,
-    "adaptive_flux_active": true
+    "cooldown_minutes": 7,
+    "adaptive_flux_active": true,
+    "use_trailing_stop": true,
+    "start_time": "09:05",
+    "end_time": "17:15"
   },
-  "anti_vibe_seal": "20260223_GOLDEN_V22_LOCKED"
+  "anti_vibe_seal": "20260301_GOLDEN_V28_LOCKED_LMN_FINETUNED"
 }

@@ -76,7 +76,7 @@ export function PerformanceWidget() {
         onClick={fetchPerformance}
         disabled={loading}
         className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-300 transition-colors"
-        title="Refresh Data"
+        title="Atualizar Dados"
       >
         <RefreshCw size={16} className={cn(loading && "animate-spin")} />
       </button>
@@ -97,7 +97,7 @@ export function PerformanceWidget() {
           {/* Main Profit Display */}
           <div className="flex flex-col">
             <span className="text-xs text-zinc-500 uppercase font-semibold">
-              Net Profit (MT5 History)
+              Lucro Líquido (Histórico MT5)
             </span>
             <div
               className={cn(
@@ -118,7 +118,7 @@ export function PerformanceWidget() {
               <div className="flex items-center gap-1.5 text-zinc-400 mb-1">
                 <Target size={14} />
                 <span className="text-xs font-semibold uppercase">
-                  Win Rate
+                  Taxa de Acerto
                 </span>
               </div>
               <div className="text-lg font-bold tabular-nums">
@@ -142,7 +142,7 @@ export function PerformanceWidget() {
               <div className="flex items-center gap-1.5 text-zinc-400 mb-1">
                 <TrendingUp size={14} />
                 <span className="text-xs font-semibold uppercase">
-                  Profit Factor
+                  Fator de Lucro
                 </span>
               </div>
               <div className="text-lg font-bold tabular-nums">
@@ -159,13 +159,13 @@ export function PerformanceWidget() {
           {/* Gross Info (Subtle) */}
           <div className="flex justify-between text-xs pt-2 border-t border-zinc-800/50 mt-1">
             <div className="flex flex-col">
-              <span className="text-zinc-500">Gross Profit</span>
+              <span className="text-zinc-500">Lucro Bruto</span>
               <span className="text-emerald-500 font-medium tabular-nums">
                 R$ {data.gross_profit.toFixed(2)}
               </span>
             </div>
             <div className="flex flex-col text-right">
-              <span className="text-zinc-500">Gross Loss</span>
+              <span className="text-zinc-500">Prejuízo Bruto</span>
               <span className="text-rose-500 font-medium tabular-nums">
                 R$ {data.gross_loss.toFixed(2)}
               </span>

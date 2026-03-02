@@ -96,20 +96,20 @@ async def run_custom_audit():
         resumo_tabela += f"| {date_str} | **R$ {day_pnl:.2f}** | {len(trades_day)} | {len(buy_trades)} (R$ {buy_pnl:.2f}) | {len(sell_trades)} (R$ {sell_pnl:.2f}) | {win_rate:.1f}% | {flash_exits} | {missed_ai} / {missed_flux} |\n"
 
         detailed_reports += f"### 📅 Pregão: {date_str}\n"
-        detailed_reports += f"**Desempenho Financeiro:**\n"
+        detailed_reports += "**Desempenho Financeiro:**\n"
         detailed_reports += f"- **PnL do Dia**: R$ {day_pnl:.2f}\n"
         detailed_reports += f"- **Compras**: {len(buy_trades)} trades, Resultado Acumulado: R$ {buy_pnl:.2f}\n"
         detailed_reports += f"- **Vendas**: {len(sell_trades)} trades, Resultado Acumulado: R$ {sell_pnl:.2f}\n"
         detailed_reports += f"- **Win Rate**: {win_rate:.1f}%\n"
         
-        detailed_reports += f"\n**Defesas Ativas e Sombras (Oportunidades):**\n"
+        detailed_reports += "\n**Defesas Ativas e Sombras (Oportunidades):**\n"
         detailed_reports += f"- Sinais base matemáticos detectados (Candidatos V22): {shadow.get('v22_candidates', 0)}\n"
         detailed_reports += f"- Falta de Confiança IA (Oportunidades vetadas < 81% conf): {missed_ai}\n"
         detailed_reports += f"- Falta de Pressão de Fluxo (Oportunidades vetadas): {missed_flux}\n"
         detailed_reports += f"- Saídas Antecipadas (Flash-Exit): {flash_exits}\n"
         
         # Sugestões de melhoria focadas no resultado do dia
-        detailed_reports += f"\n**Insights para Melhorar Assertividade neste cenário:**\n"
+        detailed_reports += "\n**Insights para Melhorar Assertividade neste cenário:**\n"
         if missed_ai > len(trades_day) and missed_ai > 0:
             detailed_reports += "- *Alta Taxa de Veto pela IA*: O modelo considerou muitos sinais como incertos. Avaliar se o `confidence_threshold` (0.81) está muito rígido ou se o mercado apresentou muito ruído atípico (ex: macro data).\n"
         if missed_flux > len(trades_day) and missed_flux > 0:

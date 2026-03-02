@@ -156,6 +156,34 @@ class MicrostructureAnalyzer:
             logging.error(f"Erro ao calcular VAP: {e}")
             return None
 
+    def calculate_vwap(self, ticks_df):
+        """
+        [v27] Calcula a VWAP (Volume Weighted Average Price) a partir dos ticks.
+        Retorna (vwap, vwap_std) para detecção de exaustão e tendência institucional.
+        """
+        if ticks_df is None or ticks_df.empty:
+            return 0.0, 0.0
+            
+        try:
+            # Garante que temos as colunas necessárias
+            if 'price' not in ticks_df.columns or 'volume' not in ticks_df.columns:
+                return 0.0, 0.0
+                
+            cum_vol = ticks_df['volume'].sum()
+            if cum_vol == 0:
+                return 0.0, 0.0
+                
+            vwap = (ticks_df['price'] * ticks_df['volume']).sum() / cum_vol
+            
+            # Cálculo de Desvio Padrão para Bandas de VWAP (Exaustão)
+            variance = ((ticks_df['price'] - vwap)**2 * ticks_df['volume']).sum() / cum_vol
+            vwap_std = np.sqrt(variance) if variance > 0 else 0.0
+            
+            return float(vwap), float(vwap_std)
+        except Exception as e:
+            logging.error(f"Erro no cálculo de VWAP: {e}")
+            return 0.0, 0.0
+
     def calculate_cvd(self, ticks_df):
         """
         Calcula o Cumulative Volume Delta (CVD) a partir de um DataFrame de ticks.
