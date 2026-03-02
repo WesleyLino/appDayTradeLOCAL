@@ -43,6 +43,7 @@ class AICore:
         self.consecutive_losses = 0
         self.ia_cooldown_until = 0 # Timestamp (mantido para compatibilidade de log, não usado para bloqueio)
         self.atr_history = [] # Para calculo de inercia de volatilidade
+        self.performance_history = [] # [v27] Histórico de PnL para Quarter-Kelly
 
         # [MELHORIA] Quarter-Kelly — Controle dinâmico de exposição por perdas consecutivas
         self.kelly_lot_multiplier = 1.0  # Multiplicador de lote (1.0=normal, 0.25=reduzido)
@@ -62,11 +63,15 @@ class AICore:
         self.macro_bull_lock = False
         self.macro_bear_lock = False
 
-        self.sentiment_anchor_price = 0.0
         self.sentiment_anchor_time = 0
+        self.sentiment_anchor_price = 0.0 # [SOTA v5] Ancora de Preço p/ Decay
         self.max_sentiment_drift = 150.0 # Pontos do WIN para absorção total
         self.opening_window_rigor = 1.5   # Multiplicador de rigor 09:00-09:30
         self.spread_veto_threshold = 3.5  # Veto se spread > 3.5 pts
+
+        # [v27 - INSTITUCIONAL] VWAP & Trend Filter
+        self.vwap_slope_ema = 0.0         # Inclinação da VWAP (Alpha de Direção)
+        self.vwap_slope_alpha = 0.1       # Suavização para evitar ruído de 1 min
 
     def fetch_latest_news(self):
         """
@@ -333,6 +338,20 @@ class AICore:
         else:
             self.h1_trend = 0 # Neutro
 
+    def update_vwap_slope(self, current_vwap):
+        """
+        [v27] Calcula a inclinação da VWAP usando EMA para filtrar ruído.
+        Essencial para evitar operar contra a tendência institucional primária.
+        """
+        if hasattr(self, 'prev_vwap') and self.prev_vwap > 0:
+            current_slope = current_vwap - self.prev_vwap
+            self.vwap_slope_ema = (current_slope * self.vwap_slope_alpha) + (self.vwap_slope_ema * (1 - self.vwap_slope_alpha))
+            
+            if abs(self.vwap_slope_ema) > 10.0:
+                logging.debug(f"📈 [VWAP SLOPE] Inclinação Forte: {self.vwap_slope_ema:.2f}")
+        
+        self.prev_vwap = current_vwap
+
     def update_sentiment_anchor(self, price):
         """
         [SOTA v5] Define o preço âncora para o decaimento de sentimento.
@@ -342,10 +361,10 @@ class AICore:
             self.sentiment_anchor_price = price
             logging.debug(f"⚓ SENTIMENT ANCHOR SET: {price:.1f} (Score: {self.latest_sentiment_score:.2f})")
 
-    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0, sma_20=0.0, wdo_aggression=0.0):
+    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0, vwap=0.0, vwap_std=0.0, wdo_aggression=0.0):
         """
         [SOTA v5] Fluxo de Decisão com Camadas de Precisão
-        [SOTA v25.3] Adicionado sma_20 para Mean Reversion Guard.
+        [SOTA v26] Upgrade Prop Firm: VWAP Bands III (Substitui SMA 20).
         """
         # 0. [SOTA v5] Sentiment Decay Adaptativo (Absorção por preço)
         if self.sentiment_anchor_price > 0 and abs(sentiment) > 0.1:
@@ -427,7 +446,7 @@ class AICore:
                 lot_multiplier = self.lot_multiplier_partial
                 logging.warning(f"🛡️ ENTRADA ULTRA-CONSERVADORA: Alta incerteza ({uncertainty_rel*100:.1f}%)")
             else:
-                veto_reason = f"HIGH_UNCERTAINTY_FAILSAFE ({uncertainty_rel*100:.1f}% > {uncertainty_threshold*100:.1f}%)"
+                veto_reason = f"ALTA_INCERTEZA_IA ({uncertainty_rel*100:.1f}% > {uncertainty_threshold*100:.1f}%)"
         
         # [PRO] Filtro de Divergência de Fluxo Inter-Mercados (WDO vs WIN)
         if veto_reason is None and wdo_aggression != 0.0:
@@ -444,7 +463,7 @@ class AICore:
             ai_dir = np.sign(norm_patchtst)
             obi_dir = np.sign(self.obi_ema)
             if abs(self.obi_ema) > 1.5 and ai_dir != 0 and ai_dir != obi_dir:
-                veto_reason = "FLOW_DIVERGENCE_VETO"
+                veto_reason = "VETO_DIVERGENCIA_DE_FLUXO"
 
         # [SOTA v4] Filtro Direcional H1 (Regime Maestro)
         if veto_reason is None:
@@ -460,25 +479,36 @@ class AICore:
             if ai_dir_raw < 0:
                 if self.macro_bull_lock:
                     veto_reason = f"MACRO_BULL_BLOCK (EMA {self.sentiment_ema:.2f} > 0.15)"
-                    logging.info(f"🛡️ [ANTI-NOISE] Venda barrada pela tendência de alta macro.")
+                    logging.info("🛡️ [ANTI-NOISE] Venda barrada pela tendência de alta macro.")
             elif ai_dir_raw > 0:
                 if self.macro_bear_lock:
-                    veto_reason = f"MACRO_BEAR_BLOCK (EMA {self.sentiment_ema:.2f} < -0.15)"
-                    logging.info(f"🛡️ [ANTI-NOISE] Compra barrada pela tendência de baixa macro.")
+                    veto_reason = f"TRAVA_MACRO_BAIXA (EMA {self.sentiment_ema:.2f} < -0.15)"
+                    logging.info("🛡️ [ANTI-NOISE] Compra barrada pela tendência de baixa macro.")
 
-        # [SOTA v25.3] MEAN REVERSION GUARD (Avoid Buying Tops / Selling Bottoms)
-        if veto_reason is None and sma_20 > 0 and atr > 0:
+        # [SOTA v26] VWAP EXHAUSTION GUARD (Substitui Mean Reversion SMA)
+        # Identifica exaustão institucional usando Bandas de VWAP (3 Desvios Padrão)
+        if veto_reason is None and vwap > 0 and vwap_std > 0:
             ai_dir_raw = ai_dir if 'ai_dir' in locals() else 0
-            dist_pts = current_price - sma_20
-            atr_dist = abs(dist_pts) / atr if atr > 0 else 0
+            # Calcula o Z-Score em relação à VWAP
+            z_score = (current_price - vwap) / vwap_std
             
-            # [SOTA v25.4] Endurecido para 1.5 ATR para garantir > 70% Win Rate
-            if ai_dir_raw > 0 and dist_pts > (1.5 * atr):
-                veto_reason = f"VETO_REVERSAO_MEDIA_COMPRA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
-                logging.info(f"🛡️ [ANTI-EXHAUSTION] Compra bloqueada: Preço esticado (1.5 ATR).")
-            elif ai_dir_raw < 0 and dist_pts < (-1.5 * atr):
-                veto_reason = f"VETO_REVERSAO_MEDIA_VENDA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
-                logging.info(f"🛡️ [ANTI-EXHAUSTION] Venda bloqueada: Preço esticado (1.5 ATR).")
+            # [SOTA v26] Filtro de Exaustão de 2.5 Desvios (Prop Firm Level)
+            if ai_dir_raw > 0 and z_score > 2.5:
+                veto_reason = f"EXAUSTAO_VWAP_COMPRA (z={z_score:.2f} > 2.5)"
+                logging.info("🛡️ [EXAUSTÃO VWAP] Compra bloqueada: Preço esticado acima de 2.5 SD.")
+            elif ai_dir_raw < 0 and z_score < -2.5:
+                veto_reason = f"EXAUSTAO_VWAP_VENDA (z={z_score:.2f} < -2.5)"
+                logging.info("🛡️ [EXAUSTÃO VWAP] Venda bloqueada: Preço esticado abaixo de -2.5 SD.")
+
+        # [v27] Filtro de Tendência VWAP (Slope Check)
+        if veto_reason is None and abs(self.vwap_slope_ema) > 5.0:
+            ai_dir_raw = ai_dir if 'ai_dir' in locals() else 0
+            if ai_dir_raw > 0 and self.vwap_slope_ema < -8.0:
+                veto_reason = "VETO_CONTRA_TENDENCIA_VWAP_ALTA"
+                logging.info(f"🛡️ [VWAP SLOPE] Compra vetada: VWAP em queda livre ({self.vwap_slope_ema:.2f})")
+            elif ai_dir_raw < 0 and self.vwap_slope_ema > 8.0:
+                veto_reason = "VETO_CONTRA_TENDENCIA_VWAP_BAIXA"
+                logging.info(f"🛡️ [VWAP SLOPE] Venda vetada: VWAP em subida forte ({self.vwap_slope_ema:.2f})")
 
         # [SOTA v5] Spread Veto (Proteção contra Slippage)
         if veto_reason is None and spread > self.spread_veto_threshold:
@@ -530,7 +560,7 @@ class AICore:
             lot_multiplier = self.calculate_probabilistic_lot(final_score, quantile_confidence)
             if is_opening_session:
                 lot_multiplier *= 0.5 # Força exposição reduzida na abertura
-                logging.info(f"⏳ REDUCED LOT FOR OPENING: {lot_multiplier:.2f}x")
+                logging.info(f"⏳ LOTE REDUZIDO PARA ABERTURA: {lot_multiplier:.2f}x")
 
             # [MELHORIA] Quarter-Kelly: aplica fator de redução se ativo (0.25 após 2 perdas)
             if self.kelly_lot_multiplier < 1.0:
@@ -544,7 +574,14 @@ class AICore:
         tp_adj = 1.0
         if spread > 1.0:
             tp_adj = 1.0 + (spread / 100.0) # Aumenta TP proporcionalmente ao custo
-            logging.debug(f"🎯 SPREAD-ADJUSTED TP: +{spread:.1f} pts compensation ({tp_adj:.2f}x)")
+            logging.debug(f"🎯 TP AJUSTADO PELO SPREAD: +{spread:.1f} pts de compensação ({tp_adj:.2f}x)")
+
+        # [v27] Smart Routing: Decide se deve agredir ou usar limite
+        # Se score > 94 ou < 6, usamos agressão para não perder o movimento
+        execution_strategy = "LIMIT"
+        if final_score >= 94.0 or final_score <= 6.0:
+            execution_strategy = "AGGRESSIVE"
+            logging.info(f"⚡ [SMART ROUTER] Alta Convicção ({final_score:.1f}): Usando Agressão IOC.")
 
         return {
             "score": float(final_score),
@@ -552,6 +589,7 @@ class AICore:
             "lot_multiplier": float(lot_multiplier),
             "tp_multiplier": float(tp_adj),
             "veto": veto_reason,
+            "execution_strategy": execution_strategy, # [v27]
             "forecast": float(forecast_ref),
             "uncertainty": float(uncertainty_rel),
             "quantile_confidence": quantile_confidence,
@@ -583,8 +621,8 @@ class AICore:
             if self.consecutive_losses >= 2:
                 self.kelly_lot_multiplier = 0.25  # [QUARTER-KELLY] Reduz exposição para ¼
                 logging.warning(
-                    f"⚠️ [QUARTER-KELLY] 2 perdas consecutivas. "
-                    f"Exposição reduzida para 25% do lote normal. IA CONTINUA OPERANDO."
+                    "⚠️ [QUARTER-KELLY] 2 perdas consecutivas. "
+                    "Exposição reduzida para 25% do lote normal. IA CONTINUA OPERANDO."
                 )
         else:
             self.consecutive_losses = 0
@@ -592,8 +630,8 @@ class AICore:
             if self.consecutive_wins_kelly >= 2 and getattr(self, 'kelly_lot_multiplier', 1.0) < 1.0:
                 self.kelly_lot_multiplier = 1.0  # [QUARTER-KELLY] Restaura lote completo após 2 acertos
                 logging.info(
-                    f"✅ [QUARTER-KELLY] 2 acertos consecutivos confirmados. "
-                    f"Exposição RESTAURADA para 100% do lote normal."
+                    "✅ [QUARTER-KELLY] 2 acertos consecutivos confirmados. "
+                    "Exposição RESTAURADA para 100% do lote normal."
                 )
         
     async def predict_with_patchtst(self, inference_engine, dataframe):

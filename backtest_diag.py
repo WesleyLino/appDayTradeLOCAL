@@ -1,7 +1,10 @@
 """
 Diagnóstico: verifica se MT5 retorna dados e por que não há trades nos backtests
 """
-import sys, os, asyncio, logging
+import sys
+import os
+import asyncio
+import logging
 import MetaTrader5 as mt5
 from datetime import datetime
 

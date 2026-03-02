@@ -143,7 +143,13 @@ export function ConfluenceGauge({
           </span>
           <div className="flex items-center gap-1">
             <Activity className="w-3 h-3 text-blue-400" />
-            <span className="text-xs font-mono font-bold">{direction}</span>
+            <span className="text-xs font-mono font-bold">
+              {direction === "BUY"
+                ? "COMPRA"
+                : direction === "SELL"
+                  ? "VENDA"
+                  : direction}
+            </span>
           </div>
         </div>
         <div className="flex flex-col gap-1 items-end">

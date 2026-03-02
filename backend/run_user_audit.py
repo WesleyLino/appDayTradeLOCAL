@@ -101,20 +101,20 @@ async def run_user_audit():
         resumo_tabela += f"| {date_str} | **R$ {day_pnl:.2f}** | {len(trades_day)} | {len(buy_trades)} (R$ {buy_pnl:.2f}) | {len(sell_trades)} (R$ {sell_pnl:.2f}) | {win_rate:.1f}% | {flash_exits} | {missed_ai} / {missed_flux} |\n"
 
         detailed_reports += f"### 📅 Pregão: {date_str}\n"
-        detailed_reports += f"**📊 Desempenho Financeiro:**\n"
+        detailed_reports += "**📊 Desempenho Financeiro:**\n"
         detailed_reports += f"- **PnL do Dia**: R$ {day_pnl:.2f}\n"
         detailed_reports += f"- **Operações COMPRADAS**: {len(buy_trades)} trades, Resultado Acumulado: R$ {buy_pnl:.2f}\n"
         detailed_reports += f"- **Operações VENDIDAS**: {len(sell_trades)} trades, Resultado Acumulado: R$ {sell_pnl:.2f}\n"
         detailed_reports += f"- **Win Rate**: {win_rate:.1f}%\n"
         
-        detailed_reports += f"\n**🛡️ Defesas Ativas e Perdas de Oportunidades:**\n"
+        detailed_reports += "\n**🛡️ Defesas Ativas e Perdas de Oportunidades:**\n"
         detailed_reports += f"- Movimentos Sistêmicos (Candidatos V22 brutos): {shadow.get('v22_candidates', 0)}\n"
         detailed_reports += f"- Oportunidades Vetadas pela IA (< 85% de confiança): {missed_ai}\n"
         detailed_reports += f"- Oportunidades Vetadas por Fluxo Fraco: {missed_flux}\n"
         detailed_reports += f"- Saídas Antecipadas (Proteção Flash-Exit): {flash_exits}\n"
         
         # Sugestões de melhoria focadas no resultado do dia para elevar assertividade
-        detailed_reports += f"\n**💡 Melhorias para Elevar Assertividade:**\n"
+        detailed_reports += "\n**💡 Melhorias para Elevar Assertividade:**\n"
         if missed_ai > len(trades_day) and missed_ai > 0:
             detailed_reports += "- *Alta Taxa de Veto pela IA*: O modelo barrou muitos sinais (threshold 0.85 restritivo). Para aumentar oportunidades, considere reduzir levemente para 0.82-0.83 sem perder o caráter Sniper.\n"
         if missed_flux > len(trades_day) and missed_flux > 0:

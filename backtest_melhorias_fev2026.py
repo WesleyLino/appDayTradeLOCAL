@@ -401,14 +401,14 @@ def main():
         print(f"\n{'─'*80}")
         print(f"  {emoji} DIA: {day.strftime('%d/%m/%Y')}   Candles: {len(df)}")
         print()
-        print(f"  RESULTADO GERAL")
+        print("  RESULTADO GERAL")
         print(f"  ├── PNL Total       : R$ {day_pnl:+.2f}  ({day_pnl/INITIAL_CAPITAL*100:+.2f}%)")
         print(f"  ├── Total de Trades : {len(day_tr)}")
         print(f"  ├── Win Rate        : {day_wr:.1f}%")
         print(f"  └── Kelly Mult Atual: {kelly_mult*100:.0f}%")
         print()
 
-        print(f"  ── COMPRAS (BUY) ——————————————————————")
+        print("  ── COMPRAS (BUY) ——————————————————————")
         print(f"  Qtd: {len(buy_tr)} | Ganhos: {buy_wins} | Perdas: {len(buy_tr)-buy_wins} | PNL: R$ {resultado['buy_pnl']:+.2f}")
         for t in buy_tr:
             icon = "✅" if t['won'] else "❌"
@@ -418,7 +418,7 @@ def main():
                   f"R${t['pnl']:+.2f}  {t['reason']}{p_tag}")
         print()
 
-        print(f"  ── VENDAS (SELL) ——————————————————————")
+        print("  ── VENDAS (SELL) ——————————————————————")
         print(f"  Qtd: {len(sell_tr)} | Ganhos: {sel_wins} | Perdas: {len(sell_tr)-sel_wins} | PNL: R$ {resultado['sell_pnl']:+.2f}")
         for t in sell_tr:
             icon = "✅" if t['won'] else "❌"
@@ -428,7 +428,7 @@ def main():
                   f"R${t['pnl']:+.2f}  {t['reason']}{p_tag}")
         print()
 
-        print(f"  ── OPORTUNIDADES (SHADOW) ——————————————")
+        print("  ── OPORTUNIDADES (SHADOW) ——————————————")
         print(f"  Candidatos V22 : {day_shad['v22_candidates']}")
         print(f"  Bloq. Cooldown : {day_shad['cooldown']}  ← Quarter-Kelly não bloqueia, só reduz lote")
 
@@ -439,10 +439,10 @@ def main():
     pior_dia   = min(resultados, key=lambda r: r['pnl']) if resultados else None
 
     print(f"\n{'='*80}")
-    print(f"  CONSOLIDADO FINAL — 7 DIAS — FEV/2026 (COM MELHORIAS)")
+    print("  CONSOLIDADO FINAL — 7 DIAS — FEV/2026 (COM MELHORIAS)")
     print(f"{'='*80}")
     print()
-    print(f"  RESULTADO FINANCEIRO")
+    print("  RESULTADO FINANCEIRO")
     print(f"  ├── PNL Consolidado       : R$ {total_pnl:+.2f}  ({total_pnl/INITIAL_CAPITAL*100:+.2f}%)")
     print(f"  ├── PNL de Compras        : R$ {total_buy_pnl:+.2f}")
     print(f"  ├── PNL de Vendas         : R$ {total_sell_pnl:+.2f}")
@@ -454,18 +454,18 @@ def main():
     if pior_dia:
         print(f"  └── Pior Dia              : {pior_dia['day'].strftime('%d/%m/%Y')} → R$ {pior_dia['pnl']:+.2f}")
     print()
-    print(f"  OPERAÇÕES")
+    print("  OPERAÇÕES")
     print(f"  ├── Total de Trades       : {total_trades}")
     print(f"  ├── Win Rate Médio        : {avg_wr:.1f}%")
     print(f"  ├── Cooldown Bloqueios    : {total_shadow_cool}  (vs ~82 no baseline)")
     print(f"  └── Taxa Aproveit. V22    : {(total_trades/total_v22*100):.1f}%  (vs 36.6% no baseline)" if total_v22 else "")
     print()
     print(f"{'='*80}")
-    print(f"  COMPARATIVO COM BASELINE (sem melhorias)")
+    print("  COMPARATIVO COM BASELINE (sem melhorias)")
     print(f"{'='*80}")
     print()
-    print(f"  Métrica              | Baseline     | Com Melhorias")
-    print(f"  ---------------------|--------------|-------------------")
+    print("  Métrica              | Baseline     | Com Melhorias")
+    print("  ---------------------|--------------|-------------------")
     print(f"  PNL Total            | R$ +395,70   | R$ {total_pnl:+.2f}")
     print(f"  Win Rate Médio       | 63,9%        | {avg_wr:.1f}%")
     print(f"  PNL Vendas           | R$ +74,55    | R$ {total_sell_pnl:+.2f}")

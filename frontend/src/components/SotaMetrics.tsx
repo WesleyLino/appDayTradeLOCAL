@@ -49,17 +49,17 @@ export function SotaMetrics({
       <CardHeader className="pb-3 pt-4">
         <CardTitle className="text-sm font-medium tracking-widest text-muted-foreground flex items-center gap-2">
           <BrainCircuit className="w-4 h-4 text-emerald-400" />
-          SOTA INTELLIGENCE
+          INTELIGÊNCIA SOTA
         </CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4">
         {/* PSR Reliability */}
         <div className="flex items-center justify-between text-[11px] uppercase tracking-tighter text-blue-400 font-bold bg-blue-500/10 px-2.5 py-1.5 rounded-lg border border-blue-500/10">
           <div className="flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5" /> PSR Reliability
+            <ShieldCheck className="w-3.5 h-3.5" /> Confiabilidade PSR
           </div>
           <span>
-            {isPsrCalibrating ? "CALIBRATING..." : `${(psr * 100).toFixed(2)}%`}
+            {isPsrCalibrating ? "CALIBRANDO..." : `${(psr * 100).toFixed(2)}%`}
           </span>
         </div>
 
@@ -74,7 +74,7 @@ export function SotaMetrics({
         {/* Forecast & Confidence */}
         <div className="space-y-1">
           <div className="flex justify-between text-xs">
-            <span className="text-white/80">PatchTST Confidence</span>
+            <span className="text-white/80">Confiança PatchTST</span>
             <span className="font-mono text-emerald-300">
               {(confidence * 100).toFixed(1)}%
             </span>
@@ -133,7 +133,7 @@ export function SotaMetrics({
         {/* Synthetic Index (Blue Chips) */}
         <div className="pt-2 border-t border-white/5 space-y-1 text-xs">
           <div className="flex justify-between uppercase tracking-tighter text-muted-foreground">
-            <span>Blue Chips Synth Index</span>
+            <span>Índice Sintético Blue Chips</span>
             <span
               className={
                 syntheticIndex >= 0 ? "text-emerald-400" : "text-red-400"
@@ -157,7 +157,7 @@ export function SotaMetrics({
         <div className="pt-2 border-t border-white/5 space-y-1 text-xs">
           <div className="flex justify-between uppercase tracking-tighter text-muted-foreground">
             <span className="flex items-center gap-1">
-              <Globe className="w-3 h-3 text-blue-400" /> S&P 500 Macro
+              <Globe className="w-3 h-3 text-blue-400" /> Macro S&P 500
             </span>
             <span
               className={macroIndex >= 0 ? "text-blue-400" : "text-amber-400"}
@@ -178,7 +178,7 @@ export function SotaMetrics({
 
         {/* Regime */}
         <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Market Regime</span>
+          <span className="text-muted-foreground">Regime de Mercado</span>
           <span
             className={`px-2 py-0.5 rounded font-bold ${regime === 2 ? "bg-red-500/20 text-red-400" : "bg-blue-500/20 text-blue-400"}`}
           >

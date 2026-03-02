@@ -9,7 +9,7 @@ def sanitize_log(e):
     try:
         return str(e).encode('utf-8', 'replace').decode('utf-8')
     except:
-        return "Unknown error (encoding failure)"
+        return "Erro desconhecido (falha de codificação)"
 
 # Configuração de Logs
 logging.basicConfig(
@@ -159,13 +159,16 @@ class MT5Bridge:
             # 10004: REQUOTE, 10006: PRICE_CHANGED
             if result.retcode in [10004, 10006]:
                 attempt += 1
-                logging.warning(f"REQUOTE/PRICE_OFF ({result.retcode}): Tentativa {attempt}/{max_retries}. Ajustando preço...")
+                logging.warning(f"RECOTAÇÃO/PREÇO_ALTERADO ({result.retcode}): Tentativa {attempt}/{max_retries}. Ajustando preço...")
                 
                 # Obter preço atualizado instantaneamente
                 tick = mt5.symbol_info_tick(params['symbol'])
                 if tick:
                     # Ajustar preço mantendo a direção
-                    new_price = tick.ask if params['type'] in [mt5.ORDER_TYPE_BUY, mt5.ORDER_TYPE_BUY_LIMIT] else tick.bid
+                    if params['type'] in [mt5.ORDER_TYPE_BUY, mt5.ORDER_TYPE_BUY_LIMIT]:
+                        new_price = tick.ask 
+                    else:
+                        new_price = tick.bid
                     
                     # Se for LIMIT, talvez queiramos ser um pouco mais agressivos na retentativa
                     # mas para este escopo, apenas atualizamos para o novo preço de mercado
@@ -184,7 +187,41 @@ class MT5Bridge:
             
         return result
 
-    def place_limit_order(self, symbol, order_type, price, volume, sl=0.0, tp=0.0, comment="HFT Limit"):
+    def place_aggressive_order(self, symbol, order_type, volume, sl=0.0, tp=0.0, comment="v27 SOTA AGRESSÃO"):
+        """
+        [v27 - SMART ROUTER]
+        Executa ordem a mercado cruzando o spread (Agressão Instantânea).
+        Usa ORDER_FILLING_IOC para garantir execução imediata ou cancelamento (sem deixar saldo pendurado).
+        """
+        if not self.connected: return None
+
+        tick = mt5.symbol_info_tick(symbol)
+        if not tick:
+            logging.error(f"Não foi possível obter tick para agressão no símbolo {symbol}.")
+            return None
+
+        # Cruza o spread: se compra, paga o Ask. Se vende, bate no Bid.
+        price = tick.ask if order_type == mt5.ORDER_TYPE_BUY else tick.bid
+
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": float(volume),
+            "type": order_type,
+            "price": float(price),
+            "sl": float(sl),
+            "tp": float(tp),
+            "deviation": 10,  # Aceita até 10 pontos de slippage para garantir entrada
+            "magic": 123456,
+            "comment": comment,
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+
+        logging.info(f"🚀 [SMART ROUTER] Enviando agressão: {symbol} {volume} lotes @ {price}")
+        return self.place_resilient_order(request)
+
+    def place_limit_order(self, symbol, order_type, price, volume, sl=0.0, tp=0.0, comment="HFT Limite"):
         """
         Envia uma Ordem Limitada (Pending Order) para o book.
         Retorna o result object do MT5.
@@ -219,9 +256,9 @@ class MT5Bridge:
 
         result = mt5.order_send(request)
         if result.retcode != mt5.TRADE_RETCODE_DONE:
-            logging.error(f"Falha ao enviar Limit Order: {sanitize_log(result.comment)} ({result.retcode})")
+            logging.error(f"Falha ao enviar Ordem Limitada: {sanitize_log(result.comment)} ({result.retcode})")
         else:
-            logging.info(f"LIMIT ORDER ENVIADA: {symbol} {volume} @ {price} (Ticket: {result.order})")
+            logging.info(f"ORDEM LIMITADA ENVIADA: {symbol} {volume} @ {price} (Ticket: {result.order})")
         
         return result
 
@@ -270,14 +307,14 @@ class MT5Bridge:
     def check_order_status(self, ticket):
         """
         Verifica o estado de uma ordem.
-        Retorna: 'FILLED', 'PENDING', 'CANCELED', 'UNKNOWN'
+        Retorna: 'EXECUTADA', 'PENDENTE', 'CANCELADA', 'DESCONHECIDO'
         """
-        if not self.connected: return "UNKNOWN"
+        if not self.connected: return "DESCONHECIDO"
         
         # 1. Checar se está PENDENTE (Active)
         orders = mt5.orders_get(ticket=ticket)
         if orders and len(orders) > 0:
-            return "PENDING"
+            return "PENDENTE"
             
         # 2. Checar se foi FINALIZADA (History)
         from_date = datetime.now() - timedelta(days=1)
@@ -286,15 +323,15 @@ class MT5Bridge:
         if hist_orders and len(hist_orders) > 0:
             state = hist_orders[0].state
             if state == mt5.ORDER_STATE_FILLED:
-                return "FILLED"
+                return "EXECUTADA"
             elif state == mt5.ORDER_STATE_CANCELED:
-                return "CANCELED"
+                return "CANCELADA"
             elif state == mt5.ORDER_STATE_PARTIAL:
-                return "PARTIAL"
+                return "PARCIAL"
             else:
-                return f"STATE_{state}"
+                return f"ESTADO_{state}"
                 
-        return "UNKNOWN"
+        return "DESCONHECIDO"
 
     def validate_order_compliance(self, symbol, price):
         """
@@ -349,7 +386,7 @@ class MT5Bridge:
             "price": float(price),
             "deviation": 20,
             "magic": 123456,
-            "comment": "CLOSE AUTO",
+            "comment": "FECHAMENTO AUTO",
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC if "WIN" in symbol or "WDO" in symbol else mt5.ORDER_FILLING_RETURN,
         }
@@ -394,7 +431,7 @@ class MT5Bridge:
             "price": float(price),
             "deviation": 20,
             "magic": 123456,
-            "comment": "CLOSE PARTIAL",
+            "comment": "PARCIAL AUTO",
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC if "WIN" in symbol or "WDO" in symbol else mt5.ORDER_FILLING_RETURN,
         }

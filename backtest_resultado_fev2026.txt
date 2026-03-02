@@ -2,7 +2,7 @@
 =============== BACKTEST DETALHADO - MINI ÍNDICE (WIN) - FEV/2026 ===============
   SÍMBOLO  : WIN$N
   CAPITAL  : R$ 3,000.00
-  TIMEFRAME: M1  |  ESTRATÉGIA: SOTA V22 Golden Params
+  TIMEFRAME: M1  |  ESTRATÉGIA: SOTA V28 (flux=0.95, cooldown=7min, Filtro-H ativo)
   DIAS     : 19/02, 20/02, 23/02, 24/02, 25/02, 26/02, 27/02
 ==================================================================================
 
@@ -10,12 +10,12 @@
 RELATORIO DO PASSADO (WIN$N)
 ==================================================
 Saldo Inicial: R$ 3000.00
-Saldo Final:   R$ 3032.91
-Lucro Líquido: R$ 32.91
-Total Trades:  10
-Win Rate:      60.0%
-Profit Factor: 1.46
-Max Drawdown:  1.72%
+Saldo Final:   R$ 3122.00
+Lucro Líquido: R$ 122.00
+Total Trades:  6
+Win Rate:      50.0%
+Profit Factor: 5.07
+Max Drawdown:  0.97%
 
 Relatório Visual salvo em: backend/backtest_report.html
 ==================================================
@@ -26,36 +26,31 @@ Relatório Visual salvo em: backend/backtest_report.html
   Janela operacional   : 09:15 - 17:15
 
   RESULTADO GERAL
-  ├── PNL Total          :       R$ +32.91      +1.10%
-  ├── Total de Trades    :     10
-  ├── Win Rate           :   60.0%
-  ├── Profit Factor      :   1.46
-  └── Max Drawdown       :   1.72%
+  ├── PNL Total          :      R$ +122.00      +4.07%
+  ├── Total de Trades    :      6
+  ├── Win Rate           :   50.0%
+  ├── Profit Factor      :   5.07
+  └── Max Drawdown       :   0.97%
 
   ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────
-  Qtd: 5  |  Ganhos: 3  |  Perdas: 2  |  PNL: R$ -1.60
+  Qtd: 6  |  Ganhos: 3  |  Perdas: 3  |  PNL: R$ +122.00
   Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
   -----------------------------------------------------------------------------------------------
-  ❌ 2026-02-19 10:47:00   2026-02-19 10:52:00      192105    191962    -143    R$ -28.60  SL          
-  ✅ 2026-02-19 12:10:00   2026-02-19 12:12:00      191910    191990     +80    R$ +16.00  SL          
-  ✅ 2026-02-19 13:21:00   2026-02-19 13:26:00      191760    191840     +80    R$ +16.00  SL          
-  ✅ 2026-02-19 13:39:00   2026-02-19 13:42:00      191665    191740     +75    R$ +15.00  SL          
-  ❌ 2026-02-19 14:16:00   2026-02-19 14:18:00      191560    191460    -100    R$ -20.00  SL          
+  ✅ 2026-02-19 09:54:00   2026-02-19 09:58:00      191845    192245    +400    R$ +80.00  TP          
+  ❌ 2026-02-19 10:47:00   2026-02-19 10:52:00      192105    191955    -150    R$ -30.00  SL          
+  ❌ 2026-02-19 11:38:00   2026-02-19 11:40:00      192235    192235      +0     R$ +0.00  SL          
+  ✅ 2026-02-19 12:10:00   2026-02-19 12:16:00      191910    192170    +260    R$ +52.00  SL          
+  ✅ 2026-02-19 13:21:00   2026-02-19 13:38:00      191760    191860    +100    R$ +20.00  SL          
+  ❌ 2026-02-19 14:16:00   2026-02-19 14:20:00      191560    191560      +0     R$ +0.00  SL          
 
   ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────
-  Qtd: 5  |  Ganhos: 3  |  Perdas: 2  |  PNL: R$ +34.51
-  Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
-  -----------------------------------------------------------------------------------------------
-  ✅ 2026-02-19 09:58:00   2026-02-19 10:00:00      192260    192210     +50    R$ +10.00  SL          
-  ✅ 2026-02-19 10:34:00   2026-02-19 10:36:00      192395    192285    +110    R$ +22.00  SL          
-  ❌ 2026-02-19 11:17:00   2026-02-19 11:19:00      192255    192372    -117    R$ -23.49  SL          
-  ❌ 2026-02-19 14:30:00   2026-02-19 14:32:00      191910    191910      +0     R$ +0.00  SL          
-  ✅ 2026-02-19 14:55:00   2026-02-19 14:57:00      192225    192095    +130    R$ +26.00  SL          
+  Nenhuma operação de venda executada neste dia.
 
   ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────
-  Candidatos V22 detectados : 30
+  Candidatos V22 detectados : 31
   Bloqueados pela IA        : 0  (confiança abaixo do limiar)
-  Bloqueados pelo filtro flux: 4
+  Bloqueados pelo filtro flux: 0
+  Bloqueados Filtro-H (tend.): 13  [MELHORIA H V28 — veto de direção]
   Distribuição de confiança dos bloqueados (%):
     [70-75%] : 0 sinais
     [75-80%] : 0 sinais
@@ -64,20 +59,20 @@ Relatório Visual salvo em: backend/backtest_report.html
     rsi            : 0 ocorrências
     bb             : 0 ocorrências
     volume         : 0 ocorrências
-    time           : 4 ocorrências
-    cooldown       : 8 ocorrências
+    time           : 3 ocorrências
+    cooldown       : 5 ocorrências
 ----------------------------------------------------------------------------------
 
 ==================================================
 RELATORIO DO PASSADO (WIN$N)
 ==================================================
 Saldo Inicial: R$ 3000.00
-Saldo Final:   R$ 3086.13
-Lucro Líquido: R$ 86.13
-Total Trades:  11
-Win Rate:      63.6%
-Profit Factor: 2.88
-Max Drawdown:  1.48%
+Saldo Final:   R$ 3091.00
+Lucro Líquido: R$ 91.00
+Total Trades:  6
+Win Rate:      33.3%
+Profit Factor: 4.03
+Max Drawdown:  1.00%
 
 Relatório Visual salvo em: backend/backtest_report.html
 ==================================================
@@ -88,164 +83,31 @@ Relatório Visual salvo em: backend/backtest_report.html
   Janela operacional   : 09:15 - 17:15
 
   RESULTADO GERAL
-  ├── PNL Total          :       R$ +86.13      +2.87%
-  ├── Total de Trades    :     11
-  ├── Win Rate           :   63.6%
-  ├── Profit Factor      :   2.88
-  └── Max Drawdown       :   1.48%
+  ├── PNL Total          :       R$ +91.00      +3.03%
+  ├── Total de Trades    :      6
+  ├── Win Rate           :   33.3%
+  ├── Profit Factor      :   4.03
+  └── Max Drawdown       :   1.00%
 
   ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────
-  Qtd: 6  |  Ganhos: 5  |  Perdas: 1  |  PNL: R$ +112.00
+  Qtd: 6  |  Ganhos: 2  |  Perdas: 4  |  PNL: R$ +91.00
   Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
   -----------------------------------------------------------------------------------------------
-  ✅ 2026-02-20 10:07:00   2026-02-20 10:09:00      191975    192025     +50    R$ +10.00  SL          
-  ✅ 2026-02-20 10:22:00   2026-02-20 10:24:00      191885    191935     +50    R$ +10.00  SL          
-  ❌ 2026-02-20 11:15:00   2026-02-20 11:18:00      191830    191830      +0     R$ +0.00  SL          
-  ✅ 2026-02-20 12:21:00   2026-02-20 12:23:00      192525    192605     +80    R$ +16.00  SL          
-  ✅ 2026-02-20 13:00:00   2026-02-20 13:03:00      192865    193075    +210    R$ +42.00  SL          
-  ✅ 2026-02-20 14:30:00   2026-02-20 14:34:00      193935    194105    +170    R$ +34.00  SL          
+  ❌ 2026-02-20 10:07:00   2026-02-20 10:09:00      191975    191975      +0     R$ +0.00  SL          
+  ❌ 2026-02-20 10:22:00   2026-02-20 10:24:00      191885    191885      +0     R$ +0.00  SL          
+  ❌ 2026-02-20 11:09:00   2026-02-20 11:11:00      192140    191990    -150    R$ -30.00  SL          
+  ❌ 2026-02-20 12:21:00   2026-02-20 12:24:00      192525    192525      +0     R$ +0.00  SL          
+  ✅ 2026-02-20 13:00:00   2026-02-20 13:04:00      192865    193265    +400    R$ +80.00  TP          
+  ✅ 2026-02-20 14:30:00   2026-02-20 14:40:00      193935    194140    +205    R$ +41.00  SL          
 
   ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────
-  Qtd: 5  |  Ganhos: 2  |  Perdas: 3  |  PNL: R$ -25.87
-  Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
-  -----------------------------------------------------------------------------------------------
-  ✅ 2026-02-20 11:00:00   2026-02-20 11:05:00      192315    192265     +50    R$ +10.00  SL          
-  ❌ 2026-02-20 11:50:00   2026-02-20 11:52:00      192335    192335      +0     R$ +0.00  SL          
-  ✅ 2026-02-20 12:33:00   2026-02-20 12:35:00      193165    193115     +50    R$ +10.00  SL          
-  ❌ 2026-02-20 13:35:00   2026-02-20 13:38:00      193390    193496    -106    R$ -21.17  SL          
-  ❌ 2026-02-20 14:05:00   2026-02-20 14:13:00      194080    194204    -124    R$ -24.70  SL          
+  Nenhuma operação de venda executada neste dia.
 
   ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────
-  Candidatos V22 detectados : 39
-  Bloqueados pela IA        : 0  (confiança abaixo do limiar)
-  Bloqueados pelo filtro flux: 1
-  Distribuição de confiança dos bloqueados (%):
-    [70-75%] : 0 sinais
-    [75-80%] : 0 sinais
-    [80-85%] : 0 sinais
-  Falhas de componente:
-    rsi            : 0 ocorrências
-    bb             : 0 ocorrências
-    volume         : 0 ocorrências
-    time           : 3 ocorrências
-    cooldown       : 16 ocorrências
-----------------------------------------------------------------------------------
-
-==================================================
-RELATORIO DO PASSADO (WIN$N)
-==================================================
-Saldo Inicial: R$ 3000.00
-Saldo Final:   R$ 3036.85
-Lucro Líquido: R$ 36.85
-Total Trades:  10
-Win Rate:      60.0%
-Profit Factor: 1.51
-Max Drawdown:  0.93%
-
-Relatório Visual salvo em: backend/backtest_report.html
-==================================================
-
-
-================================ DIA: 23/02/2026 ================================
-  Candles M1 carregados: 445
-  Janela operacional   : 09:15 - 17:15
-
-  RESULTADO GERAL
-  ├── PNL Total          :       R$ +36.85      +1.23%
-  ├── Total de Trades    :     10
-  ├── Win Rate           :   60.0%
-  ├── Profit Factor      :   1.51
-  └── Max Drawdown       :   0.93%
-
-  ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────
-  Qtd: 5  |  Ganhos: 3  |  Perdas: 2  |  PNL: R$ +46.53
-  Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
-  -----------------------------------------------------------------------------------------------
-  ❌ 2026-02-23 09:32:00   2026-02-23 09:34:00      193060    193060      +0     R$ +0.00  SL          
-  ✅ 2026-02-23 09:52:00   2026-02-23 09:54:00      192705    192835    +130    R$ +26.00  SL          
-  ✅ 2026-02-23 11:11:00   2026-02-23 11:13:00      192160    192210     +50    R$ +10.00  SL          
-  ✅ 2026-02-23 11:36:00   2026-02-23 11:40:00      192185    192350    +165    R$ +33.00  SL          
-  ❌ 2026-02-23 13:04:00   2026-02-23 13:05:00      192560    192448    -112    R$ -22.47  SL          
-
-  ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────
-  Qtd: 5  |  Ganhos: 3  |  Perdas: 2  |  PNL: R$ -9.68
-  Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
-  -----------------------------------------------------------------------------------------------
-  ❌ 2026-02-23 11:00:00   2026-02-23 11:01:00      192450    192568    -118    R$ -23.68  SL          
-  ❌ 2026-02-23 11:52:00   2026-02-23 11:53:00      192525    192655    -130    R$ -26.00  SL          
-  ✅ 2026-02-23 12:28:00   2026-02-23 12:30:00      192965    192865    +100    R$ +20.00  SL          
-  ✅ 2026-02-23 13:56:00   2026-02-23 13:58:00      192455    192405     +50    R$ +10.00  SL          
-  ✅ 2026-02-23 14:30:00   2026-02-23 14:37:00      192515    192465     +50    R$ +10.00  SL          
-
-  ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────
-  Candidatos V22 detectados : 32
-  Bloqueados pela IA        : 0  (confiança abaixo do limiar)
-  Bloqueados pelo filtro flux: 1
-  Distribuição de confiança dos bloqueados (%):
-    [70-75%] : 0 sinais
-    [75-80%] : 0 sinais
-    [80-85%] : 0 sinais
-  Falhas de componente:
-    rsi            : 0 ocorrências
-    bb             : 0 ocorrências
-    volume         : 0 ocorrências
-    time           : 2 ocorrências
-    cooldown       : 13 ocorrências
-----------------------------------------------------------------------------------
-
-==================================================
-RELATORIO DO PASSADO (WIN$N)
-==================================================
-Saldo Inicial: R$ 3000.00
-Saldo Final:   R$ 3162.00
-Lucro Líquido: R$ 162.00
-Total Trades:  13
-Win Rate:      84.6%
-Profit Factor: 9.10
-Max Drawdown:  0.64%
-
-Relatório Visual salvo em: backend/backtest_report.html
-==================================================
-
-
-================================ DIA: 24/02/2026 ================================
-  Candles M1 carregados: 445
-  Janela operacional   : 09:15 - 17:15
-
-  RESULTADO GERAL
-  ├── PNL Total          :      R$ +162.00      +5.40%
-  ├── Total de Trades    :     13
-  ├── Win Rate           :   84.6%
-  ├── Profit Factor      :   9.10
-  └── Max Drawdown       :   0.64%
-
-  ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────
-  Qtd: 6  |  Ganhos: 4  |  Perdas: 2  |  PNL: R$ +26.00
-  Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
-  -----------------------------------------------------------------------------------------------
-  ✅ 2026-02-24 12:13:00   2026-02-24 12:15:00      194815    194865     +50    R$ +10.00  SL          
-  ❌ 2026-02-24 13:08:00   2026-02-24 13:09:00      194810    194710    -100    R$ -20.00  SL          
-  ❌ 2026-02-24 13:19:00   2026-02-24 13:21:00      194610    194610      +0     R$ +0.00  SL          
-  ✅ 2026-02-24 13:55:00   2026-02-24 13:57:00      194830    194910     +80    R$ +16.00  SL          
-  ✅ 2026-02-24 14:30:00   2026-02-24 14:33:00      194685    194735     +50    R$ +10.00  SL          
-  ✅ 2026-02-24 15:19:00   2026-02-24 15:24:00      195020    195070     +50    R$ +10.00  SL          
-
-  ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────
-  Qtd: 7  |  Ganhos: 7  |  Perdas: 0  |  PNL: R$ +136.00
-  Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
-  -----------------------------------------------------------------------------------------------
-  ✅ 2026-02-24 09:30:00   2026-02-24 09:32:00      194855    194665    +190    R$ +38.00  SL          
-  ✅ 2026-02-24 10:07:00   2026-02-24 10:09:00      194930    194855     +75    R$ +15.00  SL          
-  ✅ 2026-02-24 10:26:00   2026-02-24 10:28:00      195130    195080     +50    R$ +10.00  SL          
-  ✅ 2026-02-24 11:09:00   2026-02-24 11:11:00      195140    195050     +90    R$ +18.00  SL          
-  ✅ 2026-02-24 11:35:00   2026-02-24 11:41:00      195335    195230    +105    R$ +21.00  SL          
-  ✅ 2026-02-24 12:31:00   2026-02-24 12:35:00      195065    194945    +120    R$ +24.00  SL          
-  ✅ 2026-02-24 14:50:00   2026-02-24 14:52:00      195240    195190     +50    R$ +10.00  SL          
-
-  ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────
-  Candidatos V22 detectados : 28
+  Candidatos V22 detectados : 45
   Bloqueados pela IA        : 0  (confiança abaixo do limiar)
   Bloqueados pelo filtro flux: 0
+  Bloqueados Filtro-H (tend.): 19  [MELHORIA H V28 — veto de direção]
   Distribuição de confiança dos bloqueados (%):
     [70-75%] : 0 sinais
     [75-80%] : 0 sinais
@@ -262,12 +124,128 @@ Relatório Visual salvo em: backend/backtest_report.html
 RELATORIO DO PASSADO (WIN$N)
 ==================================================
 Saldo Inicial: R$ 3000.00
-Saldo Final:   R$ 3082.27
-Lucro Líquido: R$ 82.27
-Total Trades:  14
-Win Rate:      64.3%
-Profit Factor: 2.33
-Max Drawdown:  0.98%
+Saldo Final:   R$ 2990.00
+Lucro Líquido: R$ -10.00
+Total Trades:  7
+Win Rate:      14.3%
+Profit Factor: 0.67
+Max Drawdown:  0.99%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+
+================================ DIA: 23/02/2026 ================================
+  Candles M1 carregados: 445
+  Janela operacional   : 09:15 - 17:15
+
+  RESULTADO GERAL
+  ├── PNL Total          :       R$ -10.00      -0.33%
+  ├── Total de Trades    :      7
+  ├── Win Rate           :   14.3%
+  ├── Profit Factor      :   0.67
+  └── Max Drawdown       :   0.99%
+
+  ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────
+  Qtd: 2  |  Ganhos: 1  |  Perdas: 1  |  PNL: R$ +20.00
+  Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
+  -----------------------------------------------------------------------------------------------
+  ❌ 2026-02-23 09:05:00   2026-02-23 09:07:00      193950    193950      +0     R$ +0.00  SL          
+  ✅ 2026-02-23 09:27:00   2026-02-23 09:32:00      193135    193235    +100    R$ +20.00  SL          
+
+  ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────
+  Qtd: 5  |  Ganhos: 0  |  Perdas: 5  |  PNL: R$ -30.00
+  Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
+  -----------------------------------------------------------------------------------------------
+  ❌ 2026-02-23 11:00:00   2026-02-23 11:04:00      192450    192450      +0     R$ +0.00  SL          
+  ❌ 2026-02-23 11:52:00   2026-02-23 11:53:00      192525    192675    -150    R$ -30.00  SL          
+  ❌ 2026-02-23 12:28:00   2026-02-23 12:30:00      192965    192965      +0     R$ +0.00  SL          
+  ❌ 2026-02-23 13:56:00   2026-02-23 14:01:00      192455    192455      +0     R$ +0.00  SL          
+  ❌ 2026-02-23 14:30:00   2026-02-23 14:39:00      192515    192515      +0     R$ +0.00  SL          
+
+  ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────
+  Candidatos V22 detectados : 32
+  Bloqueados pela IA        : 0  (confiança abaixo do limiar)
+  Bloqueados pelo filtro flux: 0
+  Bloqueados Filtro-H (tend.): 12  [MELHORIA H V28 — veto de direção]
+  Distribuição de confiança dos bloqueados (%):
+    [70-75%] : 0 sinais
+    [75-80%] : 0 sinais
+    [80-85%] : 0 sinais
+  Falhas de componente:
+    rsi            : 0 ocorrências
+    bb             : 0 ocorrências
+    volume         : 0 ocorrências
+    time           : 1 ocorrências
+    cooldown       : 8 ocorrências
+----------------------------------------------------------------------------------
+
+==================================================
+RELATORIO DO PASSADO (WIN$N)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 3024.00
+Lucro Líquido: R$ 24.00
+Total Trades:  6
+Win Rate:      50.0%
+Profit Factor: 1.80
+Max Drawdown:  1.00%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+
+================================ DIA: 24/02/2026 ================================
+  Candles M1 carregados: 445
+  Janela operacional   : 09:15 - 17:15
+
+  RESULTADO GERAL
+  ├── PNL Total          :       R$ +24.00      +0.80%
+  ├── Total de Trades    :      6
+  ├── Win Rate           :   50.0%
+  ├── Profit Factor      :   1.80
+  └── Max Drawdown       :   1.00%
+
+  ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────
+  Qtd: 6  |  Ganhos: 3  |  Perdas: 3  |  PNL: R$ +24.00
+  Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
+  -----------------------------------------------------------------------------------------------
+  ❌ 2026-02-24 11:48:00   2026-02-24 11:49:00      195055    194905    -150    R$ -30.00  SL          
+  ❌ 2026-02-24 12:13:00   2026-02-24 12:18:00      194815    194815      +0     R$ +0.00  SL          
+  ❌ 2026-02-24 13:08:00   2026-02-24 13:17:00      194810    194810      +0     R$ +0.00  SL          
+  ✅ 2026-02-24 13:55:00   2026-02-24 14:01:00      194830    194930    +100    R$ +20.00  SL          
+  ✅ 2026-02-24 14:30:00   2026-02-24 14:39:00      194685    194845    +160    R$ +32.00  SL          
+  ✅ 2026-02-24 15:19:00   2026-02-24 15:24:00      195020    195030     +10     R$ +2.00  END_OF_SIM  
+
+  ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────
+  Nenhuma operação de venda executada neste dia.
+
+  ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────
+  Candidatos V22 detectados : 27
+  Bloqueados pela IA        : 0  (confiança abaixo do limiar)
+  Bloqueados pelo filtro flux: 0
+  Bloqueados Filtro-H (tend.): 15  [MELHORIA H V28 — veto de direção]
+  Distribuição de confiança dos bloqueados (%):
+    [70-75%] : 0 sinais
+    [75-80%] : 0 sinais
+    [80-85%] : 0 sinais
+  Falhas de componente:
+    rsi            : 0 ocorrências
+    bb             : 0 ocorrências
+    volume         : 0 ocorrências
+    cooldown       : 5 ocorrências
+----------------------------------------------------------------------------------
+
+==================================================
+RELATORIO DO PASSADO (WIN$N)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2980.00
+Lucro Líquido: R$ -20.00
+Total Trades:  5
+Win Rate:      20.0%
+Profit Factor: 0.67
+Max Drawdown:  1.00%
 
 Relatório Visual salvo em: backend/backtest_report.html
 ==================================================
@@ -278,40 +256,87 @@ Relatório Visual salvo em: backend/backtest_report.html
   Janela operacional   : 09:15 - 17:15
 
   RESULTADO GERAL
-  ├── PNL Total          :       R$ +82.27      +2.74%
-  ├── Total de Trades    :     14
-  ├── Win Rate           :   64.3%
-  ├── Profit Factor      :   2.33
-  └── Max Drawdown       :   0.98%
+  ├── PNL Total          :       R$ -20.00      -0.67%
+  ├── Total de Trades    :      5
+  ├── Win Rate           :   20.0%
+  ├── Profit Factor      :   0.67
+  └── Max Drawdown       :   1.00%
 
   ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────
-  Qtd: 9  |  Ganhos: 6  |  Perdas: 3  |  PNL: R$ +83.00
-  Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
-  -----------------------------------------------------------------------------------------------
-  ❌ 2026-02-25 09:33:00   2026-02-25 09:35:00      194180    194180      +0     R$ +0.00  SL          
-  ✅ 2026-02-25 10:28:00   2026-02-25 10:30:00      194545    194595     +50    R$ +10.00  SL          
-  ✅ 2026-02-25 10:47:00   2026-02-25 10:49:00      194445    194535     +90    R$ +18.00  SL          
-  ✅ 2026-02-25 11:15:00   2026-02-25 11:19:00      194565    194615     +50    R$ +10.00  SL          
-  ❌ 2026-02-25 12:36:00   2026-02-25 12:41:00      194675    194575    -100    R$ -20.00  SL          
-  ✅ 2026-02-25 12:51:00   2026-02-25 12:53:00      194290    194380     +90    R$ +18.00  SL          
-  ✅ 2026-02-25 13:03:00   2026-02-25 13:05:00      193840    194000    +160    R$ +32.00  SL          
-  ✅ 2026-02-25 14:12:00   2026-02-25 14:16:00      193880    193955     +75    R$ +15.00  SL          
-  ❌ 2026-02-25 15:16:00   2026-02-25 15:18:00      194355    194355      +0     R$ +0.00  SL          
+  Nenhuma operação de compra executada neste dia.
 
   ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────
-  Qtd: 5  |  Ganhos: 3  |  Perdas: 2  |  PNL: R$ -0.73
+  Qtd: 5  |  Ganhos: 1  |  Perdas: 4  |  PNL: R$ -20.00
   Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
   -----------------------------------------------------------------------------------------------
-  ✅ 2026-02-25 09:52:00   2026-02-25 09:55:00      194585    194480    +105    R$ +21.00  SL          
-  ✅ 2026-02-25 11:01:00   2026-02-25 11:03:00      194730    194680     +50    R$ +10.00  SL          
-  ❌ 2026-02-25 11:32:00   2026-02-25 11:37:00      194765    194865    -100    R$ -20.00  SL          
-  ✅ 2026-02-25 11:58:00   2026-02-25 12:01:00      195130    195080     +50    R$ +10.00  SL          
-  ❌ 2026-02-25 14:31:00   2026-02-25 14:33:00      194250    194359    -109    R$ -21.73  SL          
+  ❌ 2026-02-25 09:52:00   2026-02-25 09:57:00      194585    194585      +0     R$ +0.00  SL          
+  ❌ 2026-02-25 11:01:00   2026-02-25 11:04:00      194730    194730      +0     R$ +0.00  SL          
+  ❌ 2026-02-25 11:32:00   2026-02-25 11:38:00      194765    194915    -150    R$ -30.00  SL          
+  ✅ 2026-02-25 11:58:00   2026-02-25 12:11:00      195130    194930    +200    R$ +40.00  SL          
+  ❌ 2026-02-25 14:31:00   2026-02-25 14:34:00      194250    194400    -150    R$ -30.00  SL          
 
   ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────
-  Candidatos V22 detectados : 26
+  Candidatos V22 detectados : 29
   Bloqueados pela IA        : 0  (confiança abaixo do limiar)
-  Bloqueados pelo filtro flux: 1
+  Bloqueados pelo filtro flux: 0
+  Bloqueados Filtro-H (tend.): 21  [MELHORIA H V28 — veto de direção]
+  Distribuição de confiança dos bloqueados (%):
+    [70-75%] : 0 sinais
+    [75-80%] : 0 sinais
+    [80-85%] : 0 sinais
+  Falhas de componente:
+    rsi            : 0 ocorrências
+    bb             : 0 ocorrências
+    volume         : 0 ocorrências
+    cooldown       : 2 ocorrências
+----------------------------------------------------------------------------------
+
+==================================================
+RELATORIO DO PASSADO (WIN$N)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2910.00
+Lucro Líquido: R$ -90.00
+Total Trades:  7
+Win Rate:      0.0%
+Profit Factor: 0.00
+Max Drawdown:  3.00%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+
+================================ DIA: 26/02/2026 ================================
+  Candles M1 carregados: 445
+  Janela operacional   : 09:15 - 17:15
+
+  RESULTADO GERAL
+  ├── PNL Total          :       R$ -90.00      -3.00%
+  ├── Total de Trades    :      7
+  ├── Win Rate           :    0.0%
+  ├── Profit Factor      :   0.00
+  └── Max Drawdown       :   3.00%
+
+  ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────
+  Nenhuma operação de compra executada neste dia.
+
+  ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────
+  Qtd: 7  |  Ganhos: 0  |  Perdas: 7  |  PNL: R$ -90.00
+  Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
+  -----------------------------------------------------------------------------------------------
+  ❌ 2026-02-26 09:58:00   2026-02-26 10:00:00      193375    193375      +0     R$ +0.00  SL          
+  ❌ 2026-02-26 10:14:00   2026-02-26 10:19:00      193550    193700    -150    R$ -30.00  SL          
+  ❌ 2026-02-26 12:10:00   2026-02-26 12:12:00      193410    193410      +0     R$ +0.00  SL          
+  ❌ 2026-02-26 12:33:00   2026-02-26 12:36:00      193630    193780    -150    R$ -30.00  SL          
+  ❌ 2026-02-26 13:07:00   2026-02-26 13:12:00      194020    194020      +0     R$ +0.00  SL          
+  ❌ 2026-02-26 13:47:00   2026-02-26 14:00:00      194110    194260    -150    R$ -30.00  SL          
+  ❌ 2026-02-26 14:34:00   2026-02-26 14:39:00      194430    194430      +0     R$ +0.00  SL          
+
+  ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────
+  Candidatos V22 detectados : 37
+  Bloqueados pela IA        : 0  (confiança abaixo do limiar)
+  Bloqueados pelo filtro flux: 0
+  Bloqueados Filtro-H (tend.): 17  [MELHORIA H V28 — veto de direção]
   Distribuição de confiança dos bloqueados (%):
     [70-75%] : 0 sinais
     [75-80%] : 0 sinais
@@ -327,74 +352,12 @@ Relatório Visual salvo em: backend/backtest_report.html
 RELATORIO DO PASSADO (WIN$N)
 ==================================================
 Saldo Inicial: R$ 3000.00
-Saldo Final:   R$ 2990.21
-Lucro Líquido: R$ -9.79
-Total Trades:  11
-Win Rate:      54.5%
-Profit Factor: 0.90
-Max Drawdown:  2.04%
-
-Relatório Visual salvo em: backend/backtest_report.html
-==================================================
-
-
-================================ DIA: 26/02/2026 ================================
-  Candles M1 carregados: 445
-  Janela operacional   : 09:15 - 17:15
-
-  RESULTADO GERAL
-  ├── PNL Total          :        R$ -9.79      -0.33%
-  ├── Total de Trades    :     11
-  ├── Win Rate           :   54.5%
-  ├── Profit Factor      :   0.90
-  └── Max Drawdown       :   2.04%
-
-  ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────
-  Qtd: 5  |  Ganhos: 4  |  Perdas: 1  |  PNL: R$ +35.74
-  Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
-  -----------------------------------------------------------------------------------------------
-  ✅ 2026-02-26 09:20:00   2026-02-26 09:22:00      192420    192495     +75    R$ +15.00  SL          
-  ❌ 2026-02-26 10:38:00   2026-02-26 10:39:00      193770    193644    -126    R$ -25.26  SL          
-  ✅ 2026-02-26 11:30:00   2026-02-26 11:32:00      193070    193145     +75    R$ +15.00  SL          
-  ✅ 2026-02-26 14:23:00   2026-02-26 14:25:00      194165    194270    +105    R$ +21.00  SL          
-  ✅ 2026-02-26 14:53:00   2026-02-26 14:57:00      194285    194335     +50    R$ +10.00  SL          
-
-  ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────
-  Qtd: 6  |  Ganhos: 2  |  Perdas: 4  |  PNL: R$ -45.54
-  Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
-  -----------------------------------------------------------------------------------------------
-  ❌ 2026-02-26 09:58:00   2026-02-26 10:00:00      193375    193375      +0     R$ +0.00  SL          
-  ❌ 2026-02-26 10:14:00   2026-02-26 10:19:00      193550    193732    -182    R$ -36.31  SL          
-  ✅ 2026-02-26 12:10:00   2026-02-26 12:12:00      193410    193360     +50    R$ +10.00  SL          
-  ❌ 2026-02-26 12:33:00   2026-02-26 12:34:00      193630    193733    -103    R$ -20.61  SL          
-  ✅ 2026-02-26 13:07:00   2026-02-26 13:10:00      194020    193910    +110    R$ +22.00  SL          
-  ❌ 2026-02-26 13:47:00   2026-02-26 13:55:00      194110    194213    -103    R$ -20.61  SL          
-
-  ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────
-  Candidatos V22 detectados : 37
-  Bloqueados pela IA        : 0  (confiança abaixo do limiar)
-  Bloqueados pelo filtro flux: 3
-  Distribuição de confiança dos bloqueados (%):
-    [70-75%] : 0 sinais
-    [75-80%] : 0 sinais
-    [80-85%] : 0 sinais
-  Falhas de componente:
-    rsi            : 0 ocorrências
-    bb             : 0 ocorrências
-    volume         : 0 ocorrências
-    cooldown       : 18 ocorrências
-----------------------------------------------------------------------------------
-
-==================================================
-RELATORIO DO PASSADO (WIN$N)
-==================================================
-Saldo Inicial: R$ 3000.00
-Saldo Final:   R$ 3005.34
-Lucro Líquido: R$ 5.34
-Total Trades:  10
-Win Rate:      60.0%
-Profit Factor: 1.08
-Max Drawdown:  1.99%
+Saldo Final:   R$ 2970.00
+Lucro Líquido: R$ -30.00
+Total Trades:  8
+Win Rate:      0.0%
+Profit Factor: 0.00
+Max Drawdown:  1.00%
 
 Relatório Visual salvo em: backend/backtest_report.html
 ==================================================
@@ -405,36 +368,35 @@ Relatório Visual salvo em: backend/backtest_report.html
   Janela operacional   : 09:15 - 17:15
 
   RESULTADO GERAL
-  ├── PNL Total          :        R$ +5.34      +0.18%
-  ├── Total de Trades    :     10
-  ├── Win Rate           :   60.0%
-  ├── Profit Factor      :   1.08
-  └── Max Drawdown       :   1.99%
+  ├── PNL Total          :       R$ -30.00      -1.00%
+  ├── Total de Trades    :      8
+  ├── Win Rate           :    0.0%
+  ├── Profit Factor      :   0.00
+  └── Max Drawdown       :   1.00%
 
   ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────
-  Qtd: 6  |  Ganhos: 4  |  Perdas: 2  |  PNL: R$ +19.48
+  Qtd: 7  |  Ganhos: 0  |  Perdas: 7  |  PNL: R$ -30.00
   Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
   -----------------------------------------------------------------------------------------------
-  ✅ 2026-02-27 10:55:00   2026-02-27 10:58:00      192855    192905     +50    R$ +10.00  SL          
-  ✅ 2026-02-27 11:22:00   2026-02-27 11:24:00      192595    192645     +50    R$ +10.00  SL          
-  ✅ 2026-02-27 12:45:00   2026-02-27 12:48:00      192600    192650     +50    R$ +10.00  SL          
-  ❌ 2026-02-27 13:15:00   2026-02-27 13:19:00      192525    192422    -103    R$ -20.52  SL          
+  ❌ 2026-02-27 10:24:00   2026-02-27 10:26:00      193125    193125      +0     R$ +0.00  SL          
+  ❌ 2026-02-27 10:55:00   2026-02-27 10:59:00      192855    192855      +0     R$ +0.00  SL          
+  ❌ 2026-02-27 11:22:00   2026-02-27 11:24:00      192595    192595      +0     R$ +0.00  SL          
+  ❌ 2026-02-27 12:45:00   2026-02-27 12:48:00      192600    192600      +0     R$ +0.00  SL          
+  ❌ 2026-02-27 13:15:00   2026-02-27 13:19:00      192525    192375    -150    R$ -30.00  SL          
   ❌ 2026-02-27 13:41:00   2026-02-27 13:43:00      191725    191725      +0     R$ +0.00  SL          
-  ✅ 2026-02-27 14:52:00   2026-02-27 14:54:00      191770    191820     +50    R$ +10.00  SL          
+  ❌ 2026-02-27 14:52:00   2026-02-27 14:54:00      191770    191770      +0     R$ +0.00  SL          
 
   ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────
-  Qtd: 4  |  Ganhos: 2  |  Perdas: 2  |  PNL: R$ -14.14
+  Qtd: 1  |  Ganhos: 0  |  Perdas: 1  |  PNL: R$ +0.00
   Entrada                Saída                    Preço E   Preço S     Pts          PNL  Motivo      
   -----------------------------------------------------------------------------------------------
-  ✅ 2026-02-27 09:38:00   2026-02-27 09:40:00      193465    193365    +100    R$ +20.00  SL          
-  ✅ 2026-02-27 10:13:00   2026-02-27 10:15:00      193655    193575     +80    R$ +16.00  SL          
-  ❌ 2026-02-27 12:02:00   2026-02-27 12:07:00      192640    192770    -130    R$ -25.91  SL          
-  ❌ 2026-02-27 14:17:00   2026-02-27 14:21:00      192030    192151    -121    R$ -24.24  SL          
+  ❌ 2026-02-27 09:38:00   2026-02-27 09:42:00      193465    193465      +0     R$ +0.00  SL          
 
   ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────
-  Candidatos V22 detectados : 24
+  Candidatos V22 detectados : 27
   Bloqueados pela IA        : 0  (confiança abaixo do limiar)
-  Bloqueados pelo filtro flux: 1
+  Bloqueados pelo filtro flux: 0
+  Bloqueados Filtro-H (tend.): 7  [MELHORIA H V28 — veto de direção]
   Distribuição de confiança dos bloqueados (%):
     [70-75%] : 0 sinais
     [75-80%] : 0 sinais
@@ -449,55 +411,56 @@ Relatório Visual salvo em: backend/backtest_report.html
 ===================== CONSOLIDADO FINAL - 7 DIAS - FEV/2026 =====================
 
   RESULTADO FINANCEIRO
-  ├── PNL Consolidado       :      R$ +395.70     +13.19%
-  ├── PNL de Compras        :      R$ +321.15
-  ├── PNL de Vendas         :       R$ +74.55
-  ├── Capital Final Estimado:    R$ +3,395.70
+  ├── PNL Consolidado       :       R$ +87.00      +2.90%
+  ├── PNL de Compras        :      R$ +227.00
+  ├── PNL de Vendas         :      R$ -140.00
+  ├── Capital Final Estimado:    R$ +3,087.00
   │
-  ├── Dias Positivos        : 6/7
-  ├── Melhor Dia            : 24/02/2026 → R$ +162.00
-  └── Pior Dia              : 26/02/2026 → R$ -9.79
+  ├── Dias Positivos        : 3/7
+  ├── Melhor Dia            : 19/02/2026 → R$ +122.00
+  └── Pior Dia              : 26/02/2026 → R$ -90.00
 
   OPERAÇÕES
-  ├── Total de Trades       : 79
-  ├─── Compras (BUY)        : 42
-  ├─── Vendas  (SELL)       : 37
-  ├── Win Rate Médio        : 63.9%
-  ├── Profit Factor Médio   : 2.75
-  └── Max Drawdown (pior dia): 2.04%
+  ├── Total de Trades       : 45
+  ├─── Compras (BUY)        : 27
+  ├─── Vendas  (SELL)       : 18
+  ├── Win Rate Médio        : 23.9%
+  ├── Profit Factor Médio   : 1.75
+  └── Max Drawdown (pior dia): 3.00%
 
   ANALISE DE OPORTUNIDADES PERDIDAS
-  ├── Candidatos V22 detectados     : 216
+  ├── Candidatos V22 detectados     : 228
   ├── Bloqueados pela IA             : 0  (confiança < limiar 70%)
-  ├── Bloqueados pelo filtro de fluxo: 11
-  └── Taxa de aproveitamento V22     : 36.6%  (79/216)
+  ├── Bloqueados pelo filtro de fluxo: 0
+  ├── Bloqueados Filtro-H (tend.)    : 104  [MELHORIA H V28]
+  └── Taxa de aproveitamento V22     : 19.7%  (45/228)
 
 ================== ANALISE ESTRATEGICA - SUGESTOES DE MELHORIA ==================
 
-  [MÉDIA] 1. Filtro de Fluxo (flux_imbalance_threshold)
-       Obs.: 11 sinais bloqueados pelo filtro de fluxo (vs 0 pela IA).
-       Ação: Reduzir `flux_imbalance_threshold` de 1.2 para 1.05 em modo de análise. O filtro de fluxo pode estar muito restritivo em mercados de menor liquidez no mini índice.
+  [ALTA] 1. Assimetria Direcional (BUY vs SELL)
+       Obs.: Compras geraram R$ +227.00, Vendas geraram R$ -140.00.
+       Ação: O mercado esteve em tendência de alta no período. Aumentar peso do regime=1 (Trend) para priorizar compras em períodos de uptrend. Reduzir threshold de entrada para vendas em regime de alta (rsi_sell > 75 em vez de 70).
 
-  [BAIXA] 2. Otimização de Alvos (TP/SL)
-       Obs.: Win Rate alto (63.9%) sugere que os alvos podem ser expandidos.
-       Ação: Com win rate > 60%, o sistema está deixando lucro na mesa. Aumentar `tp_dist` de 400 para 550 pts e ativar trailing_stop para capturar movimentos maiores. Manter `sl_dist` em 150 pts para preservar a relação risco/retorno.
+  [ALTA] 2. Qualidade de Entradas (Win Rate)
+       Obs.: Win Rate médio: 23.9% — abaixo do nível mínimo recomendado (>55%).
+       Ação: Revisar os horários de operação: evitar a primeira hora após abertura (09:00-09:45) e o período próximo ao fechamento (17:00-17:15). Concentrar entradas em 10:00-12:00 e 14:00-16:30.Avaliar aumento do `confidence_threshold` para 0.75 para filtrar sinais de baixa qualidade.
 
 
 ============================= TABELA RESUMO POR DIA =============================
 
   DATA          TRADES   BUY   SELL    PNL COMPRA     PNL VENDA     PNL TOTAL    WR%
   --------------------------------------------------------------------------------
-  📈 19/02/2026       10     5      5      R$ -1.60     R$ +34.51     R$ +32.91  60.0%
-  📈 20/02/2026       11     6      5    R$ +112.00     R$ -25.87     R$ +86.13  63.6%
-  📈 23/02/2026       10     5      5     R$ +46.53      R$ -9.68     R$ +36.85  60.0%
-  📈 24/02/2026       13     6      7     R$ +26.00    R$ +136.00    R$ +162.00  84.6%
-  📈 25/02/2026       14     9      5     R$ +83.00      R$ -0.73     R$ +82.27  64.3%
-  📉 26/02/2026       11     5      6     R$ +35.74     R$ -45.54      R$ -9.79  54.5%
-  📈 27/02/2026       10     6      4     R$ +19.48     R$ -14.14      R$ +5.34  60.0%
+  📈 19/02/2026        6     6      0    R$ +122.00      R$ +0.00    R$ +122.00  50.0%
+  📈 20/02/2026        6     6      0     R$ +91.00      R$ +0.00     R$ +91.00  33.3%
+  📉 23/02/2026        7     2      5     R$ +20.00     R$ -30.00     R$ -10.00  14.3%
+  📈 24/02/2026        6     6      0     R$ +24.00      R$ +0.00     R$ +24.00  50.0%
+  📉 25/02/2026        5     0      5      R$ +0.00     R$ -20.00     R$ -20.00  20.0%
+  📉 26/02/2026        7     0      7      R$ +0.00     R$ -90.00     R$ -90.00   0.0%
+  📉 27/02/2026        8     7      1     R$ -30.00      R$ +0.00     R$ -30.00   0.0%
   ────────────────────────────────────────────────────────────────────────────────
-  TOTAL             79    42     37    R$ +321.15     R$ +74.55    R$ +395.70
+  TOTAL             45    27     18    R$ +227.00    R$ -140.00     R$ +87.00
 
 ==================================================================================
-  Análise concluída em: 01/03/2026 17:56:13
+  Análise concluída em: 01/03/2026 21:44:53
 ==================================================================================
 

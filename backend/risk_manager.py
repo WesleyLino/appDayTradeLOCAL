@@ -26,21 +26,22 @@ class RiskManager:
         self.trailing_lock = 50.0    # Trava 50 pontos iniciais
         self.trailing_step = 20.0    # Move a cada 20 pontos de avanço
 
-        # [MELHORIA] Trailing Stop Assimétrico — SELL
+        # [MELHORIA] Trailing Stop Assimétrico — SELL (Refinado v27 Sniper)
         # Mercados caem mais rápido do que sobem (pânico reversa antes).
-        # Ativa mais cedo (40pts) e com passo menor (15pts) para encurralar o preço na queda.
-        self.trailing_trigger_sell = 40.0  # Ativa com 40 pontos de lucro na VENDA
-        self.trailing_lock_sell = 30.0     # Trava 30 pontos iniciais na VENDA
-        self.trailing_step_sell = 15.0     # Move a cada 15 pontos de avanço na VENDA
+        # Ativa mais cedo (30pts) e com passo ultra-curto (5pts) para "snipar" o lucro na queda.
+        self.trailing_trigger_sell = 30.0  # [Otimizado v27] Ativa com 30 pontos
+        self.trailing_lock_sell = 20.0     # Trava 20 pontos de lucro garantido
+        self.trailing_step_sell = 5.0      # Move a cada 5 pontos (Segura a queda curta)
         
         # [URGENTE] Breakeven Parameters
         self.be_trigger = 50.0       # Ativa com 50 pontos de lucro (Otimizado)
         self.be_lock = 0.0           # Move para o preço de entrada (0.0 de lucro garantido)
         
-        # [FASE 2] Gestão de Múltiplos Contratos e Saídas Parciais
-        self.base_volume = 2.0       # Lote de entrada padrão (multi-lote para parciais)
-        self.partial_volume = 1.0    # Lote a ser descarregado na primeira parcial
-        self.partial_profit_points = 50.0 # Gatilho em pontos para executar a zeragem parcial
+        # [v27 - PROP FIRM] Gestão de Múltiplos Contratos e Saídas Parciais
+        self.base_volume = 2.0       # Lote de entrada padrão 
+        self.partial_volume = 1.0    # Lote a ser descarregado na primeira parcial (50%)
+        self.partial_profit_points = 60.0 # [RECALIBRADO] Lucro em pontos para parcial (v27: 0.8x ATR médio ≈ 60pts)
+        self.has_taken_partial = False    # Flag de controle por ticket funcional no main.py
         
         # [FASE 2] Velocity Limit (Drawdown Acelerado no Tempo)
         # [MELHORIA D] Timeout aumentado de 20s para 45s.
@@ -220,14 +221,14 @@ class RiskManager:
         if regime == 2:
             return {
                 "allowed": False,
-                "reason": "Market Regime is NOISE/VOLATILE (2)"
+                "reason": "Regime de Mercado é RUÍDO/VOLÁTIL (2)"
             }
 
         # Regra 2: Circuit Breaker Dinâmico (Relativo)
         if avg_atr > 0 and current_atr > (3 * avg_atr):
              return {
                 "allowed": False,
-                "reason": f"Circuit Breaker: ATR {current_atr:.1f} > 3x Avg {avg_atr:.1f}"
+                "reason": f"Disjuntor (Circuit Breaker): ATR {current_atr:.1f} > 3x Média {avg_atr:.1f}"
             }
             
         # Regra 3: Panic Threshold Absoluto (Fallback se média estiver descalibrada)
@@ -238,10 +239,10 @@ class RiskManager:
         if current_atr > panic_threshold:
              return {
                 "allowed": False,
-                "reason": f"Extreme Volatility ({current_atr:.1f} > {panic_threshold})"
+                "reason": f"Volatilidade Extrema ({current_atr:.1f} > {panic_threshold})"
             }
 
-        return {"allowed": True, "reason": "Market Condition OK"}
+        return {"allowed": True, "reason": "Condição de Mercado OK"}
 
     def check_macro_filter(self, side, macro_change_pct):
         """
@@ -291,7 +292,7 @@ class RiskManager:
         """
         # Se total_profit for negativo e maior (em magnitude) que o limite
         if total_profit <= -self.max_daily_loss:
-            return False, f"Daily loss limit reached: {total_profit:.2f} <= -{self.max_daily_loss:.2f}"
+            return False, f"Limite de perda diária atingido: {total_profit:.2f} <= -{self.max_daily_loss:.2f}"
         return True, "OK"
 
     def check_aggressive_risk(self, daily_pnl, initial_balance=1000.0):
@@ -310,7 +311,7 @@ class RiskManager:
         [AGRESSIVO] No modo 60%, este método pode ser ignorado pelo bot.
         """
         if current_trade_count >= self.daily_trade_limit:
-            return False, f"Daily trade limit reached: {current_trade_count} / {self.daily_trade_limit}"
+            return False, f"Limite de trades diários atingido: {current_trade_count} / {self.daily_trade_limit}"
         return True, "OK"
 
     def validate_volatility(self, current_atr, avg_atr):
@@ -404,17 +405,39 @@ class RiskManager:
 
             if regime == 1: # Tendência Clara: Buscar alvos maiores
                 tp_mult = 1.5
-                logging.info("📈 REGIME TENDÊNCIA: Alvo TP expandido (1.5x ATR)")
+                # [SOTA v24] ALVO ADAPTATIVO: +20% TP se alinhado com Ultra Tendência
+                tp_mult *= 1.2
+                logging.info("📈 REGIME TENDÊNCIA: Alvo TP expandido (1.5x * 1.2 ATR)")
             elif regime == 0: # Indefinido/Lateral: Alvos Curtos + R:R Equilibrado
                 # [MELHORIA C] sl_mult reduzido de 1.3 para 0.8 em mercado lateral.
-                # Ratio anterior era 0.8 TP / 1.3 SL = 0.61:1 (desfavorável).
-                # Com sl_mult=0.8: ratio 0.8 TP / 0.8 SL = 1:1 (equilibrado).
                 tp_mult = 0.8
                 sl_mult = 0.8  # [MELHORIA C] Era 1.3
                 logging.info("⚖️ REGIME LATERAL: R:R equilibrado 1:1 (TP=0.8x, SL=0.8x ATR)")
             
             sl_points = float(current_atr * sl_mult)
             tp_points = float(current_atr * tp_mult)
+
+            # [MELHORIA K - V28] TP Dinâmico por Regime usando tp_dist do Golden Params como âncora
+            # Em tendência forte: usa tp_dist*1.36 (≈750pts base 550) ao invés de ATR puro
+            # Em lateral: usa tp_dist*0.73 (≈400pts) para conservar capital
+            # Em ruído (regime==2): mantém tp_points do ATR (conservador)
+            try:
+                import json, os
+                _params_path = os.path.join(os.path.dirname(__file__), "v22_locked_params.json")
+                if os.path.exists(_params_path):
+                    with open(_params_path, "r") as _f:
+                        _cfg = json.load(_f)
+                    _tp_base = float(_cfg.get("strategy_params", {}).get("tp_dist", 550.0))
+                    if regime == 1:   # Tendência: TP expandido
+                        tp_points = max(tp_points, _tp_base * 1.36)  # ~750pts com base 550
+                        logging.info(f"🚀 [MELHORIA K] TP Tendência expandido para {tp_points:.0f}pts")
+                    elif regime == 0: # Lateral: TP conservador
+                        tp_points = min(tp_points, _tp_base * 0.73)  # ~400pts com base 550
+                        logging.info(f"⚖️ [MELHORIA K] TP Lateral reduzido para {tp_points:.0f}pts")
+                    # regime == 2 (Ruído): mantém tp_points ATR-based sem alteração
+                    # [ANTIVIBE-CODING] TP dinâmico V28 — aprovado pelo usuário em 01/03/2026
+            except Exception as _e:
+                logging.debug(f"[MELHORIA K] Fallback para ATR puro: {_e}")
             
         # PRIORIDADE 2: Parâmetros Otimizados dinamicamente via JSON
         elif symbol in self.dynamic_params:
@@ -472,8 +495,14 @@ class RiskManager:
             tp = self._apply_anti_violinada(symbol, tp, side)
             # ------------------------------------
 
+        # [SOTA v26] Seletor de Ação Híbrida (Market vs Limit)
+        # Se for ORDER_TYPE_BUY ou SELL pura, é execução a mercado (DEAL)
+        # Se for LIMIT ou STOP, é ação de ordem pendente (PENDING)
+        is_market = type in (mt5.ORDER_TYPE_BUY, mt5.ORDER_TYPE_SELL)
+        action = mt5.TRADE_ACTION_DEAL if is_market else mt5.TRADE_ACTION_PENDING
+
         return {
-            "action": mt5.TRADE_ACTION_PENDING, # Usar ordens LIMIT conforme Master Plan
+            "action": action,
             "symbol": "", # Será preenchido no main.py
             "type": type,
             "price": price,
@@ -482,9 +511,9 @@ class RiskManager:
             "volume": float(volume),
             "deviation": self.max_deviation,
             "magic": 123456,
-            "comment": "QuantumTrade B3 OCO",
+            "comment": "QuantumTrade B3 HFT" if is_market else "QuantumTrade B3 LIMIT",
             "type_time": mt5.ORDER_TIME_DAY, # Ordem válida até o final do dia (Day Trade)
-            "type_filling": mt5.ORDER_FILLING_RETURN, # Permite execução parcial (Limit Orders na B3)
+            "type_filling": mt5.ORDER_FILLING_IOC if is_market else mt5.ORDER_FILLING_RETURN, # IOC para agressão rápida a mercado
         }
     def _quantize_price(self, symbol, price):
         """

@@ -57,7 +57,7 @@ export function TradingDashboard() {
 
   // Derived Metrics
   const aiScore = data?.ai_prediction?.score ?? 0;
-  const aiDirection = data?.ai_prediction?.direction ?? "NEUTRAL";
+  const aiDirection = data?.ai_prediction?.direction ?? "NEUTRO";
 
   const isObiOk = Math.abs(data?.obi ?? 0) > 0.2; // Exemplo de threshold
   const isConfidenceOk = (data?.ai_confidence ?? 0) > 0.6;
@@ -105,8 +105,8 @@ export function TradingDashboard() {
 
   // Controle de Estado dos Logs
   const [logFilter, setLogFilter] = useState<
-    "ALL" | "INFO" | "SUCCESS" | "WARNING" | "ERROR"
-  >("ALL");
+    "TODOS" | "INFO" | "SUCESSO" | "ALERTA" | "ERRO"
+  >("TODOS");
   const [isAutoScroll, setIsAutoScroll] = useState(true);
   const logContainerRef = useRef<HTMLDivElement>(null);
 
@@ -125,8 +125,17 @@ export function TradingDashboard() {
 
   const filteredLogs =
     data?.logs?.filter((log: any) => {
-      if (logFilter === "ALL") return true;
-      return log.type.toUpperCase() === logFilter;
+      if (logFilter === "TODOS") return true;
+      const typeMap: Record<string, string> = {
+        SUCCESS: "SUCESSO",
+        WARNING: "ALERTA",
+        ERROR: "ERRO",
+        INFO: "INFO",
+      };
+      return (
+        (typeMap[log.type.toUpperCase()] || log.type.toUpperCase()) ===
+        logFilter
+      );
     }) ?? [];
 
   const formatLogMessage = (msg: string) => {
@@ -177,6 +186,10 @@ export function TradingDashboard() {
     warning: <AlertTriangle size={14} className="text-amber-400 shrink-0" />,
     error: <XCircle size={14} className="text-red-400 shrink-0" />,
     info: <Info size={14} className="text-blue-400 shrink-0" />,
+    SUCESSO: <CheckCircle size={14} className="text-emerald-400 shrink-0" />,
+    ALERTA: <AlertTriangle size={14} className="text-amber-400 shrink-0" />,
+    ERRO: <XCircle size={14} className="text-red-400 shrink-0" />,
+    INFO: <Info size={14} className="text-blue-400 shrink-0" />,
   };
 
   // Sniper Bot State (Mapped to backend telemetry)
@@ -428,7 +441,7 @@ export function TradingDashboard() {
                     <div className="grid grid-cols-2 gap-2 mt-1">
                       <div className="bg-black/40 p-1.5 rounded border border-white/5 text-center">
                         <p className="text-[8px] text-muted-foreground uppercase">
-                          Wins
+                          Vitórias
                         </p>
                         <p className="text-xs font-bold text-indigo-400">
                           {data.risk_status.sniper.consecutive_wins}
@@ -569,6 +582,20 @@ export function TradingDashboard() {
                         color: "text-red-400 bg-red-500/20 border-red-500/20",
                       },
                       NEUTRAL: {
+                        label: "NEUTRO",
+                        color:
+                          "text-zinc-400 bg-zinc-500/20 border-zinc-500/20",
+                      },
+                      ALTISTA: {
+                        label: "ALTISTA",
+                        color:
+                          "text-emerald-400 bg-emerald-500/20 border-emerald-500/20",
+                      },
+                      BAIXISTA: {
+                        label: "BAIXISTA",
+                        color: "text-red-400 bg-red-500/20 border-red-500/20",
+                      },
+                      NEUTRO: {
                         label: "NEUTRO",
                         color:
                           "text-zinc-400 bg-zinc-500/20 border-zinc-500/20",
@@ -738,7 +765,7 @@ export function TradingDashboard() {
                 </span>
                 <div className="flex items-center gap-2 self-end sm:self-auto">
                   <div className="flex bg-black/40 p-0.5 rounded-lg border border-white/5">
-                    {["ALL", "INFO", "SUCCESS", "WARNING", "ERROR"].map((f) => (
+                    {["TODOS", "INFO", "SUCESSO", "ALERTA", "ERRO"].map((f) => (
                       <button
                         key={f}
                         onClick={() => setLogFilter(f as any)}
@@ -749,7 +776,7 @@ export function TradingDashboard() {
                             : "text-muted-foreground hover:text-zinc-300",
                         )}
                       >
-                        {f === "ALL" ? "TODOS" : f}
+                        {f}
                       </button>
                     ))}
                   </div>
@@ -800,7 +827,7 @@ export function TradingDashboard() {
                   <div className="flex gap-2 text-muted-foreground italic items-center justify-center p-4 opacity-50">
                     <Activity size={14} className="animate-spin" />
                     <span>
-                      {logFilter !== "ALL"
+                      {logFilter !== "TODOS"
                         ? `Nenhum log do tipo ${logFilter} encontrado...`
                         : "Aguardando sinais de alta confiança (>85%)..."}
                     </span>

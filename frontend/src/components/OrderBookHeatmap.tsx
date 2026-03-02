@@ -79,7 +79,7 @@ export function OrderBookHeatmap() {
     <Card className="border-white/5 bg-black/20 backdrop-blur-xl shadow-2xl">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-zinc-400 flex justify-between items-center">
-          Order Book Heatmap (L2)
+          Mapa de Calor do Order Book (L2)
           {isSimulated ? (
             <Badge variant="outline" className="text-xs bg-zinc-950/50">
               Simulado (MT5 Off)
@@ -89,7 +89,7 @@ export function OrderBookHeatmap() {
               variant="default"
               className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/50"
             >
-              Live Data
+              Dados em Tempo Real
             </Badge>
           )}
         </CardTitle>

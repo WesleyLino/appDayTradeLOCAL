@@ -49,7 +49,7 @@ class SniperBotWIN:
         self.end_time = time(15, 0) # Expandido para janela da tarde
         self.consecutive_wins = 0 # Alpha Scaling tracker
         self.rsi_period = 14
-        self.flux_threshold = 1.2 # Sniper Pro: 1.2x (Validated)
+        self.flux_threshold = 1.05 # [MELHORIA F] Reduzido 1.2→1.05 (backtest 7d fev/2026: 12 sinais válidos bloqueados)
         self.vol_spike_mult = 1.2 # Sniper Pro: 1.2x (Validated)
         self.last_trade_time = None
         
@@ -106,11 +106,28 @@ class SniperBotWIN:
         rs = gain / loss.replace(0, 0.000001)
         return 100 - (100 / (1 + rs))
 
-    async def execute_trade(self, side, quantile_confidence="NORMAL", tp_multiplier=1.0, current_atr=None, regime=None):
-        """Coordena o envio de ORDEM LIMITADA (Passive Entry) com Cancelamento Tático.
+    def calculate_vwap_bands(self, df):
+        """Calcula VWAP Intraday e Desvio Padrão para detecção de exaustão."""
+        # Preço Típico: (H + L + C) / 3
+        tp = (df['high'] + df['low'] + df['close']) / 3
+        v = df['tick_volume']
+        
+        # VWAP = Somatório(TP * V) / Somatório(V)
+        vwap = (tp * v).cumsum() / v.cumsum()
+        
+        # Calculamos o desvio padrão em relação à VWAP (Rolling de 20 períodos para volatilidade local)
+        # SOTA v26: Usamos a distância quadrática ponderada se disponível, mas std() local é robusto.
+        std = tp.rolling(20).std()
+        
+        return float(vwap.iloc[-1]), float(std.iloc[-1])
+
+    async def execute_trade(self, side, quantile_confidence="NORMAL", ai_score=50.0, tp_multiplier=1.0, current_atr=None, regime=None):
+        """Coordena o envio de ORDEM HÍBRIDA (Market vs Limit) baseado na Convicção Institucional.
+        [SOTA v26] Upgrade Prop Firm.
         Args:
             side: 'buy' ou 'sell'
-            quantile_confidence: 'NORMAL' | 'HIGH' | 'VERY_HIGH' — calibra o tamanho do lote.
+            quantile_confidence: 'NORMAL' | 'HIGH' | 'VERY_HIGH'
+            ai_score: Score da IA (0-100). Score >= 90 ativa execução a MERCADO.
             tp_multiplier: Fator de ajuste de TP por spread (SOTA v5).
             current_atr: Volatilidade atual para alvos adaptativos.
             regime: Regime de mercado detectado (0=Lateral, 1=Tendência, 2=Ruído).
@@ -142,11 +159,19 @@ class SniperBotWIN:
             self._save_state()
             return True
 
-        # [FASE 28] Obter Parâmetros de Risco OCO
+        # [SOTA v26] Roteamento Híbrido: Agressão vs Passivo
+        use_market = ai_score >= 90.0
+        
+        # Obter Parâmetros de Risco OCO
         # SOTA v5: Injetamos o TP Multiplier calculado pela IA
+        order_type_limit = self.bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else self.bridge.mt5.ORDER_TYPE_SELL_LIMIT
+        order_type_market = self.bridge.mt5.ORDER_TYPE_BUY if side == "buy" else self.bridge.mt5.ORDER_TYPE_SELL
+        
+        target_type = order_type_market if use_market else order_type_limit
+        
         params = self.risk.get_order_params(
             self.symbol, 
-            self.bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else self.bridge.mt5.ORDER_TYPE_SELL_LIMIT,
+            target_type,
             limit_price, 
             lots, 
             current_atr=current_atr,
@@ -154,10 +179,23 @@ class SniperBotWIN:
             tp_multiplier=tp_multiplier
         )
 
-        # Enviar Ordem Limitada
-        order_type = params['type']
+        if use_market:
+            logger.info(f"🚀 [AGRESSÃO] Score {ai_score:.1f} >= 90: Executando {side.upper()} a MERCADO!")
+            result = self.bridge.place_resilient_order(params)
+            if result and result.retcode == self.bridge.mt5.TRADE_RETCODE_DONE:
+                self.trade_count += 1
+                self._save_state()
+                logger.info(f"🎯 [MERCADO FEITO] Trade {self.trade_count}/{self.risk.daily_trade_limit} executado com sucesso.")
+                return True
+            else:
+                msg = result.comment if result else "None"
+                logger.error(f"❌ [MERCADO FALHOU] Rejeição na agressão: {msg}")
+                return False
+        
+        # Fallback: Enviar Ordem Limitada (Passiva)
+        logger.info(f"⏳ [PASSIVO] Score {ai_score:.1f} < 90: Usando ordem LIMIT @ {limit_price}")
         result = self.bridge.place_limit_order(
-            self.symbol, order_type, limit_price, lots, 
+            self.symbol, target_type, limit_price, lots, 
             sl=params['sl'], tp=params['tp'],
             comment="SNIPER_SOTA_LIMIT"
         )
@@ -173,23 +211,23 @@ class SniperBotWIN:
             for _ in range(iterations):
                 await asyncio.sleep(0.5)
                 status = self.bridge.check_order_status(order_ticket)
-                if status == "FILLED":
+                if status == "EXECUTADA":  # [BUG FIX] Era "FILLED" — padrão PT-BR do mt5_bridge
                     self.trade_count += 1
                     self._save_state()
                     logger.info(f"🎯 [EXECUÇÃO] {side.upper()} @ {limit_price} | Trade {self.trade_count}/{self.risk.daily_trade_limit}")
                     return True
-                elif status == "CANCELED":
+                elif status == "CANCELADA":  # [BUG FIX] Era "CANCELED" — padrão PT-BR do mt5_bridge
                     logger.warning(f"🚫 [REJEITADA/CANCELADA] Ordem {order_ticket} cancelada externamente.")
                     return False
             
-            # Se não executar em 3s, cancela
+            # Se não executar no TTL, cancela ativamente
             logger.info(f"⏱️ TTL Expirou. Cancelando ordem {order_ticket}...")
             if self.bridge.cancel_order(order_ticket):
                 logger.info(f"🛡️ [CANCELADA/TTL] Ordem {order_ticket} cancelada (Momento passou).")
             else:
                 # Verificação de Condição de Corrida (Race Condition)
                 final_status = self.bridge.check_order_status(order_ticket)
-                if final_status == "FILLED":
+                if final_status == "EXECUTADA":  # [BUG FIX] Era "FILLED" — padrão PT-BR do mt5_bridge
                     logger.info(f"🏁 [LUCRO/CORRIDA] Vitória em Condição de Corrida: {order_ticket} preenchida no limite!")
                     self.trade_count += 1
                     self._save_state()
@@ -276,6 +314,20 @@ class SniperBotWIN:
                             self.bridge.update_sltp(pos.ticket, potential_sl, pos.tp)
                             logger.info(f"⚡ [SOTA TRAILING] SL BUY Movido: {potential_sl} | Flutuante: {current_profit:.1f} pts")
 
+                # [v26] Scaling Out — Saída Parcial BUY
+                # Ativa ao atingir o profit parcial (50pts padrão) se o volume permitir.
+                if (current_profit >= self.risk.partial_profit_points
+                        and pos.volume > self.risk.partial_volume
+                        and not self.persistence.get_state(f"partial_done_{pos.ticket}")):
+                    partial_lots = self.risk.partial_volume
+                    if self.risk.dry_run:
+                        logger.info(f"💰 [DRY RUN] Parcial BUY: Realizando {partial_lots} lote(s) @ +{current_profit:.1f} pts (ticket={pos.ticket})")
+                    else:
+                        self.bridge.close_partial_position(pos.ticket, partial_lots)  # [BUG FIX] Era close_partial (inexistente)
+                        logger.info(f"💰 [PARCIAL BUY] {partial_lots} lote(s) realizados @ +{current_profit:.1f} pts. Travando lucro e rodando Alpha.")
+                    # Registrar execução para esta posição
+                    self.persistence.save_state(f"partial_done_{pos.ticket}", "1")
+
             elif pos.type == self.bridge.mt5.POSITION_TYPE_SELL:
                 current_profit = pos.price_open - pos.price_current
                 
@@ -297,7 +349,7 @@ class SniperBotWIN:
                     if self.risk.dry_run:
                         logger.info(f"💰 [DRY RUN] Parcial SELL: Fechando {partial_lots} lote(s) @ +{current_profit:.1f} pts (ticket={pos.ticket})")
                     else:
-                        self.bridge.close_partial(pos.ticket, partial_lots)
+                        self.bridge.close_partial_position(pos.ticket, partial_lots)  # [BUG FIX] Era close_partial (inexistente)
                         logger.info(f"💰 [PARCIAL SELL] {partial_lots} lote(s) realizados @ +{current_profit:.1f} pts. Restante: trailing livre.")
                     # Marcar para não repetir nesta posição
                     self.persistence.save_state(f"partial_done_{pos.ticket}", "1")
@@ -341,6 +393,23 @@ class SniperBotWIN:
                     self.end_time = datetime.strptime(d_params["end_time"], "%H:%M").time()
                 except: pass
             logger.info(f"🎯 SniperBot: Parâmetros SOTA aplicados: RSI={self.rsi_period}, VolSpike={self.vol_spike_mult}, Janela={self.start_time}-{self.end_time}")
+
+        # [MELHORIA M - V28] Lê start_time/end_time do v22_locked_params.json se não carregou via dynamic_params
+        try:
+            import json, os
+            _lp = os.path.join(os.path.dirname(__file__), "v22_locked_params.json")
+            if os.path.exists(_lp):
+                with open(_lp) as _f:
+                    _cfg = json.load(_f)
+                _sp = _cfg.get("strategy_params", {})
+                if _sp.get("start_time"):
+                    self.start_time = datetime.strptime(_sp["start_time"], "%H:%M").time()
+                if _sp.get("end_time"):
+                    self.end_time   = datetime.strptime(_sp["end_time"],   "%H:%M").time()
+                logger.info(f"🕐 [MELHORIA M] Janela operacional ajustada: {self.start_time}–{self.end_time}")
+                # [ANTIVIBE-CODING] Janela V28-M — aprovado pelo usuário em 01/03/2026
+        except Exception as _e:
+            logger.debug(f"[MELHORIA M] Fallback para janela padrão: {_e}")
         
         self.running = True
         while self.running:
@@ -402,9 +471,19 @@ class SniperBotWIN:
                 if self.last_trade_time:
                     elapsed = (datetime.now() - self.last_trade_time).total_seconds()
                     # [SOTA v24] Cooldown Dinâmico por Convicção
-                    # VERY_HIGH: 5 min (300s), NORMAL/HIGH: 10 min (600s)
+                    # [MELHORIA N - V28] Cooldown adaptativo por regime: T=300s, L=540s, R=720s
                     is_very_high = self.persistence.get_state("last_quantile_confidence") == "VERY_HIGH"
-                    cooldown_limit = 300 if is_very_high else 600
+                    if is_very_high:
+                        cooldown_limit = 180   # 3 min — alta convicção
+                    else:
+                        _cur_regime = getattr(self, '_last_known_regime', 0)
+                        if _cur_regime == 1:   # Tendência clara
+                            cooldown_limit = 300   # 5 min
+                        elif _cur_regime == 2: # Ruído/alta volatilidade
+                            cooldown_limit = 720   # 12 min
+                        else:                  # Lateral / indefinido
+                            cooldown_limit = 540   # 9 min
+                    # [ANTIVIBE-CODING] Cooldown adaptativo V28-N — aprovado pelo usuário em 01/03/2026
                     if elapsed < cooldown_limit:
                         await asyncio.sleep(1)
                         continue
@@ -428,6 +507,9 @@ class SniperBotWIN:
                 df['rsi'] = self.calculate_rsi(df['close'], self.rsi_period)
                 df['vol_sma'] = df['tick_volume'].rolling(20).mean()
                 
+                # [SOTA v26] Cálculo de VWAP Bands III
+                vwap, vwap_std = self.calculate_vwap_bands(df)
+                
                 last_row = df.iloc[-1]
                 rsi = last_row['rsi']
                 avg_vol = last_row['vol_sma']
@@ -445,11 +527,37 @@ class SniperBotWIN:
                 volatility = float(log_returns.tail(20).std() * np.sqrt(252 * 480)) # Multiplicador para 1min
                 if not np.isfinite(volatility): volatility = 0.0
 
+                # [MELHORIA H - V28] Filtro de Tendência Diária (EMA30/EMA90)
+                df['ema30'] = df['close'].ewm(span=30, adjust=False).mean()
+                df['ema90'] = df['close'].ewm(span=90, adjust=False).mean()
+                ema30_curr = float(df['ema30'].iloc[-1])
+                ema90_curr = float(df['ema90'].iloc[-1])
+                today_str = str(date.today())
+                if not hasattr(self, '_bias_day') or self._bias_day != today_str:
+                    self._bias_diario = 'neutro'
+                    self._bias_day = today_str
+                current_bot_hour = datetime.now().hour
+                current_bot_minute = datetime.now().minute
+                if current_bot_hour == 9 and current_bot_minute <= 44:
+                    # Janela de abertura: define o bias do dia
+                    if ema30_curr < ema90_curr * 0.9998:
+                        self._bias_diario = 'baixa'
+                        logger.info(f"📉 [MELHORIA H] Tendência diária detectada: BAIXA (EMA30={ema30_curr:.0f} < EMA90={ema90_curr:.0f}) — BUY vetado hoje")
+                    elif ema30_curr > ema90_curr * 1.0002:
+                        self._bias_diario = 'alta'
+                        logger.info(f"📈 [MELHORIA H] Tendência diária detectada: ALTA (EMA30={ema30_curr:.0f} > EMA90={ema90_curr:.0f}) — SELL agressivo vetado hoje")
+                    else:
+                        self._bias_diario = 'neutro'
+                bias_veto_buy  = (getattr(self, '_bias_diario', 'neutro') == 'baixa')
+                bias_veto_sell = (getattr(self, '_bias_diario', 'neutro') == 'alta')
+                # [ANTIVIBE-CODING] Filtro tendência V28 — aprovado pelo usuário em 01/03/2026
+
                 # Pressão de Fluxo Atual (Usada para Regime e Decision)
                 pressure = await self.get_flux_pressure()
 
                 # Detectar Regime (Contínuo para manter histórico)
                 regime = self.ai.detect_regime(volatility, pressure)
+                self._last_known_regime = regime  # [MELHORIA N - V28] Persiste para cooldown adaptativo
 
                 # Busca Tática: Preço de Ajuste (Settlement)
                 settlement_price = self.bridge.get_settlement_price(self.symbol)
@@ -488,6 +596,17 @@ class SniperBotWIN:
                 if buy_cond or sell_cond:
                     side = "buy" if buy_cond else "sell"
                     
+                    # [MELHORIA H - V28] Veto de direção por tendência diária
+                    if side == 'buy' and bias_veto_buy:
+                        logger.info(f"🚫 [MELHORIA H] BUY vetado \u2014 tendência diária é de BAIXA")
+                        await asyncio.sleep(1)
+                        continue
+                    if side == 'sell' and bias_veto_sell:
+                        logger.info(f"🚫 [MELHORIA H] SELL vetado \u2014 tendência diária é de ALTA")
+                        await asyncio.sleep(1)
+                        continue
+                    # [ANTIVIBE-CODING] Veto de direção V28 \u2014 aprovado pelo usuário em 01/03/2026
+
                     # Filtro de Fluxo SOTA
                     flux_ok = (side == "buy" and pressure > 0.3) or \
                               (side == "sell" and pressure < -0.3)
@@ -512,7 +631,8 @@ class SniperBotWIN:
                             minute=now.minute,
                             current_price=last_row['close'],
                             spread=live_spread,
-                            sma_20=last_row['sma_20']
+                            vwap=vwap,
+                            vwap_std=vwap_std
                         )
                         
                         ai_direction = ai_decision.get("direction", "NEUTRAL")
@@ -540,6 +660,7 @@ class SniperBotWIN:
                             if await self.execute_trade(
                                 side, 
                                 quantile_confidence=quantile_confidence, 
+                                ai_score=ai_score,
                                 tp_multiplier=final_tp_mult,
                                 current_atr=atr,
                                 regime=regime

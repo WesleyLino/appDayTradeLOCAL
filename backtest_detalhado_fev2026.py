@@ -93,7 +93,7 @@ async def run():
     print(hdr("BACKTEST DETALHADO - MINI ÍNDICE (WIN) - FEV/2026"))
     print(f"  SÍMBOLO  : {SYMBOL}")
     print(f"  CAPITAL  : R$ {INITIAL_BAL:,.2f}")
-    print(f"  TIMEFRAME: M1  |  ESTRATÉGIA: SOTA V22 Golden Params")
+    print("  TIMEFRAME: M1  |  ESTRATÉGIA: SOTA V28 (flux=0.95, cooldown=7min, Filtro-H ativo)")
     print(f"  DIAS     : {', '.join(d.strftime('%d/%m') for d in DIAS_ALVO)}")
     print(SEP_DUPLO)
 
@@ -165,6 +165,7 @@ async def run():
             "max_dd_pct":   max_dd,
             "missed_ai":    missed_ai,
             "missed_flux":  missed_flux,
+            "missed_bias":  shadows.get("filtered_by_bias", 0),
             "v22_candidates": v22_candidates,
         })
 
@@ -173,7 +174,7 @@ async def run():
         # =============================================
         print(f"\n{hdr(f'DIA: {date_str}')}")
         print(f"  Candles M1 carregados: {len(data)}")
-        print(f"  Janela operacional   : 09:15 - 17:15")
+        print("  Janela operacional   : 09:15 - 17:15")
         print(f"\n  {'RESULTADO GERAL':}")
         print(f"  ├── PNL Total          : {fmt_reais(pnl_total):>15}  {pct(pnl_total, INITIAL_BAL):>10}")
         print(f"  ├── Total de Trades    : {total_trades:>6}")
@@ -182,7 +183,7 @@ async def run():
         print(f"  └── Max Drawdown       : {max_dd:>6.2f}%")
 
         # --- COMPRAS ---
-        print(f"\n  ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────")
+        print("\n  ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────")
         if not compras.empty:
             wins_c = len(compras[compras["pnl_fin"] > 0])
             loss_c = len(compras[compras["pnl_fin"] <= 0])
@@ -195,10 +196,10 @@ async def run():
                 print(f"  {sinal} {str(t['entry_time'])[:19]:<21} {str(t['exit_time'])[:19]:<21} "
                       f"{t['entry_price']:>9.0f} {t['exit_price']:>9.0f} {pts:>+7.0f} {fmt_reais(t['pnl_fin']):>12}  {t['reason']:<12}")
         else:
-            print(f"  Nenhuma operação de compra executada neste dia.")
+            print("  Nenhuma operação de compra executada neste dia.")
 
         # --- VENDAS ---
-        print(f"\n  ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────")
+        print("\n  ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────")
         if not vendas.empty:
             wins_v = len(vendas[vendas["pnl_fin"] > 0])
             loss_v = len(vendas[vendas["pnl_fin"] <= 0])
@@ -211,19 +212,21 @@ async def run():
                 print(f"  {sinal} {str(t['entry_time'])[:19]:<21} {str(t['exit_time'])[:19]:<21} "
                       f"{t['entry_price']:>9.0f} {t['exit_price']:>9.0f} {pts:>+7.0f} {fmt_reais(t['pnl_fin']):>12}  {t['reason']:<12}")
         else:
-            print(f"  Nenhuma operação de venda executada neste dia.")
+            print("  Nenhuma operação de venda executada neste dia.")
 
         # --- OPORTUNIDADES PERDIDAS ---
-        print(f"\n  ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────")
+        missed_bias = shadows.get("filtered_by_bias", 0)
+        print("\n  ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────")
         print(f"  Candidatos V22 detectados : {v22_candidates}")
         print(f"  Bloqueados pela IA        : {missed_ai}  (confiança abaixo do limiar)")
         print(f"  Bloqueados pelo filtro flux: {missed_flux}")
+        print(f"  Bloqueados Filtro-H (tend.): {missed_bias}  [MELHORIA H V28 — veto de direção]")
         if tiers:
-            print(f"  Distribuição de confiança dos bloqueados (%):")
+            print("  Distribuição de confiança dos bloqueados (%):")
             for tier, cnt in tiers.items():
                 print(f"    [{tier}%] : {cnt} sinais")
         if comp_fail:
-            print(f"  Falhas de componente:")
+            print("  Falhas de componente:")
             for comp, cnt in comp_fail.items():
                 print(f"    {comp:<15}: {cnt} ocorrências")
         print(SEP_SIMPL)
@@ -261,7 +264,7 @@ async def run():
     print(f"  ├── PNL de Compras        : {fmt_reais(total_pnl_compras):>15}")
     print(f"  ├── PNL de Vendas         : {fmt_reais(total_pnl_vendas):>15}")
     print(f"  ├── Capital Final Estimado: {fmt_reais(INITIAL_BAL + total_pnl_geral):>15}")
-    print(f"  │")
+    print("  │")
     print(f"  ├── Dias Positivos        : {dias_positivos}/{len(resultados_dias)}")
     print(f"  ├── Melhor Dia            : {melhor_dia['data']} → {fmt_reais(melhor_dia['pnl_total'])}")
     print(f"  └── Pior Dia              : {pior_dia['data']} → {fmt_reais(pior_dia['pnl_total'])}")
@@ -278,6 +281,7 @@ async def run():
     print(f"  ├── Candidatos V22 detectados     : {total_v22}")
     print(f"  ├── Bloqueados pela IA             : {total_missed_ai}  (confiança < limiar 70%)")
     print(f"  ├── Bloqueados pelo filtro de fluxo: {total_missed_flux}")
+    print(f"  ├── Bloqueados Filtro-H (tend.)    : {summary['missed_bias'].sum()}  [MELHORIA H V28]")
     pct_aproveitamento = (total_trades_geral / total_v22 * 100) if total_v22 > 0 else 0
     print(f"  └── Taxa de aproveitamento V22     : {pct_aproveitamento:.1f}%  ({total_trades_geral}/{total_v22})")
 

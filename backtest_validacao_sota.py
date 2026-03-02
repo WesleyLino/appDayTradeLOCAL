@@ -57,10 +57,10 @@ async def run():
         return
 
     print("=" * 82)
-    print(f"  RELATÓRIO DE VALIDAÇÃO SOTA - MINI ÍNDICE (WIN)")
-    print(f"  PERÍODO  : 19/02/2026 a 27/02/2026")
+    print("  RELATÓRIO DE VALIDAÇÃO SOTA - MINI ÍNDICE (WIN)")
+    print("  PERÍODO  : 19/02/2026 a 27/02/2026")
     print(f"  CAPITAL  : {fmt_reais(INITIAL_BAL)}")
-    print(f"  CONFIG   : AI CORE ATIVADO | MELHORIAS A-E INTEGRADAS")
+    print("  CONFIG   : AI CORE ATIVADO | MELHORIAS A-E INTEGRADAS")
     print("=" * 82)
 
     total_pnl = 0.0
@@ -122,7 +122,7 @@ async def run():
     # --- Consolidação Final ---
     trades_df = pd.DataFrame(trades_totais)
     print("\n" + "=" * 82)
-    print(f"  RESUMO CONSOLIDADO (7 DIAS OPERACIONAIS)")
+    print("  RESUMO CONSOLIDADO (7 DIAS OPERACIONAIS)")
     print("-" * 82)
     print(f"  LUCRO/PREJUÍZO LÍQUIDO : {fmt_reais(total_pnl)}")
     print(f"  TOTAL DE TRADES        : {len(trades_totais)}")
@@ -139,9 +139,9 @@ async def run():
         
         # Diagnóstico de Melhorias
         print("\n  DIAGNÓSTICO DE MELHORIAS:")
-        print(f"  [A-B] AI Core: Filtrou ruídos de baixa confiança com eficácia sob risco extremo.")
-        print(f"  [C-D] Risco : Velocity Limit e R:R adaptativo protegeram o capital no dia 26/02.")
-        print(f"  [E] Alpha Fade: Ordens canceladas após 10-15s evitaram entradas tardias.")
+        print("  [A-B] AI Core: Filtrou ruídos de baixa confiança com eficácia sob risco extremo.")
+        print("  [C-D] Risco : Velocity Limit e R:R adaptativo protegeram o capital no dia 26/02.")
+        print("  [E] Alpha Fade: Ordens canceladas após 10-15s evitaram entradas tardias.")
     
     print("=" * 82)
     bridge.disconnect()

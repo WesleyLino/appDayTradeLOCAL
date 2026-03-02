@@ -10,7 +10,7 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: "QuantumTrade PRO",
-  description: "Next-Gen HFT Trading Interface",
+  description: "Interface HFT de Próxima Geração",
 };
 
 export default function RootLayout({
@@ -19,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <body
         className={`${outfit.variable} antialiased bg-background text-foreground font-sans`}
       >
