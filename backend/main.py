@@ -15,18 +15,28 @@ import numpy as np
 # --- CONFIGURAÇÃO DE LOGS OPERACIONAIS ---
 import logging.handlers
 from logging.handlers import RotatingFileHandler
+import sys
+import io
 
-# Reduzindo verbosidade e implementando rotação para evitar arquivos gigantes (max 10MB)
+# Forçar UTF-8 para o stdout no Windows para evitar quedas por emojis
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 log_file = "backend/trading_bridge.log"
 rotating_handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5, encoding='utf-8')
 rotating_handler.setFormatter(log_formatter)
 
+# StreamHandler robusto para UTF-8
+stream_handler = logging.StreamHandler(sys.stdout)
+stream_handler.setFormatter(log_formatter)
+
 logging.basicConfig(
-    level=logging.INFO, # V22/V23 standard: INFO para produção, DEBUG para dev local
+    level=logging.INFO, 
     handlers=[
         rotating_handler,
-        logging.StreamHandler()
+        stream_handler
     ]
 )
 
@@ -38,11 +48,17 @@ log_id_counter = 0
 def add_operational_log(msg: str, log_type: str = "info"):
     global trade_logs, log_id_counter
     log_id_counter += 1
+    # Sanitização extra para garantir que o msg seja string e não cause crashes no JSON do WebSocket
+    try:
+        clean_msg = str(msg).encode('utf-8', 'ignore').decode('utf-8')
+    except:
+        clean_msg = "[LOG ERROR] Mensagem corrompida"
+        
     timestamp = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M:%S")
     trade_logs.insert(0, {
         "id": f"{time_module.time()}-{log_type}-{log_id_counter}",
         "time": timestamp,
-        "msg": msg,
+        "msg": clean_msg,
         "type": log_type
     })
     if len(trade_logs) > MAX_LOGS:
@@ -381,6 +397,21 @@ async def websocket_endpoint(websocket: WebSocket):
                         pnl_trade = daily_realized - prev_daily_realized
                         ai.record_result(pnl_trade)
                         prev_daily_realized = daily_realized
+                    
+                    # [SOTA v2.1] Sincronização de 8 Canais (PatchTST Pipeline)
+                    if data_60 is not None and not data_60.empty:
+                        multi_data = data_60.copy()
+                        # Preencher colunas de microestrutura para atingir os 8 canais requeridos
+                        # Nota: CVD e OFI atuais são usados para preencher o histórico se ausente
+                        if 'cvd' not in multi_data.columns: multi_data['cvd'] = cvd_val if 'cvd_val' in locals() else 0.0
+                        if 'ofi' not in multi_data.columns: multi_data['ofi'] = wen_ofi_val if 'wen_ofi_val' in locals() else 0.0
+                        if 'volume_ratio' not in multi_data.columns: multi_data['volume_ratio'] = 1.0
+                        
+                        expected_cols = ['open', 'high', 'low', 'close', 'tick_volume', 'cvd', 'ofi', 'volume_ratio']
+                        for col in expected_cols:
+                            if col not in multi_data.columns: multi_data[col] = 0.0
+                        multi_data = multi_data[expected_cols].tail(60)
+
                 
                 # 1.2 Atuallização via Cache (Background Worker) - SEMPRE ATUALIZAR (HFT Optimization)
                 ctx = load_market_context() # [ANTIVIBE-CODING]
@@ -525,11 +556,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Inferência SOTA Multi-Ativo (usa multi_data sincronizado)
                 logging.debug("Executando inferência SOTA...")
                 
-                # Garantir 60 linhas e 5 canais (SOTA Multi-Ativo exige c_in=5)
+                # Garantir 60 linhas e 8 canais (Contrato SOTA v5)
                 sota_input = multi_data
                 if sota_input is None or len(sota_input) < 60:
-                    logging.warning(f"SOTA: multi_data incompleto (len={len(sota_input) if sota_input is not None else 0}). Gerando dataframe de contingencia (8 canais).")
-                    if data_60 is not None and not data_60.empty and 'close' in data_60.columns:
+                    logging.debug("SOTA: multi_data insuficiente no loop rápido. Gerando buffer de segurança.")
+                    if data_60 is not None and not data_60.empty:
                         base_val = data_60['close'].values[-60:]
                         if len(base_val) < 60:
                             base_val = np.pad(base_val, (60 - len(base_val), 0), 'edge')
@@ -540,6 +571,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         'open': base_val, 'high': base_val, 'low': base_val, 'close': base_val,
                         'tick_volume': np.zeros(60), 'cvd': np.zeros(60), 'ofi': np.zeros(60), 'volume_ratio': np.ones(60)
                     })
+
                     
                 ai_predict_data = await inference.predict(sota_input)
                 ai_confidence = ai_predict_data.get("confidence", 0.0) if isinstance(ai_predict_data, dict) else 0.0

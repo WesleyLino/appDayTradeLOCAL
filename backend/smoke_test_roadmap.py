@@ -98,7 +98,7 @@ def test_train_module():
 
 
 def test_onnx_exists():
-    path = "backend/patchtst_weights_sota_optimized.onnx"
+    path = "backend/patchtst_weights_sota.onnx"
     assert os.path.isfile(path), "ONNX nao encontrado"
     assert os.path.getsize(path) > 1_000_000, "ONNX muito pequeno"
 

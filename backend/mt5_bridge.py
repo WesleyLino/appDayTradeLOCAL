@@ -64,6 +64,7 @@ class MT5Bridge:
         else:
             logging.info("[OK] AlgoTrading: ATIVADO (Negociacao Permitida)")
 
+
         self.connected = True
         return True
 

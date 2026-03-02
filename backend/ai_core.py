@@ -756,15 +756,15 @@ class InferenceEngine:
     def _predict_sync(self, dataframe):
         """Lógica de inferência unificada para múltiplos canais."""
         try:
-            # 1. Pre-processing e Feature Engineering (SOTA 8-Channels)
+             # 1. Pre-processing e Feature Engineering (SOTA 8-Channels)
             try:
                 required_cols = ['open', 'high', 'low', 'close', 'tick_volume', 'cvd', 'ofi', 'volume_ratio']
                 
                 # Check column presence safely
                 if all(col in dataframe.columns for col in required_cols):
-                    numeric_df = dataframe[required_cols]
+                    numeric_df = dataframe[required_cols].copy()
                 else:
-                    logging.debug(f"⚠️ Column mismatch. Columns present: {list(dataframe.columns)}")
+                    logging.debug(f"⚠️ Column mismatch. Columns present: {list(dataframe.columns)}. Iniciando reconstrução...")
                     df = dataframe.copy()
                     
                     # Ensure OHLCV exist (essential)
@@ -777,27 +777,35 @@ class InferenceEngine:
                     v_col = 'tick_volume' if 'tick_volume' in df.columns else 'real_volume' if 'real_volume' in df.columns else df.columns[4] if len(df.columns) > 4 else None
                     df['tick_volume'] = df[v_col] if v_col else 0.0
                     
-                    # Heurística de Microestrutura (Fase 20)
-                    body = df['close'] - df['open']
-                    high_low = df['high'] - df['low'] + 1e-8
-                    df['cvd'] = (df['tick_volume'] * body.apply(lambda x: 1 if x > 0 else -1 if x < 0 else 0)).cumsum()
-                    df['ofi'] = body / high_low
-                    df['volume_ratio'] = df['tick_volume'] / (df['tick_volume'].rolling(20).mean() + 1e-8)
+                    # Heurística de Microestrutura se colunas originais faltarem
+                    if 'cvd' not in df.columns:
+                        body = df['close'] - df['open']
+                        df['cvd'] = (df['tick_volume'] * body.apply(lambda x: 1 if x > 0 else -1 if x < 0 else 0)).cumsum()
+                    
+                    if 'ofi' not in df.columns:
+                        body = df['close'] - df['open']
+                        high_low = df['high'] - df['low'] + 1e-8
+                        df['ofi'] = body / high_low
+                        
+                    if 'volume_ratio' not in df.columns:
+                        df['volume_ratio'] = df['tick_volume'] / (df['tick_volume'].rolling(20).mean() + 1e-8)
                     
                     df = df.fillna(0.0)
+                    for col in required_cols:
+                        if col not in df.columns:
+                            df[col] = 0.0
                     numeric_df = df[required_cols]
-                    
             except Exception as e_feat:
-                logging.error(f"❌ Feature Engineering CRITICAL failure: {repr(e_feat)}")
-                # Ultimo recurso: Gerar colunas base OHLCV+indicadores zerados a partir do que tivermos
-                safe_df = pd.DataFrame(index=range(len(dataframe)))
+                logging.error(f"❌ Feature Engineering failure: {repr(e_feat)}")
+                # Fallback robusto
+                numeric_df = pd.DataFrame(index=range(len(dataframe)))
                 for col in ['open', 'high', 'low', 'close']:
-                    safe_df[col] = dataframe.get(col, 0.0)
-                safe_df['tick_volume'] = 0.0
-                safe_df['cvd'] = 0.0
-                safe_df['ofi'] = 0.0
-                safe_df['volume_ratio'] = 1.0
-                numeric_df = safe_df
+                    numeric_df[col] = dataframe.get(col, 0.0)
+                numeric_df['tick_volume'] = dataframe.get('tick_volume', 0.0)
+                for col in ['cvd', 'ofi']: numeric_df[col] = 0.0
+                numeric_df['volume_ratio'] = 1.0
+                numeric_df = numeric_df[required_cols]
+
                 
             input_data = numeric_df.values[-60:].copy()
             
