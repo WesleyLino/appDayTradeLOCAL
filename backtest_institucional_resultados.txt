@@ -1,154 +1,30 @@
 =====================================================================================
-  SIMULAÇÃO INSTITUCIONAL SOTA (v30/v40) - MINI ÍNDICE (WIN)
+  SIMULAÇÃO INSTITUCIONAL SOTA (v50.0 MASTER) - MINI ÍNDICE (WIN)
   PERÍODO  : 19/02/2026 a 02/03/2026
   CAPITAL  : R$ +3,000.00
-  MODO     : TÁTICO STANDARD (SEM IA - APENAS TÉCNICO)
+  MODO     : HFT ELITE (IA SOTA ATIVADA)
 =====================================================================================
-
-==================================================
-RELATORIO DO PASSADO (WIN$)
-==================================================
-Saldo Inicial: R$ 3000.00
-Saldo Final:   R$ 3133.00
-Lucro Líquido: R$ 83.00
-Total Trades:  6
-Win Rate:      50.0%
-Profit Factor: 1.92
-Max Drawdown:  2.91%
-
-Relatório Visual salvo em: backend/backtest_report.html
-==================================================
-  [19/02/2026] Trades:  6 | PnL:    R$ +83.00 | WR:  50.0% | Cand. Técnicos: 34 | IA Veto: 0
-
-==================================================
-RELATORIO DO PASSADO (WIN$)
-==================================================
-Saldo Inicial: R$ 3083.00
-Saldo Final:   R$ 3236.00
-Lucro Líquido: R$ 103.00
-Total Trades:  6
-Win Rate:      33.3%
-Profit Factor: 2.72
-Max Drawdown:  1.93%
-
-Relatório Visual salvo em: backend/backtest_report.html
-==================================================
-  [20/02/2026] Trades:  6 | PnL:   R$ +103.00 | WR:  33.3% | Cand. Técnicos: 47 | IA Veto: 0
-
-==================================================
-RELATORIO DO PASSADO (WIN$)
-==================================================
-Saldo Inicial: R$ 3186.00
-Saldo Final:   R$ 3206.00
-Lucro Líquido: R$ -40.00
-Total Trades:  7
-Win Rate:      14.3%
-Profit Factor: 0.33
-Max Drawdown:  1.85%
-
-Relatório Visual salvo em: backend/backtest_report.html
-==================================================
-  [23/02/2026] Trades:  7 | PnL:    R$ -40.00 | WR:  14.3% | Cand. Técnicos: 41 | IA Veto: 0
-
-==================================================
-RELATORIO DO PASSADO (WIN$)
-==================================================
-Saldo Inicial: R$ 3146.00
-Saldo Final:   R$ 3226.00
-Lucro Líquido: R$ 30.00
-Total Trades:  6
-Win Rate:      50.0%
-Profit Factor: 1.50
-Max Drawdown:  1.91%
-
-Relatório Visual salvo em: backend/backtest_report.html
-==================================================
-  [24/02/2026] Trades:  6 | PnL:    R$ +30.00 | WR:  50.0% | Cand. Técnicos: 34 | IA Veto: 0
-
-==================================================
-RELATORIO DO PASSADO (WIN$)
-==================================================
-Saldo Inicial: R$ 3176.00
-Saldo Final:   R$ 3096.00
-Lucro Líquido: R$ -110.00
-Total Trades:  5
-Win Rate:      20.0%
-Profit Factor: 0.27
-Max Drawdown:  3.13%
-
-Relatório Visual salvo em: backend/backtest_report.html
-==================================================
-  [25/02/2026] Trades:  5 | PnL:   R$ -110.00 | WR:  20.0% | Cand. Técnicos: 33 | IA Veto: 0
-
-==================================================
-RELATORIO DO PASSADO (WIN$)
-==================================================
-Saldo Inicial: R$ 3066.00
-Saldo Final:   R$ 2926.00
-Lucro Líquido: R$ -180.00
-Total Trades:  7
-Win Rate:      0.0%
-Profit Factor: 0.00
-Max Drawdown:  5.20%
-
-Relatório Visual salvo em: backend/backtest_report.html
-==================================================
-  [26/02/2026] Trades:  7 | PnL:   R$ -180.00 | WR:   0.0% | Cand. Técnicos: 44 | IA Veto: 0
-
-==================================================
-RELATORIO DO PASSADO (WIN$)
-==================================================
-Saldo Inicial: R$ 2886.00
-Saldo Final:   R$ 2896.00
-Lucro Líquido: R$ -60.00
-Total Trades:  8
-Win Rate:      0.0%
-Profit Factor: 0.00
-Max Drawdown:  2.04%
-
-Relatório Visual salvo em: backend/backtest_report.html
-==================================================
-  [27/02/2026] Trades:  8 | PnL:    R$ -60.00 | WR:   0.0% | Cand. Técnicos: 35 | IA Veto: 0
-
-==================================================
-RELATORIO DO PASSADO (WIN$)
-==================================================
-Saldo Inicial: R$ 2826.00
-Saldo Final:   R$ 2925.00
-Lucro Líquido: R$ 49.00
-Total Trades:  5
-Win Rate:      20.0%
-Profit Factor: inf
-Max Drawdown:  0.00%
-
-Relatório Visual salvo em: backend/backtest_report.html
-==================================================
-  [02/03/2026] Trades:  5 | PnL:    R$ +49.00 | WR:  20.0% | Cand. Técnicos: 31 | IA Veto: 0
+📊 [19/02/2026] Dados: 505 candles carregados.
+  [19/02/2026] Trades:  0 | PnL:     R$ +0.00 | WR:   0.0% | Cand:  0 | Vetos: 0
+📊 [20/02/2026] Dados: 505 candles carregados.
+  [20/02/2026] Trades:  0 | PnL:     R$ +0.00 | WR:   0.0% | Cand:  0 | Vetos: 0
+📊 [23/02/2026] Dados: 505 candles carregados.
+  [23/02/2026] Trades:  0 | PnL:     R$ +0.00 | WR:   0.0% | Cand:  0 | Vetos: 0
+📊 [24/02/2026] Dados: 505 candles carregados.
+  [24/02/2026] Trades:  0 | PnL:     R$ +0.00 | WR:   0.0% | Cand:  0 | Vetos: 0
+📊 [25/02/2026] Dados: 505 candles carregados.
+  [25/02/2026] Trades:  0 | PnL:     R$ +0.00 | WR:   0.0% | Cand:  0 | Vetos: 0
+📊 [26/02/2026] Dados: 505 candles carregados.
+  [26/02/2026] Trades:  0 | PnL:     R$ +0.00 | WR:   0.0% | Cand:  0 | Vetos: 0
+📊 [27/02/2026] Dados: 505 candles carregados.
+  [27/02/2026] Trades:  0 | PnL:     R$ +0.00 | WR:   0.0% | Cand:  0 | Vetos: 0
+📊 [02/03/2026] Dados: 505 candles carregados.
+  [02/03/2026] Trades:  0 | PnL:     R$ +0.00 | WR:   0.0% | Cand:  0 | Vetos: 0
 
 =====================================================================================
-  REGRAS DE NEGOCIAÇÃO RELATÓRIO FINAL
+  RELATÓRIO FINAL CONSOLIDADO
 -------------------------------------------------------------------------------------
-  PATRIMÔNIO FINAL       : R$ +2,875.00
-  LUCRO LÍQUIDO ACUMULADO : R$ -125.00
-  RETORNO SOBRE CAPITAL  : -4.2%
-  TOTAL DE OPERAÇÕES     : 50
--------------------------------------------------------------------------------------
-  📊 POTENCIAL POR OPERAÇÃO:
-  ├── COMPRAS  : 32 trades | PnL:   R$ +225.00
-  └── VENDAS   : 18 trades | PnL:   R$ -350.00
--------------------------------------------------------------------------------------
-  🛡️ GESTÃO DE RISCO:
-  ├── ASSERTIVIDADE GERAL: 22.0%
-  ├── TRADES COM LUCRO   : 11
-  └── TRADES COM PREJUÍZO : 10
--------------------------------------------------------------------------------------
-  🔎 ANÁLISE DE OPORTUNIDADES (VETOS):
-  ├── TOTAL DE SINAIS VETADOS: 299
-  ├── VETADOS POR IA (<93%)  : 0 (Segurança)
-  └── VETADOS POR FLUXO/VOL  : 0
-
-  💡 MELHORIAS PARA ELEVAR ASSERTIVIDADE:
-  1. Ajustar o 'Alpha Fade' para 12s em dias de alta volatilidade (como 26/02).
-  2. Refinar a piramidação (Scaling In) para ativar apenas com Score > 95%.
-  3. Implementar bloqueio preventivo 5min antes de notícias 3 estrelas (Calendário).
+  PATRIMÔNIO FINAL       : R$ +3,000.00
+  LUCRO LÍQUIDO ACUMULADO : R$ +0.00
+  TOTAL DE OPERAÇÕES     : 0
 =====================================================================================

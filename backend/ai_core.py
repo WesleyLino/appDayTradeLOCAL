@@ -1,8 +1,7 @@
 from backend.microstructure_analyzer import MicrostructureAnalyzer # HFT v2.0
 
-from backend.meta_learner import MetaLearner # HFT v2.0 Meta-Learner
-
-from sklearn.cluster import KMeans # Keep KMeans for regime_model
+from backend.meta_learner import MetaLearner # Meta-aprendizado HFT v2.0
+from sklearn.cluster import KMeans # Mantém KMeans para o modelo de regime
 
 from dotenv import load_dotenv
 
@@ -70,11 +69,11 @@ class AICore:
 
 
 
-        # [NEW CONFIGURABLE PARAMETERS - HIGH GAIN RESEARCH]
+        # [NOVOS PARÂMETROS CONFIGURÁVEIS - PESQUISA DE ALTO GANHO]
 
-        self.uncertainty_threshold_base = 0.25 # [ANTIVIBE-CODING] Default Seguro
+        self.uncertainty_threshold_base = 0.25 # [ANTIVIBE-CODING] Padrão Seguro
 
-        self.lot_multiplier_partial = 0.25     # [ANTIVIBE-CODING] Default Seguro
+        self.lot_multiplier_partial = 0.25     # [ANTIVIBE-CODING] Padrão Seguro
 
         self.uncertainty_high_conviction_cap = 4.0 # 400%
 
@@ -96,11 +95,11 @@ class AICore:
 
         self.prob_lot_tiers = {
 
-            "low": 0.25,      # Confiança 70-75%
+            "baixa": 0.25,      # Confiança 70-75%
 
-            "medium": 0.75,   # Confiança 75-85%
+            "media": 0.75,     # Confiança 75-85%
 
-            "high": 1.0       # Confiança > 85%
+            "alta": 1.0        # Confiança > 85%
 
         }
 
@@ -582,19 +581,19 @@ class AICore:
 
         if quantile_confidence == "NORMAL":
 
-            if score >= 90 or score <= 10: return self.prob_lot_tiers["high"]
+            if score >= 90 or score <= 10: return self.prob_lot_tiers["alta"]
 
-            if score >= 85 or score <= 15: return self.prob_lot_tiers["medium"]
+            if score >= 85 or score <= 15: return self.prob_lot_tiers["media"]
 
-            return self.prob_lot_tiers["low"]
+            return self.prob_lot_tiers["baixa"]
 
         
 
         # Se for HIGH/VERY_HIGH, autoriza mais exposição
 
-        if score >= 85 or score <= 15: return self.prob_lot_tiers["high"]
+        if score >= 85 or score <= 15: return self.prob_lot_tiers["alta"]
 
-        return self.prob_lot_tiers["medium"]
+        return self.prob_lot_tiers["media"]
 
 
 
@@ -661,26 +660,25 @@ class AICore:
 
 
     def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0, sma_20=0.0, wdo_aggression=0.0):
-
-        """
-
-        [SOTA v5] Fluxo de Decisão com Camadas de Precisão
-        [SOTA v25.3] Adicionado sma_20 para Mean Reversion Guard.
-        [v30 - INSTITUCIONAL] Adicionado VWAP Anchor e convergência WIN/WDO.
-        """
+        # [v50.1] DEBUG GLOBAL
+        import sys
+        # sys.stderr.write(f"DEBUG: AICore calculating for price {current_price}\n")
         # --- 0. [v30] VWAP MEAN REVERSION GUARD ---
         # Se o MicrostructureAnalyzer já calculou a VWAP no loop anterior
         vwap_val, vwap_std = self.micro_analyzer.calculate_vwap(None) # Puxa do cache interno se df for None
         if vwap_val > 0:
             price_dist_vwap = current_price - vwap_val
-            # [ANTIVIBE-CODING] Veto se preço esticado > 250 pts da VWAP sem fluxo extremo
-            if price_dist_vwap > 250.0 and abs(ofi) < 1.5:
+            target_vwap_veto = getattr(self, 'vwap_dist_threshold', 250.0)
+            
+            # [ANTIVIBE-CODING] Veto se preço esticado > threshold da VWAP sem fluxo extremo
+            if price_dist_vwap > target_vwap_veto and abs(ofi) < 1.5:
+                print(f"DEBUG_VETO_VWAP_UP: {price_dist_vwap}")
                 logging.warning(f"🛑 [VWAP VETO] Preço muito acima da VWAP (+{price_dist_vwap:.1f} pts). Risco de exaustão.")
                 return {"direction": "WAIT", "confidence": 0, "reason": "VWAP_OVEREXTENDED_UP"}
-            if price_dist_vwap < -250.0 and abs(ofi) < 1.5:
+            if price_dist_vwap < -target_vwap_veto and abs(ofi) < 1.5:
+                print(f"DEBUG_VETO_VWAP_DOWN: {price_dist_vwap}")
                 logging.warning(f"🛑 [VWAP VETO] Preço muito abaixo da VWAP ({price_dist_vwap:.1f} pts). Risco de exaustão.")
                 return {"direction": "WAIT", "confidence": 0, "reason": "VWAP_OVEREXTENDED_DOWN"}
-
         # --- 0.1 [v40 - INSTITUCIONAL] VETO DE DIVERGÊNCIA CVD ---
         # Detecta absorção institucional (preço sobe com agressão de venda ou vice-versa)
         divergence = self.micro_analyzer.detect_divergence(self.micro_analyzer.price_history, self.micro_analyzer.cvd_history)
@@ -768,10 +766,16 @@ class AICore:
         
 
         # 4. Threshold de Incerteza e Rigor Adaptativo
-
         uncertainty_threshold = self.uncertainty_threshold_base
-
         lot_multiplier = 1.0
+
+        # [v50.1] ROTINA OPEN DRIVE (10:00 - 10:45)
+        # Momento de entrada de fluxo estrangeiro e abertura das ações.
+        is_open_drive = (hour == 10 and 0 <= minute <= 45)
+        if is_open_drive:
+            # Relaxa o rigor para capturar a tendência real do dia
+            uncertainty_threshold = 0.40 # Threshold mais permissivo (v50.1)
+            logging.info(f"🚀 [OPEN DRIVE] Janela de Fluxo Estrangeiro Ativa. Threshold relaxado para 40%.")
 
         # [v30] CONVERGÊNCIA INTER-MERCADOS (WIN + WDO)
         # Se Índice e Dólar confirmam a direção (Correlação Negativa Inversa)
@@ -792,10 +796,19 @@ class AICore:
             uncertainty_threshold = max(uncertainty_threshold, 0.40)
 
         
-
-        # [SOTA v25.6] SWEET SPOT RIGOR (BALANCING 70% TARGET)
-
-        uncertainty_threshold = 0.30 # Ideal para filtrar ruido sem matar o volume
+        # [HFT MASTER] Elastic Conformal Prediction
+        # Se a volatilidade atual for maior que a média histórica (Expansão), expandimos o threshold.
+        # Caso contrário, mantemos o rigor em 30%.
+        avg_atr = np.mean(self.atr_history) if len(self.atr_history) > 0 else 0
+        if atr > 0 and avg_atr > 0:
+            vol_expansion = atr / avg_atr
+            if vol_expansion > 1.5: # Volatilidade duplicando ou crescendo forte
+                uncertainty_threshold = 0.45
+                logging.info(f"📈 [INCERTEZA ELÁSTICA] Volatilidade em expansão ({vol_expansion:.1f}x). Threshold: 45%")
+            else:
+                uncertainty_threshold = 0.30 # Ideal para filtrar ruido sem matar o volume
+        else:
+            uncertainty_threshold = 0.30 
 
         if regime == 2 or abs(ofi) > 2.0:
 
@@ -953,31 +966,39 @@ class AICore:
 
             
 
-            # [SOTA v25.4] Endurecido para 1.5 ATR para garantir > 70% Win Rate
-
-            if ai_dir_raw > 0 and dist_pts > (1.5 * atr):
-
+            # [SOTA v25.4] RELAXADO PARA 2.0 ATR NA v50.1 para evitar bloqueio excessivo
+            if ai_dir_raw > 0 and dist_pts > (2.0 * atr):
                 veto_reason = f"VETO_REVERSAO_MEDIA_COMPRA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
-
-                logging.info("🛡️ [ANTI-EXHAUSTION] Compra bloqueada: Preço esticado (1.5 ATR).")
-
-            elif ai_dir_raw < 0 and dist_pts < (-1.5 * atr):
-
+                logging.info("🛡️ [ANTI-EXHAUSTION] Compra bloqueada: Preço esticado (2.0 ATR).")
+            elif ai_dir_raw < 0 and dist_pts < (-2.0 * atr):
                 veto_reason = f"VETO_REVERSAO_MEDIA_VENDA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
-
-                logging.info("🛡️ [ANTI-EXHAUSTION] Venda bloqueada: Preço esticado (1.5 ATR).")
+                logging.info("🛡️ [ANTI-EXHAUSTION] Venda bloqueada: Preço esticado (2.0 ATR).")
 
 
 
         # [SOTA v5] Spread Veto (Proteção contra Slippage)
-
         if veto_reason is None and spread > self.spread_veto_threshold:
-
             veto_reason = f"VETO_DE_SPREAD_ALTO ({spread:.1f} > {self.spread_veto_threshold})"
-
             logging.warning(f"⚠️ VETO DE SPREAD: {spread:.1f} pts > {self.spread_veto_threshold}")
 
-
+        # [v50.1] GATILHO LONG SQUEEZE (Caça aos Stops)
+        # Se o preço está perdendo fundo histórico e há urgência de venda
+        if veto_reason is None and self.h1_trend < 0:
+            long_squeeze = self._detect_long_squeeze(current_price, atr)
+            if long_squeeze:
+                # Dispara venda agressiva mesmo se o score da IA não for extremo
+                logging.warning(f"💥 [LONG SQUEEZE] Caça aos Stops detectada em {current_price:.1f}. Forçando Venda.")
+                direction = "SELL"
+                final_score = 5.0 # Score de venda alta
+                lot_multiplier = 2.0 # Dobra o lote para o estouro
+                return {
+                    "score": float(final_score),
+                    "direction": direction,
+                    "lot_multiplier": float(lot_multiplier),
+                    "tp_multiplier": 2.5, # Alvo longo para o squeeze
+                    "veto": None,
+                    "reason": "INSTITUTIONAL_LONG_SQUEEZE"
+                }
 
         # 6. Cálculo do Score Final
 
@@ -1044,18 +1065,17 @@ class AICore:
 
 
         # Direção - [SOTA v25.6] SWEET SPOT PUSH (70%+)
-
-        buy_threshold = 93.0
-
-        sell_threshold = 7.0
+        # [v50.1] RELAXAMENTO PARA HYPER-OPT: 88% em vez de 93%
+        buy_threshold = 88.0
+        sell_threshold = 12.0
 
         
 
         direction = "NEUTRAL"
 
-        if final_score >= buy_threshold: direction = "BUY"
+        if final_score >= buy_threshold: direction = "COMPRA"
 
-        elif final_score <= sell_threshold: direction = "SELL"
+        elif final_score <= sell_threshold: direction = "VENDA"
 
         
 
@@ -1125,11 +1145,25 @@ class AICore:
 
                 "veto": veto_reason,
 
-                "ia_cooldown": ia_in_cooldown
-
             }
-
         }
+
+    def _detect_long_squeeze(self, current_price, atr):
+        """
+        [v50.1] Identifica se o preço está em zona de acionamento de Stops do varejo.
+        """
+        if not hasattr(self, 'price_history') or len(self.micro_analyzer.price_history) < 20:
+            return False
+            
+        # Pega a mínima dos últimos 20 períodos
+        history = self.micro_analyzer.price_history
+        local_low = min(history)
+        
+        # Se o preço está a menos de 50 pontos do fundo ou rompeu levemente (5 pontos)
+        # E o ATR está em expansão (urgência)
+        if (local_low - 5) <= current_price <= (local_low + 50):
+            return True
+        return False
 
     
 
@@ -1594,30 +1628,18 @@ class InferenceEngine:
                     
 
                     # Heurística de Microestrutura se colunas originais faltarem
-
                     if 'cvd' not in df.columns:
-
                         body = df['close'] - df['open']
-
                         df['cvd'] = (df['tick_volume'] * body.apply(lambda x: 1 if x > 0 else -1 if x < 0 else 0)).cumsum()
-
                     
-
                     if 'ofi' not in df.columns:
-
-                        body = df['close'] - df['open']
-
-                        high_low = df['high'] - df['low'] + 1e-8
-
-                        df['ofi'] = body / high_low
-
-                        
+                        # Heurística OFI: Delta de Volume relativo à direção do candle
+                        df['ofi'] = df['cvd'].diff().fillna(0.0) / (df['tick_volume'].replace(0, 1))
 
                     if 'volume_ratio' not in df.columns:
-
-                        df['volume_ratio'] = df['tick_volume'] / (df['tick_volume'].rolling(20).mean() + 1e-8)
-
+                        df['volume_ratio'] = df['tick_volume'] / (df['tick_volume'].rolling(20).mean().fillna(1.0))
                     
+                    numeric_df = df[required_cols].fillna(0.0).values
 
                     df = df.fillna(0.0)
 

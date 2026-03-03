@@ -75,7 +75,11 @@ class BacktestPro:
             'be_trigger': kwargs.get('be_trigger', 50.0),
             'be_lock': kwargs.get('be_lock', 0.0),
             'base_lot': kwargs.get('base_lot', locked_params.get('base_lot', 1)), # [ANTIVIBE-CODING]
-            'use_ai_core': kwargs.get('use_ai_core', locked_params.get('use_ai_core', True)) # [ANTIVIBE-CODING] v27 Default
+            'use_ai_core': kwargs.get('use_ai_core', locked_params.get('use_ai_core', True)), # [ANTIVIBE-CODING] v27 Default
+            'vwap_dist_threshold': kwargs.get('vwap_dist_threshold', 250.0), # [v50.1] Hyper-Opt
+            'pyramid_profit_threshold': kwargs.get('pyramid_profit_threshold', 50.0),
+            'pyramid_signal_threshold': kwargs.get('pyramid_signal_threshold', 1.2),
+            'pyramid_max_volume': kwargs.get('pyramid_max_volume', 3)
         }
 
         # Estado do Backtest
@@ -98,6 +102,8 @@ class BacktestPro:
             'total_missed': 0,
             'filtered_by_ai': 0,
             'filtered_by_flux': 0,
+            'filtered_by_bias': 0,
+            'veto_reasons': {},
             'v22_candidates': 0,
             'component_fail': {
                 'rsi': 0,
@@ -176,17 +182,20 @@ class BacktestPro:
                     if new_sl > position['sl'] + step_pts:
                         position['sl'] = new_sl
             
-            # 1.3 Take Profit Fixo (Agora coexistente com Trailing Stop)
-            if row['high'] >= tp:
-                return 'TP', tp
+            # 1.3 Take Profit com Time-Decay [v50.1]
+            elapsed = (row.name - position['time']).total_seconds()
+            tp_dist = abs(position['tp'] - entry)
+            decayed_tp_dist = self.risk.apply_time_decay_to_tp(tp_dist, elapsed)
+            
+            if row['high'] >= (entry + decayed_tp_dist):
+                return 'TP_DECAY', (entry + decayed_tp_dist)
                 
         else: # sell
-            # 1. Lógica de Trailing Stop - SELL (USA ASSIMETRIA V26)
-            trigger_pts = self.opt_params.get('trailing_trigger_sell', 200.0)
-            lock_pts = self.opt_params.get('trailing_lock_sell', 100.0)
-            step_pts = self.opt_params.get('trailing_step_sell', 50.0)
+            # 1. Lógica de Trailing Stop - SELL (USA ASSIMETRIA v50.1)
+            atr_now = row.get('atr_current', 100.0)
+            trigger_pts, lock_pts, step_pts = self.risk.get_dynamic_trailing_params(atr_now, side="sell")
 
-            # 2.1 Lógica de Breakeven [URGENTE]
+            # 2.1 Lógica de Breakeven
             be_trigger = self.opt_params.get('be_trigger', 70.0)
             be_lock = self.opt_params.get('be_lock', 0.0)
             profit_pts_be = entry - row['low']
@@ -208,9 +217,13 @@ class BacktestPro:
                     if new_sl < position['sl'] - step_pts:
                         position['sl'] = new_sl
                     
-            # 2.3 Take Profit Fixo (Agora coexistente com Trailing Stop)
-            if row['low'] <= tp:
-                return 'TP', tp
+            # 2.3 Take Profit com Time-Decay [v50.1]
+            elapsed = (row.name - position['time']).total_seconds()
+            tp_dist = abs(position['tp'] - entry)
+            decayed_tp_dist = self.risk.apply_time_decay_to_tp(tp_dist, elapsed)
+
+            if row['low'] <= (entry - decayed_tp_dist):
+                return 'TP_DECAY', (entry - decayed_tp_dist)
             
         # 4. Scaling Out — Saída Parcial [SOTA v26] Real Financeiramente
         if not position.get('partial_done', False):
@@ -344,6 +357,19 @@ class BacktestPro:
                 elif i - self.position['index'] > 25: # Time Exit (25 candles)
                     self._close_trade(row['close'], 'TIME', row.name)
                     self.last_trade_time = row.name
+                else:
+                    # [v50.1] Simulação de Piramidação (Scaling In) - Apenas se posição ainda ativa
+                    profit_now = (row['close'] - self.position['entry_price']) if self.position['side'] == 'buy' else (self.position['entry_price'] - row['close'])
+                    if self.risk.allow_pyramiding(
+                        profit_now, 
+                        row.get('ofi', 0), 
+                        self.position['lots'],
+                        profit_threshold=self.opt_params.get('pyramid_profit_threshold'),
+                        signal_threshold=self.opt_params.get('pyramid_signal_threshold'),
+                        max_volume=self.opt_params.get('pyramid_max_volume')
+                    ):
+                        self.position['lots'] += 1
+                        logging.info(f"💎 [PIRAMIDAÇÃO] +1 contrato adicionado @ {row['close']} | Novo Lote: {self.position['lots']}")
 
             # [SOTA v5] Simulação de Spread Dinâmico (1.0 a 3.5 pts)
             fixed_spread = self.opt_params.get('spread')
@@ -444,7 +470,13 @@ class BacktestPro:
                         # Extrair janela para predição
                         window_data = data.iloc[i-64:i] # PatchTST usa 64 velas
                         if len(window_data) == 64:
-                            patchtst_data = await self.ai.predict_with_patchtst(self.ai.inference_engine, window_data)
+                            # [v50.1] Predição retorna dicionário {"score": float, "confidence": float}
+                            pred_res = await self.ai.predict_with_patchtst(self.ai.inference_engine, window_data)
+                            patchtst_data = pred_res.get('score', 50.0)
+                            
+                            # FALLBACK: Se predição for neutra, usar momentum do sentimento como proxy
+                            if abs(patchtst_data - 50.0) < 1.0:
+                                patchtst_data = 50.0 + (sentiment_score * 10.0) # Escala 0-100
 
                     # Volatilidade Anualizada (Proxy do Bot)
                     log_returns = np.log(window['close'] / window['close'].shift(1))
@@ -454,6 +486,9 @@ class BacktestPro:
                     # AI Decision (Passando OFI se disponível)
                     # No backtest OHLCV, simulamos OFI como 0.5 * sentiment para manter consistência
                     sim_ofi = (sentiment_score * 0.5) if sentiment_score != 0 else 0.0
+                    
+                    # Atualizar vwap_dist_threshold no AICore se disponível
+                    self.ai.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 250.0)
                     
                     ai_decision = self.ai.calculate_decision(
                         obi=obi,
@@ -471,9 +506,16 @@ class BacktestPro:
                         wdo_aggression=0.0 # Placeholder para backtest WIN
                     )
                     
+                    # [v50.1] Hyper-Opt de Gatilhos Técnicos
+                    rsi_buy_level = self.opt_params.get('rsi_buy_level', 30)
+                    rsi_sell_level = self.opt_params.get('rsi_sell_level', 70)
+                    v_spike_mult = self.opt_params.get('vol_spike_mult', 1.5)
+                    
+                    vol_spike_eff = row['tick_volume'] > (vol_sma * v_spike_mult)
+
                     # [MODO FUSÃO SOTA] Gatilhos Matemáticos (RSI/BB) + Filtro de Convicção IA
-                    v22_buy_raw = (rsi < 30 and row['close'] < lower_bb) and vol_spike_eff
-                    v22_sell_raw = (rsi > 70 and row['close'] > upper_bb) and vol_spike_eff
+                    v22_buy_raw = (rsi < rsi_buy_level and row['close'] < lower_bb) and vol_spike_eff
+                    v22_sell_raw = (rsi > rsi_sell_level and row['close'] > upper_bb) and vol_spike_eff
                     
                     self.shadow_signals['v22_candidates'] = self.shadow_signals.get('v22_candidates', 0) + 1
                     
@@ -481,11 +523,28 @@ class BacktestPro:
                     ai_score = ai_decision.get('score', 50.0)
                     ai_stability = ai_score / 100.0
                     
+                    if v22_buy_raw or v22_sell_raw:
+                        print(f"DEBUG_SIGNAL: {row.name} | Dir: {ai_dir} | Stability: {ai_stability:.2f} | Reason: {ai_decision.get('reason')}")
+                    
+                    # [v50.1] Diagnóstico Granulado de Filtros
+                    if v22_buy_raw or v22_sell_raw:
+                        self.shadow_signals['component_fail']['ai_veto_total'] = self.shadow_signals['component_fail'].get('ai_veto_total', 0) + 1
+                        if ai_dir == "WAIT":
+                            reason = ai_decision.get('reason', 'UNKNOWN')
+                            self.shadow_signals['veto_reasons'][reason] = self.shadow_signals['veto_reasons'].get(reason, 0) + 1
+                        elif ai_stability < self.opt_params['confidence_threshold']:
+                            self.shadow_signals['veto_reasons']['LOW_CONFIDENCE'] = self.shadow_signals['veto_reasons'].get('LOW_CONFIDENCE', 0) + 1
+
                     # Decisão Final: Precisa do gatilho técnico + viés de direção da IA com confiança
                     v22_buy = v22_buy_raw and (ai_dir == "BUY") and (ai_stability >= self.opt_params['confidence_threshold'])
                     v22_sell = v22_sell_raw and (ai_dir == "SELL") and (ai_stability >= self.opt_params['confidence_threshold'])
                     
-                    # Rastreamento de Vetos (Shadow Trading) - Separado por Ponta
+                    # [V50.1] Rastreamento de Vetos de IA (Shadow)
+                    if ai_dir == "WAIT" or ai_stability < self.opt_params['confidence_threshold']:
+                        if v22_buy_raw or v22_sell_raw:
+                            self.shadow_signals['filtered_by_ai'] += 1
+                            reason = ai_decision.get('reason', 'LOW_CONFIDENCE')
+                            self.shadow_signals['veto_reasons'][reason] = self.shadow_signals['veto_reasons'].get(reason, 0) + 1
                     if v22_buy_raw and not v22_buy:
                         self.shadow_signals['buy_vetos_ai'] = self.shadow_signals.get('buy_vetos_ai', 0) + 1
                     if v22_sell_raw and not v22_sell:
@@ -505,8 +564,6 @@ class BacktestPro:
                         logging.debug(f"🤖 Decisão da IA: {ai_decision}")
                         vol_spike_eff = vol_spike # No modo IA usamos volume puro
                         ai_stability = ai_decision.get('score', 50.0) / 100.0 # [SOTA v25.4] Usa score real para o filtro de confianca do auditor
-                    elif (rsi < 30 and row['close'] < lower_bb) or (rsi > 70 and row['close'] > upper_bb):
-                        logging.debug(f"💤 IA NEUTRA (Candidato Filtrado por Incerteza da IA/Meta): {ai_decision.get('uncertainty', 0)*100:.1f}% de incerteza")
 
                 # --- [LEGACY] INTELIGÊNCIA DO SUCESSO: REGIME MAESTRO & SCALPING ADAPTATION ---
                 else:
@@ -712,7 +769,7 @@ class BacktestPro:
                         'execution_mode': ai_decision.get('execution_mode', 'LIMIT') if 'ai_decision' in locals() else 'LIMIT'
                     }
                     self.daily_trade_count += 1
-                    logging.info(f"🎯 V22 TRIGGER [{regime_tag}]: {side} @ {row['close']} | Lots: {target_lot}")
+                    logging.info(f"🎯 GATILHO V22 [{regime_tag}]: {side} @ {row['close']} | Lotes: {target_lot}")
             
             # Atualizar Drawdown
             if self.balance > self.peak_balance:

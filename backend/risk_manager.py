@@ -45,6 +45,12 @@ class RiskManager:
         # [FASE 2] Time-Based Stop (Inatividade Tática)
         self.max_trade_duration_min = 15.0      # Minutos máximos para uma operação 'preguiçosa'
         
+        # [v50.1] TIME-DECAYING TP
+        self.tp_decay_per_min = 0.05            # Decaimento de 5% por minuto
+        
+        # [v50.1] TRAILING ESTRANGULADOR (VENDA)
+        self.sell_trailing_step_atr = 0.3        # Passo de 0.3 ATR para vendas (Paranoia Institucional)
+        
         # [FASE 2] Quarter-Kelly (Ajuste de Expectativa)
         self.kelly_fraction = 0.25              # Quarter-Kelly (Segurança HFT)
         
@@ -134,40 +140,90 @@ class RiskManager:
             
         return False, "VELOCITY_OK"
 
-    def check_time_stop(self, elapsed_seconds, current_profit_points):
+    def check_time_stop(self, elapsed_seconds, current_profit_points, current_atr=None):
         """
-        [v40 - INSTITUCIONAL] Time-Based Stop (Decaimento de Alpha).
-        Se a operação entrou e em 5 minutos não andou 100 pontos a favor, encerra.
-        Fundamento: O Alpha de agressão institucional expira rápido.
+        [v50 - MASTER] Time-Based Stop Elástico.
+        Se a operação entrou e em 3-5 minutos não explodiu a favor, encerra.
+        Fundamento: Se o Alpha não se pagou rápido, a premissa de microestrutura evaporou.
         """
-        if elapsed_seconds >= 300: # 5 minutos
-            if current_profit_points < 100.0:
-                logging.warning(f"⏰ [TIME-STOP] 5 min atingidos sem explosão (PnL: {current_profit_points:.1f}). Abortando.")
+        # Limiar de tempo dinâmico: Se ATR está alto (mercado rápido), o tempo é menor (180s = 3min)
+        # Se ATR está baixo (mercado lento), tolera até 300s (5min).
+        max_time = 180 if (current_atr and current_atr > 300) else 300
+        
+        if elapsed_seconds >= max_time:
+            # Se não atingiu pelo menos o alvo de breakeven, sai para liberar margem
+            if current_profit_points < self.be_trigger:
+                logging.warning(f"⏰ [TIME-STOP MASTER] {max_time}s atingidos. PnL {current_profit_points:.1f} abaixo do gatilho {self.be_trigger}. Abortando.")
                 return True
         return False
 
+    def allow_pyramiding(self, current_profit_points, signal_strength, current_volume, 
+                         symbol=None, profit_threshold=None, signal_threshold=None, max_volume=None):
+        """
+        [v50 - MASTER] Piramidação Matemática (Scaling In).
+        Suporta injeção de parâmetros dinâmicos via self.dynamic_params.
+        """
+        # Fallback para parâmetros dinâmicos se disponíveis
+        d_params = self.dynamic_params.get(symbol, {}) if symbol else {}
+        
+        trigger = profit_threshold if profit_threshold is not None else d_params.get("pyramid_profit_threshold", self.be_trigger)
+        sig_threshold = signal_threshold if signal_threshold is not None else d_params.get("pyramid_signal_threshold", 1.2)
+        max_vol = max_volume if max_volume is not None else d_params.get("pyramid_max_volume", 3)
+        
+        if current_profit_points >= trigger and abs(signal_strength) >= sig_threshold:
+            if current_volume < max_vol:
+                logging.info(f"💎 [PIRAMIDAÇÃO DINÂMICA] Autorizada! Lucro {current_profit_points:.1f} | Fluxo: {signal_strength:.2f} | Vol Atual: {current_volume}")
+                return True
+        return False
+
+    def apply_time_decay_to_tp(self, original_tp_dist, elapsed_seconds):
+        """
+        [v50.1] Alvo com Decaimento Temporal (Time-Decaying TP).
+        Reduz o alvo à medida que o tempo passa para mitigar exposição excessiva.
+        """
+        if elapsed_seconds < 60: return original_tp_dist
+        
+        minutes = elapsed_seconds / 60.0
+        # Reduz 5% por minuto transcorrido
+        decay_factor = max(0.2, 1.0 - (minutes * self.tp_decay_per_min))
+        
+        new_tp = original_tp_dist * decay_factor
+        if decay_factor < 0.95:
+             logging.debug(f"⏳ [DECAIMENTO TEMPORAL] Alvo reduzido: {original_tp_dist:.1f} -> {new_tp:.1f} (Decay: {decay_factor:.2%})")
+        return float(new_tp)
+
     def check_scaling_out(self, symbol, ticket, current_profit_points, current_volume):
         """
-        [v30 - INSTITUCIONAL] Scaling Out (Saída Parcial).
-        Se a posição atingir o alvo parcial e ainda tiver volume base, encerra metade.
+        [v50 - MASTER] Saída Parcial (Scaling Out) / Take Profit Fracionado.
+        Se atingiu o primeiro alvo e tem mais de 1 lote, encerra a parcial para garantir lucro.
         """
-        if current_profit_points >= self.partial_profit_points and current_volume >= self.base_volume:
-            logging.info(f"🎯 [SCALING OUT] Alvo de {self.partial_profit_points} pts atingido. Descarregando {self.partial_volume} lotes.")
+        if current_profit_points >= self.partial_profit_points and current_volume > self.partial_volume:
+            logging.info(f"🎯 [PARCIAL MASTER] Gatilho atingido: {current_profit_points:.1f} pts. Reduzindo {self.partial_volume} lotes.")
             return True, self.partial_volume
         return False, 0.0
 
-    def allow_pyramiding(self, current_profit_points, signal_strength):
+    def get_dynamic_trailing_params(self, current_atr, side="buy"):
         """
-        [v40 - HFT ELITE] Piramidação (Scaling In).
-        Permite adicionar contratos se:
-        1. A posição atual estiver protegida (Lucro > 100 pts no WIN).
-        2. O sinal de fluxo for extremo (signal_strength >= 1.2).
+        [v50.1] Trailing Stop Dinâmico Assimétrico.
+        - Compra: Segue a EMA 9 (Aprox 1 ATR).
+        - Venda: Estrangulador Paranoico (Passo Curto baseado em ATR).
         """
-        # [ANTIVIBE-CODING] Proteção de capital: Só piramida se a primeira mão estiver no lucro.
-        if current_profit_points >= 100.0 and abs(signal_strength) >= 1.2:
-            logging.info(f"💎 [PIRAMIDAÇÃO] Autorizada: Lucro {current_profit_points:.1f} pts / Sinal {signal_strength:.2f}")
-            return True
-        return False
+        if not current_atr or current_atr <= 0:
+            return self.trailing_trigger, self.trailing_lock, self.trailing_step
+            
+        if side == "sell":
+            # [v50.1] Lógica de Venda: Estrangulamento Rápido
+            trigger = current_atr * 0.7  # Ativa mais cedo (0.7 ATR)
+            lock = current_atr * 0.3     # Trava 0.3 ATR
+            step = current_atr * self.sell_trailing_step_atr # Passo curto (0.3 ATR)
+            return float(trigger), float(lock), float(step)
+            
+        # Padrão Institucional para Compra: 1.5x ATR
+        trigger = current_atr * 1.5
+        lock = current_atr * 0.8
+        step = current_atr * 0.4
+        
+        return float(trigger), float(lock), float(step)
 
     def calculate_quarter_kelly(self, balance, win_rate_pct, profit_factor, risk_per_trade_points=150.0, point_value=0.20):
         """
@@ -249,14 +305,14 @@ class RiskManager:
         if regime == 2:
             return {
                 "allowed": False,
-                "reason": "Market Regime is NOISE/VOLATILE (2)"
+                "reason": "Regime de Mercado: RUÍDO/VOLÁTIL (2)"
             }
 
         # Regra 2: Circuit Breaker Dinâmico (Relativo)
         if avg_atr > 0 and current_atr > (3 * avg_atr):
             return {
                 "allowed": False,
-                "reason": f"Circuit Breaker: ATR {current_atr:.1f} > 3x Avg {avg_atr:.1f}"
+                "reason": f"Circuit Breaker: ATR {current_atr:.1f} > 3x Média {avg_atr:.1f}"
             }
             
         # Regra 3: Panic Threshold Absoluto (Fallback se média estiver descalibrada)
@@ -267,10 +323,10 @@ class RiskManager:
         if current_atr > panic_threshold:
              return {
                 "allowed": False,
-                "reason": f"Extreme Volatility ({current_atr:.1f} > {panic_threshold})"
+                "reason": f"Volatilidade Extrema ({current_atr:.1f} > {panic_threshold})"
             }
 
-        return {"allowed": True, "reason": "Market Condition OK"}
+        return {"allowed": True, "reason": "Condição de Mercado OK"}
 
     def check_macro_filter(self, side, macro_change_pct):
         """
@@ -320,7 +376,7 @@ class RiskManager:
         """
         # Se total_profit for negativo e maior (em magnitude) que o limite
         if total_profit <= -self.max_daily_loss:
-            return False, f"Daily loss limit reached: {total_profit:.2f} <= -{self.max_daily_loss:.2f}"
+            return False, f"Limite de perda diária atingido: {total_profit:.2f} <= -{self.max_daily_loss:.2f}"
         return True, "OK"
 
     def check_aggressive_risk(self, daily_pnl, initial_balance=1000.0):
@@ -339,7 +395,7 @@ class RiskManager:
         [AGRESSIVO] No modo 60%, este método pode ser ignorado pelo bot.
         """
         if current_trade_count >= self.daily_trade_limit:
-            return False, f"Daily trade limit reached: {current_trade_count} / {self.daily_trade_limit}"
+            return False, f"Limite de trades diários atingido: {current_trade_count} / {self.daily_trade_limit}"
         return True, "OK"
 
     def validate_volatility(self, current_atr, avg_atr):
@@ -384,7 +440,10 @@ class RiskManager:
                         "sl": params.get("sl_dist", params.get("sl")),
                         "tp": params.get("tp_dist", params.get("tp")),
                         "rsi_period": params.get("rsi_period"),
-                        "vol_spike_mult": params.get("vol_spike_mult")
+                        "vol_spike_mult": params.get("vol_spike_mult"),
+                        "pyramid_profit_threshold": params.get("pyramid_profit_threshold"),
+                        "pyramid_signal_threshold": params.get("pyramid_signal_threshold"),
+                        "pyramid_max_volume": params.get("pyramid_max_volume")
                     }
                     self.dynamic_params[symbol] = mapped_params
                     logging.info(f"✅ RISK: Parâmetros para {symbol} mapeados: {mapped_params}")

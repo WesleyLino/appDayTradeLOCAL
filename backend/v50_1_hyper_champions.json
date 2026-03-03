@@ -1,0 +1,142 @@
+[
+    {
+        "params": {
+            "confidence_threshold": 0.55,
+            "vwap_dist_threshold": 250,
+            "bb_dev": 1.8,
+            "tp_dist": 450,
+            "sl_dist": 180
+        },
+        "pnl": 0,
+        "trades": 0,
+        "wr": 0,
+        "max_dd": 0,
+        "score": -9999
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.55,
+            "vwap_dist_threshold": 250,
+            "bb_dev": 1.8,
+            "tp_dist": 550,
+            "sl_dist": 180
+        },
+        "pnl": 0,
+        "trades": 0,
+        "wr": 0,
+        "max_dd": 0,
+        "score": -9999
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.55,
+            "vwap_dist_threshold": 250,
+            "bb_dev": 2.1,
+            "tp_dist": 350,
+            "sl_dist": 180
+        },
+        "pnl": 0,
+        "trades": 0,
+        "wr": 0,
+        "max_dd": 0,
+        "score": -9999
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.55,
+            "vwap_dist_threshold": 250,
+            "bb_dev": 2.1,
+            "tp_dist": 350,
+            "sl_dist": 220
+        },
+        "pnl": 0,
+        "trades": 0,
+        "wr": 0,
+        "max_dd": 0,
+        "score": -9999
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.55,
+            "vwap_dist_threshold": 250,
+            "bb_dev": 1.8,
+            "tp_dist": 350,
+            "sl_dist": 220
+        },
+        "pnl": 0,
+        "trades": 0,
+        "wr": 0,
+        "max_dd": 0,
+        "score": -9999
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.55,
+            "vwap_dist_threshold": 250,
+            "bb_dev": 1.8,
+            "tp_dist": 550,
+            "sl_dist": 220
+        },
+        "pnl": 0,
+        "trades": 0,
+        "wr": 0,
+        "max_dd": 0,
+        "score": -9999
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.55,
+            "vwap_dist_threshold": 250,
+            "bb_dev": 1.8,
+            "tp_dist": 350,
+            "sl_dist": 180
+        },
+        "pnl": 0,
+        "trades": 0,
+        "wr": 0,
+        "max_dd": 0,
+        "score": -9999
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.55,
+            "vwap_dist_threshold": 250,
+            "bb_dev": 1.8,
+            "tp_dist": 450,
+            "sl_dist": 220
+        },
+        "pnl": 0,
+        "trades": 0,
+        "wr": 0,
+        "max_dd": 0,
+        "score": -9999
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.55,
+            "vwap_dist_threshold": 250,
+            "bb_dev": 2.1,
+            "tp_dist": 450,
+            "sl_dist": 180
+        },
+        "pnl": 0,
+        "trades": 0,
+        "wr": 0,
+        "max_dd": 0,
+        "score": -9999
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.55,
+            "vwap_dist_threshold": 250,
+            "bb_dev": 2.1,
+            "tp_dist": 450,
+            "sl_dist": 220
+        },
+        "pnl": 0,
+        "trades": 0,
+        "wr": 0,
+        "max_dd": 0,
+        "score": -9999
+    }
+]

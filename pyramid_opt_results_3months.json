@@ -1,0 +1,245 @@
+[
+    {
+        "pyramid_profit_threshold": 30.0,
+        "pyramid_signal_threshold": 0.6,
+        "pyramid_max_volume": 2,
+        "pnl": 325.77857142856817,
+        "max_dd_pct": 5.536407613541342,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.565587797619042
+    },
+    {
+        "pyramid_profit_threshold": 30.0,
+        "pyramid_signal_threshold": 0.6,
+        "pyramid_max_volume": 3,
+        "pnl": 325.77857142856817,
+        "max_dd_pct": 5.536407613541342,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.565587797619042
+    },
+    {
+        "pyramid_profit_threshold": 30.0,
+        "pyramid_signal_threshold": 0.6,
+        "pyramid_max_volume": 4,
+        "pnl": 325.77857142856817,
+        "max_dd_pct": 5.536407613541342,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.565587797619042
+    },
+    {
+        "pyramid_profit_threshold": 50.0,
+        "pyramid_signal_threshold": 0.6,
+        "pyramid_max_volume": 2,
+        "pnl": 319.4785714285681,
+        "max_dd_pct": 5.547073457878052,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.554650297619042
+    },
+    {
+        "pyramid_profit_threshold": 50.0,
+        "pyramid_signal_threshold": 0.6,
+        "pyramid_max_volume": 3,
+        "pnl": 319.4785714285681,
+        "max_dd_pct": 5.547073457878052,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.554650297619042
+    },
+    {
+        "pyramid_profit_threshold": 50.0,
+        "pyramid_signal_threshold": 0.6,
+        "pyramid_max_volume": 4,
+        "pnl": 319.4785714285681,
+        "max_dd_pct": 5.547073457878052,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.554650297619042
+    },
+    {
+        "pyramid_profit_threshold": 70.0,
+        "pyramid_signal_threshold": 0.6,
+        "pyramid_max_volume": 2,
+        "pnl": 319.4785714285681,
+        "max_dd_pct": 5.547073457878052,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.554650297619042
+    },
+    {
+        "pyramid_profit_threshold": 70.0,
+        "pyramid_signal_threshold": 0.6,
+        "pyramid_max_volume": 3,
+        "pnl": 319.4785714285681,
+        "max_dd_pct": 5.547073457878052,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.554650297619042
+    },
+    {
+        "pyramid_profit_threshold": 70.0,
+        "pyramid_signal_threshold": 0.6,
+        "pyramid_max_volume": 4,
+        "pnl": 319.4785714285681,
+        "max_dd_pct": 5.547073457878052,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.554650297619042
+    },
+    {
+        "pyramid_profit_threshold": 30.0,
+        "pyramid_signal_threshold": 0.75,
+        "pyramid_max_volume": 2,
+        "pnl": 110.63571428571596,
+        "max_dd_pct": 6.812764889832619,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1920758928571458
+    },
+    {
+        "pyramid_profit_threshold": 30.0,
+        "pyramid_signal_threshold": 0.75,
+        "pyramid_max_volume": 3,
+        "pnl": 110.63571428571596,
+        "max_dd_pct": 6.812764889832619,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1920758928571458
+    },
+    {
+        "pyramid_profit_threshold": 30.0,
+        "pyramid_signal_threshold": 0.75,
+        "pyramid_max_volume": 4,
+        "pnl": 110.63571428571596,
+        "max_dd_pct": 6.812764889832619,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1920758928571458
+    },
+    {
+        "pyramid_profit_threshold": 50.0,
+        "pyramid_signal_threshold": 0.75,
+        "pyramid_max_volume": 2,
+        "pnl": 110.63571428571596,
+        "max_dd_pct": 6.812764889832619,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1920758928571458
+    },
+    {
+        "pyramid_profit_threshold": 50.0,
+        "pyramid_signal_threshold": 0.75,
+        "pyramid_max_volume": 3,
+        "pnl": 110.63571428571596,
+        "max_dd_pct": 6.812764889832619,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1920758928571458
+    },
+    {
+        "pyramid_profit_threshold": 50.0,
+        "pyramid_signal_threshold": 0.75,
+        "pyramid_max_volume": 4,
+        "pnl": 110.63571428571596,
+        "max_dd_pct": 6.812764889832619,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1920758928571458
+    },
+    {
+        "pyramid_profit_threshold": 70.0,
+        "pyramid_signal_threshold": 0.75,
+        "pyramid_max_volume": 2,
+        "pnl": 110.63571428571596,
+        "max_dd_pct": 6.812764889832619,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1920758928571458
+    },
+    {
+        "pyramid_profit_threshold": 70.0,
+        "pyramid_signal_threshold": 0.75,
+        "pyramid_max_volume": 3,
+        "pnl": 110.63571428571596,
+        "max_dd_pct": 6.812764889832619,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1920758928571458
+    },
+    {
+        "pyramid_profit_threshold": 70.0,
+        "pyramid_signal_threshold": 0.75,
+        "pyramid_max_volume": 4,
+        "pnl": 110.63571428571596,
+        "max_dd_pct": 6.812764889832619,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1920758928571458
+    },
+    {
+        "pyramid_profit_threshold": 30.0,
+        "pyramid_signal_threshold": 0.9,
+        "pyramid_max_volume": 2,
+        "pnl": 64.43571428571596,
+        "max_dd_pct": 7.529740731068024,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1118675595238123
+    },
+    {
+        "pyramid_profit_threshold": 30.0,
+        "pyramid_signal_threshold": 0.9,
+        "pyramid_max_volume": 3,
+        "pnl": 64.43571428571596,
+        "max_dd_pct": 7.529740731068024,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1118675595238123
+    },
+    {
+        "pyramid_profit_threshold": 30.0,
+        "pyramid_signal_threshold": 0.9,
+        "pyramid_max_volume": 4,
+        "pnl": 64.43571428571596,
+        "max_dd_pct": 7.529740731068024,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1118675595238123
+    },
+    {
+        "pyramid_profit_threshold": 50.0,
+        "pyramid_signal_threshold": 0.9,
+        "pyramid_max_volume": 2,
+        "pnl": 64.43571428571596,
+        "max_dd_pct": 7.529740731068024,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1118675595238123
+    },
+    {
+        "pyramid_profit_threshold": 50.0,
+        "pyramid_signal_threshold": 0.9,
+        "pyramid_max_volume": 3,
+        "pnl": 64.43571428571596,
+        "max_dd_pct": 7.529740731068024,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1118675595238123
+    },
+    {
+        "pyramid_profit_threshold": 50.0,
+        "pyramid_signal_threshold": 0.9,
+        "pyramid_max_volume": 4,
+        "pnl": 64.43571428571596,
+        "max_dd_pct": 7.529740731068024,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1118675595238123
+    },
+    {
+        "pyramid_profit_threshold": 70.0,
+        "pyramid_signal_threshold": 0.9,
+        "pyramid_max_volume": 2,
+        "pnl": 64.43571428571596,
+        "max_dd_pct": 7.529740731068024,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1118675595238123
+    },
+    {
+        "pyramid_profit_threshold": 70.0,
+        "pyramid_signal_threshold": 0.9,
+        "pyramid_max_volume": 3,
+        "pnl": 64.43571428571596,
+        "max_dd_pct": 7.529740731068024,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1118675595238123
+    },
+    {
+        "pyramid_profit_threshold": 70.0,
+        "pyramid_signal_threshold": 0.9,
+        "pyramid_max_volume": 4,
+        "pnl": 64.43571428571596,
+        "max_dd_pct": 7.529740731068024,
+        "win_rate": 53.57142857142857,
+        "profit_factor": 1.1118675595238123
+    }
+]

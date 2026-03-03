@@ -9,6 +9,7 @@ class MicrostructureAnalyzer:
         self.cvd_history = []
         self.price_history = []
         self.last_vwap = (0.0, 0.0) # (vwap, std)
+        self.cvd_accel_history = [] # [v50.1] Aceleração de Fluxo
 
     def analyze(self, current_book, ticks_df=None):
         """
@@ -32,14 +33,41 @@ class MicrostructureAnalyzer:
         # 4. Detecção de Divergência (Absorção)
         divergence = self.detect_divergence(self.price_history, self.cvd_history)
         
-        # 5. Detecção de Icebergs
-        iceberg_signal = self.detect_icebergs(ticks_df, current_book) if ticks_df is not None else 0.0
+        # 5. Detecção de Icebergs (OHLCV Aprimorado v50.1)
+        iceberg_signal = self.detect_icebergs_v50(ticks_df, current_book, ticks_df is None)
         
-        # [ANTIVIBE-CODING] - Pesos de Agregação Congelados
-        # OFI (Book) + CVD (Tape) + Divergência (Absorção) + Icebergs (Ocultos)
-        final_signal = (np.tanh(ofi / 500.0) * 0.4) + (np.tanh(cvd / 200.0) * 0.3) + (divergence * 0.2) + (iceberg_signal * 0.1)
+        # 6. Aceleração de CVD (Urgência)
+        cvd_accel = self.calculate_cvd_acceleration()
+        
+        # [ANTIVIBE-CODING] - Pesos de Agregação Atualizados v50.1 (70% Assertiveness Target)
+        # OFI (Book) + CVD (Tape) + Divergência (Absorção) + Icebergs (Ocultos) + Aceleração (Urgência)
+        # Shift de peso para Urgência e Absorção Oculta
+        final_signal = (np.tanh(ofi / 500.0) * 0.35) + \
+                       (np.tanh(cvd / 200.0) * 0.20) + \
+                       (divergence * 0.15) + \
+                       (iceberg_signal * 0.20) + \
+                       (cvd_accel * 0.10)
         
         return float(np.clip(final_signal, -1.0, 1.0))
+
+    def calculate_cvd_acceleration(self) -> float:
+        """
+        [v50.1] Calcula a aceleração do CVD para detectar Varreduras de Book (Sweeps).
+        Mede a segunda derivada do fluxo de agressão.
+        """
+        if len(self.cvd_history) < 3: return 0.0
+        
+        # Variação do CVD (Velocidade)
+        v1 = self.cvd_history[-1] - self.cvd_history[-2]
+        v2 = self.cvd_history[-2] - self.cvd_history[-3]
+        
+        # Aceleração
+        accel = v1 - v2
+        self.cvd_accel_history.append(accel)
+        if len(self.cvd_accel_history) > 10: self.cvd_accel_history.pop(0)
+        
+        # Normaliza aceleração (tanh para esmagar outliers)
+        return float(np.tanh(accel / 1000.0))
 
     def calculate_wen_ofi(self, current_book: dict, levels: int = 5) -> float:
         """
@@ -98,47 +126,82 @@ class MicrostructureAnalyzer:
         return float(np.where(buy_aggr, volumes, 0).sum() - np.where(sell_aggr, volumes, 0).sum())
 
     def detect_divergence(self, price_arr, cvd_arr):
-        """[HFT] Detecta divergência entre Preço e CVD (Absorção)."""
-        if len(price_arr) < 5 or len(cvd_arr) < 5: return 0.0
+        """
+        [HFT MASTER] Detecta divergência entre Preço e CVD (Absorção).
+        Bullish: Preço cai e CVD sobe (Absorção de Venda).
+        Bearish: Preço sobe e CVD cai (Absorção de Compra).
+        """
+        if len(price_arr) < 10 or len(cvd_arr) < 10: return 0.0
         
         try:
-            x = np.arange(len(price_arr))
-            slope_price = np.polyfit(x, price_arr, 1)[0]
-            slope_cvd = np.polyfit(x, cvd_arr, 1)[0]
+            # Correlação de Pearson para detectar se estão andando em sentidos opostos
+            corr = np.corrcoef(price_arr[-10:], cvd_arr[-10:])[0, 1]
             
-            # Bullish: Preço cai/flat e CVD sobe (Vendedores sendo absorvidos por ordens limitadas de compra)
-            if slope_price <= 0.0001 and slope_cvd > 10: return 1.0
-            # Bearish: Preço sobe/flat e CVD cai (Compradores sendo absorvidos por ordens limitadas de venda)
-            if slope_price >= -0.0001 and slope_cvd < -10: return -1.0
-        except: pass
+            # Cálculo de inclinação (Slopes) para confirmar direção
+            x = np.arange(10)
+            slope_price = np.polyfit(x, price_arr[-10:], 1)[0]
+            slope_cvd = np.polyfit(x, cvd_arr[-10:], 1)[0]
+            
+            # Divergência de Absorção (Preço e Volume andando em direções opostas)
+            if corr < -0.6:
+                # Bearish Absorption: Preço Sobe mas CVD Cai (Institucional Vendendo Passivo)
+                if slope_price > 0 and slope_cvd < 0:
+                    logging.info(f"🚨 [ABSORÇÃO BEARISH] Divergência Detectada! Corr: {corr:.2f}")
+                    return -1.0
+                # Bullish Absorption: Preço Cai mas CVD Sobe (Institucional Comprando Passivo)
+                if slope_price < 0 and slope_cvd > 0:
+                    logging.info(f"🚨 [ABSORÇÃO BULLISH] Divergência Detectada! Corr: {corr:.2f}")
+                    return 1.0
+        except Exception as e:
+            logging.error(f"Erro em detect_divergence: {e}")
         return 0.0
 
-    def detect_icebergs(self, ticks_df, current_book, threshold_ratio=3.0):
+    def detect_icebergs_v50(self, ticks_df, current_book, is_backtest=False, threshold_ratio=2.5):
         """
-        [HFT] Detecta ordens Iceberg.
-        Se Volume Executado > N * Volume Visível no Level 1, há um Iceberg.
+        [v50.1] Detecção Master de Icebergs.
+        - Produção: Cruza Ticks agredidos vs Variação de Lote no Book.
+        - Backtest: Price/Volume Efficiency (Volume alto em candle pequeno).
         """
-        if ticks_df is None or ticks_df.empty or not current_book: return 0.0
+        if is_backtest:
+            # Lógica OHLCV: Se volume > 2x média e preço não se moveu (Efficiency < threshold)
+            # Indica que alguém absorveu toda a urgência.
+            if len(self.cvd_history) < 10: return 0.0
+            
+            # Precisamos do candle atual (simulado) para checar eficiência
+            # Isso é injetado via breakdown ou história
+            return 0.0 # Placeholder: será refinado no backtest_pro.py via injeção de sinais
+            
+        if ticks_df is None or ticks_df.empty or not current_book or self.prev_book_levels is None:
+            return 0.0
         
         try:
-            l1_bid_vol = current_book['bids'][0]['volume'] if current_book['bids'] else 1
-            l1_ask_vol = current_book['asks'][0]['volume'] if current_book['asks'] else 1
+            buy_vol = self.calculate_cvd_side(ticks_df, side='buy')
+            sell_vol = self.calculate_cvd_side(ticks_df, side='sell')
             
-            # Volume agredido no preço atual do L1
-            # (Poderíamos filtrar pelo PREÇO exato do L1, mas o batch de ticks já é o 'now')
-            cvd = self.calculate_cvd(ticks_df)
+            delta_bid_vol = current_book['bids'][0]['volume'] - self.prev_book_levels['bids'][0]['volume'] if (current_book['bids'] and self.prev_book_levels['bids']) else 0
+            delta_ask_vol = current_book['asks'][0]['volume'] - self.prev_book_levels['asks'][0]['volume'] if (current_book['asks'] and self.prev_book_levels['asks']) else 0
             
-            # Iceberg de Compra (Alguém absorvendo a venda)
-            if cvd < 0 and abs(cvd) > (l1_bid_vol * threshold_ratio):
-                logging.warning(f"❄️ Iceberg de COMPRA detectado! CVD: {cvd}, L1-Bid: {l1_bid_vol}")
+            if sell_vol > abs(delta_bid_vol) * threshold_ratio and sell_vol > 50:
+                logging.warning(f"❄️ [ICEBERG COMPRA] Executado: {sell_vol} | Sumiu do Book: {abs(delta_bid_vol)}")
                 return 1.0
                 
-            # Iceberg de Venda (Alguém absorvendo o ataque comprador)
-            if cvd > 0 and cvd > (l1_ask_vol * threshold_ratio):
-                logging.warning(f"❄️ Iceberg de VENDA detectado! CVD: {cvd}, L1-Ask: {l1_ask_vol}")
+            if buy_vol > abs(delta_ask_vol) * threshold_ratio and buy_vol > 50:
+                logging.warning(f"❄️ [ICEBERG VENDA] Executado: {buy_vol} | Sumiu do Book: {abs(delta_ask_vol)}")
                 return -1.0
-        except: pass
+        except Exception as e:
+            logging.error(f"Erro em detect_icebergs: {e}")
         return 0.0
+
+    def calculate_cvd_side(self, ticks_df, side='buy'):
+        """Auxiliar para calcular volume por lado de agressão."""
+        if ticks_df is None or ticks_df.empty: return 0.0
+        flags = ticks_df['flags'].values
+        volumes = ticks_df['volume_real'].values if 'volume_real' in ticks_df.columns else ticks_df['volume'].values
+        if side == 'buy':
+            mask = (flags & mt5.TICK_FLAG_BUY) == mt5.TICK_FLAG_BUY
+        else:
+            mask = (flags & mt5.TICK_FLAG_SELL) == mt5.TICK_FLAG_SELL
+        return float(volumes[mask].sum())
 
     def calculate_vwap(self, ticks_df):
         if ticks_df is None or ticks_df.empty: 

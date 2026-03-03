@@ -1,0 +1,162 @@
+[
+    {
+        "params": {
+            "confidence_threshold": 0.45,
+            "vwap_dist_threshold": 300,
+            "vol_spike_mult": 1.4,
+            "rsi_buy_level": 33,
+            "rsi_sell_level": 62,
+            "tp_dist": 400,
+            "sl_dist": 200
+        },
+        "pnl": -171.5040000000095,
+        "trades": 26,
+        "wr": 34.61538461538461,
+        "max_dd": 0.052805280528052806,
+        "score": -27.307258013664153
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.45,
+            "vwap_dist_threshold": 300,
+            "vol_spike_mult": 1.4,
+            "rsi_buy_level": 33,
+            "rsi_sell_level": 67,
+            "tp_dist": 400,
+            "sl_dist": 200
+        },
+        "pnl": -171.5040000000095,
+        "trades": 26,
+        "wr": 34.61538461538461,
+        "max_dd": 0.052805280528052806,
+        "score": -27.307258013664153
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.45,
+            "vwap_dist_threshold": 300,
+            "vol_spike_mult": 1.4,
+            "rsi_buy_level": 38,
+            "rsi_sell_level": 67,
+            "tp_dist": 400,
+            "sl_dist": 200
+        },
+        "pnl": -171.5040000000095,
+        "trades": 26,
+        "wr": 34.61538461538461,
+        "max_dd": 0.052805280528052806,
+        "score": -27.307258013664153
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.45,
+            "vwap_dist_threshold": 300,
+            "vol_spike_mult": 1.4,
+            "rsi_buy_level": 38,
+            "rsi_sell_level": 62,
+            "tp_dist": 400,
+            "sl_dist": 200
+        },
+        "pnl": -171.5040000000095,
+        "trades": 26,
+        "wr": 34.61538461538461,
+        "max_dd": 0.052805280528052806,
+        "score": -27.307258013664153
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.45,
+            "vwap_dist_threshold": 450,
+            "vol_spike_mult": 1.4,
+            "rsi_buy_level": 33,
+            "rsi_sell_level": 67,
+            "tp_dist": 400,
+            "sl_dist": 200
+        },
+        "pnl": -171.5040000000095,
+        "trades": 26,
+        "wr": 34.61538461538461,
+        "max_dd": 0.052805280528052806,
+        "score": -27.307258013664153
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.45,
+            "vwap_dist_threshold": 450,
+            "vol_spike_mult": 1.4,
+            "rsi_buy_level": 33,
+            "rsi_sell_level": 62,
+            "tp_dist": 400,
+            "sl_dist": 200
+        },
+        "pnl": -171.5040000000095,
+        "trades": 26,
+        "wr": 34.61538461538461,
+        "max_dd": 0.052805280528052806,
+        "score": -27.307258013664153
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.45,
+            "vwap_dist_threshold": 450,
+            "vol_spike_mult": 1.4,
+            "rsi_buy_level": 38,
+            "rsi_sell_level": 62,
+            "tp_dist": 400,
+            "sl_dist": 200
+        },
+        "pnl": -171.5040000000095,
+        "trades": 26,
+        "wr": 34.61538461538461,
+        "max_dd": 0.052805280528052806,
+        "score": -27.307258013664153
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.45,
+            "vwap_dist_threshold": 450,
+            "vol_spike_mult": 1.4,
+            "rsi_buy_level": 38,
+            "rsi_sell_level": 67,
+            "tp_dist": 400,
+            "sl_dist": 200
+        },
+        "pnl": -171.5040000000095,
+        "trades": 26,
+        "wr": 34.61538461538461,
+        "max_dd": 0.052805280528052806,
+        "score": -27.307258013664153
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.55,
+            "vwap_dist_threshold": 300,
+            "vol_spike_mult": 1.4,
+            "rsi_buy_level": 33,
+            "rsi_sell_level": 62,
+            "tp_dist": 400,
+            "sl_dist": 200
+        },
+        "pnl": -171.5040000000095,
+        "trades": 26,
+        "wr": 34.61538461538461,
+        "max_dd": 0.052805280528052806,
+        "score": -27.307258013664153
+    },
+    {
+        "params": {
+            "confidence_threshold": 0.55,
+            "vwap_dist_threshold": 300,
+            "vol_spike_mult": 1.4,
+            "rsi_buy_level": 33,
+            "rsi_sell_level": 67,
+            "tp_dist": 400,
+            "sl_dist": 200
+        },
+        "pnl": -171.5040000000095,
+        "trades": 26,
+        "wr": 34.61538461538461,
+        "max_dd": 0.052805280528052806,
+        "score": -27.307258013664153
+    }
+]

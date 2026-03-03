@@ -144,7 +144,7 @@ class SniperBotWIN:
         lots = min(10, lots)
         
         if not is_scaling_in:
-            logger.info(f"[QUARTER-KELLY] WR={wr}% PF={pf} -> VolKelly={kelly_volume:.2f} | Alpha={scaling} Conf={quantile_confidence} -> Final={lots}")
+            logger.info(f"[QUARTER-KELLY] WR={wr}% PF={pf} -> VolKelly={kelly_volume:.2f} | Alpha={scaling} Confiança={quantile_confidence} -> Total={lots}")
         
         if self.risk.dry_run:
             logger.info(f"🧪 [SIMULAÇÃO] Sniper {side.upper()} (LIMIT) disparado @ {limit_price} com {lots} lotes")
@@ -225,10 +225,14 @@ class SniperBotWIN:
             self.last_total_trades = stats['total_trades']
 
     async def manage_trailing_stop(self):
-        """Monitora posições e aplica Trailing Stop, Breakeven e Time-Stop."""
+        """Monitora posições e aplica Trailing Stop, Breakeven e Time-Stop (HFT Master)."""
         positions = self.bridge.mt5.positions_get(symbol=self.symbol)
         if not positions:
             return
+
+        # Busca ATR atual para cálculos dinâmicos
+        df = self.bridge.get_market_data(self.symbol, n_candles=20)
+        current_atr = float((df['high'] - df['low']).rolling(14).mean().iloc[-1]) if not df.empty else 150.0
 
         for pos in positions:
             if pos.sl == 0: continue
@@ -248,9 +252,9 @@ class SniperBotWIN:
                 if not self.risk.dry_run: self.bridge.close_position(pos.ticket)
                 continue
 
-            # 0.1 [HFT ELITE] Time-Based Stop (Fase 2)
-            if self.risk.check_time_stop(elapsed, current_profit):
-                logger.warning(f"⏰ [TIME-STOP] Posição {pos.ticket} estagnada ({elapsed/60:.1f} min).")
+            # 0.1 [v50 - MASTER] Time-Based Stop Elástico (3-5 min)
+            if self.risk.check_time_stop(elapsed, current_profit, current_atr=current_atr):
+                logger.warning(f"⏰ [TIME-STOP MASTER] Posição {pos.ticket} estagnada ({elapsed/60:.1f} min).")
                 if not self.risk.dry_run: self.bridge.close_position(pos.ticket)
                 continue
 
@@ -271,13 +275,14 @@ class SniperBotWIN:
                         self.bridge.update_sltp(pos.ticket, new_sl, pos.tp)
                         logger.info(f"⚡ [BREAKEVEN] COMPRA protegida: {new_sl}")
                 
-                # 2. Trailing Stop
-                if current_profit >= self.risk.trailing_trigger:
-                    potential_sl = self.risk._quantize_price(self.symbol, pos.price_current - (self.risk.trailing_trigger - self.risk.trailing_lock))
-                    if potential_sl > pos.sl + self.risk.trailing_step:
+                # 2. Trailing Stop Dinâmico (Master ATR-Based)
+                t_trigger, t_lock, t_step = self.risk.get_dynamic_trailing_params(current_atr)
+                if current_profit >= t_trigger:
+                    potential_sl = self.risk._quantize_price(self.symbol, pos.price_current - (t_trigger - t_lock))
+                    if potential_sl > pos.sl + t_step:
                         if not self.risk.dry_run:
                             self.bridge.update_sltp(pos.ticket, potential_sl, pos.tp)
-                            logger.info(f"⚡ [TRAILING] COMPRA movida: {potential_sl}")
+                            logger.info(f"⚡ [TRAILING MASTER] COMPRA movida: {potential_sl} (ATR: {current_atr:.1f})")
 
             elif pos.type == self.bridge.mt5.POSITION_TYPE_SELL:
                 if current_profit >= self.risk.be_trigger and pos.sl > pos.price_open:
@@ -286,13 +291,14 @@ class SniperBotWIN:
                         self.bridge.update_sltp(pos.ticket, new_sl, pos.tp)
                         logger.info(f"⚡ [BREAKEVEN] VENDA protegida: {new_sl}")
 
-                # 2. Trailing Stop
-                if current_profit >= self.risk.trailing_trigger:
-                    potential_sl = self.risk._quantize_price(self.symbol, pos.price_current + (self.risk.trailing_trigger - self.risk.trailing_lock))
-                    if potential_sl < pos.sl - self.risk.trailing_step:
+                # 2. Trailing Stop Dinâmico (Master ATR-Based)
+                t_trigger, t_lock, t_step = self.risk.get_dynamic_trailing_params(current_atr)
+                if current_profit >= t_trigger:
+                    potential_sl = self.risk._quantize_price(self.symbol, pos.price_current + (t_trigger - t_lock))
+                    if potential_sl < pos.sl - t_step:
                         if not self.risk.dry_run:
                             self.bridge.update_sltp(pos.ticket, potential_sl, pos.tp)
-                            logger.info(f"⚡ [TRAILING] VENDA movida: {potential_sl}")
+                            logger.info(f"⚡ [TRAILING MASTER] VENDA movida: {potential_sl} (ATR: {current_atr:.1f})")
 
     async def run(self):
         logger.info("🚀 Sniper Bot WIN v2.0 (Quarter-Kelly & Time-Stops)")
@@ -373,11 +379,11 @@ class SniperBotWIN:
                 
                 # [SOTA] Filtro de Fluxo Adaptativo
                 flux_mult = self.vol_spike_mult if atr < 200 else 1.05
-                buy_cond = last['rsi'] < 30 and last['tick_volume'] > (last['vol_sma'] * flux_mult)
-                sell_cond = last['rsi'] > 70 and last['tick_volume'] > (last['vol_sma'] * flux_mult)
+                comprar_cond = last['rsi'] < 30 and last['tick_volume'] > (last['vol_sma'] * flux_mult)
+                vender_cond = last['rsi'] > 70 and last['tick_volume'] > (last['vol_sma'] * flux_mult)
                 
-                if buy_cond or sell_cond:
-                    side = "buy" if buy_cond else "sell"
+                if comprar_cond or vender_cond:
+                    side = "buy" if comprar_cond else "sell"
                     if (side == "buy" and pressure > 1.2) or (side == "sell" and pressure < -1.2):
                         patchtst_score = await self.ai.predict_with_patchtst(self.ai.inference_engine, df)
                         ai_decision = self.ai.calculate_decision(
@@ -393,16 +399,17 @@ class SniperBotWIN:
                             current_price=last['close']
                         )
                         
-                        if (side == "buy" and ai_decision["direction"] == "BUY") or (side == "sell" and ai_decision["direction"] == "SELL"):
+                        if (side == "buy" and ai_decision["direction"] == "COMPRA") or (side == "sell" and ai_decision["direction"] == "VENDA"):
                             # [v40 - PIRAMIDAÇÃO]
                             positions = self.bridge.mt5.positions_get(symbol=self.symbol)
                             can_trade = True
                             if positions:
                                 pos = positions[0]
                                 profit_pts = pos.price_current - pos.price_open if pos.type == self.bridge.mt5.POSITION_TYPE_BUY else pos.price_open - pos.price_current
-                                if not self.risk.allow_pyramiding(profit_pts, pressure):
+                                total_vol = sum(p.volume for p in positions)
+                                if not self.risk.allow_pyramiding(profit_pts, pressure, total_vol, symbol=self.symbol):
                                     can_trade = False
-                                    logger.info(f"⏳ [BLOCK] Piramidação não permitida: Lucro {profit_pts:.1f} pts / Fluxo {pressure:.2f}")
+                                    logger.info(f"⏳ [BLOCK] Piramidação não permitida: Lucro {profit_pts:.1f} pts / Vol Total {total_vol}")
 
                             if can_trade:
                                 is_scaling_in = len(positions) > 0
