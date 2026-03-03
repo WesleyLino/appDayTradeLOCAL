@@ -467,8 +467,8 @@ class BacktestPro:
                         ofi=sim_ofi,
                         current_price=row['close'], # [SOTA v5] Sincronia de preco
                         spread=current_spread, # [SOTA v5] Sincronia de spread
-                        vwap=row['vwap'],
-                        vwap_std=row['vwap_std']
+                        sma_20=mid_bb,
+                        wdo_aggression=0.0 # Placeholder para backtest WIN
                     )
                     
                     # [MODO FUSÃO SOTA] Gatilhos Matemáticos (RSI/BB) + Filtro de Convicção IA
@@ -630,9 +630,6 @@ class BacktestPro:
                     elif not sentiment_ok:
                         self.shadow_signals['total_missed'] += 1
                         # self.shadow_signals['filtered_by_sentiment'] = ...
-
-                if (v22_buy or v22_sell) and not (time_ok and risk_ok and limit_ok and vol_stable and cooldown_ok and ai_filter_ok and sentiment_ok and flux_ok):
-                    logging.debug(f"⚠️ Signal BLOCKED at {row.name}: time={time_ok}, risk={risk_ok}, limit={limit_ok}, vol_stable={vol_stable}, cooldown={cooldown_ok}, ai={ai_filter_ok}, flux={flux_ok}, sent={sentiment_ok}")
 
                 if (v22_buy or v22_sell) and time_ok and risk_ok and limit_ok and vol_stable and cooldown_ok and ai_filter_ok and sentiment_ok and flux_ok:
                     side = "buy" if v22_buy else "sell"
