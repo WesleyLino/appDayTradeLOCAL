@@ -655,7 +655,7 @@ class AICore:
 
             self.sentiment_anchor_price = price
 
-            logging.debug(f"⚓ SENTIMENT ANCHOR SET: {price:.1f} (Score: {self.latest_sentiment_score:.2f})")
+            logging.debug(f"⚓ ÂNCORA DE SENTIMENTO DEFINIDA: {price:.1f} (Score: {self.latest_sentiment_score:.2f})")
 
 
 
@@ -679,20 +679,25 @@ class AICore:
                 print(f"DEBUG_VETO_VWAP_DOWN: {price_dist_vwap}")
                 logging.warning(f"🛑 [VWAP VETO] Preço muito abaixo da VWAP ({price_dist_vwap:.1f} pts). Risco de exaustão.")
                 return {"direction": "WAIT", "confidence": 0, "reason": "VWAP_OVEREXTENDED_DOWN"}
-        # --- 0.1 [v40 - INSTITUCIONAL] VETO DE DIVERGÊNCIA CVD ---
+        # --- 0.1 [v52.0 - INSTITUCIONAL] VETO/GATILHO DE DIVERGÊNCIA CVD ---
         # Detecta absorção institucional (preço sobe com agressão de venda ou vice-versa)
         divergence = self.micro_analyzer.detect_divergence(self.micro_analyzer.price_history, self.micro_analyzer.cvd_history)
         if divergence != 0:
-            # Se divergência = -1 (Bearish Divergence: Preço sobe/flat, CVD cai), veta COMPRA
+            ai_score_val = patchtst_score.get("score", 0.5) if isinstance(patchtst_score, dict) else patchtst_score
+            # Se divergência = -1 (Bearish Divergence: Preço sobe/flat, CVD cai)
             if divergence == -1:
-                logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Compra detectada (Topo). Vetando COMPRA.")
-                # Se o sinal original era COMPRA, anulamos
-                if patchtst_score.get("score", 0.5) > 0.5 if isinstance(patchtst_score, dict) else patchtst_score > 0.5:
+                # SE o sinal da IA confirma a venda (Score < 0.2), vira um GATILHO FORTE em vez de Veto
+                if ai_score_val < 0.2:
+                    logging.info("🎯 [ALPHA v52.0] GATILHO DE EXAUSTÃO: Divergência Bearish + IA Bearish. Operação Prioritária.")
+                elif ai_score_val > 0.5:
+                    logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Compra detectada (Topo). Vetando COMPRA.")
                     return {"direction": "WAIT", "confidence": 0, "reason": "CVD_BEARISH_DIVERGENCE"}
-            # Se divergência = 1 (Bullish Divergence: Preço cai/flat, CVD sobe), veta VENDA
+            # Se divergência = 1 (Bullish Divergence: Preço cai/flat, CVD sobe)
             elif divergence == 1:
-                logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Venda detectada (Fundo). Vetando VENDA.")
-                if patchtst_score.get("score", 0.5) < 0.5 if isinstance(patchtst_score, dict) else patchtst_score < 0.5:
+                if ai_score_val > 0.8:
+                    logging.info("🎯 [ALPHA v52.0] GATILHO DE EXAUSTÃO: Divergência Bullish + IA Bullish. Operação Prioritária.")
+                elif ai_score_val < 0.5:
+                    logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Venda detectada (Fundo). Vetando VENDA.")
                     return {"direction": "WAIT", "confidence": 0, "reason": "CVD_BULLISH_DIVERGENCE"}
 
         # 0. [SOTA v5] Sentiment Decay Adaptativo (Absorção por preço)
@@ -852,7 +857,7 @@ class AICore:
 
                     uncertainty_threshold *= 0.85 
 
-                    logging.info(f"🧊 EXAUSTíO DE VOLATILIDADE: Apertando o rigor ({atr_inertia:.1f})")
+                    logging.info(f"🧊 EXAUSTÃO DE VOLATILIDADE: Apertando o rigor ({atr_inertia:.1f})")
 
 
 
@@ -933,24 +938,23 @@ class AICore:
         # [SOTA v25] MACRO SENTIMENT LOCKS (70% ASSERTIVENESS TARGET)
 
         if veto_reason is None:
-
             ai_dir_raw = ai_dir if 'ai_dir' in locals() else 0
-
             if ai_dir_raw < 0:
-
                 if self.macro_bull_lock:
-
                     veto_reason = f"MACRO_BULL_BLOCK (EMA {self.sentiment_ema:.2f} > 0.15)"
-
-                    logging.info("🛡️ [ANTI-NOISE] Venda barrada pela tendência de alta macro.")
-
+                    logging.info("🛡️ [ANTI-RUÍDO] Venda barrada pela tendência de alta macro.")
             elif ai_dir_raw > 0:
-
                 if self.macro_bear_lock:
-
                     veto_reason = f"BLOQUEIO_MACRO_BAIXISTA (EMA {self.sentiment_ema:.2f} < -0.15)"
+                    logging.info("🛡️ [ANTI-RUÍDO] Compra barrada pela tendência de baixa macro.")
 
-                    logging.info("🛡️ [ANTI-NOISE] Compra barrada pela tendência de baixa macro.")
+        # [v52.0] EMA BYPASS: A IA ignora o macro se o sinal for extremo e houver fluxo tóxico.
+        if veto_reason is not None and "BLOCK" in veto_reason:
+            ai_dir_raw = ai_dir if 'ai_dir' in locals() else 0
+            # Se IA está convicta (Score < 15% ou > 85%) E temos fluxo pesado (Spoofing/Toxic Flow)
+            if (abs(norm_patchtst) > 0.7) and (abs(self.toxic_flow_score) > 0.8):
+                logging.warning(f"⚡ [EMA BYPASS] IA Autorizada a ignorar Macro Veto: {veto_reason}. Fluxo institucional detectado.")
+                veto_reason = None
 
 
 
@@ -997,7 +1001,7 @@ class AICore:
                     "lot_multiplier": float(lot_multiplier),
                     "tp_multiplier": 2.5, # Alvo longo para o squeeze
                     "veto": None,
-                    "reason": "INSTITUTIONAL_LONG_SQUEEZE"
+                    "reason": "LONG_SQUEEZE_INSTITUCIONAL"
                 }
 
         # 6. Cálculo do Score Final
@@ -1064,7 +1068,7 @@ class AICore:
 
 
 
-        # Direção - [SOTA v25.6] SWEET SPOT PUSH (70%+)
+        # Direção - [SOTA v25.6] IMPULSO PONTO DOCE (70%+)
         # [v50.1] RELAXAMENTO PARA HYPER-OPT: 88% em vez de 93%
         buy_threshold = 88.0
         sell_threshold = 12.0

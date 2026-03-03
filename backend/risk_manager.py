@@ -21,19 +21,19 @@ class RiskManager:
             (time(16, 55), time(18, 0))  # Fechamento
         ]
         
-        # [SOTA] Trailing Stop Parameters (Default WIN Champion)
+        # [SOTA] Parâmetros de Trailing Stop (Campeão WIN Padrão)
         self.trailing_trigger = 70.0  # Ativa com 70 pontos (Otimizado)
         self.trailing_lock = 50.0    # Trava 50 pontos iniciais
         self.trailing_step = 20.0    # Move a cada 20 pontos de avanço
         
-        # [URGENTE] Breakeven Parameters
-        self.be_trigger = 50.0       # Ativa com 50 pontos de lucro (Otimizado)
-        self.be_lock = 0.0           # Move para o preço de entrada (0.0 de lucro garantido)
+        # [v52.0] Breakeven Ultra-Rápido
+        self.be_trigger = 50.0       # Ativa com 50 pontos de lucro (Garante o zero)
+        self.be_lock = 0.0           # Move para o preço de entrada
         
-        # [FASE 2] Gestão de Múltiplos Contratos e Saídas Parciais
-        self.base_volume = 2.0       # Lote de entrada padrão (multi-lote para parciais)
-        self.partial_volume = 1.0    # Lote a ser descarregado na primeira parcial
-        self.partial_profit_points = 50.0 # Gatilho em pontos para executar a zeragem parcial
+        # [v52.0] Scaling Out (Saída Parcial HFT)
+        self.base_volume = 2.0       # 2 contratos para permitir parcial
+        self.partial_volume = 1.0    # Zera 1 contrato na parcial
+        self.partial_profit_points = 60.0 # Bate o lucro aos 60 pontos (Garante o almoço)
         
         # [FASE 2] Velocity Limit (Drawdown Acelerado no Tempo)
         self.velocity_time_limit_sec = 20.0     # Segundos máximos engatado negativamente
@@ -42,8 +42,8 @@ class RiskManager:
         # [HFT ELITE] Alpha Fade (Decaimento de Ordem)
         self.alpha_fade_timeout = 10.0          # Segundos antes de cancelar ordem limite não executada
         
-        # [FASE 2] Time-Based Stop (Inatividade Tática)
-        self.max_trade_duration_min = 15.0      # Minutos máximos para uma operação 'preguiçosa'
+        # [v52.0] Alpha Decay (Fuga por Inatividade)
+        self.max_trade_duration_min = 3.0       # 3 minutos (3 candles M1) sem evolução = Sai a mercado
         
         # [v50.1] TIME-DECAYING TP
         self.tp_decay_per_min = 0.05            # Decaimento de 5% por minuto
@@ -138,7 +138,7 @@ class RiskManager:
             logging.warning(f"⏳ LIMITE DE VELOCIDADE EXCEDIDO: Operação amarrada em {current_profit_points} pts por {elapsed_seconds:.1f}s. Abortando cedo.")
             return True, "LIMITE_VELOCIDADE_DRAWDOWN"
             
-        return False, "VELOCITY_OK"
+        return False, "VELOCIDADE_OK"
 
     def check_time_stop(self, elapsed_seconds, current_profit_points, current_atr=None):
         """
