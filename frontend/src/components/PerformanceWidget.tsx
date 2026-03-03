@@ -156,19 +156,44 @@ export function PerformanceWidget() {
             </div>
           </div>
 
-          {/* Gross Info (Subtle) */}
-          <div className="flex justify-between text-xs pt-2 border-t border-zinc-800/50 mt-1">
-            <div className="flex flex-col">
-              <span className="text-zinc-500">Lucro Bruto</span>
-              <span className="text-emerald-500 font-medium tabular-nums">
-                R$ {data.gross_profit.toFixed(2)}
-              </span>
+          {/* Gross Info (Subtle) & Averages */}
+          <div className="flex flex-col gap-2 pt-2 border-t border-zinc-800/50 mt-1">
+            <div className="flex justify-between text-xs">
+              <div className="flex flex-col">
+                <span className="text-zinc-500">Lucro Bruto</span>
+                <span className="text-emerald-500 font-medium tabular-nums">
+                  R$ {data.gross_profit.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex flex-col text-right">
+                <span className="text-zinc-500">Prejuízo Bruto</span>
+                <span className="text-rose-500 font-medium tabular-nums">
+                  R$ {data.gross_loss.toFixed(2)}
+                </span>
+              </div>
             </div>
-            <div className="flex flex-col text-right">
-              <span className="text-zinc-500">Prejuízo Bruto</span>
-              <span className="text-rose-500 font-medium tabular-nums">
-                R$ {data.gross_loss.toFixed(2)}
-              </span>
+
+            <div className="flex justify-between text-[10px] text-zinc-500 font-mono uppercase tracking-tighter pt-1 border-t border-zinc-800/20">
+              <div className="flex flex-col">
+                <span>Média Gain</span>
+                <span className="text-emerald-400/80">
+                  +R${" "}
+                  {(
+                    data.gross_profit /
+                    (data.total_trades * (data.win_rate / 100) || 1)
+                  ).toFixed(2)}
+                </span>
+              </div>
+              <div className="flex flex-col text-right">
+                <span>Média Loss</span>
+                <span className="text-rose-400/80">
+                  -R${" "}
+                  {(
+                    data.gross_loss /
+                    (data.total_trades * (1 - data.win_rate / 100) || 1)
+                  ).toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
         </>

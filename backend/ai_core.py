@@ -764,7 +764,7 @@ class AICore:
 
             uncertainty_threshold = 0.20 # Rigor em ruído
 
-            logging.info(f"🛡️ FILTRO DE RUÍDO: Rigor 0.20")
+            logging.info("🛡️ FILTRO DE RUÍDO: Rigor 0.20")
 
             
 
@@ -892,7 +892,7 @@ class AICore:
 
                     veto_reason = f"MACRO_BULL_BLOCK (EMA {self.sentiment_ema:.2f} > 0.15)"
 
-                    logging.info(f"🛡️ [ANTI-NOISE] Venda barrada pela tendência de alta macro.")
+                    logging.info("🛡️ [ANTI-NOISE] Venda barrada pela tendência de alta macro.")
 
             elif ai_dir_raw > 0:
 
@@ -900,7 +900,7 @@ class AICore:
 
                     veto_reason = f"BLOQUEIO_MACRO_BAIXISTA (EMA {self.sentiment_ema:.2f} < -0.15)"
 
-                    logging.info(f"🛡️ [ANTI-NOISE] Compra barrada pela tendência de baixa macro.")
+                    logging.info("🛡️ [ANTI-NOISE] Compra barrada pela tendência de baixa macro.")
 
 
 
@@ -922,13 +922,13 @@ class AICore:
 
                 veto_reason = f"VETO_REVERSAO_MEDIA_COMPRA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
 
-                logging.info(f"🛡️ [ANTI-EXHAUSTION] Compra bloqueada: Preço esticado (1.5 ATR).")
+                logging.info("🛡️ [ANTI-EXHAUSTION] Compra bloqueada: Preço esticado (1.5 ATR).")
 
             elif ai_dir_raw < 0 and dist_pts < (-1.5 * atr):
 
                 veto_reason = f"VETO_REVERSAO_MEDIA_VENDA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
 
-                logging.info(f"🛡️ [ANTI-EXHAUSTION] Venda bloqueada: Preço esticado (1.5 ATR).")
+                logging.info("🛡️ [ANTI-EXHAUSTION] Venda bloqueada: Preço esticado (1.5 ATR).")
 
 
 

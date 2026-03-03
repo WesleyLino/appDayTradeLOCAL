@@ -53,20 +53,29 @@ export function SotaMetrics({
         </CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4">
-        {/* PSR Reliability */}
-        <div className="flex items-center justify-between text-[11px] uppercase tracking-tighter text-blue-400 font-bold bg-blue-500/10 px-2.5 py-1.5 rounded-lg border border-blue-500/10">
-          <div className="flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5" /> Confiabilidade PSR
+        {/* PSR Reliability & Quarter-Kelly */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between text-[11px] uppercase tracking-tighter text-blue-400 font-bold bg-blue-500/10 px-2.5 py-1.5 rounded-lg border border-blue-500/10">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5" /> Confiabilidade PSR
+            </div>
+            <span>
+              {isPsrCalibrating
+                ? "CALIBRANDO..."
+                : `${(psr * 100).toFixed(2)}%`}
+            </span>
           </div>
-          <span>
-            {isPsrCalibrating ? "CALIBRANDO..." : `${(psr * 100).toFixed(2)}%`}
-          </span>
+
+          <div className="flex items-center justify-between text-[10px] uppercase tracking-tight text-indigo-300 font-medium bg-indigo-500/5 px-2.5 py-1 rounded border border-indigo-500/10">
+            <span>Quarter-Kelly Scaling</span>
+            <span className="font-mono">ATIVO</span>
+          </div>
         </div>
 
-        {/* Current Exposure (Lot Multiplier) */}
+        {/* Current Exposure (Incerteza Elástica) */}
         <div className="flex items-center justify-between text-[11px] uppercase tracking-tighter text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/10">
           <div className="flex items-center gap-1.5">
-            <Scale className="w-3.5 h-3.5" /> Exposição Atual
+            <Scale className="w-3.5 h-3.5" /> Incerteza Elástica
           </div>
           <span className="font-mono">{lotMultiplier.toFixed(2)}x</span>
         </div>
