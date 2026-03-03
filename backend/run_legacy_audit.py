@@ -18,7 +18,7 @@ async def run_detailed_audit():
     target_dates_str = ["19/02/2026", "20/02/2026", "23/02/2026", "24/02/2026", "25/02/2026", "26/02/2026", "27/02/2026"]
     dates_to_test = [datetime.strptime(d, "%d/%m/%Y").date() for d in target_dates_str]
     
-    logging.info(f"🚀 INICIANDO AUDITORIA SNIPER CLASSIC (LEGADO)")
+    logging.info("🚀 INICIANDO AUDITORIA SNIPER CLASSIC (LEGADO)")
     
     base_tester = BacktestPro(symbol=symbol, n_candles=25000, timeframe=timeframe)
     full_data = await base_tester.load_data()

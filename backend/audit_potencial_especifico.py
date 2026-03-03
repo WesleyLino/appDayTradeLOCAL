@@ -117,7 +117,7 @@ async def run_audit_sota():
     try:
         with open(report_file, "w", encoding='utf-8') as f:
             f.write(report_md)
-        print(f"✅ Arquivo gravado com sucesso.")
+        print("✅ Arquivo gravado com sucesso.")
     except Exception as e:
         print(f"❌ Erro ao gravar arquivo: {e}")
     

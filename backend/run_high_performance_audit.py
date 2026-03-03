@@ -31,7 +31,7 @@ async def run_high_performance_audit():
         return
 
     full_report = "# 📊 Relatório de Auditoria SOTA: Alta Performance (R$ 2.500+)\n"
-    full_report += f"**Configuração**: SOTA High-Gain (Threshold 0.75 | Lote Dinâmico)\n"
+    full_report += "**Configuração**: SOTA High-Gain (Threshold 0.75 | Lote Dinâmico)\n"
     full_report += f"**Capital Inicial**: R$ {capital_inicial:.2f} | Ativo: {symbol}\n\n"
     
     resumo_tabela = "### 📈 Resumo Acumulado\n\n"
@@ -105,7 +105,7 @@ async def run_high_performance_audit():
         resumo_tabela += f"| {date_str} | **R$ {day_pnl:.2f}** | {len(trades_day)} | {len(buys)} (R$ {buy_pnl:.2f}) | {len(sells)} (R$ {sell_pnl:.2f}) | {wr:.1f}% | R$ {current_balance:.2f} |\n"
         
         detailed_results += f"### 📅 {date_str} - Análise Operacional Exaustiva\n"
-        detailed_results += f"- **Performance Financeira**: \n"
+        detailed_results += "- **Performance Financeira**: \n"
         detailed_results += f"  - 🟢 **Pontual de Compra**: R$ {buy_pnl:.2f} ({buy_wins}G / {len(buys)-buy_wins}L)\n"
         detailed_results += f"  - 🔴 **Pontual de Venda**: R$ {sell_pnl:.2f} ({sell_wins}G / {len(sells)-sell_wins}L)\n"
         detailed_results += f"  - 📉 **Prejuízo (Losses)**: R$ {sum(t['pnl_fin'] for t in trades_day if t['pnl_fin'] < 0):.2f}\n"
@@ -116,19 +116,19 @@ async def run_high_performance_audit():
         sv_ai = tester.shadow_signals.get('sell_vetos_ai', 0)
         flux_v = tester.shadow_signals.get('filtered_by_flux', 0)
         
-        detailed_results += f"- **Rastreamento de Oportunidades Perdidas**: \n"
+        detailed_results += "- **Rastreamento de Oportunidades Perdidas**: \n"
         detailed_results += f"  - Gatilhos Matemáticos Brutos (V22): {v22_cand}\n"
         detailed_results += f"  - 🚫 Vetos de Compra (IA Insegura): {bv_ai}\n"
         detailed_results += f"  - 🚫 Vetos de Venda (IA Insegura): {sv_ai}\n"
         detailed_results += f"  - 🚫 Vetos por Filtro de Fluxo/Spread: {flux_v}\n"
         
-        detailed_results += f"- **🚀 Melhorias para Assertividade**: \n"
+        detailed_results += "- **🚀 Melhorias para Assertividade**: \n"
         if day_pnl < 0:
-            detailed_results += f"  - *Ajuste*: O prejuízo foi causado por entradas em baixa volatilidade. Sugestão: elevar `vol_min` para evitar 'falsas reversões'.\n"
+            detailed_results += "  - *Ajuste*: O prejuízo foi causado por entradas em baixa volatilidade. Sugestão: elevar `vol_min` para evitar 'falsas reversões'.\n"
         elif wr > 60:
-            detailed_results += f"  - *Ajuste*: Alta assertividade detectada. Potencial para elevar o lucro dobrando o `base_lot` em sinais com Convicção > 85%.\n"
+            detailed_results += "  - *Ajuste*: Alta assertividade detectada. Potencial para elevar o lucro dobrando o `base_lot` em sinais com Convicção > 85%.\n"
         else:
-            detailed_results += f"  - *Ajuste*: Equilíbrio estável. Manter calibragem atual para preservação de capital.\n"
+            detailed_results += "  - *Ajuste*: Equilíbrio estável. Manter calibragem atual para preservação de capital.\n"
         
         detailed_results += "\n---\n"
 

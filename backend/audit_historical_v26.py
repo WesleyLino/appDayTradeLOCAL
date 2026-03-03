@@ -160,7 +160,7 @@ def generate_markdown_report(results, capital):
         total_vetos_ai += shadow.get('filtered_by_ai', 0)
         total_vetos_flux += shadow.get('filtered_by_flux', 0)
 
-    report_content += f"\n## 📊 Resumo Executivo\n"
+    report_content += "\n## 📊 Resumo Executivo\n"
     report_content += f"- **Lucro Total Acumulado**: R$ {total_pnl:.2f}\n"
     report_content += f"- **Total de Operações**: {total_trades}\n"
     report_content += f"- **Dias Positivos**: {wins} / {len(results)}\n"
@@ -176,7 +176,7 @@ def generate_markdown_report(results, capital):
         f.write(report_content)
     logger.info("✅ Arquivo .md escrito com sucesso.")
     
-    logger.info(f"✅ Auditoria Finalizada. Relatório salvo em backend/relatorio_backtest_v26.md")
+    logger.info("✅ Auditoria Finalizada. Relatório salvo em backend/relatorio_backtest_v26.md")
 
 if __name__ == "__main__":
     asyncio.run(run_audit())

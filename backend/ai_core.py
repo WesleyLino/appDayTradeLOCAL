@@ -126,7 +126,7 @@ class AICore:
 
         self.opening_window_rigor = 1.5   # Multiplicador de rigor 09:00-09:30
 
-        self.spread_veto_threshold = 3.5  # Veto se spread > 3.5 pts
+        self.spread_veto_threshold = 5.0  # Veto se spread > 5.0 pts (Ajustado para HFT Volátil)
 
 
 
@@ -665,10 +665,37 @@ class AICore:
         """
 
         [SOTA v5] Fluxo de Decisão com Camadas de Precisão
-
         [SOTA v25.3] Adicionado sma_20 para Mean Reversion Guard.
-
+        [v30 - INSTITUCIONAL] Adicionado VWAP Anchor e convergência WIN/WDO.
         """
+        # --- 0. [v30] VWAP MEAN REVERSION GUARD ---
+        # Se o MicrostructureAnalyzer já calculou a VWAP no loop anterior
+        vwap_val, vwap_std = self.micro_analyzer.calculate_vwap(None) # Puxa do cache interno se df for None
+        if vwap_val > 0:
+            price_dist_vwap = current_price - vwap_val
+            # [ANTIVIBE-CODING] Veto se preço esticado > 250 pts da VWAP sem fluxo extremo
+            if price_dist_vwap > 250.0 and abs(ofi) < 1.5:
+                logging.warning(f"🛑 [VWAP VETO] Preço muito acima da VWAP (+{price_dist_vwap:.1f} pts). Risco de exaustão.")
+                return {"direction": "WAIT", "confidence": 0, "reason": "VWAP_OVEREXTENDED_UP"}
+            if price_dist_vwap < -250.0 and abs(ofi) < 1.5:
+                logging.warning(f"🛑 [VWAP VETO] Preço muito abaixo da VWAP ({price_dist_vwap:.1f} pts). Risco de exaustão.")
+                return {"direction": "WAIT", "confidence": 0, "reason": "VWAP_OVEREXTENDED_DOWN"}
+
+        # --- 0.1 [v40 - INSTITUCIONAL] VETO DE DIVERGÊNCIA CVD ---
+        # Detecta absorção institucional (preço sobe com agressão de venda ou vice-versa)
+        divergence = self.micro_analyzer.detect_divergence(self.micro_analyzer.price_history, self.micro_analyzer.cvd_history)
+        if divergence != 0:
+            # Se divergência = -1 (Bearish Divergence: Preço sobe/flat, CVD cai), veta COMPRA
+            if divergence == -1:
+                logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Compra detectada (Topo). Vetando COMPRA.")
+                # Se o sinal original era COMPRA, anulamos
+                if patchtst_score.get("score", 0.5) > 0.5 if isinstance(patchtst_score, dict) else patchtst_score > 0.5:
+                    return {"direction": "WAIT", "confidence": 0, "reason": "CVD_BEARISH_DIVERGENCE"}
+            # Se divergência = 1 (Bullish Divergence: Preço cai/flat, CVD sobe), veta VENDA
+            elif divergence == 1:
+                logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Venda detectada (Fundo). Vetando VENDA.")
+                if patchtst_score.get("score", 0.5) < 0.5 if isinstance(patchtst_score, dict) else patchtst_score < 0.5:
+                    return {"direction": "WAIT", "confidence": 0, "reason": "CVD_BULLISH_DIVERGENCE"}
 
         # 0. [SOTA v5] Sentiment Decay Adaptativo (Absorção por preço)
 
@@ -746,6 +773,16 @@ class AICore:
 
         lot_multiplier = 1.0
 
+        # [v30] CONVERGÊNCIA INTER-MERCADOS (WIN + WDO)
+        # Se Índice e Dólar confirmam a direção (Correlação Negativa Inversa)
+        if wdo_aggression != 0:
+            current_score = patchtst_score.get("score", 0.5) if isinstance(patchtst_score, dict) else patchtst_score
+            # WIN Buy - WDO Sell Aggression (> 0.5) = Convergência Forte
+            if (current_score > 0.8 and wdo_aggression < -0.5) or \
+               (current_score < 0.2 and wdo_aggression > 0.5):
+                lot_multiplier = 1.5
+                logging.info(f"🚀 [CONVERGÊNCIA WIN/WDO] Multiplicador Alpha Ativo: 1.5x (WDO Aggr: {wdo_aggression:.2f})")
+
         veto_reason = None
 
 
@@ -814,7 +851,7 @@ class AICore:
 
         if ia_in_cooldown:
 
-            veto_reason = "IA_COOLDOWN_VETO"
+            veto_reason = "VETO_COOLDOWN_IA"
 
         elif uncertainty_rel > uncertainty_threshold:
 
@@ -826,7 +863,7 @@ class AICore:
 
             else:
 
-                veto_reason = f"HIGH_UNCERTAINTY_FAILSAFE ({uncertainty_rel*100:.1f}% > {uncertainty_threshold*100:.1f}%)"
+                veto_reason = f"FALHA_ALTA_INCERTEZA ({uncertainty_rel*100:.1f}% > {uncertainty_threshold*100:.1f}%)"
 
         
 
@@ -838,13 +875,13 @@ class AICore:
 
             if ai_dir > 0 and wdo_aggression > 1.5:  
 
-                veto_reason = "WDO_CROSS_CORRELATION_VETO_BUY_BLOCKED"
+                veto_reason = "VETO_CORRELACAO_CRUZADA_WDO_COMPRA_BLOQUEADA"
 
                 logging.info("🛡️ VETO INTER-MERCADOS: Compra vetada por fluxo massivo de alta no WDO.")
 
             elif ai_dir < 0 and wdo_aggression < -1.5:
 
-                veto_reason = "WDO_CROSS_CORRELATION_VETO_SELL_BLOCKED"
+                veto_reason = "VETO_CORRELACAO_CRUZADA_WDO_VENDA_BLOQUEADA"
 
                 logging.info("🛡️ VETO INTER-MERCADOS: Venda vetada por fluxo massivo de baixa no WDO.")
 
@@ -860,7 +897,7 @@ class AICore:
 
             if abs(self.obi_ema) > 1.5 and ai_dir != 0 and ai_dir != obi_dir:
 
-                veto_reason = "FLOW_DIVERGENCE_VETO"
+                veto_reason = "VETO_DIVERGENCIA_FLUXO"
 
 
 
@@ -872,11 +909,11 @@ class AICore:
 
             if self.h1_trend == 1 and ai_dir < 0: # Venda contra tendência de alta H1
 
-                veto_reason = "H1_BULLISH_TREND_VETO"
+                veto_reason = "VETO_TENDENCIA_ALTA_H1"
 
             elif self.h1_trend == -1 and ai_dir > 0: # Compra contra tendência de baixa H1
 
-                veto_reason = "H1_BEARISH_TREND_VETO"
+                veto_reason = "VETO_TENDENCIA_BAIXA_H1"
 
                 
 

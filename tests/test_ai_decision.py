@@ -19,9 +19,9 @@ class TestAIDecision(unittest.TestCase):
 
     def test_strong_buy_signal(self):
         """Testa um cenário de compra forte onde todos indicadores são positivos."""
-        obi = 0.9          # Compra forte no book
-        sentiment = 0.8    # Notícias otimistas
-        patchtst = 0.9     # Previsão de alta (Norm: (0.9-0.5)*2 = 0.8)
+        obi = 1.0          # Compra extrema no book (v30/v40)
+        sentiment = 0.9    # Notícias muito otimistas
+        patchtst = 0.95    # Previsão de alta agressiva
         
         # Norm PatchTST = 0.8
         # Composite = (0.9 * 0.3) + (0.8 * 0.5) + (0.8 * 0.2) 

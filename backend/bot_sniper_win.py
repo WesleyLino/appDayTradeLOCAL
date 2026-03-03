@@ -23,8 +23,8 @@ def sanitize_log(e):
     """Protege contra UnicodeDecodeError em logs de exceções."""
     try:
         return str(e).encode('utf-8', 'replace').decode('utf-8')
-    except:
-        return "Unknown error (encoding failure)"
+    except Exception:
+        return "Erro desconhecido (falha de codificação)"
 
 class SniperBotWIN:
     def __init__(self, bridge=None, risk=None, ai=None, dry_run=True):
@@ -69,8 +69,11 @@ class SniperBotWIN:
         bid_vol = sum(item['volume'] for item in book['bids'][:5])
         ask_vol = sum(item['volume'] for item in book['asks'][:5])
         
-        # Formula SOTA: (Bid - Ask) / (Bid + Ask + 1)
-        return float((bid_vol - ask_vol) / (bid_vol + ask_vol + 1))
+        # Formula Institucional (Ratio): Bid/Ask para compatibilidade com gatilhos > 1.0
+        if bid_vol >= ask_vol:
+            return float(bid_vol / max(1, ask_vol))
+        else:
+            return -float(ask_vol / max(1, bid_vol))
 
     def _load_state(self):
         """Carrega estado persistido do bot."""
@@ -106,7 +109,7 @@ class SniperBotWIN:
         rs = gain / loss.replace(0, 0.000001)
         return 100 - (100 / (1 + rs))
 
-    async def execute_trade(self, side, quantile_confidence="NORMAL", tp_multiplier=1.0, current_atr=None, regime=None):
+    async def execute_trade(self, side, ai_decision=None, quantile_confidence="NORMAL", tp_multiplier=1.0, current_atr=None, regime=None, is_scaling_in=False):
         """Coordena o envio de ORDEM LIMITADA com dimensionamento de IA."""
         tick = self.bridge.mt5.symbol_info_tick(self.symbol)
         if not tick: return False
@@ -127,19 +130,24 @@ class SniperBotWIN:
         scaling = min(2, self.consecutive_wins)
         
         # Volume Base (Kelly) + Scaling
-        lots = round(kelly_volume) + scaling
-        
-        # Boost por Confiança da IA (Fase 22)
-        if quantile_confidence == "HIGH": lots += 1
-        elif quantile_confidence == "VERY_HIGH": lots += 2
+        if is_scaling_in:
+            lots = 1.0 # [INSTITUCIONAL] Lote reduzido para piramidação (mão pequena)
+            logger.info(f"💎 [PIRAMIDAÇÃO] Executando Scaling In: +{lots} lote.")
+        else:
+            lots = round(kelly_volume) + scaling
+            
+            # Boost por Confiança da IA (Fase 22)
+            if quantile_confidence == "HIGH": lots += 1
+            elif quantile_confidence == "VERY_HIGH": lots += 2
         
         # Limite Master (Capped)
         lots = min(10, lots)
         
-        logger.info(f"[QUARTER-KELLY] WR={wr}% PF={pf} -> KellyVol={kelly_volume:.2f} | Alpha={scaling} Conf={quantile_confidence} -> Final={lots}")
+        if not is_scaling_in:
+            logger.info(f"[QUARTER-KELLY] WR={wr}% PF={pf} -> VolKelly={kelly_volume:.2f} | Alpha={scaling} Conf={quantile_confidence} -> Final={lots}")
         
         if self.risk.dry_run:
-            logger.info(f"🧪 [SIMULAÇíO] LIMIT {side.upper()} Sniper disparado @ {limit_price} com {lots} lotes")
+            logger.info(f"🧪 [SIMULAÇÃO] Sniper {side.upper()} (LIMIT) disparado @ {limit_price} com {lots} lotes")
             self.trade_count += 1
             self._save_state()
             return True
@@ -154,10 +162,16 @@ class SniperBotWIN:
             tp_multiplier=tp_multiplier
         )
 
-        result = self.bridge.place_limit_order(
+        # [v30 - SMART ROUTING]
+        # Decide entre LIMIT ou MARKET com base no Score da IA e Incerteza
+        score = ai_decision.get("confidence_score", 0.0) if ai_decision else 0.0
+        uncertainty = ai_decision.get("uncertainty", 0.0) if ai_decision else 0.0
+
+        result = self.bridge.place_smart_order(
             self.symbol, params['type'], limit_price, lots, 
             sl=params['sl'], tp=params['tp'],
-            comment="SNIPER_SOTA_LIMIT"
+            score=score, uncertainty=uncertainty,
+            comment="SNIPER_SOTA_PYRAMID" if is_scaling_in else "SNIPER_SOTA_SMART"
         )
         
         if result and result.retcode == self.bridge.mt5.TRADE_RETCODE_DONE:
@@ -187,7 +201,7 @@ class SniperBotWIN:
                     return True
             return False
         else:
-            msg = result.comment if result else "None"
+            msg = result.comment if result else "Nenhum"
             logger.error(f"❌ [REJEITADA] Falha: {msg}")
             return False
 
@@ -206,7 +220,7 @@ class SniperBotWIN:
                         logger.info(f"✨ [LUCRO] Vitória! +{profit:.2f} | Alpha: {self.consecutive_wins}")
                     else:
                         self.consecutive_wins = 0
-                        logger.info(f"📉 [LOSS] Resetando Alpha Scaling.")
+                        logger.info("📉 [PREJUÍZO] Resetando Alpha Scaling.")
                     self._save_state()
             self.last_total_trades = stats['total_trades']
 
@@ -240,13 +254,22 @@ class SniperBotWIN:
                 if not self.risk.dry_run: self.bridge.close_position(pos.ticket)
                 continue
 
+            # 0.2 [v30 - INSTITUCIONAL] Scaling Out (Parcial)
+            should_partial, p_vol = self.risk.check_scaling_out(self.symbol, pos.ticket, current_profit, pos.volume)
+            if should_partial:
+                if not self.risk.dry_run:
+                    self.bridge.close_partial_position(pos.ticket, p_vol)
+                else:
+                    logger.info(f"🧪 [SIMULAÇÃO] Executando PARCIAL de {p_vol} lotes no ticket {pos.ticket}")
+                continue
+
             # 1. Breakeven
             if pos.type == self.bridge.mt5.POSITION_TYPE_BUY:
                 if current_profit >= self.risk.be_trigger and pos.sl < pos.price_open:
                     new_sl = self.risk._quantize_price(self.symbol, pos.price_open + self.risk.be_lock)
                     if not self.risk.dry_run:
                         self.bridge.update_sltp(pos.ticket, new_sl, pos.tp)
-                        logger.info(f"⚡ [BREAKEVEN] BUY protected: {new_sl}")
+                        logger.info(f"⚡ [BREAKEVEN] COMPRA protegida: {new_sl}")
                 
                 # 2. Trailing Stop
                 if current_profit >= self.risk.trailing_trigger:
@@ -254,14 +277,14 @@ class SniperBotWIN:
                     if potential_sl > pos.sl + self.risk.trailing_step:
                         if not self.risk.dry_run:
                             self.bridge.update_sltp(pos.ticket, potential_sl, pos.tp)
-                            logger.info(f"⚡ [TRAILING] BUY moved: {potential_sl}")
+                            logger.info(f"⚡ [TRAILING] COMPRA movida: {potential_sl}")
 
             elif pos.type == self.bridge.mt5.POSITION_TYPE_SELL:
                 if current_profit >= self.risk.be_trigger and pos.sl > pos.price_open:
                     new_sl = self.risk._quantize_price(self.symbol, pos.price_open - self.risk.be_lock)
                     if not self.risk.dry_run:
                         self.bridge.update_sltp(pos.ticket, new_sl, pos.tp)
-                        logger.info(f"⚡ [BREAKEVEN] SELL protected: {new_sl}")
+                        logger.info(f"⚡ [BREAKEVEN] VENDA protegida: {new_sl}")
 
                 # 2. Trailing Stop
                 if current_profit >= self.risk.trailing_trigger:
@@ -269,7 +292,7 @@ class SniperBotWIN:
                     if potential_sl < pos.sl - self.risk.trailing_step:
                         if not self.risk.dry_run:
                             self.bridge.update_sltp(pos.ticket, potential_sl, pos.tp)
-                            logger.info(f"⚡ [TRAILING] SELL moved: {potential_sl}")
+                            logger.info(f"⚡ [TRAILING] VENDA movida: {potential_sl}")
 
     async def run(self):
         logger.info("🚀 Sniper Bot WIN v2.0 (Quarter-Kelly & Time-Stops)")
@@ -333,12 +356,20 @@ class SniperBotWIN:
                     await asyncio.sleep(1)
                     continue
                 
+                # [HFT ELITE - V40] Microestrutura & Fluxo Sincronizado
+                book = self.bridge.get_order_book(self.symbol)
+                ticks_df = self.bridge.get_time_and_sales(self.symbol, n_ticks=100)
+                
+                # Sincroniza o analisador para habilitar o Veto de Divergência de CVD
+                self.ai.micro_analyzer.analyze(book, ticks_df)
+                weighted_ofi = self.ai.micro_analyzer.calculate_wen_ofi(book)
+                
                 df['rsi'] = self.calculate_rsi(df['close'], self.rsi_period)
                 df['vol_sma'] = df['tick_volume'].rolling(20).mean()
                 last = df.iloc[-1]
                 
                 atr = float((df['high'] - df['low']).rolling(14).mean().iloc[-1])
-                pressure = await self.get_flux_pressure()
+                pressure = await self.get_flux_pressure() # Agora retorna Ratio escala > 1.0
                 
                 # [SOTA] Filtro de Fluxo Adaptativo
                 flux_mult = self.vol_spike_mult if atr < 200 else 1.05
@@ -347,19 +378,37 @@ class SniperBotWIN:
                 
                 if buy_cond or sell_cond:
                     side = "buy" if buy_cond else "sell"
-                    if (side == "buy" and pressure > 0.3) or (side == "sell" and pressure < -0.3):
+                    if (side == "buy" and pressure > 1.2) or (side == "sell" and pressure < -1.2):
                         patchtst_score = await self.ai.predict_with_patchtst(self.ai.inference_engine, df)
                         ai_decision = self.ai.calculate_decision(
-                            obi=pressure, sentiment=await self.ai.update_sentiment(),
-                            patchtst_score=patchtst_score, regime=self.ai.detect_regime(0.1, pressure),
-                            atr=atr, volatility=0.1, hour=now.hour, minute=now.minute,
+                            obi=pressure, 
+                            sentiment=await self.ai.update_sentiment(),
+                            patchtst_score=patchtst_score, 
+                            regime=self.ai.detect_regime(0.1, pressure),
+                            atr=atr, 
+                            volatility=0.1, 
+                            hour=now.hour, 
+                            minute=now.minute,
+                            ofi=weighted_ofi, # Passando OFI real para o Veto de VWAP
                             current_price=last['close']
                         )
                         
                         if (side == "buy" and ai_decision["direction"] == "BUY") or (side == "sell" and ai_decision["direction"] == "SELL"):
-                            if await self.execute_trade(side, quantile_confidence=ai_decision["quantile_confidence"], tp_multiplier=ai_decision.get("tp_multiplier", 1.0), current_atr=atr):
-                                self.persistence.save_state("last_quantile_confidence", ai_decision["quantile_confidence"])
-                                self.last_trade_time = now
+                            # [v40 - PIRAMIDAÇÃO]
+                            positions = self.bridge.mt5.positions_get(symbol=self.symbol)
+                            can_trade = True
+                            if positions:
+                                pos = positions[0]
+                                profit_pts = pos.price_current - pos.price_open if pos.type == self.bridge.mt5.POSITION_TYPE_BUY else pos.price_open - pos.price_current
+                                if not self.risk.allow_pyramiding(profit_pts, pressure):
+                                    can_trade = False
+                                    logger.info(f"⏳ [BLOCK] Piramidação não permitida: Lucro {profit_pts:.1f} pts / Fluxo {pressure:.2f}")
+
+                            if can_trade:
+                                is_scaling_in = len(positions) > 0
+                                if await self.execute_trade(side, ai_decision=ai_decision, quantile_confidence=ai_decision["quantile_confidence"], tp_multiplier=ai_decision.get("tp_multiplier", 1.0), current_atr=atr, is_scaling_in=is_scaling_in):
+                                    self.persistence.save_state("last_quantile_confidence", ai_decision["quantile_confidence"])
+                                    self.last_trade_time = now
 
                 await asyncio.sleep(0.1)
                 

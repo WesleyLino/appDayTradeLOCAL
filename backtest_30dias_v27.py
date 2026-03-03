@@ -83,8 +83,8 @@ async def run():
     print(hdr("BACKTEST 30 DIAS - MINI ÍNDICE (WIN) - JAN-FEV/2026"))
     print(f"  SÍMBOLO  : {SYMBOL}")
     print(f"  CAPITAL  : R$ {INITIAL_BAL:,.2f}")
-    print(f"  TIMEFRAME: M1  |  ESTRATÉGIA: SOTA V27 Golden Params")
-    print(f"  DIAS     : 19/01 a 27/02/2026 (30 dias úteis, excl. Carnaval)")
+    print("  TIMEFRAME: M1  |  ESTRATÉGIA: SOTA V27 Golden Params")
+    print("  DIAS     : 19/01 a 27/02/2026 (30 dias úteis, excl. Carnaval)")
     print(f"  PARAMS   : flux={locked_params.get('flux_imbalance_threshold','?')}, "
           f"tp={locked_params.get('tp_dist','?')}pts, sl={locked_params.get('sl_dist','?')}pts")
     print(SEP_DUPLO)
@@ -195,9 +195,9 @@ async def run():
         dia_str = dia.strftime('%d/%m/%Y')
         print(f"\n{hdr('DIA: ' + dia_str)}")
         print(f"  Candles M1 carregados: {len(data)}")
-        print(f"  Janela operacional   : 09:15 - 17:15")
+        print("  Janela operacional   : 09:15 - 17:15")
         print()
-        print(f"  RESULTADO GERAL")
+        print("  RESULTADO GERAL")
         print(f"  ├── PNL Total          :  {fmt_reais(pnl_dia):>15}   {pct(pnl_dia, INITIAL_BAL)}")
         print(f"  ├── Total de Trades    : {n_trades:>5}")
         print(f"  ├── Win Rate           : {wr:>5.1f}%")
@@ -205,7 +205,7 @@ async def run():
         print(f"  └── Max Drawdown       : {dd_pct:>5.2f}%")
 
         # Tabela BUY
-        print(f"\n  ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────")
+        print("\n  ── OPERAÇÕES COMPRADAS (BUY) ──────────────────────")
         buys = [t for t in trades if t['side'] == 'buy']
         buy_wins = sum(1 for t in buys if t['pnl_fin'] > 0)
         buy_losses = len(buys) - buy_wins
@@ -221,7 +221,7 @@ async def run():
                 print(f"  {icon} {ei}   {eo}  {t.get('entry_price',0):>9.0f}  {t.get('exit_price',0):>9.0f}  {pts:>+7.0f}  {fmt_reais(t['pnl_fin']):>12}  {t.get('reason','')}")
 
         # Tabela SELL
-        print(f"\n  ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────")
+        print("\n  ── OPERAÇÕES VENDIDAS (SELL) ───────────────────────")
         sells = [t for t in trades if t['side'] == 'sell']
         sell_wins = sum(1 for t in sells if t['pnl_fin'] > 0)
         sell_losses = len(sells) - sell_wins
@@ -237,7 +237,7 @@ async def run():
                 print(f"  {icon} {ei}   {eo}  {t.get('entry_price',0):>9.0f}  {t.get('exit_price',0):>9.0f}  {pts:>+7.0f}  {fmt_reais(t['pnl_fin']):>12}  {t.get('reason','')}")
 
         # Oportunidades
-        print(f"\n  ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────")
+        print("\n  ── OPORTUNIDADES PERDIDAS (SHADOW SIGNALS) ─────────")
         print(f"  Candidatos V22 detectados : {candidates}")
         print(f"  Bloqueados pelo filtro flux: {blocked_flux}")
         print(f"  Aproveitamento            : {n_trades}/{candidates} ({n_trades/candidates*100:.1f}%)" if candidates > 0 else "  Aproveitamento: N/A")
@@ -272,7 +272,7 @@ async def run():
     # ----- CONSOLIDADO FINAL -----
     print(f"\n{hdr('CONSOLIDADO FINAL - 30 DIAS - JAN-FEV 2026')}")
     print()
-    print(f"  RESULTADO FINANCEIRO")
+    print("  RESULTADO FINANCEIRO")
     print(f"  ├── PNL Consolidado       : {fmt_reais(total_pnl):>20}   {pct(total_pnl, INITIAL_BAL)}")
     print(f"  ├── PNL de Compras        : {fmt_reais(total_buy_pnl):>20}")
     print(f"  ├── PNL de Vendas         : {fmt_reais(total_sell_pnl):>20}")
@@ -285,13 +285,13 @@ async def run():
         pfs    = [d['pf'] for d in resumo_dias if d['pf'] != float('inf')]
         dds    = [d['dd'] for d in resumo_dias]
 
-        print(f"  │")
+        print("  │")
         print(f"  ├── Dias Analisados       : {len(resumo_dias)}")
         print(f"  ├── Dias Positivos        : {dias_positivos}/{len(resumo_dias)}")
         print(f"  ├── Melhor Dia            : {melhor['data']} → {fmt_reais(melhor['pnl_total'])}")
         print(f"  └── Pior Dia              : {pior['data']} → {fmt_reais(pior['pnl_total'])}")
         print()
-        print(f"  OPERAÇÕES")
+        print("  OPERAÇÕES")
         print(f"  ├── Total de Trades       : {total_trades}")
         print(f"  ├─── Compras (BUY)        : {total_buy}")
         print(f"  ├─── Vendas  (SELL)       : {total_sell}")
@@ -299,7 +299,7 @@ async def run():
         print(f"  ├── Profit Factor Médio   : {sum(pfs)/len(pfs):.2f}" if pfs else "  ├── Profit Factor: N/A")
         print(f"  └── Max Drawdown (pior dia): {max(dds):.2f}%" if dds else "  └── Max Drawdown: N/A")
         print()
-        print(f"  OPORTUNIDADES PERDIDAS")
+        print("  OPORTUNIDADES PERDIDAS")
         print(f"  ├── Candidatos detectados : {total_candidates}")
         print(f"  ├── Bloqueados (flux)      : {total_blocked_flux}")
         print(f"  └── Taxa aproveitamento   : {total_trades}/{total_candidates} ({total_trades/total_candidates*100:.1f}%)" if total_candidates > 0 else "  └── Taxa aproveitamento: N/A")
@@ -337,11 +337,11 @@ async def run():
             flux_pct = total_blocked_flux / total_candidates * 100 if total_candidates > 0 else 0
             print(f"  [ANALISE] {total_blocked_flux} sinais bloqueados pelo flux ({flux_pct:.1f}% dos candidatos).")
             if flux_pct > 5:
-                print(f"           → Avaliar redução de flux_threshold para 0.95 (requer validação).")
+                print("           → Avaliar redução de flux_threshold para 0.95 (requer validação).")
         dias_neg = [d for d in resumo_dias if d['pnl_total'] < 0]
         if dias_neg:
             print(f"  [ALERTA] {len(dias_neg)} dia(s) negativo(s): {', '.join(d['data'] for d in dias_neg)}")
-            print(f"           → Analisar padrão de mercado nesses dias para regras de veto.")
+            print("           → Analisar padrão de mercado nesses dias para regras de veto.")
         else:
             print(f"  [EXCELENTE] Todos os {len(resumo_dias)} dias analisados foram positivos.")
 

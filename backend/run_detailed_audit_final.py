@@ -30,7 +30,7 @@ async def run_detailed_audit():
         return
 
     full_report = "# 📊 Relatório de Auditoria Detalhada: Potencial de Ganho (19/02 - 27/02)\n"
-    full_report += f"**Configuração**: Modo de Potencial Bruto (Sniper SOTA Desbloqueado)\n"
+    full_report += "**Configuração**: Modo de Potencial Bruto (Sniper SOTA Desbloqueado)\n"
     full_report += f"**Capital**: R$ {capital_inicial:.2f} | **Foco**: Potencial de Reversão e Tendência\n\n"
     
     resumo_tabela = "### 📈 Resumo das Operações (Sem Veto Macro)\n\n"
@@ -103,7 +103,7 @@ async def run_detailed_audit():
             detailed_results += f"- **Win Rate**: {wr:.1f}%\n"
             detailed_results += f"- **Oportunidades**: O sistema identificou maior potencial na ponta {'COMPRADORA' if buy_pnl > sell_pnl else 'VENDEDORA'}.\n"
         else:
-            detailed_results += f"- **Nota**: Sem trades disparados pelos gatilhos básicos (RSI/Bandas) mesmo com filtros IA relaxados.\n"
+            detailed_results += "- **Nota**: Sem trades disparados pelos gatilhos básicos (RSI/Bandas) mesmo com filtros IA relaxados.\n"
         detailed_results += "---\n"
 
     full_report += resumo_tabela

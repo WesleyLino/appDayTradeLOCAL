@@ -8,6 +8,7 @@ class MicrostructureAnalyzer:
         self.prev_book_levels = None
         self.cvd_history = []
         self.price_history = []
+        self.last_vwap = (0.0, 0.0) # (vwap, std)
 
     def analyze(self, current_book, ticks_df=None):
         """
@@ -140,11 +141,13 @@ class MicrostructureAnalyzer:
         return 0.0
 
     def calculate_vwap(self, ticks_df):
-        if ticks_df is None or ticks_df.empty: return 0.0, 0.0
+        if ticks_df is None or ticks_df.empty: 
+            return self.last_vwap
         volumes = ticks_df['volume_real'].values if 'volume_real' in ticks_df.columns else ticks_df['volume'].values
         prices = ticks_df['price'].values
         cum_vol = volumes.sum()
         if cum_vol == 0: return 0.0, 0.0
         vwap = (prices * volumes).sum() / cum_vol
         variance = ((prices - vwap)**2 * volumes).sum() / cum_vol
-        return float(vwap), float(np.sqrt(variance))
+        self.last_vwap = (float(vwap), float(np.sqrt(variance)))
+        return self.last_vwap

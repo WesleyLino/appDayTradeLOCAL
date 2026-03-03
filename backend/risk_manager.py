@@ -136,15 +136,37 @@ class RiskManager:
 
     def check_time_stop(self, elapsed_seconds, current_profit_points):
         """
-        [FASE 2] Time-Based Stop.
-        Se a operação exceder o tempo máximo e não estiver com lucro expressivo, encerra.
-        Garante rotação de capital e evita 'ficar pendurado' em mercados mortos.
+        [v40 - INSTITUCIONAL] Time-Based Stop (Decaimento de Alpha).
+        Se a operação entrou e em 5 minutos não andou 100 pontos a favor, encerra.
+        Fundamento: O Alpha de agressão institucional expira rápido.
         """
-        max_sec = self.max_trade_duration_min * 60
-        if elapsed_seconds > max_sec:
-            if current_profit_points < 20: # Se estiver no prejuízo ou lucro pífio
-                logging.info(f"⏱️ [TIME-STOP] Operação excedeu {self.max_trade_duration_min}min sem tração. Encerrando.")
+        if elapsed_seconds >= 300: # 5 minutos
+            if current_profit_points < 100.0:
+                logging.warning(f"⏰ [TIME-STOP] 5 min atingidos sem explosão (PnL: {current_profit_points:.1f}). Abortando.")
                 return True
+        return False
+
+    def check_scaling_out(self, symbol, ticket, current_profit_points, current_volume):
+        """
+        [v30 - INSTITUCIONAL] Scaling Out (Saída Parcial).
+        Se a posição atingir o alvo parcial e ainda tiver volume base, encerra metade.
+        """
+        if current_profit_points >= self.partial_profit_points and current_volume >= self.base_volume:
+            logging.info(f"🎯 [SCALING OUT] Alvo de {self.partial_profit_points} pts atingido. Descarregando {self.partial_volume} lotes.")
+            return True, self.partial_volume
+        return False, 0.0
+
+    def allow_pyramiding(self, current_profit_points, signal_strength):
+        """
+        [v40 - HFT ELITE] Piramidação (Scaling In).
+        Permite adicionar contratos se:
+        1. A posição atual estiver protegida (Lucro > 100 pts no WIN).
+        2. O sinal de fluxo for extremo (signal_strength >= 1.2).
+        """
+        # [ANTIVIBE-CODING] Proteção de capital: Só piramida se a primeira mão estiver no lucro.
+        if current_profit_points >= 100.0 and abs(signal_strength) >= 1.2:
+            logging.info(f"💎 [PIRAMIDAÇÃO] Autorizada: Lucro {current_profit_points:.1f} pts / Sinal {signal_strength:.2f}")
+            return True
         return False
 
     def calculate_quarter_kelly(self, balance, win_rate_pct, profit_factor, risk_per_trade_points=150.0, point_value=0.20):
