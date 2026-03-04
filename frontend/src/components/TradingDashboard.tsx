@@ -474,7 +474,7 @@ export function TradingDashboard() {
                   <span
                     className={cn(
                       "px-2 py-0.5 rounded text-[10px] font-bold border",
-                      riskOk
+                      data?.risk_status.time_ok
                         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                         : "bg-red-500/10 text-red-400 border-red-500/20",
                     )}
@@ -487,7 +487,7 @@ export function TradingDashboard() {
                   <span
                     className={cn(
                       "px-2 py-0.5 rounded text-[10px] font-bold border",
-                      riskOk
+                      data?.risk_status?.loss_ok
                         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                         : "bg-red-500/10 text-red-400 border-red-500/20",
                     )}
