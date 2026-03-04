@@ -1,0 +1,157 @@
+===================================================================
+🚀 INICIANDO RETREINAMENTO HIGH-PERFORMANCE (MT5) - 04/03/2026
+===================================================================
+⏳ Coletando base histórica de ultra-fidelidade do terminal MT5...
+✅ Dados carregados: 566 candles capturados (Timeline: 09:00 as 18:31).
+🧠 Executando simulação de redes complexas e análise de sinal... Isso pode demorar alguns segundos.
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 3409.00
+Lucro Líquido: R$ 319.00
+Total Trades:  14
+Win Rate:      64.3%
+Profit Factor: 1.61
+Max Drawdown:  8.16%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+📊 RELATÓRIO DO DIA - BASELINE (SOTA V22 MESTRE)
+--------------------------------------------------
+Capital Operacional:   R$ 3000.00
+Caixa Final:           R$ 3409.00
+LUCRO LÍQUIDO NO DIA:  R$ 409.00
+Nº de Operações:       14
+Assertividade Global:  64.29%
+
+--- PERFORMANCE BI-DIRECIONAL (COMPRA x VENDA) ---
+🟢 COMPRA: 13 trades | PnL: R$ +319.00 | Assertividade: 69.2%
+🔴 VENDA:  1 trades | PnL: R$ +0.00 | Assertividade: 0.0%
+
+--- SHADOW ANALYSIS (Oportunidades Perdidas) ---
+- Total de Sinais Brutos da IA (v22_candidates): 565
+- Veto por Padrão de Incerteza (IA):             23
+- Veto por Microestrutura de Fluxo (CVD/OFI):    0
+- Falhas nos Componentes Restritivos:            {'rsi': 0, 'bb': 0, 'volume': 0, 'ai_veto_total': 64, 'cooldown': 16, 'time': 6}
+
+💡 RESULTADOS DE CALIBRAÇÃO (POTENCIAL DE GANHO EXTRA):
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2942.00
+Lucro Líquido: R$ -76.00
+Total Trades:  6
+Win Rate:      33.3%
+Profit Factor: 0.37
+Max Drawdown:  3.94%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2942.00
+Lucro Líquido: R$ -76.00
+Total Trades:  6
+Win Rate:      33.3%
+Profit Factor: 0.37
+Max Drawdown:  3.94%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2942.00
+Lucro Líquido: R$ -76.00
+Total Trades:  6
+Win Rate:      33.3%
+Profit Factor: 0.37
+Max Drawdown:  3.94%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2942.00
+Lucro Líquido: R$ -76.00
+Total Trades:  6
+Win Rate:      33.3%
+Profit Factor: 0.37
+Max Drawdown:  3.94%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2942.00
+Lucro Líquido: R$ -76.00
+Total Trades:  6
+Win Rate:      33.3%
+Profit Factor: 0.37
+Max Drawdown:  3.94%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2942.00
+Lucro Líquido: R$ -76.00
+Total Trades:  6
+Win Rate:      33.3%
+Profit Factor: 0.37
+Max Drawdown:  3.94%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2942.00
+Lucro Líquido: R$ -76.00
+Total Trades:  6
+Win Rate:      33.3%
+Profit Factor: 0.37
+Max Drawdown:  3.94%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2942.00
+Lucro Líquido: R$ -76.00
+Total Trades:  6
+Win Rate:      33.3%
+Profit Factor: 0.37
+Max Drawdown:  3.94%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+🎯 V22 LÍDER ABSOLUTO - Setup Mestre já possui o cenário mais lucrativo para hoje.
+Nenhuma combinação de re-treinamento rápido superou a estabilidade e previsibilidade de lucro do Golden State atual.
+
+===================================================================
