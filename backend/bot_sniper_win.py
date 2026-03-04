@@ -29,7 +29,8 @@ def sanitize_log(e):
 class SniperBotWIN:
     def __init__(self, bridge=None, risk=None, ai=None, dry_run=True):
         self.bridge = bridge or MT5Bridge()
-        self.risk = risk or RiskManager(max_daily_loss=600.0, daily_trade_limit=3) # Calibrado para WIN 3000 BRL
+        # [ANTIVIBE-CODING] - Calibração para saldo de R$ 500,00
+        self.risk = risk or RiskManager(max_daily_loss=150.0, daily_trade_limit=3) 
         
         # Só define dry_run se o risk for novo ou se explicitamente passado
         if risk is None:
@@ -341,10 +342,26 @@ class SniperBotWIN:
                     await asyncio.sleep(1)
                     continue
                 
-                # Kill Switch Equity
+                # Kill Switch Equity & Daily Profit
                 acc = self.bridge.get_account_health()
-                eq_ok, eq_msg = self.risk.check_equity_kill_switch(acc.get('equity', 0), 3000.0)
+                
+                # [ANTIVIBE-CODING] - Calcula PnL Diário Realizado + Flutuante
+                daily_realized = self.bridge.get_daily_realized_profit()
+                total_pnl = daily_realized + acc.get('profit', 0)
+                
+                # 1. Trava de Perda Diária (Acumulada)
+                pnl_ok, pnl_msg = self.risk.check_daily_loss(total_pnl)
+                if not pnl_ok:
+                    logger.warning(pnl_msg)
+                    self.stop()
+                    break
+                
+                # 2. Kill Switch (Pânico por Drawdown Flutuante Extremo)
+                # Usa o Saldo (Balance) real como referência dinâmica
+                starting_balance = acc.get('balance', 0)
+                eq_ok, eq_msg = self.risk.check_equity_kill_switch(acc.get('equity', 0), starting_balance)
                 if not eq_ok:
+                    logger.warning(eq_msg)
                     self.stop()
                     break
 

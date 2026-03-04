@@ -260,7 +260,7 @@ app.add_middleware(
 
 bridge = MT5Bridge()
 
-risk = RiskManager()
+risk = RiskManager(max_daily_loss=150.0)
 
 ai = AICore()
 
@@ -957,15 +957,15 @@ async def autonomous_bot_loop():
 
                         account = {
 
-                            "balance": 3000.0,
+                            "balance": 500.0,
 
-                            "equity": 3000.0 + daily_realized,
+                            "equity": 500.0 + daily_realized,
 
                             "profit": 0.0,
 
                             "margin": 0.0,
 
-                            "margin_free": 3000.0,
+                            "margin_free": 500.0,
 
                             "currency": "BRL"
 
@@ -995,7 +995,7 @@ async def autonomous_bot_loop():
 
                 if risk.dry_run:
 
-                    virtual_capital = 3000.0
+                    virtual_capital = 500.0
 
                     account['balance'] = virtual_capital
 
