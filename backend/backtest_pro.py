@@ -722,6 +722,10 @@ class BacktestPro:
                 t_end = datetime.strptime(self.opt_params['end_time'], "%H:%M").time()
                 time_ok = t_start <= row.name.time() <= t_end
                 
+                # [PAUSA PARCIAL] Sincronia de Produção: Bloqueio compulsório das primeiras 9 velas (Aguarda amostragem H-L)
+                if row.name.hour == 9 and row.name.minute < 10:
+                    time_ok = False
+                
                 # [AGRESSIVO] Limite de 60% de perda diária
                 limit_loss = self.initial_balance * 0.60
                 risk_ok = self.daily_pnl > -limit_loss

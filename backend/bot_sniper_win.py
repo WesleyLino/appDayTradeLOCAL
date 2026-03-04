@@ -52,6 +52,10 @@ class SniperBotWIN:
         self.flux_threshold = 1.2 # Sniper Pro: 1.2x (Validated)
         self.vol_spike_mult = 1.2 # Sniper Pro: 1.2x (Validated)
         self.last_trade_time = None
+        # [PAUSA PARCIAL] Controle de Volatilidade de Abertura (H-L Extremo)
+        self.dia_pausado_vol = False
+        self.hl_abertura_cache = None
+        self.dia_abertura_cache = None
         
         # [FASE 28] Sincronização de Parâmetros Calibrados (Grid Search)
         self.risk.load_optimized_params("WIN", "best_params_WIN.json")
@@ -377,6 +381,34 @@ class SniperBotWIN:
                 atr = float((df['high'] - df['low']).rolling(14).mean().iloc[-1])
                 pressure = await self.get_flux_pressure() # Agora retorna Ratio escala > 1.0
                 
+                # [PAUSA PARCIAL - 03/03/2026] VERIFICA VOLATILIDADE M1 NA ABERTURA (Live)
+                hoje = now.date()
+                if self.dia_abertura_cache != hoje:
+                    self.dia_pausado_vol = False
+                    self.hl_abertura_cache = None
+                    self.dia_abertura_cache = hoje
+
+                if self.hl_abertura_cache is None:
+                    inicio_dia = datetime(now.year, now.month, now.day, 9, 0, 0)
+                    try:
+                        rates_hoje = self.bridge.mt5.copy_rates_range(self.symbol, self.bridge.mt5.TIMEFRAME_M1, inicio_dia, now)
+                        if rates_hoje is not None and len(rates_hoje) >= 10:
+                            df_hoje = pd.DataFrame(rates_hoje)
+                            if 'high' in df_hoje.columns and 'low' in df_hoje.columns:
+                                hl_10 = df_hoje['high'].iloc[:10] - df_hoje['low'].iloc[:10]
+                                self.hl_abertura_cache = float(hl_10.mean())
+                                if self.hl_abertura_cache > 250.0:
+                                    self.dia_pausado_vol = True
+                                    logger.warning(f"⚠️ [PAUSA VOLATILIDADE] H-L abertura={self.hl_abertura_cache:.1f}pts (limiar=250.0). Operações PAUSADAS.")
+                            else:
+                                logger.debug("Início do dia aguardando colunas OHLC consistentes.")
+                    except Exception as e:
+                        logger.error(f"Erro ao calcular H-L abertura (Live): {e}")
+
+                if self.dia_pausado_vol and 0 < atr < 80.0:
+                    self.dia_pausado_vol = False
+                    logger.info(f"✅ [PAUSA VOLATILIDADE] ATR={atr:.1f}pts normalizou. Retomando operações.")
+                
                 # [SOTA] Filtro de Fluxo Adaptativo
                 flux_mult = self.vol_spike_mult if atr < 200 else 1.05
                 comprar_cond = last['rsi'] < 30 and last['tick_volume'] > (last['vol_sma'] * flux_mult)
@@ -399,6 +431,10 @@ class SniperBotWIN:
                             current_price=last['close']
                         )
                         
+                        if self.dia_pausado_vol:
+                            ai_decision["direction"] = "WAIT"
+                            ai_decision["reason"] = "ATR_DIA_PAUSADO"
+
                         if (side == "buy" and ai_decision["direction"] == "COMPRA") or (side == "sell" and ai_decision["direction"] == "VENDA"):
                             # [v40 - PIRAMIDAÇÃO]
                             positions = self.bridge.mt5.positions_get(symbol=self.symbol)

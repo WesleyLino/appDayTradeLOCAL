@@ -628,6 +628,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
         partially_closed_tickets = set() # [FASE 2] Evitar duplo-fechamento parcial
 
+        # [PAUSA PARCIAL] Controle de Volatilidade de Abertura (H-L Extremo)
+        dia_pausado_vol = False
+        hl_abertura_cache = None
+        dia_abertura_cache = None
+
         
 
 
@@ -1096,6 +1101,36 @@ async def websocket_endpoint(websocket: WebSocket):
 
                     avg_atr = high_low.mean()
 
+                # [PAUSA PARCIAL - 03/03/2026] VERIFICA VOLATILIDADE M1 NA ABERTURA (Live)
+                hoje = now.date()
+                if dia_abertura_cache != hoje:
+                    dia_pausado_vol = False
+                    hl_abertura_cache = None
+                    dia_abertura_cache = hoje
+
+                if hl_abertura_cache is None:
+                    inicio_dia = datetime(now.year, now.month, now.day, 9, 0, 0)
+                    try:
+                        rates_hoje = await asyncio.to_thread(bridge.mt5.copy_rates_range, symbol, bridge.mt5.TIMEFRAME_M1, inicio_dia, now)
+                        if rates_hoje is not None and len(rates_hoje) >= 10:
+                            df_hoje = pd.DataFrame(rates_hoje)
+                            if 'high' in df_hoje.columns and 'low' in df_hoje.columns:
+                                hl_10 = df_hoje['high'].iloc[:10] - df_hoje['low'].iloc[:10]
+                                hl_abertura_cache = float(hl_10.mean())
+                                if hl_abertura_cache > 250.0:
+                                    dia_pausado_vol = True
+                                    add_operational_log(f"⚠️ [PAUSA VOLATILIDADE] H-L abert={hl_abertura_cache:.1f}pts (limiar=250).", "warning")
+                                    logging.warning(f"⚠️ [PAUSA VOLATILIDADE] H-L abertura={hl_abertura_cache:.1f}pts (limiar=250.0). Operações PAUSADAS.")
+                            else:
+                                logging.debug("Início do dia aguardando colunas OHLC consistentes.")
+                    except Exception as e:
+                        logging.error(f"Erro ao calcular H-L abertura (Live): {e}")
+
+                if dia_pausado_vol and 0 < current_atr < 80.0:
+                    dia_pausado_vol = False
+                    add_operational_log(f"✅ [PAUSA VOLATILIDADE] ATR={current_atr:.1f}pts normalizou. Retomando.", "info")
+                    logging.info(f"✅ [PAUSA VOLATILIDADE] ATR={current_atr:.1f}pts normalizou. Retomando operações.")
+
                 
 
                 # 2. Processar Lógica de IA e Risco
@@ -1227,6 +1262,11 @@ async def websocket_endpoint(websocket: WebSocket):
                     wdo_aggression=wdo_aggression_norm
 
                 )
+
+                # [PAUSA PARCIAL] Bloqueio final antes de aplicar qualquer heurística
+                if dia_pausado_vol:
+                    decision["direction"] = "WAIT"
+                    decision["reason"] = "ATR_DIA_PAUSADO"
 
                 ai_total_score = decision["score"]
 

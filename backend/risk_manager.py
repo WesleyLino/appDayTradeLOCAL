@@ -16,7 +16,7 @@ class RiskManager:
         self.dry_run = False # [REAL-EXECUTION-ACTIVE] - Ativação de ordens reais no MT5
         # [ANTIVIBE-CODING] - Limites de Perda Agressivos
         self.forbidden_hours = [
-            (time(8, 55), time(9, 5)),   # Abertura
+            (time(8, 55), time(9, 10)),  # Abertura (Aguarda formação das 10 primeiras velas de M1 para cálculo de volatilidade)
             (time(12, 0), time(13, 0)),  # Almoço/Baixa liquidez
             (time(16, 55), time(18, 0))  # Fechamento
         ]
