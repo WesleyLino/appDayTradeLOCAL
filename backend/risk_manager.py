@@ -68,38 +68,161 @@ class RiskManager:
         self.calendar_events = []
         self._load_economic_calendar()
 
+        # [MELHORIA-CALENDARIO] Estado de Momentum Pós-Evento
+        self.post_event_momentum = False        # True durante os 10 min após fim de um veto
+        self.post_event_momentum_until = None   # datetime de expiração do modo momentum
+        self.post_event_name = ""               # Nome do evento que originou o momentum
+
     def _load_economic_calendar(self):
-        """Carrega os dados de calendário econômico (3 estrelas) para ativar Veto de Liquidez (-3min a +3min)."""
+        """Carrega dados de calendário econômico (impacto >= 3) para Veto de Liquidez.
+
+        Campos suportados em economic_calendar.json:
+          - time         (obrigatório) HH:MM do evento
+          - impact       (obrigatório) 1-3, só eventos com 3 são carregados
+          - event        (obrigatório) nome do evento
+          - date         (opcional)  YYYY-MM-DD — se presente, o veto só é ativado nesta data
+          - window_minutes (opcional) minutos de veto antes/depois (padrão: 3)
+        """
         try:
             cal_path = os.path.join(os.getcwd(), "data", "economic_calendar.json")
-            if os.path.exists(cal_path):
-                with open(cal_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    for item in data:
-                        if item.get("impact", 0) >= 3:
-                            evt_time = datetime.strptime(item["time"], "%H:%M").time()
-                            t_start = (datetime.combine(datetime.today(), evt_time) - timedelta(minutes=3)).time()
-                            t_end = (datetime.combine(datetime.today(), evt_time) + timedelta(minutes=3)).time()
-                            self.calendar_events.append({"start": t_start, "end": t_end, "event": item["event"]})
-                logging.info(f"📅 CALENDÁRIO ECONÔMICO: {len(self.calendar_events)} alertas críticos carregados para Blindagem Ativa.")
+            if not os.path.exists(cal_path):
+                return
+
+            today_str = datetime.today().strftime("%Y-%m-%d")
+            loaded = 0
+
+            with open(cal_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            for item in data:
+                if item.get("impact", 0) < 3:
+                    continue
+
+                # [MELHORIA-1] Suporte a datas específicas — ignora eventos de outros dias
+                event_date = item.get("date")
+                if event_date and event_date != today_str:
+                    logging.debug(f"📅 Evento '{item['event']}' ignorado (data: {event_date} ≠ hoje: {today_str})")
+                    continue
+
+                # [MELHORIA-4] Janela de veto configurável por evento (padrão: 3 min)
+                window = int(item.get("window_minutes", 3))
+
+                evt_time = datetime.strptime(item["time"], "%H:%M").time()
+                evt_dt   = datetime.combine(datetime.today(), evt_time)
+                t_start  = (evt_dt - timedelta(minutes=window)).time()
+                t_end    = (evt_dt + timedelta(minutes=window)).time()
+
+                self.calendar_events.append({
+                    "start":          t_start,
+                    "end":            t_end,
+                    "momentum_end":   (evt_dt + timedelta(minutes=window + 10)).time(),  # [MELHORIA-2]
+                    "event":          item["event"],
+                })
+                loaded += 1
+
+            logging.info(f"📅 CALENDÁRIO ECONÔMICO: {loaded} alertas críticos carregados para Blindagem Ativa.")
+
+            # [ALERTA DE EXPIRAÇÃO] Avisa quando todos os eventos cadastrados já expiraram
+            if loaded == 0 and data:
+                all_dates = [
+                    item.get("date") for item in data
+                    if item.get("impact", 0) >= 3 and item.get("date")
+                ]
+                if all_dates:
+                    ultima = max(all_dates)
+                    logging.critical(
+                        f"🚨 [CALENDÁRIO EXPIRADO] Todos os {len(all_dates)} eventos cadastrados "
+                        f"já passaram! Último evento: {ultima}. "
+                        f"AÇÃO NECESSÁRIA: Acrescente novas datas em 'data/economic_calendar.json' "
+                        f"e reinicie o backend."
+                    )
+
         except Exception as e:
             logging.error(f"Erro ao carregar economic_calendar.json: {e}")
 
     def is_time_allowed(self):
-        """Verifica se o horário atual é permitido para operar."""
+        """Verifica se o horário atual é permitido para operar.
+
+        Retorna:
+          - False:  horário proibido (forbidden_hours) ou veto de calendário ativo
+          - True:   operação liberada
+
+        Efeitos colaterais:
+          - self.post_event_momentum: True durante os 10 min pós-evento [MELHORIA-2]
+        """
         now = datetime.now().time()
+        now_dt = datetime.now()
+
+        # --- Horários proibidos fixos ---
         for start, end in self.forbidden_hours:
             if start <= now <= end:
+                self.post_event_momentum = False
                 return False
-                
-        # [PRO] Blindagem de Calendário Econômico (Veto de Liquidez HFT)
+
+        # --- [PRO] Blindagem de Calendário Econômico ---
         if hasattr(self, 'calendar_events'):
             for event in self.calendar_events:
+
+                # Janela de Veto Total (pré + pós evento)
                 if event["start"] <= now <= event["end"]:
-                    logging.warning(f"🛑 VETO DE CALENDÁRIO ATIVO: Operação blindada devido a {event['event']}")
+                    logging.warning(
+                        f"🛑 VETO DE CALENDÁRIO ATIVO: Operação blindada devido a {event['event']}"
+                    )
+                    self.post_event_momentum = False
                     return False
-                    
+
+                # [MELHORIA-2] Janela de Momentum Pós-Evento (10 min após fim do veto)
+                if event["end"] < now <= event.get("momentum_end", event["end"]):
+                    if not self.post_event_momentum:
+                        logging.info(
+                            f"🚀 [MOMENTUM PÓS-EVENTO] Janela de 10 min ativa após '{event['event']}'. "
+                            f"Threshold relaxado para 65%."
+                        )
+                    self.post_event_momentum = True
+                    self.post_event_name = event["event"]
+                    return True  # Libera — com threshold especial
+
+        # Fora de qualquer janela de evento
+        self.post_event_momentum = False
         return True
+
+    def is_direction_allowed(self, direction: str, sentiment_score: float) -> bool:
+        """[MELHORIA-3] Veto Direcional — bloqueia apenas o lado contrário ao sentimento.
+
+        Chamado quando o sistema está em Veto de Calendário ou regime de risco alto.
+
+        Args:
+            direction:       "BUY" ou "SELL"
+            sentiment_score: float entre -1.0 e +1.0 (do NewsSentimentWorker)
+
+        Returns:
+            True  → direção permitida pelo sentimento
+            False → direção vetada (lado contrário ao sentimento)
+        """
+        if sentiment_score > 0.5:
+            # Mercado com viés BULLISH forte → bloqueia VENDA
+            if direction == "SELL":
+                logging.warning(
+                    f"⛔ [VETO DIRECIONAL] VENDA bloqueada: sentimento BULLISH ({sentiment_score:.2f})"
+                )
+                return False
+            return True
+
+        if sentiment_score < -0.5:
+            # Mercado com viés BEARISH forte → bloqueia COMPRA
+            if direction == "BUY":
+                logging.warning(
+                    f"⛔ [VETO DIRECIONAL] COMPRA bloqueada: sentimento BEARISH ({sentiment_score:.2f})"
+                )
+                return False
+            return True
+
+        # Sentimento neutro (-0.5 a +0.5) → bloqueia ambos os lados
+        logging.info(
+            f"⛔ [VETO DIRECIONAL] Sentimento neutro ({sentiment_score:.2f}). "
+            f"Operação {direction} suspensa."
+        )
+        return False
 
     def validate_environmental_risk(self, ping_ms, spread_points, max_ping=150.0, max_spread=15.0):
         """

@@ -1701,19 +1701,22 @@ async def autonomous_bot_loop():
                 if risk.should_force_close():
 
                     await panic_close_all()
-
                     logging.warning("Check Force Close: 17:50 atingido.")
 
+                # --- LÓGICA DE DECISÃO DE TRADE ---
+                # [MELHORIA-2] Threshold relaxado para 65% durante Modo Momentum Pós-Evento
+                if getattr(risk, 'post_event_momentum', False):
+                    _threshold_buy  = 65  # Mais permissivo nos 10 min pós-evento
+                    _threshold_sell = 35
+                    logging.debug(f"⚡ [MOMENTUM] Threshold relaxado: Buy>={_threshold_buy} / Sell<={_threshold_sell}")
+                else:
+                    _threshold_buy  = 85  # Padrão normal
+                    _threshold_sell = 15
 
-
-                # --- LÓGICA DE DECISíO DE TRADE (RESTAURAÇíO MACRO) ---
-
-                is_threshold_met = ai_total_score >= 85 or ai_total_score <= 15
+                is_threshold_met = ai_total_score >= _threshold_buy or ai_total_score <= _threshold_sell
 
                 if risk.allow_autonomous and is_threshold_met and risk_ok and market_ok and time_allowed:
-
                     if ai_direction in ["BUY", "SELL"]:
-
                         side = "buy" if ai_direction == "BUY" else "sell"
 
                         

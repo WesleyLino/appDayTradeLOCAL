@@ -1,0 +1,61 @@
+# 📖 Guia de Configuração Manual: Capital e Risco
+
+Mestre, este roteiro define os locais exatos onde você pode ajustar o capital de referência e os limites de perda (Stop Diário) conforme sua banca crescer.
+
+---
+
+## 🛑 RESUMO DOS PARÂMETROS
+* **Capital**: O valor que o sistema usa como base para cálculos e exibição no Dashboard.
+* **Stop Diário (max_daily_loss)**: O valor máximo em Reais (BRL) que o robô pode perder no dia antes de travar.
+
+---
+
+## 1. Configuração do Robô Sniper
+**Arquivo:** [backend/bot_sniper_win.py](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/bot_sniper_win.py)
+
+Identifique a linha de inicialização do Gerenciador de Risco (geralmente próxima à linha 32):
+
+```python
+# [ANTIVIBE-CODING] - Calibração de Risco
+self.risk = RiskManager(max_daily_loss=150.0, daily_trade_limit=3)
+```
+
+* **Como alterar**: Mude o valor `150.0` para o seu novo stop (ex: `300.0`).
+* **Nota**: O capital de referência (Equity Kill Switch) agora é **dinâmico** e lerá automaticamente o saldo da sua conta do MetaTrader 5. Você não precisa alterar o capital aqui.
+
+---
+
+## 2. Configuração do Dashboard e Monitoramento Global
+**Arquivo:** [backend/main.py](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/main.py)
+
+Existem dois locais importantes neste arquivo:
+
+### A. Limite de Perda Global (Linha ~263)
+```python
+risk = RiskManager(max_daily_loss=150.0)
+```
+* **Ação**: Ajuste o `150.0` para que o Dashboard também trave no mesmo valor que o robô Sniper.
+
+### B. Capital Virtual (Modo Simulação/Dry Run)
+Para que os gráficos e métricas de simulação fiquem corretos, altere os valores nas seguintes linhas (aprox. 960 a 1000):
+
+```python
+# Linhas 960, 962 e 968 (Valores para quando o MT5 está offline)
+"balance": 500.0,
+"equity": 500.0 + daily_realized,
+"margin_free": 500.0,
+
+# Linha 998 (Referência para o modo de simulação)
+virtual_capital = 500.0
+```
+
+---
+
+## 🛠️ FUNCIONALIDADES CHAVE
+1. **Kill Switch Dinâmico**: Ao contrário da versão anterior, você não precisa avisar ao código que seu saldo aumentou ou diminuiu. O Sniper detecta o seu `Balance` direto da B3 e se auto-calibra.
+2. **Stop Balanceado**: Recomenda-se manter o `max_daily_loss` entre **20% a 30%** do seu capital total para garantir a sobrevivência em dias de alta volatilidade.
+
+---
+
+> [!WARNING]
+> **Sempre reinicie a aplicação** após salvar os arquivos para que as novas configurações entrem em vigor.
