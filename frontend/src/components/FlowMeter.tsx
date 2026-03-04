@@ -12,7 +12,7 @@ export function FlowMeter() {
 
   return (
     <div className="flex flex-col items-center p-4 bg-zinc-900/60 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg min-h-[120px] justify-center">
-      <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-4">
+      <span className="text-[14px] text-muted-foreground uppercase tracking-widest font-bold mb-4">
         Fluxo OBI (Microestrutura)
       </span>
       <div className="relative w-full h-4 bg-black/40 rounded-full overflow-hidden border border-white/5">
@@ -25,7 +25,7 @@ export function FlowMeter() {
         />
         <div className="absolute top-0 left-1/2 w-0.5 h-full bg-foreground/20" />
       </div>
-      <div className="flex justify-between w-full mt-2 text-xs font-mono">
+      <div className="flex justify-between w-full mt-2 text-2xl font-mono">
         <span className="text-loss">Venda</span>
         <span className="font-bold">{obi.toFixed(2)}</span>
         <span className="text-profit">Compra</span>

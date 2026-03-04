@@ -542,7 +542,7 @@ export function TradingDashboard() {
         <div className="lg:col-span-3 flex flex-col gap-6">
           <TradingChart />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-5 glass rounded-2xl shadow-xl flex flex-col gap-4 min-h-[380px] border border-white/10">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] text-muted-foreground uppercase tracking-widest font-bold flex items-center gap-2">
@@ -806,7 +806,7 @@ export function TradingDashboard() {
               <div
                 ref={logContainerRef}
                 onScroll={handleLogScroll}
-                className="flex-1 font-mono text-[10px] space-y-1 overflow-y-auto max-h-[140px] custom-scrollbar pr-2 pb-1 relative"
+                className="flex-1 font-mono text-[10px] space-y-1 overflow-y-auto max-h-[400px] custom-scrollbar pr-2 pb-1 relative"
               >
                 {filteredLogs.length > 0 ? (
                   filteredLogs.map((log: any, index: number) => (
@@ -842,10 +842,9 @@ export function TradingDashboard() {
                 )}
               </div>
             </div>
-
-            <div className="md:col-span-1">
-              <FlowMeter />
-            </div>
+          </div>
+          <div className="md:col-span-1">
+            <FlowMeter />
           </div>
 
           {/* Heatmap L2 (Novo - Phase 29) */}
