@@ -130,6 +130,9 @@ class BacktestPro:
         # [MELHORIA H - 03/03/2026] Cooldown diferenciado por direção
         self._last_buy_time  = datetime(2000, 1, 1)  # Cooldown independente de COMPRA
         self._last_sell_time = datetime(2000, 1, 1)  # Cooldown independente de VENDA
+        # [PAUSA PARCIAL - 03/03/2026] Flag de pausa por ATR extremo na abertura
+        # True = operações suspensas até ATR normalizar (< ATR_NORMALIZA)
+        self._dia_pausado_atr = False
         self.data = None # Para inspeção externa
 
     async def load_data(self):
@@ -431,6 +434,43 @@ class BacktestPro:
                     # Reset do bias diário na troca de dia
                     self._bias_diario = 'neutro'
                     self._bias_day = current_date
+                    # [PAUSA PARCIAL - 03/03/2026] Reseta pausa a cada novo dia
+                    self._dia_pausado_atr = False
+                    self._velas_hoje = 0
+                    self._hl_acumulado = 0.0
+
+                # Contador eficiente O(1) para as primeiras 10 velas disponíveis no dia
+                self._velas_hoje += 1
+                if self._velas_hoje <= 10:
+                    self._hl_acumulado += (row['high'] - row['low'])
+
+                # [PAUSA PARCIAL - 03/03/2026] VERIFICA VOLATILIDADE M1 NA ABERTURA
+                # H-L médio imune a gaps overnight. 03/03 = 314pts. Dias normais = ~180pts.
+                HL_EXTREMO     = 250.0  # Limiar de detecção extrema
+                ATR_NORMALIZA  = 80.0   # Limiar de normalização: retoma a operar
+
+                if self._velas_hoje == 10 and not self._dia_pausado_atr:
+                    hl_abertura = self._hl_acumulado / 10.0
+                    if hl_abertura > HL_EXTREMO:
+                        self._dia_pausado_atr = True
+                        logging.warning(
+                            f"⚠️ [PAUSA VOLATILIDADE] {current_date} | H-L abertura={hl_abertura:.1f}pts "
+                            f"(limiar={HL_EXTREMO}). Operações PAUSADAS até ATR<{ATR_NORMALIZA}."
+                        )
+                elif self._dia_pausado_atr:
+                    # Verifica normalização: ATR caiu abaixo de 80pts? (ATR M1 rolling 14)
+                    if atr_current < ATR_NORMALIZA:
+                        self._dia_pausado_atr = False
+                        logging.info(
+                            f"✅ [PAUSA VOLATILIDADE] {current_date} | ATR={atr_current:.1f}pts normalizou. "
+                            f"Retomando operações às {row.name.strftime('%H:%M')}."
+                        )
+
+                # Bloqueia entradas enquanto dia estiver pausado por volatilidade extrema
+                if self._dia_pausado_atr:
+                    self.shadow_signals['veto_reasons']['ATR_DIA_PAUSADO'] = \
+                        self.shadow_signals['veto_reasons'].get('ATR_DIA_PAUSADO', 0) + 1
+                    continue  # Próxima vela — sem entradas
                 if is_opening_window:
                     if current_ema30 < current_ema90 * 0.9998:  # Margem de 0.02% para evitar falsos alertas
                         self._bias_diario = 'baixa'
