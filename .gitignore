@@ -32,6 +32,8 @@ backend/news_feed.txt
 trading_state.db
 *.db
 *.sqlite3
+*.db-journal
+*-journal
 
 # Large/Generated Files
 extracted_rules.txt

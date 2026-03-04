@@ -2,7 +2,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 from dotenv import load_dotenv
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import time as time_module
 
@@ -110,7 +110,7 @@ def add_operational_log(msg: str, log_type: str = "info"):
 
         
 
-    timestamp = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M:%S")
+    timestamp = (datetime.now(timezone.utc) - timedelta(hours=3)).strftime("%H:%M:%S")
 
     trade_logs.insert(0, {
 
@@ -448,9 +448,9 @@ async def startup_event():
 
 
 
-        # keyboard.add_hotkey('ctrl+q', lambda: panic_close_all())
-
-        # logging.info("Kill Switch ativo: Pressione Ctrl+Q para ZERAR TUDO.")
+        # Iniciar a background task que sustenta o robô principal (Modo Autônomo)
+        asyncio.create_task(autonomous_bot_loop())
+        logging.info("🚀 Autonomous Bot Loop instanciado com sucesso como Background Task.")
 
         print("DEBUG: INICIALIZAÇÃO FINALIZADA", file=sys.stderr)
 
@@ -516,17 +516,19 @@ async def shutdown_event():
 
 
 
-# [ANTIVIBE-CODING] - Endpoint Crítico de WebSocket (v3.2)
+# [ANTIVIBE-CODING] - Variáveis Globais de Conexão Frontend
 
-@app.websocket("/ws")
+active_websockets: List[WebSocket] = []
 
-async def websocket_endpoint(websocket: WebSocket):
+latest_market_packet = None
 
-    await websocket.accept()
 
-    conn_id = f"{time_module.time():.4f}"
 
-    logging.info(f"🚀 WebSocket: Handshake concluído. [ID: {conn_id}]")
+# [ANTIVIBE-CODING] - Background Task (Independente do WebSocket Cliente)
+
+async def autonomous_bot_loop():
+    global latest_market_packet
+    logging.info("🚀 Background Task: Loop Autônomo inicializado e operando de forma independente.")
 
     
 
@@ -2034,13 +2036,18 @@ async def websocket_endpoint(websocket: WebSocket):
 
                                                 }
 
-                                                await websocket.send_json(hb_packet)
-
+                                                latest_market_packet = hb_packet
+                                                disconnected_ws = []
+                                                for ws in list(active_websockets):
+                                                    try:
+                                                        await ws.send_json(hb_packet)
+                                                    except Exception:
+                                                        disconnected_ws.append(ws)
+                                                for ws in disconnected_ws:
+                                                    if ws in active_websockets:
+                                                        active_websockets.remove(ws)
                                             except Exception:
-
                                                 pass
-
-
 
                                             if status == "FILLED":
 
@@ -2254,19 +2261,22 @@ async def websocket_endpoint(websocket: WebSocket):
 
                         "dry_run": risk.dry_run,
 
-                        "timestamp": (datetime.utcnow() - timedelta(hours=3)).timestamp(),
+                        "timestamp": (datetime.now(timezone.utc) - timedelta(hours=3)).timestamp(),
 
                         "logs": trade_logs
 
                     }
 
-                    await websocket.send_json(packet)
-
-                except (WebSocketDisconnect, RuntimeError):
-
-                    logging.info("WebSocket Cliente desconectado.")
-
-                    break
+                    latest_market_packet = packet
+                    disconnected_ws = []
+                    for ws in list(active_websockets):
+                        try:
+                            await ws.send_json(packet)
+                        except Exception:
+                            disconnected_ws.append(ws)
+                    for ws in disconnected_ws:
+                        if ws in active_websockets:
+                            active_websockets.remove(ws)
 
                 except Exception as packet_e:
 
@@ -2332,14 +2342,28 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 await asyncio.sleep(1)
 
-    except WebSocketDisconnect: pass
-
     except Exception as e:
 
-        logging.critical(f"Erro fatal: {sanitize_log(e)}")
+        logging.critical(f"Erro fatal Autonomo Loop: {sanitize_log(e)}")
 
-        await websocket.close()
 
+# [ANTIVIBE-CODING] - Novo Endpoint Exclusivo para Clientes WebSocket
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    active_websockets.append(websocket)
+    logging.info(f"🟢 Cliente WebSocket Conectado no Painel. [Total: {len(active_websockets)}]")
+    try:
+        while True:
+            msg = await websocket.receive_text()
+            if msg == "ping":
+                await websocket.send_text("pong")
+    except Exception:
+        pass
+    finally:
+        if websocket in active_websockets:
+            active_websockets.remove(websocket)
+        logging.info(f"🔴 Cliente WebSocket Desconectado do Painel. [Total: {len(active_websockets)}]")
 
 
 @app.post("/config/autonomous")

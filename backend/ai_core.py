@@ -781,7 +781,7 @@ class AICore:
         if is_open_drive:
             # Relaxa o rigor para capturar a tendência real do dia
             uncertainty_threshold = 0.40 # Threshold mais permissivo (v50.1)
-            logging.info(f"🚀 [OPEN DRIVE] Janela de Fluxo Estrangeiro Ativa. Threshold relaxado para 40%.")
+            logging.info("🚀 [OPEN DRIVE] Janela de Fluxo Estrangeiro Ativa. Threshold relaxado para 40%.")
 
         # [v30] CONVERGÊNCIA INTER-MERCADOS (WIN + WDO)
         # Se Índice e Dólar confirmam a direção (Correlação Negativa Inversa)

@@ -121,7 +121,7 @@ async def hyper_optimize():
     if champions:
         with open("backend/v50_1_hyper_champions_v2.json", "w") as f:
             json.dump(champions, f, indent=4)
-        print(f"💾 Top 10 salvos em backend/v50_1_hyper_champions_v2.json")
+        print("💾 Top 10 salvos em backend/v50_1_hyper_champions_v2.json")
 
 if __name__ == "__main__":
     asyncio.run(hyper_optimize())

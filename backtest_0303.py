@@ -86,7 +86,7 @@ async def rodar_backtest(label_modo, modo_params, df):
     print(f"  Saídas       : TPs={tps} | SLs={sls} | Forçados={forced}")
     print(f"  Melhor Trade : R${melhor:+.2f} | Pior Trade: R${pior:+.2f}")
 
-    print(f"\n  📍 SHADOW SIGNALS (Oportunidades Perdidas):")
+    print("\n  📍 SHADOW SIGNALS (Oportunidades Perdidas):")
     print(f"     Candidatos v22   : {candidatos}")
     if vetos_top:
         for k, v in vetos_top:
@@ -131,7 +131,7 @@ async def main():
         from datetime import datetime
 
         print("=" * 62)
-        print(f"  BACKTEST ALTA PERFORMANCE — 03/03/2026 (v52.4+)")
+        print("  BACKTEST ALTA PERFORMANCE — 03/03/2026 (v52.4+)")
         print(f"  Saldo Inicial: R${SALDO_INICIAL:.2f}")
         print("=" * 62)
 
@@ -184,8 +184,8 @@ async def main():
         print(f"     PnL: R${melhor['pnl']:+.2f} | Trades: {melhor['trades']} | WR: {melhor['wr']:.1f}%")
         print(f"     Compras: R${melhor['pnl_buy']:+.2f} | Vendas: R${melhor['pnl_sell']:+.2f}")
 
-        print(f"\n  📈 ACUMULADO HISTÓRICO:")
-        print(f"     19/02–27/02 (6 dias): R$+540,40")
+        print("\n  📈 ACUMULADO HISTÓRICO:")
+        print("     19/02–27/02 (6 dias): R$+540,40")
         print(f"     03/03 melhor modo   : R${melhor['pnl']:+.2f}")
         print(f"     TOTAL 7 DIAS        : R${540.40 + melhor['pnl']:+.2f}")
         print(f"     Média/Dia (7 dias)  : R${(540.40 + melhor['pnl']) / 7:+.2f}")
