@@ -1,0 +1,222 @@
+# Inventário Completo e Plano de Auditoria — AppDayTrade LOCAL (v52.1)
+
+## Visão Geral
+
+Sistema HFT Sniper para mini-índice (WIN$) e mini-dólar (WDO$) com:
+- **Motor de IA**: PatchTST (ONNX/DirectML) + Meta-Learner (XGBoost) + Regime Detection (KMeans)
+- **Microestrutura**: OBI, CVD, OFI, Spoofing Detection, VWAP
+- **Gestão de Risco**: RiskManager com Trailing Stop, Scaling Out, Breakeven, Piramidação
+- **Estratégia Base**: RSI + Bollinger Bands (Reversão de Volatilidade)
+
+---
+
+## 📊 INVENTÁRIO COMPLETO
+
+### 1. PARÂMETROS OPERACIONAIS (best_params_WIN.json / v22_locked_params.json)
+
+| Parâmetro | Valor Atual | Descrição |
+|-----------|-------------|-----------|
+| `rsi_period` | 9 | Período do RSI |
+| `bb_dev` | 1.8 | Desvio padrão das Bandas de Bollinger |
+| `sl_dist` | 150.0 pts | Stop Loss fixo |
+| `tp_dist` | 550.0 pts | Take Profit fixo |
+| `vol_spike_mult` | 0.8 | Multiplicador de volume para gatilho |
+| `confidence_threshold` | 0.75 | Limiar mínimo de confiança da IA |
+| `start_time` | 09:15 | Início da janela operacional |
+| `end_time` | 17:15 | Fim da janela operacional |
+| `daily_trade_limit` | 999 | Limite de trades por dia |
+| `be_trigger` | 40.0 pts | Gatilho de breakeven |
+| `be_lock` | 0.0 pts | Lock de breakeven |
+| `partial_profit_points` | 45.0 pts | Alvo de saída parcial |
+| `pyramid_profit_threshold` | 30.0 pts | Gatilho de piramidação |
+| `pyramid_signal_threshold` | 0.6 | Força mínima do sinal para piramidação |
+| `pyramid_max_volume` | 3 | Máximo de contratos na pirâmide |
+| `vwap_dist_threshold` | 450.0 pts | Distância máxima da VWAP |
+| `cooldown_minutes` | 3 min | Cooldown base entre trades |
+
+---
+
+### 2. PESOS DO MOTOR DE DECISÃO (ai_core.py → calculate_decision)
+
+**Pesos Dinâmicos por Regime:**
+
+| Regime | PatchTST (w_patchtst) | OBI (w_obi) | Sentimento (w_sent) |
+|--------|------------------------|-------------|---------------------|
+| Sem dados de mercado | **0.85** | 0.07 | 0.08 |
+| Regime 0 (Consolidação) | 0.40 | **0.40** | 0.20 |
+| Regime 1 (Tendência) | **0.75** | 0.15 | 0.10 |
+| **Default** | **0.50** | 0.20 | **0.30** |
+
+**Fórmula de Score:**
+```
+composite_signal = (obi × w_obi) + (norm_patchtst × w_patchtst) + (sentiment × w_sent)
+ai_score_raw = (composite_signal + 1) × 50  [escala 0–100]
+final_score = ai_score_raw × 0.4 + meta_score × 0.6
+```
+
+**Thresholds de Direção:**
+- `buy_threshold` = **75.0** → COMPRA
+- `sell_threshold` = **25.0** → VENDA
+
+---
+
+### 3. FILTROS E VETOS (em ordem de execução)
+
+#### 3.1 Filtros ANTES do Score
+
+| Filtro | Condição de Veto | Impacto |
+|--------|------------------|---------|
+| **VWAP Overextended** | `price - vwap > 450 pts` AND `OFI < 1.5` | Bloqueia COMPRA e VENDA |
+| **CVD Bearish Divergence** | Divergência = -1 AND `score > 0.5` | Bloqueia COMPRA |
+| **CVD Bullish Divergence** | Divergência = 1 AND `score < 0.5` | Bloqueia VENDA |
+| **Sentiment Decay** | `price_drift / max_sentiment_drift` | Reduz peso do sentimento |
+
+#### 3.2 Filtros de Incerteza Adaptativa
+
+| Filtro | Condição | Threshold |
+|--------|----------|-----------|
+| **Open Drive** (10:00–10:45) | Relaxa rigor | threshold = 0.40 |
+| **Abertura** (09:00–09:30) | Aumenta rigor | threshold ÷ 1.5 |
+| **Volatilidade Normal** | ATR > 0 | threshold = 0.30 |
+| **Volatilidade em Expansão** | ATR/ATR_médio > 1.5 | threshold = 0.45 |
+| **Regime Ruído** (regime=2) | Máximo rigor | threshold = 0.20 |
+| **Alta Certeza** (VERY_HIGH) | Dupla abertura | threshold × 2.0 |
+| **Exaustão de Volatilidade** | ATR caindo > 12 pts | threshold × 0.85 |
+
+#### 3.3 Vetos de Direção
+
+| Veto | Condição | Direção Bloqueada |
+|------|----------|-------------------|
+| **Cooldown IA** | `time < ia_cooldown_until` | Ambas |
+| **Alta Incerteza** | `uncertainty_rel > threshold` | Ambas |
+| **Correlação WDO (Compra)** | `IA=BUY` AND `wdo_aggression > 1.5` | COMPRA |
+| **Correlação WDO (Venda)** | `IA=SELL` AND `wdo_aggression < -1.5` | VENDA |
+| **Divergência de Fluxo** | OBI_EMA > 1.5 e direção oposta | Ambas |
+| **Tendência H1 ALTA** | `h1_trend = 1` AND `IA = SELL` | VENDA |
+| **Tendência H1 BAIXA** | `h1_trend = -1` AND `IA = BUY` | COMPRA |
+| **Macro Bull Lock** | `sentiment_ema > 0.15` AND `IA = SELL` | VENDA |
+| **Macro Bear Lock** | `sentiment_ema < -0.15` AND `IA = BUY` | COMPRA |
+| **EMA Bypass** | Score extremo (>70%) AND toxic_flow > 0.8 | **Anula** veto macro |
+| **Mean Reversion Compra** | `price > sma20 + 2.0×ATR` | COMPRA |
+| **Mean Reversion Venda** | `price < sma20 - 2.0×ATR` | VENDA |
+| **Spread Alto** | `spread > 5.0 pts` | Ambas |
+| **Long Squeeze** | Price ≈ mínima 20 períodos AND `h1_trend < 0` | Força VENDA |
+
+---
+
+### 4. MÉTRICAS DO RISK MANAGER (risk_manager.py)
+
+| Métrica | Valor/Condição | Função |
+|---------|----------------|--------|
+| `max_daily_loss` | R$600 | Kill switch diário |
+| `max_daily_loss_pct` | 60% | Kill switch percentual |
+| Trailing Stop BUY | Parâmetros [v22_locked_params.json](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/v22_locked_params.json) | Trailing padrão |
+| Trailing Stop SELL | ATR dinâmico ([get_dynamic_trailing_params](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/risk_manager.py#205-227)) | Assimétrico |
+| `be_trigger` | 40 pts | Breakeven automático |
+| `be_lock` | 0 pts | Lock após BE |
+| `partial_profit_points` | 45 pts | Saída parcial (≥2 lotes) |
+| Time Stop | `max_trade_duration_min` | Alpha Decay |
+| Velocity Limit | [check_velocity_limit()](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/risk_manager.py#131-142) | Aborto precoce |
+| Quarter-Kelly | [calculate_quarter_kelly()](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/risk_manager.py#228-243) | Sizing |
+| PSR | [calculate_psr()](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/risk_manager.py#244-279) > 95% | Confiabilidade |
+
+---
+
+### 5. INDICADORES TÉCNICOS (backtest_pro.py)
+
+| Indicador | Parâmetro | Uso |
+|-----------|-----------|-----|
+| RSI | Período: 9 (EWM) | Gatilho entrada |
+| Bollinger Bands | Desvio: 1.8, Período: 20 | Gatilho entrada |
+| ATR | Período: 14 | Sizing + filtros |
+| VWAP Intraday | Cumulativo por dia | Anti-exaustão |
+| EMA30 / EMA90 | Span 30, 90 | Bias diário (V28) |
+| CVD | Cumulativo por tick | Divergência institucional |
+| OFI | Body/High-Low | Fluxo de ordens |
+| Volume Ratio | tick_vol / vol_sma | Spike detection |
+| SMA20 | Rolling 20 | Mean reversion guard |
+
+---
+
+## ⚠️ PROBLEMAS IDENTIFICADOS NA VARREDURA
+
+### BUG 1: `flux_imbalance_threshold` divergente
+- [v22_locked_params.json](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/v22_locked_params.json) define: **0.95**
+- [backtest_pro.py](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/backtest_pro.py) fallback: **1.2**
+- **Impacto**: No modo legado sem IA, o threshold de volume é diferente do esperado
+
+### BUG 2: Veto H1 MUITO agressivo para VENDA
+- O veto `VETO_TENDENCIA_ALTA_H1` bloqueia **qualquer** venda quando H1 está em alta
+- Em dias de alta H1 com reversão intraday, isso elimina operações de VENDA lucrativas
+- **Impacto**: Reduz assertividade em mercados com correções intraday
+
+### BUG 3: `pyramid_signal_threshold` não sincronizado com backtest
+- [v22_locked_params.json](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/v22_locked_params.json) define: **0.6**
+- [backtest_pro.py](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/backtest_pro.py) hardcoded fallback: **1.2** (linha 82: `kwargs.get('pyramid_signal_threshold', 1.2)`)
+- **Impacto**: Piramidação raramente ativa no backtest
+
+### BUG 4: TP no regime 0 e 2 limitado a 100 pts
+- Linhas 573-574: `dyn_tp = 100.0 if "WIN" in self.symbol`
+- Com TP fixo de 550 pts configurado, os regimes lateral e ruído usam apenas 100 pts
+- **Impacto**: Limita muito o lucro em dias de consolidação
+
+### BUG 5: `print` de debug ativo em produção
+- Linha 676: `print(f"DEBUG_VETO_VWAP_UP: ...")`
+- Linha 680: `print(f"DEBUG_VETO_VWAP_DOWN: ...")`
+- Linha 541: `print(f"DEBUG_SIGNAL: ...")`
+- **Impacto**: Sujeira nos logs, sem impacto funcional
+
+---
+
+## 📋 PLANO DE VERIFICAÇÃO
+
+### Testes Automatizados
+
+1. **Executar backtest histórico para validar antes/depois das correções:**
+```powershell
+cd c:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL
+.venv\Scripts\python.exe audit_v52_1_final.py
+```
+
+2. **Executar diagnóstico de sinais:**
+```powershell
+.venv\Scripts\python.exe backend\diagnostic_sell_vetos.py
+```
+
+3. **Rodar testes existentes:**
+```powershell
+.venv\Scripts\python.exe -m pytest tests\ -v
+```
+
+### Verificação Manual
+- Comparar número de VENDAs executadas antes/depois do ajuste do H1 veto
+- Verificar se o profit_factor melhora no backtest
+- Confirmar que `pyramid_signal_threshold` está em 0.6 no backtest
+
+---
+
+## Revisão de Decisão — Correções Propostas
+
+> [!IMPORTANT]
+> As correções abaixo NÃO alteram pesos, lógica de IA, thresholds de confiança, ou parâmetros de risco. São correções de **sincronização de parâmetros** e **bugs documentados**.
+
+### CORREÇÃO 1: Sincronizar `flux_imbalance_threshold`
+- **Arquivo**: [backtest_pro.py](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/backtest_pro.py) linha 74
+- **Mudança**: Garantir que o fallback usa o mesmo valor do JSON (0.95)
+- **Justificativa**: Inconsistência de configuração, não alteração de lógica
+
+### CORREÇÃO 2: Sincronizar `pyramid_signal_threshold`
+- **Arquivo**: [backtest_pro.py](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/backtest_pro.py) linha 82
+- **Mudança**: Usar `locked_params.get('pyramid_signal_threshold', 0.6)` em vez de `1.2`
+- **Justificativa**: Parâmetro deve vir do JSON dourado, não de hardcode incorreto
+
+### CORREÇÃO 3: TP mínimo nos regimes 0 e 2
+- **Arquivo**: [backtest_pro.py](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/backtest_pro.py) linha 573-574
+- **Mudança**: Usar `min(tp_fixed, 200.0)` em vez de fixar 100.0 pts
+- **Justificativa**: 100 pts de TP não cobre nem o custo operacional em muitos casos
+
+### CORREÇÃO 4: Remover prints de debug
+- **Arquivo**: [ai_core.py](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/ai_core.py) linhas 676, 680
+- **Arquivo**: [backtest_pro.py](file:///c:/Users/Wesley%20Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/backtest_pro.py) linha 541
+- **Justificativa**: Limpeza de código sem impacto funcional
+

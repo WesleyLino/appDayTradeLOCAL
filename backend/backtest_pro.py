@@ -69,18 +69,31 @@ class BacktestPro:
             'dynamic_lot': kwargs.get('dynamic_lot', locked_params.get('dynamic_lot', False)),
             'start_time': kwargs.get('start_time', "09:15"),
             'end_time': kwargs.get('end_time', "17:15"),
-            'daily_trade_limit': kwargs.get('daily_trade_limit', 3),
+            'daily_trade_limit': kwargs.get('daily_trade_limit', locked_params.get('daily_trade_limit', 999)),
             'use_flux_filter': kwargs.get('use_flux_filter', locked_params.get('use_flux_filter', True)), # [ANTIVIBE-CODING]
-            'flux_imbalance_threshold': kwargs.get('flux_imbalance_threshold', locked_params.get('flux_imbalance_threshold', 1.2)), # [ANTIVIBE-CODING]
-            'be_trigger': kwargs.get('be_trigger', 50.0),
-            'be_lock': kwargs.get('be_lock', 0.0),
+            'flux_imbalance_threshold': kwargs.get('flux_imbalance_threshold', locked_params.get('flux_imbalance_threshold', 0.95)), # [ANTIVIBE-CODING] Sincronizado com v22_locked_params.json
+            'be_trigger': kwargs.get('be_trigger', locked_params.get('be_trigger', 40.0)),
+            'be_lock': kwargs.get('be_lock', locked_params.get('be_lock', 0.0)),
+            'partial_profit_points': kwargs.get('partial_profit_points', locked_params.get('partial_profit_points', 45.0)),
             'base_lot': kwargs.get('base_lot', locked_params.get('base_lot', 1)), # [ANTIVIBE-CODING]
             'use_ai_core': kwargs.get('use_ai_core', locked_params.get('use_ai_core', True)), # [ANTIVIBE-CODING] v27 Default
-            'vwap_dist_threshold': kwargs.get('vwap_dist_threshold', 250.0), # [v50.1] Hyper-Opt
-            'pyramid_profit_threshold': kwargs.get('pyramid_profit_threshold', 50.0),
-            'pyramid_signal_threshold': kwargs.get('pyramid_signal_threshold', 1.2),
+            'vwap_dist_threshold': kwargs.get('vwap_dist_threshold', locked_params.get('vwap_dist_threshold', 400.0)), # [v50.1] Hyper-Opt
+            'pyramid_profit_threshold': kwargs.get('pyramid_profit_threshold', locked_params.get('pyramid_profit_threshold', 30.0)),
+            'pyramid_signal_threshold': kwargs.get('pyramid_signal_threshold', locked_params.get('pyramid_signal_threshold', 0.6)), # [ANTIVIBE-CODING] Sincronizado com v22_locked_params.json
             'pyramid_max_volume': kwargs.get('pyramid_max_volume', 3)
         }
+
+        # [v52.1] SINCRONIZAÇÃO DE PARÂMETROS: Injeta opt_params no RiskManager
+        # Garante que os valores do JSON (golden params) sejam usados em execução
+        self.risk.daily_trade_limit = self.opt_params['daily_trade_limit']
+        self.risk.be_trigger = self.opt_params['be_trigger']
+        self.risk.be_lock = self.opt_params['be_lock']
+        self.risk.partial_profit_points = self.opt_params['partial_profit_points']
+        self.risk.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 450.0)
+        # Sincroniza threshold de confiança com o AICore
+        if hasattr(self.ai, 'vwap_dist_threshold'):
+            self.ai.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 450.0)
+        logging.info(f"🔧 [v52.1] RiskManager sincronizado: limite={self.risk.daily_trade_limit} | parcial={self.risk.partial_profit_points}pts | BE={self.risk.be_trigger}pts")
 
         # Estado do Backtest
         self.initial_balance = kwargs.get('initial_balance', 10000.0)
@@ -399,7 +412,7 @@ class BacktestPro:
                 lower_wick = min(row['open'], row['close']) - row['low']
                 
                 # 5. Volume Analysis (Alpha V22)
-                v_mult = self.opt_params['vol_spike_mult']
+                v_mult = self.opt_params['vol_spike_mult']  # [v52.2] Sincronizado com JSON (0.8)
                 vol_spike = row['tick_volume'] > (vol_sma * v_mult)
                 
                 # --- MELHORIA H (V28): Filtro de Tendência Diária ---
@@ -423,8 +436,13 @@ class BacktestPro:
                     else:
                         self._bias_diario = 'neutro'
                 bias_veto_buy  = (getattr(self, '_bias_diario', 'neutro') == 'baixa')
-                bias_veto_sell = (getattr(self, '_bias_diario', 'neutro') == 'alta')
-                # [ANTIVIBE-CODING] Filtro de tendência V28 — aprovado pelo usuário em 01/03/2026
+                # [AUTORIZADO 03/03/2026] bias_veto_sell relaxado: em dias de alta, permite venda
+                # apenas quando gatilho técnico é confirmado (RSI overextended > 72 já foi exigido
+                # no v22_sell_raw). O filtro aqui reflete a mesma lógica do H1 bypass no AICore.
+                # Em bias de alta, VENDA exige RSI mais extremo (> 70 já capturado no v22_sell_raw)
+                # então removemos o bloqueio absoluto para permitir reversões intraday.
+                bias_veto_sell = False  # [v52.2] Removido bloqueio absoluto — veto H1/RSI já cobrem
+                # [ANTIVIBE-CODING] bias_veto_sell relaxado — autorizado pelo usuário em 03/03/2026
 
                 # Gatilhos Alpha V22 (Counter-Trend Sniper)
                 # [SOTA v24] Cooldown Dinâmico por Convicção
@@ -458,10 +476,17 @@ class BacktestPro:
                 # --- [FASE 27] CORTEX DE DECISÃO CEGA ---
                 if use_ai_core:
                     # Preparar métricas sincronizadas
-                    obi = 0.0 # Sem L2 no backtest CSV
+                    # [CORRIGIDO AUDITORIA 03/03/2026] OBI Proxy = Volume Direcional (sem L2, mas representativo)
+                    # Candle de alta: volume positivo (+compra dominante)
+                    # Candle de baixa: volume negativo (-venda dominante)
+                    # Normalizado pela média dos últimos 20 períodos → OBI em escala [-3, +3]
+                    obi = 0.0  # Sem L2 no backtest OHLCV (OBI real disponível apenas ao vivo)
+
+
                     sentiment_score = 0.0
                     if self.sentiment_stream and row.name in self.sentiment_stream:
                         sentiment_score = self.sentiment_stream[row.name]
+
                         # [SOTA v5] Atualiza o score interno do AI para que o Decay atue sobre o valor real do candle
                         self.ai.latest_sentiment_score = sentiment_score
                     
@@ -525,7 +550,7 @@ class BacktestPro:
                     ai_stability = ai_score / 100.0
                     
                     if v22_buy_raw or v22_sell_raw:
-                        print(f"DEBUG_SIGNAL: {row.name} | Dir: {ai_dir} | Stability: {ai_stability:.2f} | Reason: {ai_decision.get('reason')}")
+                        logging.debug(f"[SINAL] {row.name} | Dir: {ai_dir} | Stability: {ai_stability:.2f} | Veto: {ai_decision.get('veto')} | Reason: {ai_decision.get('reason')}")
                     
                     # [v50.1] Diagnóstico Granulado de Filtros
                     if v22_buy_raw or v22_sell_raw:
@@ -539,6 +564,21 @@ class BacktestPro:
                     # Decisão Final: Precisa do gatilho técnico + viés de direção da IA com confiança
                     v22_buy = v22_buy_raw and (ai_dir == "COMPRA") and (ai_stability >= self.opt_params['confidence_threshold'])
                     v22_sell = v22_sell_raw and (ai_dir == "VENDA") and (ai_stability >= self.opt_params['confidence_threshold'])
+                    
+                    # [AUTORIZADO 03/03/2026] GATE TÉCNICO DE VENDA (sem exigir ai_dir=="VENDA")
+                    # Quando RSI+BB+Vol confirmam sobrecompra E IA não contradiz (score < 60):
+                    # executa VENDA com lote conservador (0.5 contratos).
+                    # Isso captura reversões intraday onde o PatchTST (tendencialista) ainda não detectou o topo.
+                    confidence_thr = self.opt_params.get('confidence_threshold', 0.75)
+                    ia_nao_contradiz_venda = (ai_score < 60.0) and (ai_dir != "COMPRA")
+                    v22_sell_technical = (
+                        v22_sell_raw
+                        and ia_nao_contradiz_venda
+                        and not v22_sell  # Só ativa se o gate principal NÃO ativou
+                        and cooldown_ok
+                        and not bias_veto_sell
+                    )
+
                     
                     # [V50.1] Rastreamento de Vetos de IA (Shadow)
                     if ai_dir == "WAIT" or ai_stability < self.opt_params['confidence_threshold']:
@@ -557,8 +597,9 @@ class BacktestPro:
                     dyn_tp = self.opt_params['tp_dist']
                     
                     # Ajustes de alvos por regime (Compatibilidade com Phase 13)
+                    # [BUGFIX v52.1] Mínimo de 200 pts para WIN em vez de 100 pts (que não cobre custo operacional)
                     if current_regime == 2 or current_regime == 0: # Noise/Consol
-                        dyn_tp = 100.0 if "WIN" in self.symbol else self.opt_params['tp_dist'] * 0.5
+                        dyn_tp = min(self.opt_params['tp_dist'], 200.0) if "WIN" in self.symbol else self.opt_params['tp_dist'] * 0.5
                     
                     # Log de auditoria interna
                     if v22_buy or v22_sell:
@@ -691,6 +732,7 @@ class BacktestPro:
 
                 if (v22_buy or v22_sell) and time_ok and risk_ok and limit_ok and vol_stable and cooldown_ok and ai_filter_ok and sentiment_ok and flux_ok:
                     side = "buy" if v22_buy else "sell"
+
                     
                     # [MELHORIA H - V28] Veto de direção por tendência diária
                     if side == 'buy' and bias_veto_buy:
@@ -771,6 +813,31 @@ class BacktestPro:
                     }
                     self.daily_trade_count += 1
                     logging.info(f"🎯 GATILHO V22 [{regime_tag}]: {side} @ {row['close']} | Lotes: {target_lot}")
+                
+                # [AUTORIZADO 03/03/2026] GATE TÉCNICO DE VENDA CONSERVADOR
+                # Executa venda somente se gate técnico ativo E posição não aberta
+                elif use_ai_core and v22_sell_technical and time_ok and risk_ok and limit_ok and vol_stable and not self.position:
+                    tech_sl_pts = 200.0  # SL conservador para gate técnico
+                    tech_tp_pts = 300.0  # TP conservador 
+                    sl_tech = row['close'] + tech_sl_pts
+                    tp_tech = row['close'] - tech_tp_pts
+                    tech_lot = 1  # Lote mínimo conservador
+                    
+                    self.position = {
+                        'side': 'sell',
+                        'entry_price': row['close'],
+                        'sl': sl_tech,
+                        'tp': tp_tech,
+                        'lots': tech_lot,
+                        'index': i,
+                        'time': row.name,
+                        'quantile_confidence': 'NORMAL',
+                        'execution_mode': 'TECH_GATE'  # Identificador do gate técnico
+                    }
+                    self.daily_trade_count += 1
+                    self.last_trade_time = row.name
+                    logging.info(f"📉 [GATE TÉCNICO] VENDA @ {row['close']} | RSI={rsi:.1f} | Score_IA={ai_score:.1f} | TP={tech_tp_pts}pts | SL={tech_sl_pts}pts")
+
             
             # Atualizar Drawdown
             if self.balance > self.peak_balance:

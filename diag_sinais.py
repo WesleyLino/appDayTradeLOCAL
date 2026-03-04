@@ -1,49 +1,70 @@
-import asyncio
-import MetaTrader5 as mt5
-import pandas as pd
-from datetime import datetime
-import os
+"""Diagnostico de sinais tecnicos de VENDA nos dados historicos do MT5."""
 import sys
+import warnings
+import numpy as np
+import pandas as pd
 
-sys.path.insert(0, os.getcwd())
-from backend.mt5_bridge import MT5Bridge
+warnings.filterwarnings('ignore')
+sys.path.insert(0, '.')
 
-async def diag():
-    bridge = MT5Bridge()
-    if not bridge.connect(): return
-    
-    symbol = "WIN$N"
-    dia = datetime(2026, 2, 26)
-    date_from = dia.replace(hour=9, minute=0)
-    date_to = dia.replace(hour=17, minute=0)
-    
-    data = bridge.get_market_data_range(symbol, mt5.TIMEFRAME_M1, date_from, date_to)
-    if data is None or data.empty:
-        print("❌ Dados não encontrados.")
-        return
-        
-    print(f"✅ Dados carregados: {len(data)} candles.")
-    
-    # Simula indicadores básicos
-    data['rsi'] = 100 - (100 / (1 + (data['close'].diff().where(data['close'].diff() > 0, 0).rolling(9).mean() / data['close'].diff().where(data['close'].diff() < 0, 0).abs().rolling(9).mean())))
-    data['sma_20'] = data['close'].rolling(20).mean()
-    data['std_20'] = data['close'].rolling(20).std()
-    data['lower_bb'] = data['sma_20'] - 2.0 * data['std_20']
-    data['upper_bb'] = data['sma_20'] + 2.0 * data['std_20']
-    
-    # Procura candidatos V22 brutos
-    candidates_buy = data[(data['rsi'] < 30) & (data['close'] < data['lower_bb'])]
-    candidates_sell = data[(data['rsi'] > 70) & (data['close'] > data['upper_bb'])]
-    
-    print(f"🔍 Candidatos Brutos COMPRA: {len(candidates_buy)}")
-    print(f"🔍 Candidatos Brutos VENDA: {len(candidates_sell)}")
-    
-    if len(candidates_buy) > 0:
-        print("Exemplo Compra:", candidates_buy.index[0], "RSI:", candidates_buy['rsi'].iloc[0])
-    if len(candidates_sell) > 0:
-        print("Exemplo Venda:", candidates_sell.index[0], "RSI:", candidates_sell['rsi'].iloc[0])
+try:
+    import MetaTrader5 as mt5
+    from datetime import datetime
 
-    bridge.disconnect()
+    dias = [
+        ('19/02', datetime(2026, 2, 19, 9, 0), datetime(2026, 2, 19, 17, 30)),
+        ('23/02', datetime(2026, 2, 23, 9, 0), datetime(2026, 2, 23, 17, 30)),
+        ('24/02', datetime(2026, 2, 24, 9, 0), datetime(2026, 2, 24, 17, 30)),
+        ('25/02', datetime(2026, 2, 25, 9, 0), datetime(2026, 2, 25, 17, 30)),
+        ('26/02', datetime(2026, 2, 26, 9, 0), datetime(2026, 2, 26, 17, 30)),
+        ('27/02', datetime(2026, 2, 27, 9, 0), datetime(2026, 2, 27, 17, 30)),
+    ]
 
-if __name__ == "__main__":
-    asyncio.run(diag())
+    mt5.initialize()
+
+    total_sell = 0
+    total_buy = 0
+
+    for label, d_from, d_to in dias:
+        rates = mt5.copy_rates_range('WIN$', mt5.TIMEFRAME_M1, d_from, d_to)
+        if rates is None or len(rates) == 0:
+            print(f"[{label}] Sem dados")
+            continue
+
+        df = pd.DataFrame(rates)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+        df.set_index('time', inplace=True)
+
+        # Indicadores
+        delta = df['close'].diff()
+        gain = (delta.where(delta > 0, 0)).ewm(span=14, adjust=False).mean()
+        loss = (-delta.where(delta < 0, 0)).ewm(span=14, adjust=False).mean()
+        df['rsi'] = 100 - (100 / (1 + gain/(loss+1e-9)))
+        df['sma_20'] = df['close'].rolling(20).mean()
+        df['std_20'] = df['close'].rolling(20).std()
+        df['upper_bb'] = df['sma_20'] + 2.0 * df['std_20']
+        df['lower_bb'] = df['sma_20'] - 2.0 * df['std_20']
+        df['vol_sma'] = df['tick_volume'].rolling(20).mean()
+
+        # Gatilhos
+        sell_raw = (df['rsi'] > 70) & (df['close'] > df['upper_bb']) & (df['tick_volume'] > df['vol_sma'] * 0.8)
+        buy_raw  = (df['rsi'] < 30) & (df['close'] < df['lower_bb']) & (df['tick_volume'] > df['vol_sma'] * 0.8)
+
+        n_sell = sell_raw.sum()
+        n_buy  = buy_raw.sum()
+        total_sell += n_sell
+        total_buy  += n_buy
+
+        rsi_max = df['rsi'].max()
+        rsi_min = df['rsi'].min()
+
+        print(f"[{label}] VENDA_RAW={n_sell} | COMPRA_RAW={n_buy} | RSI max={rsi_max:.1f} min={rsi_min:.1f} | Candles={len(df)}")
+
+    mt5.shutdown()
+    print()
+    print(f"TOTAL: VENDA_RAW={total_sell} | COMPRA_RAW={total_buy} em 6 dias")
+
+except Exception as e:
+    import traceback
+    print(f"ERRO: {e}")
+    traceback.print_exc()

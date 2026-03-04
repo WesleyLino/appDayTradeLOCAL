@@ -7,10 +7,10 @@ import os
 
 # [ANTIVIBE-CODING] - Classe Crítica de Risco
 class RiskManager:
-    def __init__(self, max_daily_loss=600.00, daily_trade_limit=3, max_daily_loss_pct=0.60):
+    def __init__(self, max_daily_loss=600.00, daily_trade_limit=999, max_daily_loss_pct=0.60):
         self.max_daily_loss = max_daily_loss
         self.max_daily_loss_pct = max_daily_loss_pct
-        self.daily_trade_limit = daily_trade_limit 
+        self.daily_trade_limit = daily_trade_limit # v52.1 - MODO ILIMITADO
         self.max_deviation = 5 
         self.allow_autonomous = True 
         self.dry_run = False # [REAL-EXECUTION-ACTIVE] - Ativação de ordens reais no MT5
@@ -26,14 +26,14 @@ class RiskManager:
         self.trailing_lock = 50.0    # Trava 50 pontos iniciais
         self.trailing_step = 20.0    # Move a cada 20 pontos de avanço
         
-        # [v52.0] Breakeven Ultra-Rápido
-        self.be_trigger = 50.0       # Ativa com 50 pontos de lucro (Garante o zero)
+        # [v52.1] Breakeven Ultra-Rápido
+        self.be_trigger = 40.0       # Ativa com 40 pontos de lucro (Garante o zero rápido)
         self.be_lock = 0.0           # Move para o preço de entrada
         
         # [v52.0] Scaling Out (Saída Parcial HFT)
         self.base_volume = 2.0       # 2 contratos para permitir parcial
         self.partial_volume = 1.0    # Zera 1 contrato na parcial
-        self.partial_profit_points = 60.0 # Bate o lucro aos 60 pontos (Garante o almoço)
+        self.partial_profit_points = 45.0 # [v52.1] Lucro travado cedo para maior assertividade
         
         # [FASE 2] Velocity Limit (Drawdown Acelerado no Tempo)
         self.velocity_time_limit_sec = 20.0     # Segundos máximos engatado negativamente

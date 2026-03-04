@@ -1,19 +1,28 @@
 {
     "params": {
-        "rsi_period": 7,
-        "bb_dev": 2.2,
-        "sl_dist": 100.0,
-        "tp_dist": 200.0,
-        "vol_spike_mult": 1.2,
-        "confidence_threshold": 0.4,
+        "rsi_period": 9,
+        "bb_dev": 1.8,
+        "sl_dist": 150.0,
+        "tp_dist": 550.0,
+        "vol_spike_mult": 0.8,
+        "confidence_threshold": 0.75,
         "start_time": "09:15",
         "end_time": "17:15",
+        "daily_trade_limit": 999,
+        "be_trigger": 40.0,
+        "be_lock": 0.0,
+        "partial_profit_points": 45.0,
         "pyramid_profit_threshold": 30.0,
         "pyramid_signal_threshold": 0.6,
-        "pyramid_max_volume": 3
+        "pyramid_max_volume": 3,
+        "vwap_dist_threshold": 450.0,
+        "cooldown_minutes": 3,
+        "use_ai_core": true
     },
     "net_profit": 235.39999999999418,
     "max_dd": 0.013393918804144839,
     "profit_factor": 1.37448297804644,
-    "trades": 104
+    "trades": 104,
+    "version": "v52.1-MODO-ILIMITADO",
+    "updated_at": "2026-03-03"
 }

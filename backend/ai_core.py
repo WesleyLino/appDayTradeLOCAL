@@ -42,12 +42,13 @@ load_dotenv()
 class AICore:
 
     def __init__(self):
-
         self._latest_sentiment_score = 0.0 # [SOTA v5] Valor real (atras do decorator)
-
         self.obi_ema = 0.5 # Valor inicial neutro
-
         self.ema_alpha = 0.2 # Fator de suavização
+        
+        # [v52.1] Thresholds Dinâmicos para Alta Performance (MODO ILIMITADO)
+        self.buy_threshold = 75.0
+        self.sell_threshold = 25.0
 
         self.regime_model = KMeans(n_clusters=3, n_init=10)
 
@@ -125,7 +126,7 @@ class AICore:
 
         self.opening_window_rigor = 1.5   # Multiplicador de rigor 09:00-09:30
 
-        self.spread_veto_threshold = 5.0  # Veto se spread > 5.0 pts (Ajustado para HFT Volátil)
+        self.spread_veto_threshold = 100.0  # [CORRIGIDO AUDITORIA 03/03/2026] Spread máximo tolerado para WIN$ (min=5pts, típico=10-50pts, max limite=100pts)
 
 
 
@@ -672,11 +673,11 @@ class AICore:
             
             # [ANTIVIBE-CODING] Veto se preço esticado > threshold da VWAP sem fluxo extremo
             if price_dist_vwap > target_vwap_veto and abs(ofi) < 1.5:
-                print(f"DEBUG_VETO_VWAP_UP: {price_dist_vwap}")
+                logging.debug(f"DEBUG_VETO_VWAP_UP: {price_dist_vwap:.1f} pts")
                 logging.warning(f"🛑 [VWAP VETO] Preço muito acima da VWAP (+{price_dist_vwap:.1f} pts). Risco de exaustão.")
                 return {"direction": "WAIT", "confidence": 0, "reason": "VWAP_OVEREXTENDED_UP"}
             if price_dist_vwap < -target_vwap_veto and abs(ofi) < 1.5:
-                print(f"DEBUG_VETO_VWAP_DOWN: {price_dist_vwap}")
+                logging.debug(f"DEBUG_VETO_VWAP_DOWN: {price_dist_vwap:.1f} pts")
                 logging.warning(f"🛑 [VWAP VETO] Preço muito abaixo da VWAP ({price_dist_vwap:.1f} pts). Risco de exaustão.")
                 return {"direction": "WAIT", "confidence": 0, "reason": "VWAP_OVEREXTENDED_DOWN"}
         # --- 0.1 [v52.0 - INSTITUCIONAL] VETO/GATILHO DE DIVERGÊNCIA CVD ---
@@ -919,21 +920,34 @@ class AICore:
 
 
 
-        # [SOTA v4] Filtro Direcional H1 (Regime Maestro)
+        # [SOTA v4 → v52.2] Filtro Direcional H1 (Regime Maestro)
+        # [AUTORIZADO 03/03/2026] Veto relaxado: permite operações contra H1 com confirmação institucional
+        # CVD bearish + OBI negativo = fluxo institucional real de venda, mesmo com H1 em alta
 
         if veto_reason is None:
 
             ai_dir = np.sign(norm_patchtst)
 
             if self.h1_trend == 1 and ai_dir < 0: # Venda contra tendência de alta H1
-
-                veto_reason = "VETO_TENDENCIA_ALTA_H1"
+                # Bypass do veto se CVD institucional bearish confirmado (fluxo real de venda)
+                # OU score extremo de venda do PatchTST (alta convicção bearish)
+                cvd_bearish_confirmed = (divergence == -1) and (obi < -0.3)
+                extreme_sell_signal = (norm_patchtst < -0.70)
+                if cvd_bearish_confirmed or extreme_sell_signal:
+                    logging.info(f"⚡ [H1 BYPASS VENDA] CVD_bearish={cvd_bearish_confirmed}, Extreme={extreme_sell_signal}. Venda autorizada contra H1.")
+                else:
+                    veto_reason = "VETO_TENDENCIA_ALTA_H1"
 
             elif self.h1_trend == -1 and ai_dir > 0: # Compra contra tendência de baixa H1
+                # Bypass do veto se CVD institucional bullish confirmado (fluxo real de compra)
+                cvd_bullish_confirmed = (divergence == 1) and (obi > 0.3)
+                extreme_buy_signal = (norm_patchtst > 0.70)
+                if cvd_bullish_confirmed or extreme_buy_signal:
+                    logging.info(f"⚡ [H1 BYPASS COMPRA] CVD_bullish={cvd_bullish_confirmed}, Extreme={extreme_buy_signal}. Compra autorizada contra H1.")
+                else:
+                    veto_reason = "VETO_TENDENCIA_BAIXA_H1"
 
-                veto_reason = "VETO_TENDENCIA_BAIXA_H1"
 
-                
 
         # [SOTA v25] MACRO SENTIMENT LOCKS (70% ASSERTIVENESS TARGET)
 
@@ -1015,20 +1029,40 @@ class AICore:
         
 
         # Dinâmica de Pesos
-
         w_sent, w_obi, w_patchtst = 0.30, 0.20, 0.50
 
         if abs(sentiment) < 0.001 and abs(obi) < 0.01:
-
             w_patchtst, w_sent, w_obi = 0.85, 0.08, 0.07
 
         elif regime == 0: w_obi, w_patchtst, w_sent = 0.40, 0.40, 0.20
 
         elif regime == 1: w_obi, w_patchtst, w_sent = 0.15, 0.75, 0.10
 
+        # [AJUSTE AUTORIZADO 03/03/2026] Divergência Técnica: PatchTST vs OBI/Sentimento
+        # Quando PatchTST bullish (+0.5) mas OBI é bearish (<-0.3): sobrecompra técnica
+        # → Reduz peso PatchTST 40%→20%, eleva OBI 40%→60% para capturar reversão
+        patchtst_obi_divergence = (norm_patchtst > 0.5 and obi < -0.3) or \
+                                  (norm_patchtst < -0.5 and obi > 0.3)
+        patchtst_sent_divergence = (norm_patchtst > 0.5 and sentiment < -0.3) or \
+                                   (norm_patchtst < -0.5 and sentiment > 0.3)
 
+        if patchtst_obi_divergence and veto_reason is None:
+            # PatchTST contradiz fluxo de mercado — reduz seu peso
+            excess = w_patchtst * 0.50  # Redistribui 50% do peso do PatchTST
+            w_patchtst -= excess
+            w_obi += excess * 0.65   # OBI recebe 65%
+            w_sent += excess * 0.35  # Sentimento recebe 35%
+            logging.info(f"⚖️ [DIVERGÊNCIA TÉCNICA] PatchTST conflita com OBI. Pesos ajustados: OBI={w_obi:.2f} PATCHTST={w_patchtst:.2f} SENT={w_sent:.2f}")
+
+        elif patchtst_sent_divergence and veto_reason is None:
+            # PatchTST contradiz sentimento dominante — leve ajuste
+            excess = w_patchtst * 0.25
+            w_patchtst -= excess
+            w_sent += excess
+            logging.info(f"⚖️ [DIVERGÊNCIA SENT] PatchTST conflita com sentimento. Pesos ajustados: SENT={w_sent:.2f} PATCHTST={w_patchtst:.2f}")
 
         composite_signal = (obi * w_obi) + (norm_patchtst * w_patchtst) + (sentiment * w_sent)
+
 
         ai_score_raw = max(0.0, min(100.0, (composite_signal + 1) * 50))
 
@@ -1070,16 +1104,11 @@ class AICore:
 
         # Direção - [SOTA v25.6] IMPULSO PONTO DOCE (70%+)
         # [v50.1] RELAXAMENTO PARA HYPER-OPT: 88% em vez de 93%
-        buy_threshold = 88.0
-        sell_threshold = 12.0
-
-        
-
+        # [v52.1] Agora usa atributos dinâmicos (self.buy_threshold / self.sell_threshold)
         direction = "NEUTRAL"
 
-        if final_score >= buy_threshold: direction = "COMPRA"
-
-        elif final_score <= sell_threshold: direction = "VENDA"
+        if final_score >= self.buy_threshold: direction = "COMPRA"
+        elif final_score <= self.sell_threshold: direction = "VENDA"
 
         
 

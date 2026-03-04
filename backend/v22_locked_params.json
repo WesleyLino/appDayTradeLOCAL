@@ -1,5 +1,5 @@
 {
-  "comment": "PARÂMETROS V22 ATUALIZADOS EM 2026-02-23 - NÃO ALTERAR SEM AUTORIZAÇÃO",
+  "comment": "PARÂMETROS V22 ATUALIZADOS EM 2026-03-03 - v52.1 ALTA PERFORMANCE (MODO ILIMITADO)",
   "account_config": {
     "initial_balance": 3000.0,
     "symbol": "WIN$",
@@ -7,28 +7,27 @@
   },
   "strategy_params": {
     "rsi_period": 9,
-    "bb_dev": 2.0,
-    "vol_spike_mult": 1.0,
+    "bb_dev": 1.8,
+    "vol_spike_mult": 0.8,
     "use_flux_filter": true,
     "flux_imbalance_threshold": 0.95,  
-    "confidence_threshold": 0.70,
+    "confidence_threshold": 0.75,
     "sl_dist": 150.0,
-    "tp_dist": 550.0,  
-    "trailing_trigger": 200.0,
-    "trailing_lock": 100.0,
-    "trailing_step": 50.0,
-    "trailing_trigger_sell": 200.0,
-    "trailing_lock_sell": 100.0,
-    "trailing_step_sell": 50.0,
-    "use_ai_core": false,
-    "cooldown_minutes": 7,
+    "tp_dist": 550.0,
+    "daily_trade_limit": 999,
+    "use_ai_core": true,
+    "cooldown_minutes": 3,
     "adaptive_flux_active": true,
     "use_trailing_stop": true,
     "start_time": "09:15",
     "end_time": "17:15",
     "pyramid_profit_threshold": 30.0,
     "pyramid_signal_threshold": 0.6,
-    "pyramid_max_volume": 3
+    "pyramid_max_volume": 3,
+    "be_trigger": 40.0,
+    "be_lock": 0.0,
+    "partial_profit_points": 45.0,
+    "vwap_dist_threshold": 450.0
   },
-  "anti_vibe_seal": "20260301_GOLDEN_V28_LOCKED_LMN_FINETUNED"
+  "anti_vibe_seal": "20260303_GOLDEN_V52_1_UNLIMITED_PROFIT_FINAL"
 }
