@@ -440,7 +440,7 @@ export function TradingDashboard() {
                   {isSniperRunning && data?.risk_status?.sniper && (
                     <div className="grid grid-cols-2 gap-2 mt-1">
                       <div className="bg-black/40 p-1.5 rounded border border-white/5 text-center">
-                        <p className="text-[8px] text-muted-foreground uppercase">
+                        <p className="text-[12px] text-muted-foreground uppercase">
                           Vitórias
                         </p>
                         <p className="text-xs font-bold text-indigo-400">
@@ -448,7 +448,7 @@ export function TradingDashboard() {
                         </p>
                       </div>
                       <div className="bg-black/40 p-1.5 rounded border border-white/5 text-center">
-                        <p className="text-[8px] text-muted-foreground uppercase">
+                        <p className="text-[12px] text-muted-foreground uppercase">
                           Trades
                         </p>
                         <p className="text-xs font-bold text-white">

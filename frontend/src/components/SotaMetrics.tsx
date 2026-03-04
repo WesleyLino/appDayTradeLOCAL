@@ -55,7 +55,7 @@ export function SotaMetrics({
       <CardContent className="grid gap-4">
         {/* PSR Reliability & Quarter-Kelly */}
         <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between text-[11px] uppercase tracking-tighter text-blue-400 font-bold bg-blue-500/10 px-2.5 py-1.5 rounded-lg border border-blue-500/10">
+          <div className="flex items-center justify-between text-[14px] uppercase tracking-tighter text-blue-400 font-bold bg-blue-500/10 px-2.5 py-1.5 rounded-lg border border-blue-500/10">
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5" /> Confiabilidade PSR
             </div>
@@ -66,25 +66,27 @@ export function SotaMetrics({
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-[10px] uppercase tracking-tight text-indigo-300 font-medium bg-indigo-500/5 px-2.5 py-1 rounded border border-indigo-500/10">
+          <div className="flex items-center justify-between text-[14px] uppercase tracking-tight text-indigo-300 font-medium bg-indigo-500/5 px-2.5 py-1 rounded border border-indigo-500/10">
             <span>Quarter-Kelly Scaling</span>
-            <span className="font-mono">ATIVO</span>
+            <span className="font-mono text-[18px] font-bold">ATIVO</span>
           </div>
         </div>
 
         {/* Current Exposure (Incerteza Elástica) */}
-        <div className="flex items-center justify-between text-[11px] uppercase tracking-tighter text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/10">
+        <div className="flex items-center justify-between text-[14px] uppercase tracking-tighter text-white/1px] uppercase tracking-tighter text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/10">
           <div className="flex items-center gap-1.5">
             <Scale className="w-3.5 h-3.5" /> Incerteza Elástica
           </div>
-          <span className="font-mono">{lotMultiplier.toFixed(2)}x</span>
+          <span className="font-mono text-[18px]">
+            {lotMultiplier.toFixed(2)}x
+          </span>
         </div>
 
         {/* Forecast & Confidence */}
         <div className="space-y-1">
-          <div className="flex justify-between text-xs">
+          <div className="flex justify-between text-[14px] uppercase tracking-tighter text-white">
             <span className="text-white/80">Confiança PatchTST</span>
-            <span className="font-mono text-emerald-300">
+            <span className="font-mono text-emerald-300 text-[18px] font-bold">
               {(confidence * 100).toFixed(1)}%
             </span>
           </div>
@@ -97,11 +99,11 @@ export function SotaMetrics({
 
         {/* Uncertainty (Conformal) */}
         <div className="space-y-1">
-          <div className="flex justify-between text-xs">
+          <div className="flex justify-between text-[14px] uppercase tracking-tighter text-white">
             <span className="text-white/80 flex items-center gap-1">
               <ShieldCheck className="w-3 h-3" /> Incerteza (Range)
             </span>
-            <span className="font-mono text-yellow-300">
+            <span className="font-mono text-yellow-300 text-[18px] font-bold">
               {uncertaintyRange.toFixed(1)} pts
             </span>
           </div>
@@ -118,17 +120,17 @@ export function SotaMetrics({
 
         {/* OFI Weighted */}
         <div className="space-y-1">
-          <div className="flex justify-between text-xs">
-            <span className="text-white/80 flex items-center gap-1">
+          <div className="flex justify-between text-[14px] uppercase tracking-tighter text-white">
+            <span className="text-white/80 flex items-center gap-1 text-[14px]">
               <Gauge className="w-3 h-3" /> OFI Ponderado
             </span>
             <span
-              className={`font-mono ${weightedOfi >= 0 ? "text-emerald-400" : "text-red-400"}`}
+              className={`font-mono text-[18px] font-bold ${weightedOfi >= 0 ? "text-emerald-400 text-[18px] font-bold" : "text-red-400 text-[18px] font-bold"}`}
             >
               {weightedOfi.toFixed(1)}
             </span>
           </div>
-          <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden relative">
+          <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden relative text-[14px]">
             <div
               className={`absolute top-0 bottom-0 transition-all duration-500 ${weightedOfi >= 0 ? "bg-emerald-500 left-1/2" : "bg-red-500 right-1/2"}`}
               style={{
@@ -140,12 +142,14 @@ export function SotaMetrics({
         </div>
 
         {/* Synthetic Index (Blue Chips) */}
-        <div className="pt-2 border-t border-white/5 space-y-1 text-xs">
+        <div className="pt-2 border-t border-white/5 space-y-1 text-[14px] font-bold">
           <div className="flex justify-between uppercase tracking-tighter text-muted-foreground">
             <span>Índice Sintético Blue Chips</span>
             <span
               className={
-                syntheticIndex >= 0 ? "text-emerald-400" : "text-red-400"
+                syntheticIndex >= 0
+                  ? "text-emerald-400 text-[18px] font-bold"
+                  : "text-red-400 text-[18px] font-bold"
               }
             >
               {syntheticIndex >= 0 ? "+" : ""}
@@ -165,11 +169,16 @@ export function SotaMetrics({
         {/* Macro Sentiment (S&P 500) */}
         <div className="pt-2 border-t border-white/5 space-y-1 text-xs">
           <div className="flex justify-between uppercase tracking-tighter text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Globe className="w-3 h-3 text-blue-400" /> Macro S&P 500
+            <span className="flex items-center gap-1 text-[14px] font-bol">
+              <Globe className="w-3 h-3 text-blue-400 text-[18px] font-bold" />{" "}
+              Macro S&P 500
             </span>
             <span
-              className={macroIndex >= 0 ? "text-blue-400" : "text-amber-400"}
+              className={
+                macroIndex >= 0
+                  ? "text-blue-400 text-[18px] font-bold"
+                  : "text-amber-400 text-[18px] font-bold"
+              }
             >
               {macroIndex >= 0 ? "+" : ""}
               {macroIndex.toFixed(2)}%
@@ -186,8 +195,9 @@ export function SotaMetrics({
         </div>
 
         {/* Regime */}
-        <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Regime de Mercado</span>
+        <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[14px] ">
+          REGIME DE MERCADO
+          {/* <span className="text-muted-foreground text-[14px] font-bold">Regime de Mercado</span> */}
           <span
             className={`px-2 py-0.5 rounded font-bold ${regime === 2 ? "bg-red-500/20 text-red-400" : "bg-blue-500/20 text-blue-400"}`}
           >
