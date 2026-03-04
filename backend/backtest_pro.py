@@ -572,12 +572,17 @@ class BacktestPro:
                     # Quando RSI+BB+Vol confirmam sobrecompra E IA não contradiz (score < 60):
                     # executa VENDA com lote conservador (0.5 contratos).
                     # Isso captura reversões intraday onde o PatchTST (tendencialista) ainda não detectou o topo.
-                    confidence_thr = self.opt_params.get('confidence_threshold', 0.75)
-                    ia_nao_contradiz_venda = (ai_score < 65.0) and (ai_dir != "COMPRA")  # [MELHORIA D - 03/03/2026] 60→65 para mais vendas quando IA levemente bullish
+                    # [REC.2 - 03/03/2026] FILTRO DE VOLATILIDADE ATR NO GATE DE VENDA
+                    # ATR M1 do WIN$ em dias normais: 40-80pts/candle
+                    # ATR M1 em dias voláteis (como 03/03 Δ=4490pts): 100-180pts/candle
+                    # Limiar 100pts = proxy confiável para dias de alta volatilidade
+                    atr_ok_pra_venda = (atr_current <= 100.0)  # [REC.2] Bloqueia VENDA gate técnico em dias voláteis
+                    ia_nao_contradiz_venda = (ai_score < 65.0) and (ai_dir != "COMPRA")  # [MELHORIA D]
                     v22_sell_technical = (
                         v22_sell_raw
                         and ia_nao_contradiz_venda
-                        and not v22_sell  # Só ativa se o gate principal NÃO ativou
+                        and atr_ok_pra_venda          # [REC.2] Filtro de volatilidade
+                        and not v22_sell              # Só ativa se o gate principal NÃO ativou
                         and cooldown_ok
                         and not bias_veto_sell
                     )
@@ -826,11 +831,16 @@ class BacktestPro:
                 # [AUTORIZADO 03/03/2026] GATE TÉCNICO DE VENDA CONSERVADOR
                 # Executa venda somente se gate técnico ativo E posição não aberta
                 elif use_ai_core and v22_sell_technical and time_ok and risk_ok and limit_ok and vol_stable and not self.position:
-                    # [MELHORIA G - 03/03/2026] SL dinâmico por ATR em vez de fixo
-                    # ATR médio WIN$: ~150-200pts. SL = 1.3x ATR (absorve ruído sem deixar SL muito longe)
-                    atr_sl = max(150.0, min(300.0, atr_current * 1.3)) if atr_current > 0 else 200.0
+                    # [REC.3 - 03/03/2026] SL ADAPTATIVO: mais espaço em mercados voláteis
+                    # ATR M1 WIN$ normal: 40-80pts | volátil: 100-180pts
+                    # Limiar 70pts (ATR M1): distingue dia normal de dia agitado
+                    multiplicador_sl = 1.5 if atr_current > 70 else 1.3
+                    atr_sl = max(150.0, min(400.0, atr_current * multiplicador_sl)) if atr_current > 0 else 200.0
                     tech_sl_pts = atr_sl
-                    tech_tp_pts = 400.0  # [MELHORIA E - 03/03/2026] 300→400pts para melhor Reward/Risk
+                    # [REC.1 - 03/03/2026] TP ADAPTATIVO em dias voláteis
+                    # ATR M1 > 90pts = dia extremo (Δ dia > ~3000pts) → TP = 250pts (realização rápida segura)
+                    # ATR M1 ≤ 90pts = dia normal → TP = 400pts (configuração melhorias A-H mantida)
+                    tech_tp_pts = 250.0 if atr_current > 90 else 400.0
                     sl_tech = row['close'] + tech_sl_pts
                     tp_tech = row['close'] - tech_tp_pts
                     tech_lot = 1  # Lote mínimo conservador
