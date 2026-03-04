@@ -765,13 +765,13 @@ export function TradingDashboard() {
                   Log de Execução Autônoma
                 </span>
                 <div className="flex items-center gap-2 self-end sm:self-auto">
-                  <div className="flex bg-black/40 p-0.5 rounded-lg border border-white/5">
+                  <div className="flex bg-black/40 p-0.5 rounded-lg border border-white/5 ">
                     {["TODOS", "INFO", "SUCESSO", "ALERTA", "ERRO"].map((f) => (
                       <button
                         key={f}
                         onClick={() => setLogFilter(f as any)}
                         className={cn(
-                          "px-2 py-0.5 text-[9px] font-bold rounded-md transition-all",
+                          "px-2 py-0.5 text-[12px] font-bold rounded-md transition-all",
                           logFilter === f
                             ? "bg-white/10 text-white shadow-sm"
                             : "text-muted-foreground hover:text-zinc-300",
@@ -782,7 +782,7 @@ export function TradingDashboard() {
                     ))}
                   </div>
                   <span
-                    className={`text-[9px] animate-pulse border px-2 py-0.5 rounded hidden sm:inline-block ${
+                    className={`text-[16px] animate-pulse border px-2 py-0.5 rounded hidden sm:inline-block ${
                       data?.dry_run
                         ? "text-emerald-400/70 border-emerald-500/20 bg-emerald-500/10"
                         : "text-amber-400/90 border-amber-500/30 bg-amber-500/10"
@@ -813,19 +813,19 @@ export function TradingDashboard() {
                     <div
                       key={log.id}
                       className={cn(
-                        "flex items-start gap-2 p-1.5 rounded transition-all animate-in slide-in-from-left-2 duration-300 border border-transparent group hover:bg-white/[0.04] hover:border-white/[0.05]",
+                        "text-[16px] flex items-start gap-2 p-1.5 rounded transition-all animate-in slide-in-from-left-2 duration-300 border border-transparent group hover:bg-white/[0.04] hover:border-white/[0.05]",
                         index % 2 !== 0 ? "bg-white/[0.02]" : "",
                         LOG_COLORS[log.type as keyof typeof LOG_COLORS] ||
                           "text-muted-foreground",
                       )}
                     >
-                      <span className="text-zinc-500 opacity-60 font-light shrink-0 tabular-nums">
+                      <span className="text-[16px] text-zinc-500 opacity-90 font-light shrink-0 tabular-nums">
                         [{log.time}]
                       </span>
                       {LOG_ICONS[log.type as keyof typeof LOG_ICONS] || (
                         <Info size={14} className="text-zinc-500 shrink-0" />
                       )}
-                      <span className="font-medium text-[11px] text-white/90 leading-relaxed tracking-wide flex-1">
+                      <span className=" text-[14px] text-white/70 leading-relaxed tracking-wide flex-1">
                         {formatLogMessage(log.msg)}
                       </span>
                     </div>

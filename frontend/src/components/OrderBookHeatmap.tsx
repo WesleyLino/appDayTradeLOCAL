@@ -87,7 +87,7 @@ export function OrderBookHeatmap() {
           ) : (
             <Badge
               variant="default"
-              className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/50"
+              className="text-1xl bg-emerald-500/20 text-emerald-400 border-emerald-500/50"
             >
               Dados em Tempo Real
             </Badge>
@@ -98,13 +98,13 @@ export function OrderBookHeatmap() {
         <div className="flex gap-4">
           {/* Lado da Compra (Bids) - Verde */}
           <div className="flex-1 flex flex-col gap-0.5">
-            <div className="text-xs text-center text-emerald-500 mb-1 font-bold">
+            <div className="text-1xl text-center text-emerald-500 mb-1 font-bold">
               COMPRA
             </div>
             {book.bids.map((level, i) => (
               <div
                 key={`bid-${i}`}
-                className="flex justify-between text-xs px-2 py-1 rounded relative overflow-hidden"
+                className="flex justify-between text-1xl px-2 py-1 rounded relative overflow-hidden"
               >
                 {/* Barra de Fundo (Heatmap) */}
                 <div
@@ -127,13 +127,13 @@ export function OrderBookHeatmap() {
 
           {/* Lado da Venda (Asks) - Vermelho */}
           <div className="flex-1 flex flex-col gap-0.5">
-            <div className="text-xs text-center text-rose-500 mb-1 font-bold">
+            <div className="text-1xl text-center text-rose-500 mb-1 font-bold">
               VENDA
             </div>
             {book.asks.map((level, i) => (
               <div
                 key={`ask-${i}`}
-                className="flex justify-between text-xs px-2 py-1 rounded relative overflow-hidden"
+                className="flex justify-between text-1xl px-2 py-1 rounded relative overflow-hidden"
               >
                 {/* Barra de Fundo (Heatmap) */}
                 <div

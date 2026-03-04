@@ -29,7 +29,9 @@ export function TradingChart() {
     const chart = createChart(chartContainerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
-        textColor: "#a1a1aa",
+        textColor: "#f3f8f8ff",
+        // textColor: "#a1a1aa",
+        fontSize: 18,
       },
       grid: {
         vertLines: { color: "#27272a" },
@@ -44,7 +46,8 @@ export function TradingChart() {
     });
 
     const candlestickSeries = chart.addSeries(CandlestickSeries, {
-      upColor: "#10b981",
+      // upColor: "#10b981",
+      upColor: "#08c908ff",
       downColor: "#ef4444",
       borderVisible: false,
       wickUpColor: "#10b981",
@@ -69,7 +72,7 @@ export function TradingChart() {
     // [SOTA] Uncertainty Cone Series
     const forecastSeries = chart.addSeries(LineSeries, {
       color: "#06b6d4", // Cyan (AI)
-      lineWidth: 2,
+      lineWidth: 1,
       lineStyle: LineStyle.Solid,
       crosshairMarkerVisible: false,
       lastValueVisible: false,
