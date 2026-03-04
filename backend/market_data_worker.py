@@ -59,6 +59,23 @@ class MarketDataWorker:
             # 4. Preço de Ajuste (WIN$)
             settlement_price = await asyncio.to_thread(self.bridge.get_settlement_price, "WIN$")
 
+            # [MT5-INTEG] Coleta Paralela dos Novos Dados de Alta Fidelidade
+            (htf_bias, real_cvd, liquidity_data, wdo_cvd, commission_today) = await asyncio.gather(
+                asyncio.to_thread(self.bridge.get_htf_bias, "WIN$"),           # #3: Viés H1
+                asyncio.to_thread(self.bridge.get_real_cvd_ticks, "WIN$"),     # #2: CVD Real Tick
+                asyncio.to_thread(self.bridge.get_daily_volume_and_liquidity, "WIN$"),  # #6: Liquidez D1
+                asyncio.to_thread(self.bridge.get_real_cvd_ticks, "WDO$"),     # #4: CVD WDO para correlação
+                asyncio.to_thread(self.bridge.get_real_commission_today),       # #7: Comissão real
+            )
+
+            # [MT5-INTEG #4] Correlação WDO-WIN: CVD oposto no WDO = confirmação direcional no WIN
+            wdo_win_signal = "NEUTRO"
+            if abs(real_cvd) >= 10 and abs(wdo_cvd) >= 5:
+                if (real_cvd > 0 and wdo_cvd < 0) or (real_cvd < 0 and wdo_cvd > 0):
+                    wdo_win_signal = "CONFIRMADO"
+                else:
+                    wdo_win_signal = "DIVERGENTE"
+
             # Montar o pacote de contexto
             context = {
                 "timestamp": time.time(),
@@ -69,7 +86,16 @@ class MarketDataWorker:
                     "volatility_expected": vol_expected,
                     "reason": str(vol_reason)
                 },
-                "settlement_price": float(settlement_price or 0.0)
+                "settlement_price": float(settlement_price or 0.0),
+                # [MT5-INTEG] Novos campos de alta fidelidade
+                "htf_bias": str(htf_bias),
+                "real_cvd": float(real_cvd),
+                "real_cvd_wdo": float(wdo_cvd),
+                "wdo_win_signal": wdo_win_signal,
+                "low_liquidity": bool(liquidity_data.get("low_liquidity", False)),
+                "volume_today": int(liquidity_data.get("volume_today", 0)),
+                "avg_volume_10d": float(liquidity_data.get("avg_volume_10d", 0)),
+                "commission_today": float(commission_today),
             }
 
             # [DYNAMIC-FIX] Adiciona ruído sutil para evitar estaticidade visual (Dashboard Vivo)
@@ -92,7 +118,7 @@ class MarketDataWorker:
                 json.dump(context, f, indent=2)
             os.replace(temp_path, self.output_path)
             
-            logging.debug(f"✅ MarketDataWorker: Contexto atualizado. IDX: {context['synthetic_index']:.4f}")
+            logging.debug(f"✅ MarketDataWorker: Contexto atualizado. IDX: {context['synthetic_index']:.4f} | HTF: {htf_bias} | CVD Real: {real_cvd:.0f} | Liq: {'BAIXA' if context['low_liquidity'] else 'OK'}")
             
         except Exception as e:
             logging.error(f"❌ MarketDataWorker Error: {sanitize_log(e)}")

@@ -48,7 +48,7 @@ def run_ping_test():
         else:
             logging.error("Falha ao fechar posição instantaneamente. VERIFIQUE SEU PAINEL DO MT5.")
     else:
-        logging.error(f"Falha ao executar ordem de compra inicial.")
+        logging.error("Falha ao executar ordem de compra inicial.")
         
     bridge.disconnect()
     logging.info("Teste Finalizado.")

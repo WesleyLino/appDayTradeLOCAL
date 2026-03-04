@@ -852,6 +852,12 @@ async def autonomous_bot_loop():
                 vol_reason = ctx.get("calendar", {}).get("reason", "")
 
                 settlement_price = ctx.get("settlement_price", 0.0)
+                # [MT5-INTEG] Novos dados de alta fidelidade publicados pelo MarketDataWorker
+                htf_bias       = ctx.get("htf_bias", "NEUTRAL")        # Viés tendência H1
+                real_cvd_ctx   = ctx.get("real_cvd", 0.0)              # CVD via ticks reais
+                wdo_win_signal = ctx.get("wdo_win_signal", "NEUTRO")   # Correlação WDO-WIN
+                low_liquidity  = ctx.get("low_liquidity", False)        # Flag de baixa liquidez
+                commission_today = ctx.get("commission_today", 0.0)    # Custo real do dia
 
 
 
@@ -1524,6 +1530,37 @@ async def autonomous_bot_loop():
 
 
 
+                # --- FASE 5b: FILTROS HTF E LIQUIDEZ [MT5-INTEG] ---
+
+                # [MT5-INTEG #3] Filtro HTF H1: reduz score quando sinal vai contra tendência horária
+                if htf_bias == "BULL" and ai_direction == "SELL":
+                    ai_total_score = max(50.0, ai_total_score - 3.0)
+                    logging.debug("[HTF-FILTRO] H1 BULL, sinal SELL penalizado -3.0pts")
+                elif htf_bias == "BEAR" and ai_direction == "BUY":
+                    ai_total_score = max(50.0, ai_total_score - 3.0)
+                    logging.debug("[HTF-FILTRO] H1 BEAR, sinal BUY penalizado -3.0pts")
+
+                # [MT5-INTEG #6] Filtro de Baixa Liquidez: bloqueia entrada em dias rasos
+                if low_liquidity and not auction_block:
+                    logging.warning("[LIQUIDEZ] Volume D1 abaixo de 60% da media. Operacao bloqueada por baixa liquidez.")
+                    add_operational_log("VETO: Baixa Liquidez D1 — Volume abaixo de 60% da media 10D", "warning")
+                    ai_total_score = 50.0
+                    ai_direction   = "NEUTRAL"
+
+                # [MT5-INTEG #4] Correlação WDO-WIN: sinal DIVERGENTE reduz score
+                if wdo_win_signal == "DIVERGENTE" and ai_direction in ["BUY", "SELL"]:
+                    ai_total_score = max(50.0, ai_total_score - 4.0)
+                    logging.debug("[WDO-WIN] Correlacao DIVERGENTE. Score penalizado -4.0pts")
+
+                # [MT5-INTEG #2] CVD Real: se disponivel e a favor, reforca confirmacao
+                if abs(real_cvd_ctx) > 50:
+                    if (ai_direction == "BUY" and real_cvd_ctx > 0) or \
+                       (ai_direction == "SELL" and real_cvd_ctx < 0):
+                        ai_total_score = min(100.0, ai_total_score + 2.0)
+                        logging.debug(f"[CVD-REAL] Tick CVD confirma direcao ({real_cvd_ctx:.0f}). +2.0pts")
+
+                # --- FIM DOS FILTROS HTF E LIQUIDEZ ---
+
                 market_condition = risk.validate_market_condition(symbol, regime, current_atr, avg_atr)
 
                 market_ok = market_condition["allowed"]
@@ -1777,7 +1814,9 @@ async def autonomous_bot_loop():
 
                                 point_value = 10.0 if "WDO" in symbol or "DOL" in symbol else 0.20
 
-                                sota_lots = risk.calculate_volatility_sizing(account['balance'], current_atr, point_value)
+                                # [MT5-INTEG #5] Usa equity no sizing quando ha pos. aberta
+                                sizing_balance = account.get('equity', account['balance']) if account.get('equity', 0) > 0 else account['balance']
+                                sota_lots = risk.calculate_volatility_sizing(sizing_balance, current_atr, point_value)
 
                                 
 
@@ -1917,7 +1956,9 @@ async def autonomous_bot_loop():
 
                                     point_value = 10.0 if "WDO" in symbol or "DOL" in symbol else 0.20
 
-                                    sota_lots = risk.calculate_volatility_sizing(account['balance'], current_atr, point_value)
+                                    # [MT5-INTEG #5] Usa equity no sizing quando ha pos. aberta
+                                    sizing_balance = account.get('equity', account['balance']) if account.get('equity', 0) > 0 else account['balance']
+                                    sota_lots = risk.calculate_volatility_sizing(sizing_balance, current_atr, point_value)
 
                                     
 

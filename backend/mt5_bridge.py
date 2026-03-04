@@ -946,7 +946,122 @@ class MT5Bridge:
             logging.error(f"Erro na extração em massa de Ticks para {symbol}: {sanitize_log(e)}")
             return pd.DataFrame()
 
+    def get_htf_bias(self, symbol, n_candles=30):
+        """
+        [MT5-INTEG #3] Calcula o viés de tendência Horária (H1) para filtro HTF.
+        Estratégia: EMA9 > EMA21 nos últimos candles H1 = BULL, caso contrário BEAR.
+        Retorna: "BULL", "BEAR" ou "NEUTRAL"
+        """
+        if not self.connected:
+            return "NEUTRAL"
+        try:
+            rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, n_candles)
+            if rates is None or len(rates) < 21:
+                return "NEUTRAL"
+            closes = pd.Series([r['close'] for r in rates])
+            ema9  = closes.ewm(span=9, adjust=False).mean().iloc[-1]
+            ema21 = closes.ewm(span=21, adjust=False).mean().iloc[-1]
+            if ema9 > ema21 * 1.0005:   # margem mínima de 0.05% para evitar ruído
+                return "BULL"
+            elif ema9 < ema21 * 0.9995:
+                return "BEAR"
+            return "NEUTRAL"
+        except Exception as e:
+            logging.error(f"Erro em get_htf_bias para {symbol}: {sanitize_log(e)}")
+            return "NEUTRAL"
+
+    def get_real_cvd_ticks(self, symbol, n=500):
+        """
+        [MT5-INTEG #2] Calcula o CVD Real usando flags de agressão dos ticks (TICK_FLAG_BUY/SELL).
+        Mais fidedigno que o CVD baseado em OHLCV.
+        Retorna: float (positivo = pressão compradora, negativo = pressão vendedora)
+        """
+        if not self.connected:
+            return 0.0
+        try:
+            ticks = mt5.copy_ticks_from(symbol, datetime.utcnow(), n, mt5.COPY_TICKS_ALL)
+            if ticks is None or len(ticks) == 0:
+                return 0.0
+            cvd = 0.0
+            for t in ticks:
+                vol = float(t['volume']) if t['volume'] > 0 else 1.0
+                if t['flags'] & mt5.TICK_FLAG_BUY:
+                    cvd += vol
+                elif t['flags'] & mt5.TICK_FLAG_SELL:
+                    cvd -= vol
+            return float(cvd)
+        except Exception as e:
+            logging.error(f"Erro em get_real_cvd_ticks para {symbol}: {sanitize_log(e)}")
+            return 0.0
+
+    def get_daily_volume_and_liquidity(self, symbol):
+        """
+        [MT5-INTEG #6] Retorna o volume real negociado no dia e classifica a liquidez.
+        Compara com a média dos últimos 10 dias para detectar dias de baixa liquidez.
+        Retorna: dict com 'volume_today', 'avg_volume_10d', 'low_liquidity' (bool)
+        """
+        if not self.connected:
+            return {"volume_today": 0, "avg_volume_10d": 0, "low_liquidity": False}
+        try:
+            rates_10d = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, 11)
+            if rates_10d is None or len(rates_10d) < 2:
+                return {"volume_today": 0, "avg_volume_10d": 0, "low_liquidity": False}
+            volume_today  = int(rates_10d[-1]['real_volume'] or rates_10d[-1]['tick_volume'])
+            avg_10d = sum(
+                int(r['real_volume'] or r['tick_volume']) for r in rates_10d[:-1]
+            ) / max(len(rates_10d) - 1, 1)
+            low_liquidity = (avg_10d > 0) and (volume_today < avg_10d * 0.6)
+            return {
+                "volume_today": volume_today,
+                "avg_volume_10d": round(avg_10d, 0),
+                "low_liquidity": low_liquidity
+            }
+        except Exception as e:
+            logging.error(f"Erro em get_daily_volume_and_liquidity para {symbol}: {sanitize_log(e)}")
+            return {"volume_today": 0, "avg_volume_10d": 0, "low_liquidity": False}
+
+    def get_floating_pnl(self):
+        """
+        [MT5-INTEG #5] Retorna o lucro/prejuízo flutuante real das posições abertas.
+        Mais preciso que account_info.profit em contas netting da B3.
+        """
+        if not self.connected:
+            return 0.0
+        try:
+            positions = mt5.positions_get()
+            if not positions:
+                return 0.0
+            return sum(float(p.profit) for p in positions)
+        except Exception as e:
+            logging.error(f"Erro em get_floating_pnl: {sanitize_log(e)}")
+            return 0.0
+
+    def get_real_commission_today(self):
+        """
+        [MT5-INTEG #7] Calcula o custo real de comissão + swap do dia a partir dos deals fechados.
+        Permite que o PnL líquido seja preciso ao invés de estimado.
+        Retorna: float (negativo = custo)
+        """
+        if not self.connected:
+            return 0.0
+        try:
+            now = datetime.utcnow()
+            start_of_day = datetime(now.year, now.month, now.day)
+            deals = mt5.history_deals_get(start_of_day, now)
+            if not deals:
+                return 0.0
+            total_cost = sum(
+                float(d.commission) + float(d.swap)
+                for d in deals
+                if d.type in [mt5.DEAL_TYPE_BUY, mt5.DEAL_TYPE_SELL]
+            )
+            return round(total_cost, 2)
+        except Exception as e:
+            logging.error(f"Erro em get_real_commission_today: {sanitize_log(e)}")
+            return 0.0
+
 if __name__ == "__main__":
+
     # Teste de conexão básico
     bridge = MT5Bridge()
     if bridge.connect():
