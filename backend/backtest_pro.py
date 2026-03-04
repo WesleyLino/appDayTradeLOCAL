@@ -63,11 +63,11 @@ class BacktestPro:
             'trailing_step': kwargs.get('trailing_step', locked_params.get('trailing_step', 20.0)), # [ANTIVIBE-CODING]
             'sl_dist': kwargs.get('sl_dist', locked_params.get('sl_dist', 150.0)), # [ANTIVIBE-CODING]
             'tp_dist': kwargs.get('tp_dist', locked_params.get('tp_dist', 400.0)), # [ANTIVIBE-CODING]
-            'confidence_threshold': kwargs.get('confidence_threshold', locked_params.get('confidence_threshold', 0.85)), # [ANTIVIBE-CODING]
+            'confidence_threshold': kwargs.get('confidence_threshold', locked_params.get('confidence_threshold', 0.70)), # [MELHORIA A - 03/03/2026] 0.85→0.70 para capturar trades borderline com PatchTST ao vivo
             'aggressive_mode': kwargs.get('aggressive_mode', True),
             'use_trailing_stop': kwargs.get('use_trailing_stop', True),
             'dynamic_lot': kwargs.get('dynamic_lot', locked_params.get('dynamic_lot', False)),
-            'start_time': kwargs.get('start_time', "09:15"),
+            'start_time': kwargs.get('start_time', "09:00"),  # [MELHORIA B - 03/03/2026] 09:15→09:00 para capturar abertura de gap
             'end_time': kwargs.get('end_time', "17:15"),
             'daily_trade_limit': kwargs.get('daily_trade_limit', locked_params.get('daily_trade_limit', 999)),
             'use_flux_filter': kwargs.get('use_flux_filter', locked_params.get('use_flux_filter', True)), # [ANTIVIBE-CODING]
@@ -126,7 +126,10 @@ class BacktestPro:
             'tiers': {'70-75': 0, '75-80': 0, '80-85': 0}
         }
         self.last_day = None
-        self.last_trade_time = datetime(2000, 1, 1) # Cooldown control
+        self.last_trade_time = datetime(2000, 1, 1) # Cooldown control geral
+        # [MELHORIA H - 03/03/2026] Cooldown diferenciado por direção
+        self._last_buy_time  = datetime(2000, 1, 1)  # Cooldown independente de COMPRA
+        self._last_sell_time = datetime(2000, 1, 1)  # Cooldown independente de VENDA
         self.data = None # Para inspeção externa
 
     async def load_data(self):
@@ -533,8 +536,8 @@ class BacktestPro:
                     )
                     
                     # [v50.1] Hyper-Opt de Gatilhos Técnicos
-                    rsi_buy_level = self.opt_params.get('rsi_buy_level', 30)
-                    rsi_sell_level = self.opt_params.get('rsi_sell_level', 70)
+                    rsi_buy_level = self.opt_params.get('rsi_buy_level', 32)  # [MELHORIA C - 03/03/2026] 30→32 para capturar compras antes do RSI extremo
+                    rsi_sell_level = self.opt_params.get('rsi_sell_level', 68)  # [MELHORIA C - 03/03/2026] 70→68 simétrico para vendas
                     v_spike_mult = self.opt_params.get('vol_spike_mult', 1.5)
                     
                     vol_spike_eff = row['tick_volume'] > (vol_sma * v_spike_mult)
@@ -570,7 +573,7 @@ class BacktestPro:
                     # executa VENDA com lote conservador (0.5 contratos).
                     # Isso captura reversões intraday onde o PatchTST (tendencialista) ainda não detectou o topo.
                     confidence_thr = self.opt_params.get('confidence_threshold', 0.75)
-                    ia_nao_contradiz_venda = (ai_score < 60.0) and (ai_dir != "COMPRA")
+                    ia_nao_contradiz_venda = (ai_score < 65.0) and (ai_dir != "COMPRA")  # [MELHORIA D - 03/03/2026] 60→65 para mais vendas quando IA levemente bullish
                     v22_sell_technical = (
                         v22_sell_raw
                         and ia_nao_contradiz_venda
@@ -812,13 +815,22 @@ class BacktestPro:
                         'execution_mode': ai_decision.get('execution_mode', 'LIMIT') if 'ai_decision' in locals() else 'LIMIT'
                     }
                     self.daily_trade_count += 1
+                    # [MELHORIA H - 03/03/2026] Rastreia cooldown por direção
+                    if side == 'buy':
+                        self._last_buy_time = row.name
+                    else:
+                        self._last_sell_time = row.name
                     logging.info(f"🎯 GATILHO V22 [{regime_tag}]: {side} @ {row['close']} | Lotes: {target_lot}")
+
                 
                 # [AUTORIZADO 03/03/2026] GATE TÉCNICO DE VENDA CONSERVADOR
                 # Executa venda somente se gate técnico ativo E posição não aberta
                 elif use_ai_core and v22_sell_technical and time_ok and risk_ok and limit_ok and vol_stable and not self.position:
-                    tech_sl_pts = 200.0  # SL conservador para gate técnico
-                    tech_tp_pts = 300.0  # TP conservador 
+                    # [MELHORIA G - 03/03/2026] SL dinâmico por ATR em vez de fixo
+                    # ATR médio WIN$: ~150-200pts. SL = 1.3x ATR (absorve ruído sem deixar SL muito longe)
+                    atr_sl = max(150.0, min(300.0, atr_current * 1.3)) if atr_current > 0 else 200.0
+                    tech_sl_pts = atr_sl
+                    tech_tp_pts = 400.0  # [MELHORIA E - 03/03/2026] 300→400pts para melhor Reward/Risk
                     sl_tech = row['close'] + tech_sl_pts
                     tp_tech = row['close'] - tech_tp_pts
                     tech_lot = 1  # Lote mínimo conservador
@@ -836,7 +848,9 @@ class BacktestPro:
                     }
                     self.daily_trade_count += 1
                     self.last_trade_time = row.name
-                    logging.info(f"📉 [GATE TÉCNICO] VENDA @ {row['close']} | RSI={rsi:.1f} | Score_IA={ai_score:.1f} | TP={tech_tp_pts}pts | SL={tech_sl_pts}pts")
+                    # [MELHORIA H - 03/03/2026] Cooldown independente para VENDA gate técnico
+                    self._last_sell_time = row.name  # Rastreia último trade de venda separadamente
+                    logging.info(f"📉 [GATE TÉCNICO] VENDA @ {row['close']} | RSI={rsi:.1f} | Score_IA={ai_score:.1f} | TP={tech_tp_pts}pts | SL={tech_sl_pts:.0f}pts (ATR={atr_current:.0f})")
 
             
             # Atualizar Drawdown
