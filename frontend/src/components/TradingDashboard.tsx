@@ -780,8 +780,14 @@ export function TradingDashboard() {
                       </button>
                     ))}
                   </div>
-                  <span className="text-[9px] text-emerald-400/70 animate-pulse border border-emerald-500/20 px-2 py-0.5 bg-emerald-500/10 rounded hidden sm:inline-block">
-                    SIMULAÇÃO
+                  <span
+                    className={`text-[9px] animate-pulse border px-2 py-0.5 rounded hidden sm:inline-block ${
+                      data?.dry_run
+                        ? "text-emerald-400/70 border-emerald-500/20 bg-emerald-500/10"
+                        : "text-amber-400/90 border-amber-500/30 bg-amber-500/10"
+                    }`}
+                  >
+                    {data?.dry_run ? "SIMULAÇÃO" : "REAL"}
                   </span>
                 </div>
               </div>

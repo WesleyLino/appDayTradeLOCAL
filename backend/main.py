@@ -2020,7 +2020,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
                                                         "bluechips": bluechips if isinstance(bluechips, dict) else {},
 
-                                                        "limits": session_limits
+                                                        "limits": session_limits,
+
+                                                        "dry_run": risk.dry_run
 
                                                     },
 
@@ -2249,6 +2251,8 @@ async def websocket_endpoint(websocket: WebSocket):
                             }
 
                         },
+
+                        "dry_run": risk.dry_run,
 
                         "timestamp": (datetime.utcnow() - timedelta(hours=3)).timestamp(),
 

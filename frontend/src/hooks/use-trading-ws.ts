@@ -98,6 +98,7 @@ interface TradeData {
     equity: number;
   };
   timestamp: number;
+  dry_run?: boolean;
 }
 
 interface TradingStore {
