@@ -543,7 +543,7 @@ export function TradingDashboard() {
           <TradingChart />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-5 glass rounded-2xl shadow-xl flex flex-col gap-4 min-h-[180px] border border-white/10">
+            <div className="p-5 glass rounded-2xl shadow-xl flex flex-col gap-4 min-h-[380px] border border-white/10">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] text-muted-foreground uppercase tracking-widest font-bold flex items-center gap-2">
                   <Bot size={16} className="text-primary animate-pulse" />
@@ -562,7 +562,7 @@ export function TradingDashboard() {
                 </div>
               </div>
 
-              <div className="flex-1 space-y-3 overflow-y-auto max-h-[120px] custom-scrollbar pr-2">
+              <div className="flex-1 space-y-3 overflow-y-auto max-h-[420px] custom-scrollbar pr-2">
                 {data?.sentiment &&
                 typeof data.sentiment === "object" &&
                 Array.isArray(data.sentiment.headlines) &&
@@ -609,12 +609,12 @@ export function TradingDashboard() {
                         className="flex flex-col gap-2 p-3 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:border-primary/30 hover:bg-white/[0.06] transition-all duration-300 group"
                       >
                         <div className="flex justify-between items-start gap-4">
-                          <p className="text-xs font-semibold leading-relaxed text-zinc-200 group-hover:text-white transition-colors">
+                          <p className="text-[16px]  leading-relaxed text-zinc-200 group-hover:text-white transition-colors">
                             {typeof item === "string" ? item : item.headline}
                           </p>
                           <span
                             className={cn(
-                              "text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider shrink-0 border",
+                              "text-[12px] font-black px-2 py-0.5 rounded uppercase tracking-wider shrink-0 border",
                               impact.color,
                             )}
                           >
@@ -625,10 +625,10 @@ export function TradingDashboard() {
                         {item.relevance !== undefined && (
                           <div className="flex items-center gap-3 mt-1">
                             <div className="flex items-center gap-1.5 min-w-[60px]">
-                              <span className="text-[9px] text-muted-foreground font-medium">
+                              <span className="text-[14px] text-muted-foreground font-medium">
                                 Relevância:
                               </span>
-                              <span className="text-[9px] font-mono font-bold text-primary">
+                              <span className="text-[18px] font-mono font-bold text-primary">
                                 {(item.relevance * 100).toFixed(0)}%
                               </span>
                             </div>
@@ -687,9 +687,10 @@ export function TradingDashboard() {
                   />
                   Blue Chips (IBOV)
                 </span>
+
                 <span
                   className={cn(
-                    "text-lg font-black font-mono",
+                    "text-[18px] font-black font-mono",
                     (data?.risk_status?.synthetic_index ?? 0) > 0
                       ? "text-emerald-400"
                       : (data?.risk_status?.synthetic_index ?? 0) < 0
@@ -701,7 +702,7 @@ export function TradingDashboard() {
                 </span>
               </div>
 
-              <div className="flex-1 grid grid-cols-1 gap-2 overflow-y-auto max-h-[120px] custom-scrollbar pr-1">
+              <div className="flex-1 grid grid-cols-1 gap-2 overflow-y-auto max-h-[420px] custom-scrollbar pr-1">
                 {data?.risk_status?.bluechips ? (
                   Object.entries(data.risk_status.bluechips).map(
                     ([ticker, change]: [string, any]) => (
@@ -709,7 +710,7 @@ export function TradingDashboard() {
                         key={ticker}
                         className="flex items-center justify-between p-2 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] transition-all group"
                       >
-                        <span className="text-[11px] font-bold text-zinc-300 group-hover:text-primary transition-colors">
+                        <span className="text-[14px] font-bold text-zinc-300 group-hover:text-primary transition-colors">
                           {ticker}
                         </span>
                         <div className="flex items-center gap-2">
@@ -730,7 +731,7 @@ export function TradingDashboard() {
                           </div>
                           <span
                             className={cn(
-                              "text-[11px] font-mono font-black min-w-[55px] text-right tabular-nums tracking-tighter",
+                              "text-[18px] font-mono font-black min-w-[75px] text-right tabular-nums tracking-tighter",
                               change > 0
                                 ? "text-emerald-400"
                                 : change < 0
