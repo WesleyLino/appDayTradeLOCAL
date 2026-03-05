@@ -57,6 +57,7 @@ class RiskManager:
         # [NOVO] Switches de Controle Manual do Frontend
         self.enable_news_filter = True
         self.enable_calendar_filter = True
+        self.enable_macro_filter = True
         
         # [FASE 28] DYNAMIC PARAMS CACHE
         self.dynamic_params = {} # Carregado via load_optimized_params
@@ -465,6 +466,10 @@ class RiskManager:
         Bloqueia COMPRA se S&P500 cair > 0.5% (Bearish Global).
         Bloqueia VENDA se S&P500 subir > 0.5% (Bullish Global).
         """
+        # Se o usuário desativou manualmente o filtro Macro pela UI
+        if hasattr(self, 'enable_macro_filter') and not self.enable_macro_filter:
+            return True, "Macro Ignorado (Manual)"
+
         # Se macro_change_pct for 0.0 (não detectado), ignora o filtro
         if macro_change_pct == 0.0:
             return True, "Neutro (N/A)"

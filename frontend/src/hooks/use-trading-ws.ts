@@ -141,7 +141,7 @@ export function useTradingWebSocket(url: string = API_CONFIG.ws) {
       setConnected(false);
       console.log("WS Disconnected");
       // Reconectar após 3 segundos
-      setTimeout(connect, 3000);
+      setTimeout(() => connect(), 3000);
     };
 
     socket.onerror = (error) => {
@@ -237,6 +237,19 @@ export function useTradingWebSocket(url: string = API_CONFIG.ws) {
     }
   };
 
+  const toggleMacroFilter = async (enabled: boolean) => {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.http}/config/filters/macro?enabled=${enabled}`,
+        { method: "POST" },
+      );
+      return await response.json();
+    } catch (error) {
+      console.error("Macro Filter Config Error:", error);
+      return { status: "error", message: "Falha na rede" };
+    }
+  };
+
   return {
     sendOrder,
     setAutonomous,
@@ -244,5 +257,6 @@ export function useTradingWebSocket(url: string = API_CONFIG.ws) {
     stopSniper,
     toggleNewsFilter,
     toggleCalendarFilter,
+    toggleMacroFilter,
   };
 }

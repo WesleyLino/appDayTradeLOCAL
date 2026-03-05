@@ -2420,7 +2420,8 @@ async def get_filters():
     return {
         "status": "success",
         "news": risk.enable_news_filter,
-        "calendar": risk.enable_calendar_filter
+        "calendar": risk.enable_calendar_filter,
+        "macro": risk.enable_macro_filter
     }
 
 @app.post("/config/filters/news")
@@ -2438,6 +2439,14 @@ async def toggle_calendar_filter(enabled: bool):
         sniper_bot.risk.enable_calendar_filter = enabled
     logging.info(f"Filtro de Calendário: {'ATIVADO' if enabled else 'DESATIVADO'} manualmente.")
     return {"status": "success", "calendar": enabled}
+
+@app.post("/config/filters/macro")
+async def toggle_macro_filter(enabled: bool):
+    risk.enable_macro_filter = enabled
+    if hasattr(sniper_bot, "risk") and sniper_bot.risk:
+        sniper_bot.risk.enable_macro_filter = enabled
+    logging.info(f"Filtro Macro (S&P 500): {'ATIVADO' if enabled else 'DESATIVADO'} manualmente.")
+    return {"status": "success", "macro": enabled}
 
 
 @app.post("/config/sniper/start")
