@@ -931,7 +931,7 @@ export function TradingDashboard() {
                 className={cn(
                   "flex items-center justify-between p-3 rounded-lg border transition-all duration-300",
                   calendarFilterEnabled
-                    ? "bg-amber-500/10 border-amber-500/30"
+                    ? "bg-emerald-500/10 border-emerald-500/30"
                     : "bg-white/5 border-white/10",
                 )}
               >
@@ -941,16 +941,17 @@ export function TradingDashboard() {
                     className={cn(
                       "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
                       calendarFilterEnabled
-                        ? "text-amber-500"
+                        ? "text-emerald-500"
                         : "text-muted-foreground",
                     )}
                   >
-                    Veto Agenda <span className="opacity-60 text-xs">🕒</span>
+                    Filtro Calendário{" "}
+                    <span className="opacity-60 text-xs">🕒</span>
                   </Label>
                   <span className="text-[14px] text-muted-foreground leading-tight">
-                    Bloqueia 10min em
-                    <br />
-                    notícias Payroll/Fed
+                    {calendarFilterEnabled
+                      ? "ATIVO (Evitando eventos)"
+                      : "DESATIVADO"}
                   </span>
                 </div>
                 <Switch
@@ -960,7 +961,7 @@ export function TradingDashboard() {
                   disabled={isUpdatingFilters}
                   className={
                     calendarFilterEnabled
-                      ? "data-[state=checked]:bg-amber-500"
+                      ? "data-[state=checked]:bg-emerald-500"
                       : ""
                   }
                 />
@@ -971,7 +972,7 @@ export function TradingDashboard() {
                 className={cn(
                   "flex items-center justify-between p-3 rounded-lg border transition-all duration-300",
                   newsFilterEnabled
-                    ? "bg-amber-500/10 border-amber-500/30"
+                    ? "bg-emerald-500/10 border-emerald-500/30"
                     : "bg-white/5 border-white/10",
                 )}
               >
@@ -981,15 +982,16 @@ export function TradingDashboard() {
                     className={cn(
                       "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
                       newsFilterEnabled
-                        ? "text-amber-500"
+                        ? "text-emerald-500"
                         : "text-muted-foreground",
                     )}
                   >
-                    Veto Origem <span className="opacity-60 text-xs">📰</span>
+                    Notícias NLP <span className="opacity-60 text-xs">📰</span>
                   </Label>
                   <span className="text-[14px] text-muted-foreground leading-tight">
-                    Bloqueia contra a<br />
-                    manchete atual
+                    {newsFilterEnabled
+                      ? "ATIVO (Filtrando sentimentos)"
+                      : "DESATIVADO"}
                   </span>
                 </div>
                 <Switch
@@ -998,7 +1000,9 @@ export function TradingDashboard() {
                   onCheckedChange={handleToggleNews}
                   disabled={isUpdatingFilters}
                   className={
-                    newsFilterEnabled ? "data-[state=checked]:bg-amber-500" : ""
+                    newsFilterEnabled
+                      ? "data-[state=checked]:bg-emerald-500"
+                      : ""
                   }
                 />
               </div>
@@ -1008,7 +1012,7 @@ export function TradingDashboard() {
                 className={cn(
                   "flex items-center justify-between p-3 rounded-lg border transition-all duration-300",
                   macroFilterEnabled
-                    ? "bg-amber-500/10 border-amber-500/30"
+                    ? "bg-emerald-500/10 border-emerald-500/30"
                     : "bg-white/5 border-white/10",
                 )}
               >
@@ -1018,16 +1022,17 @@ export function TradingDashboard() {
                     className={cn(
                       "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
                       macroFilterEnabled
-                        ? "text-amber-500"
+                        ? "text-emerald-500"
                         : "text-muted-foreground",
                     )}
                   >
-                    Veto S&P <span className="opacity-60 text-xs">🌍</span>
+                    Filtro S&P 500{" "}
+                    <span className="opacity-60 text-xs">🌍</span>
                   </Label>
                   <span className="text-[14px] text-muted-foreground leading-tight">
-                    Corta buys em
-                    <br />
-                    queda \u003e 0.5%
+                    {macroFilterEnabled
+                      ? "ATIVO (Corta buys > 0.5%)"
+                      : "DESATIVADO"}
                   </span>
                 </div>
                 <Switch
@@ -1037,7 +1042,7 @@ export function TradingDashboard() {
                   disabled={isUpdatingFilters}
                   className={
                     macroFilterEnabled
-                      ? "data-[state=checked]:bg-amber-500"
+                      ? "data-[state=checked]:bg-emerald-500"
                       : ""
                   }
                 />
