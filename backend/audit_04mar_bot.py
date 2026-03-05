@@ -120,7 +120,7 @@ async def run_mt5_analysis():
                 best_config = {"thresh": thresh, "flux": flux}
 
     if best_config:
-        print(f'🌟 PARAMETRIZAÇÃO DE SUPERAÇÃO ENCONTRADA!')
+        print('🌟 PARAMETRIZAÇÃO DE SUPERAÇÃO ENCONTRADA!')
         print(f'-> Utilizar Confidence={best_config["thresh"]} | Filtro de Fluxo={best_config["flux"]}')
         print(f'-> Elevou o Ganho do Dia para R$ {best_pnl:.2f}')
         print(f'-> Elevou a Assertividade para {best_wr:.1f}%')

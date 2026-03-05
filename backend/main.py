@@ -845,7 +845,7 @@ async def autonomous_bot_loop():
 
                 synthetic_idx = ctx.get("synthetic_index", 0.0)
 
-                macro_change = ctx.get("macro", {"score": 0.0, "reason": "Background data"})
+                macro_change = ctx.get("macro", {"score": 0.0, "reason": "Dados de background"})
 
                 vol_expected = ctx.get("calendar", {}).get("volatility_expected", False)
 
@@ -913,7 +913,7 @@ async def autonomous_bot_loop():
 
                                     news = sent_data.get("news", [])
 
-                                    headlines = news if news else [sent_data.get("fact_check", "No news summary available")]
+                                    headlines = news if news else [sent_data.get("fact_check", "Nenhum resumo de notícias disponível")]
 
                                     ai.latest_sentiment_score = sentiment_score
 
@@ -979,7 +979,7 @@ async def autonomous_bot_loop():
 
                     else:
 
-                        logging.warning(f"WAIT: account_info indisponível para {symbol}. Retrying...")
+                        logging.warning(f"AGUARDE: account_info indisponível para {symbol}. Tentando novamente...")
 
                         await asyncio.sleep(1)
 
@@ -1007,7 +1007,7 @@ async def autonomous_bot_loop():
 
                     account['equity'] = virtual_capital + total_daily_profit
 
-                    logging.debug(f"[SIM] Virtual Balance Active: {account['balance']} | Equity: {account['equity']}")
+                    logging.debug(f"[SIM] Saldo Virtual Ativo: {account['balance']} | Equity: {account['equity']}")
 
 
 
@@ -1081,7 +1081,7 @@ async def autonomous_bot_loop():
 
                 if latency_ms > 300: # Sincronizado com o alerta do Frontend
 
-                    logging.warning(f"HIGH LATENCY ALERT: {latency_ms:.2f}ms")
+                    logging.warning(f"ALERTA DE ALTA LATÊNCIA: {latency_ms:.2f}ms")
 
                 
 
@@ -1089,7 +1089,7 @@ async def autonomous_bot_loop():
 
                 if time_module.time() - last_heartbeat > 60:
 
-                    logging.info(f"HEARTBEAT: {symbol} | PnL Dia: {total_daily_profit:.2f} | Risco: {'OK' if risk_ok else 'TRAVADO'} | Latency: {latency_ms:.1f}ms")
+                    logging.info(f"HEARTBEAT: {symbol} | PnL Dia: {total_daily_profit:.2f} | Risco: {'OK' if risk_ok else 'TRAVADO'} | Latência: {latency_ms:.1f}ms")
 
                     last_heartbeat = time_module.time()
 
@@ -1301,7 +1301,7 @@ async def autonomous_bot_loop():
 
                 if not reliability_ok and len(returns_history) >= 30:
 
-                    logging.warning(f"ALPHA-X HARD VETO: PSR insuficiente ({current_psr:.4f})")
+                    logging.warning(f"VETO ALPHA-X: PSR insuficiente ({current_psr:.4f})")
 
                     ai_total_score = 50.0
 
@@ -1317,13 +1317,13 @@ async def autonomous_bot_loop():
 
                     ai_total_score = min(100.0, ai_total_score + 5.0)
 
-                    if ai_total_score > 80: logging.info(f"CVD TRIGGER (+5.0): Fluxo Comprador Forte ({cvd_val:.0f})")
+                    if ai_total_score > 80: logging.info(f"GATILHO CVD (+5.0): Fluxo Comprador Forte ({cvd_val:.0f})")
 
                 elif cvd_val < -cvd_threshold and ai_direction == "SELL":
 
                     ai_total_score = min(100.0, ai_total_score + 5.0)
 
-                    if ai_total_score > 80: logging.info(f"CVD TRIGGER (+5.0): Fluxo Vendedor Forte ({cvd_val:.0f})")
+                    if ai_total_score > 80: logging.info(f"GATILHO CVD (+5.0): Fluxo Vendedor Forte ({cvd_val:.0f})")
 
                 
 
@@ -1401,7 +1401,7 @@ async def autonomous_bot_loop():
 
                     if settlement_veto:
 
-                        logging.warning(f"HFT DEFENSE: Veto de Ajuste ({settlement_price}). {settlement_msg}")
+                        logging.warning(f"DEFESA HFT: Veto de Ajuste ({settlement_price}). {settlement_msg}")
 
                         ai_total_score = 50.0
 
@@ -1420,7 +1420,7 @@ async def autonomous_bot_loop():
 
                     if "10:00" <= current_hhmm <= "16:00" and regime == 0:
 
-                        logging.info("PINNING ALERT: Vencimento Opções.")
+                        logging.info("ALERTA DE PINNING: Vencimento de Opções.")
 
                         ai_total_score = max(40.0, min(60.0, ai_total_score))
 
@@ -1626,7 +1626,7 @@ async def autonomous_bot_loop():
 
                                 if pos_age_min > 15.0:
 
-                                    logging.warning(f"ALPHA-X TIME EXIT: Posição {pos.ticket} aberta há {pos_age_min:.1f} min. Fechando a mercado.")
+                                    logging.warning(f"SAÍDA POR TEMPO ALPHA-X: Posição {pos.ticket} aberta há {pos_age_min:.1f} min. Fechando a mercado.")
 
                                     await asyncio.to_thread(bridge.close_position, pos.ticket)
 
@@ -1668,7 +1668,7 @@ async def autonomous_bot_loop():
 
                                 if is_velocity_limit:
 
-                                    logging.warning(f"⚡ VELOCITY LIMIT EXIT: Posição {pos.ticket} fechada precocemente devido a exaustão.")
+                                    logging.warning(f"⚡ SAÍDA POR LIMITE DE VELOCIDADE: Posição {pos.ticket} fechada precocemente devido a exaustão.")
 
                                     await asyncio.to_thread(bridge.close_position, pos.ticket)
 
@@ -1682,7 +1682,7 @@ async def autonomous_bot_loop():
 
                                     if profit_pts >= risk.partial_profit_points and pos.volume > risk.partial_volume:
 
-                                        logging.info(f"🎯 PARTIAL PROFIT: Atingiu {profit_pts:.1f} pts. Fechando {risk.partial_volume} lotes de {pos.volume}.")
+                                        logging.info(f"🎯 LUCRO PARCIAL: Atingiu {profit_pts:.1f} pts. Fechando {risk.partial_volume} lotes de {pos.volume}.")
 
                                         success = await asyncio.to_thread(bridge.close_partial_position, pos.ticket, risk.partial_volume)
 
@@ -1779,7 +1779,7 @@ async def autonomous_bot_loop():
 
                         else:
 
-                            # EXECUÇíO AUTORIZADA
+                            # EXECUÇÃO AUTORIZADA
 
                             brk = decision.get("breakdown", {})
 
@@ -1815,7 +1815,7 @@ async def autonomous_bot_loop():
 
                                 order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
 
-                                logging.info("🎯 SNIPER MODE: AGGRESSIVE LIMIT ORDER")
+                                logging.info("🎯 MODO SNIPER: ORDEM LIMITE AGRESSIVA")
 
                                 
 
@@ -1855,7 +1855,7 @@ async def autonomous_bot_loop():
 
                                 params["symbol"] = symbol
 
-                                params["comment"] = "AUTO SNIPER"
+                                params["comment"] = "SNIPER AUTOMÁTICO"
 
                                 
 
@@ -1883,7 +1883,7 @@ async def autonomous_bot_loop():
 
                                         sl=params['sl'], tp=params['tp'],
 
-                                        comment="AUTO_SNIPER_LIMIT"
+                                        comment="SNIPER_LIMITE_AUTO"
 
                                     )
 
@@ -1919,17 +1919,17 @@ async def autonomous_bot_loop():
 
                                         persistence.save_state("last_auto_trade", f"{side} at {current_order_price}")
 
-                                        msg_log = f"TRADE SUCCESS: {side.upper()} {final_lots} lotes @ {current_order_price}"
+                                        msg_log = f"TRADE SUCESSO: {side.upper()} {final_lots} lotes @ {current_order_price}"
 
                                         add_operational_log(msg_log, "success")
 
-                                        logging.info(f"TRADE SUCCESS ({mode_tag}): Sniper preenchido.")
+                                        logging.info(f"TRADE SUCESSO ({mode_tag}): Sniper preenchido.")
 
                                     else:
 
-                                        logging.warning(f"Sniper TTL Expired. Cancelando {order_ticket}...")
+                                        logging.warning(f"Sniper TTL Expirado. Cancelando {order_ticket}...")
 
-                                        add_operational_log(f"Sniper TTL Expired. Ordem {order_ticket} cancelada.", "warning")
+                                        add_operational_log(f"Sniper TTL Expirado. Ordem {order_ticket} cancelada.", "warning")
 
                                         await asyncio.to_thread(bridge.cancel_order, order_ticket)
 
@@ -1947,7 +1947,7 @@ async def autonomous_bot_loop():
 
                                 order_type = bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else bridge.mt5.ORDER_TYPE_SELL_LIMIT
 
-                                logging.info("🛡️ PASSIVE ENTRY: LIMIT ORDER (Top Book)")
+                                logging.info("🛡️ ENTRADA PASSIVA: ORDEM LIMITE (Topo do Book)")
 
                                 
 
@@ -1963,7 +1963,7 @@ async def autonomous_bot_loop():
 
                                 if not valid_comp:
 
-                                     logging.warning(f"BLOCK Compliance: {reason_comp}")
+                                     logging.warning(f"VARREDURA Compliance: {reason_comp}")
 
                                 else:
 
@@ -2128,7 +2128,7 @@ async def autonomous_bot_loop():
 
                                         if not filled:
 
-                                            logging.info(f"HFT TTL Expired: Tentando cancelar {order_ticket}...")
+                                            logging.info(f"HFT TTL Expirado: Tentando cancelar {order_ticket}...")
 
                                             cancel_success = await asyncio.to_thread(bridge.cancel_order, order_ticket)
 
@@ -2142,7 +2142,7 @@ async def autonomous_bot_loop():
 
                                                 if final_status == "FILLED":
 
-                                                    logging.info(f"RACE CONDITION WIN: Ordem {order_ticket} preenchida!")
+                                                    logging.info(f"VITÓRIA POR CONDIÇÃO DE CORRIDA: Ordem {order_ticket} preenchida!")
 
                                                     add_operational_log(f"RACE CONDITION WIN: {side.upper()} {final_lots} lotes!", "success")
 
@@ -2401,7 +2401,7 @@ async def autonomous_bot_loop():
 
     except Exception as e:
 
-        logging.critical(f"Erro fatal Autonomo Loop: {sanitize_log(e)}")
+        logging.critical(f"Erro fatal Loop Autônomo: {sanitize_log(e)}")
 
 
 # [ANTIVIBE-CODING] - Novo Endpoint Exclusivo para Clientes WebSocket
@@ -2410,6 +2410,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     active_websockets.append(websocket)
     logging.info(f"🟢 Cliente WebSocket Conectado no Painel. [Total: {len(active_websockets)}]")
+    add_operational_log(f"Painel conectado via WebSocket (Total: {len(active_websockets)})", "info")
     try:
         while True:
             msg = await websocket.receive_text()
@@ -2426,7 +2427,9 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.post("/config/autonomous")
 async def toggle_autonomous(enabled: bool):
     risk.allow_autonomous = enabled
-    logging.info(f"Modo Autônomo: {'ATIVO' if enabled else 'INATIVO'}")
+    status = 'ATIVO' if enabled else 'INATIVO'
+    logging.info(f"Modo Autônomo: {status}")
+    add_operational_log(f"Modo Autônomo alterado para: {status}", "warning" if enabled else "info")
     return {"status": "success", "autonomous": enabled}
 
 @app.get("/config/filters")
@@ -2443,7 +2446,9 @@ async def toggle_news_filter(enabled: bool):
     risk.enable_news_filter = enabled
     if hasattr(sniper_bot, "risk") and sniper_bot.risk:
         sniper_bot.risk.enable_news_filter = enabled
-    logging.info(f"Filtro de Notícias NLP: {'ATIVADO' if enabled else 'DESATIVADO'} manualmente.")
+    status = 'ATIVADO' if enabled else 'DESATIVADO'
+    logging.info(f"Filtro de Notícias NLP: {status} manualmente.")
+    add_operational_log(f"Filtro de Notícias NLP {status} pelo usuário", "info")
     return {"status": "success", "news": enabled}
 
 @app.post("/config/filters/calendar")
@@ -2451,7 +2456,9 @@ async def toggle_calendar_filter(enabled: bool):
     risk.enable_calendar_filter = enabled
     if hasattr(sniper_bot, "risk") and sniper_bot.risk:
         sniper_bot.risk.enable_calendar_filter = enabled
-    logging.info(f"Filtro de Calendário: {'ATIVADO' if enabled else 'DESATIVADO'} manualmente.")
+    status = 'ATIVADO' if enabled else 'DESATIVADO'
+    logging.info(f"Filtro de Calendário: {status} manualmente.")
+    add_operational_log(f"Filtro de Calendário Econômico {status} pelo usuário", "info")
     return {"status": "success", "calendar": enabled}
 
 @app.post("/config/filters/macro")
@@ -2459,7 +2466,9 @@ async def toggle_macro_filter(enabled: bool):
     risk.enable_macro_filter = enabled
     if hasattr(sniper_bot, "risk") and sniper_bot.risk:
         sniper_bot.risk.enable_macro_filter = enabled
-    logging.info(f"Filtro Macro (S&P 500): {'ATIVADO' if enabled else 'DESATIVADO'} manualmente.")
+    status = 'ATIVADO' if enabled else 'DESATIVADO'
+    logging.info(f"Filtro Macro (S&P 500): {status} manualmente.")
+    add_operational_log(f"Filtro Macro Global {status} pelo usuário", "info")
     return {"status": "success", "macro": enabled}
 
 
@@ -2577,7 +2586,7 @@ async def place_order(req: OrderRequest):
 
     latency = (time_module.perf_counter() - start_order) * 1000
 
-    logging.info(f"⚡ PIPELINE_ORDEM: Lado={side}, Vol={volume}, Resultado={result.retcode}, Latencia={latency:.2f}ms")
+    logging.info(f"⚡ PIPELINE_ORDEM: Lado={side}, Vol={volume}, Resultado={result.retcode}, Latência={latency:.2f}ms")
 
     
 

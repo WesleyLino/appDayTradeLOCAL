@@ -160,7 +160,7 @@ class MT5Bridge:
             # 10004: REQUOTE, 10006: PRICE_CHANGED
             if result.retcode in [10004, 10006]:
                 attempt += 1
-                logging.warning(f"REQUOTE/PRICE_OFF ({result.retcode}): Tentativa {attempt}/{max_retries}. Ajustando preço...")
+                logging.warning(f"REQUOTE/PREÇO_OFF ({result.retcode}): Tentativa {attempt}/{max_retries}. Ajustando preço...")
                 
                 # Obter preço atualizado instantaneamente
                 tick = mt5.symbol_info_tick(params['symbol'])
@@ -185,7 +185,7 @@ class MT5Bridge:
             
         return result
 
-    def place_limit_order(self, symbol, order_type, price, volume, sl=0.0, tp=0.0, comment="HFT Limit"):
+    def place_limit_order(self, symbol, order_type, price, volume, sl=0.0, tp=0.0, comment="HFT Limite"):
         """
         Envia uma Ordem Limitada (Pending Order) para o book.
         Retorna o result object do MT5.
@@ -226,11 +226,11 @@ class MT5Bridge:
         if result.retcode != mt5.TRADE_RETCODE_DONE:
             logging.error(f"Falha ao enviar Limit Order: {sanitize_log(result.comment)} ({result.retcode})")
         else:
-            logging.info(f"LIMIT ORDER ENVIADA: {symbol} {volume} @ {price} (Ticket: {result.order})")
+            logging.info(f"ORDEM LIMITE ENVIADA: {symbol} {volume} @ {price} (Ticket: {result.order})")
         
         return result
 
-    def place_market_order(self, symbol, order_type, volume, sl=0.0, tp=0.0, comment="HFT Market"):
+    def place_market_order(self, symbol, order_type, volume, sl=0.0, tp=0.0, comment="HFT Mercado"):
         """
         Envia uma Ordem a Mercado (Instant Execution).
         """
@@ -272,11 +272,11 @@ class MT5Bridge:
         if result.retcode != mt5.TRADE_RETCODE_DONE:
             logging.error(f"Falha ao enviar Market Order: {sanitize_log(result.comment)} ({result.retcode})")
         else:
-            logging.info(f"MARKET ORDER EXECUTADA: {symbol} {volume} (Ticket: {result.deal})")
+            logging.info(f"ORDEM A MERCADO EXECUTADA: {symbol} {volume} (Ticket: {result.deal})")
         
         return result
 
-    def place_smart_order(self, symbol, order_type, price, volume, sl=0.0, tp=0.0, score=0.0, uncertainty=0.0, comment="SOTA Smart"):
+    def place_smart_order(self, symbol, order_type, price, volume, sl=0.0, tp=0.0, score=0.0, uncertainty=0.0, comment="SOTA Inteligente"):
         """
         [HFT ELITE - SMART ROUTING]
         Decide entre ordem LIMITADA ou MERCADO com base na força do sinal (Score) e incerteza.

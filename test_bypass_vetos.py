@@ -58,13 +58,13 @@ def run_tests():
         risk.enable_calendar_filter = True
         tempo_permitido = risk.is_time_allowed()
         print(f"  👉 Painel [LIGADO]  -> Data Simulada: 10:00 (Durante PAYROLL). Trade Liberado? {tempo_permitido}")
-        assert tempo_permitido == False, "Erro: Filtro deveria bloquear no payroll."
+        assert not tempo_permitido, "Erro: Filtro deveria bloquear no payroll."
         
         # CENÁRIO B: Botão DESLIGADO (False)
         risk.enable_calendar_filter = False
         tempo_ignorado = risk.is_time_allowed()
         print(f"  👉 Painel [DESLIGADO] -> Data Simulada: 10:00 (Durante PAYROLL). Trade Liberado? {tempo_ignorado}")
-        assert tempo_ignorado == True, "Erro: Filtro não liberou o DayTrade mesmo com Veto Agenda Bypassado."
+        assert tempo_ignorado, "Erro: Filtro não liberou o DayTrade mesmo com Veto Agenda Bypassado."
 
     print("  ✔️ APROVADO: O Veto de Agenda anula a varredura e permite os trades soltos.\n")
     print("="*50)

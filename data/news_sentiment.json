@@ -2,58 +2,58 @@
   "score": -0.8,
   "reliability": "high",
   "risk_classification": "EXTREME",
-  "fact_check": "A continuidade da guerra no Oriente M\u00e9dio est\u00e1 impactando negativamente os mercados globais (Wall Street, Ibovespa) e elevando os pre\u00e7os do petr\u00f3leo, o que gera preocupa\u00e7\u00f5es inflacion\u00e1rias. A China suspendeu exporta\u00e7\u00f5es de combust\u00edveis e a Petrobras enfrenta alta defasagem no diesel, intensificando a press\u00e3o sobre os pre\u00e7os de energia. Not\u00edcias corporativas pontuais t\u00eam impacto limitado no cen\u00e1rio geral.",
+  "fact_check": "A extens\u00e3o do conflito no Oriente M\u00e9dio est\u00e1 impactando negativamente \u00edndices globais (STOXX 600, TSX). H\u00e1 queda da Nvidia devido a potenciais novas regras de exporta\u00e7\u00e3o de chips de IA, indicando risco regulat\u00f3rio. No Brasil, Localiza (RENT3) registrou queda de 6% ap\u00f3s rebaixamento. Oracle planeja cortes de empregos. Balan\u00e7o da Lojas Renner (LREN3) \u00e9 aguardado.",
   "news": [
     {
-      "headline": "BYD lan\u00e7a bateria Blade 2\u00aa gera\u00e7\u00e3o para impulsionar vendas na China",
-      "relevance": 0.4,
+      "headline": "Lojas Renner (LREN3): balan\u00e7o a ser divulgado nesta quinta.",
+      "relevance": 0.6,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "A\u00e7\u00f5es da United Airlines caem com alta do petr\u00f3leo e tens\u00f5es no Oriente M\u00e9dio",
+      "headline": "Goldman Sachs v\u00ea seguradoras melhor posicionadas para IA e eleva AIG.",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Trump se prepara para demitir a secret\u00e1ria de Seguran\u00e7a Interna Kristi Noem.",
+      "relevance": 0.2,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Localiza \u00e9 rebaixada por UBS BB e a\u00e7\u00e3o cai 6% devido a 'invas\u00e3o de carros chineses'.",
       "relevance": 0.7,
       "impact": "BEARISH"
     },
     {
-      "headline": "Wall Street em queda com investidores avaliando riscos de guerra no Oriente M\u00e9dio",
+      "headline": "Jefferies aponta as principais a\u00e7\u00f5es do setor de minera\u00e7\u00e3o de carv\u00e3o.",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Oracle planeja cortar milhares de empregos em meio \u00e0 expans\u00e3o de data centers.",
+      "relevance": 0.4,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "\u00cdndice STOXX 600 apaga ganhos iniciais conforme conflito no Oriente M\u00e9dio se estende.",
       "relevance": 0.9,
       "impact": "BEARISH"
     },
     {
-      "headline": "Israel: A\u00e7\u00f5es fecham em alta, \u00cdndice TA 35 avan\u00e7a 1,07%",
-      "relevance": 0.6,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Ibovespa cai forte com continuidade da guerra no Oriente M\u00e9dio; balan\u00e7os no radar",
-      "relevance": 1.0,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "China ordena suspens\u00e3o de exporta\u00e7\u00f5es de diesel e gasolina por refinarias",
+      "headline": "Nvidia cai com relat\u00f3rio sobre regras globais de exporta\u00e7\u00e3o de chips de IA.",
       "relevance": 0.8,
       "impact": "BEARISH"
     },
     {
-      "headline": "Defasagem do diesel atinge 47% nas refinarias da Petrobras, segundo Abicom",
+      "headline": "Vale: o que importa mais, momentum ou valuation? Como a XP olha as a\u00e7\u00f5es VALE3.",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "TSX cai com foco no conflito com o Ir\u00e3.",
       "relevance": 0.9,
       "impact": "BEARISH"
-    },
-    {
-      "headline": "Amazon Connect Health utiliza IA para reduzir burocracia na sa\u00fade",
-      "relevance": 0.3,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Caixa projeta carteira de cr\u00e9dito de R$ 1,5 tri no 1\u00ba semestre",
-      "relevance": 0.6,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Rumo: resultados fracos s\u00e3o divulgados pela companhia",
-      "relevance": 0.5,
-      "impact": "NEUTRAL"
     }
   ],
-  "timestamp": 1772728949.6358433
+  "timestamp": 1772738730.61035
 }

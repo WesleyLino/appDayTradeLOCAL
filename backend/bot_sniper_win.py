@@ -192,7 +192,7 @@ class SniperBotWIN:
                 if status == "FILLED":
                     self.trade_count += 1
                     self._save_state()
-                    logger.info(f"🎯 [EXECUÇíO] {side.upper()} {lots} @ {limit_price}")
+                    logger.info(f"🎯 [EXECUÇÃO] {side.upper()} {lots} @ {limit_price}")
                     return True
                 elif status == "CANCELED":
                     return False
@@ -462,7 +462,7 @@ class SniperBotWIN:
                                 total_vol = sum(p.volume for p in positions)
                                 if not self.risk.allow_pyramiding(profit_pts, pressure, total_vol, symbol=self.symbol):
                                     can_trade = False
-                                    logger.info(f"⏳ [BLOCK] Piramidação não permitida: Lucro {profit_pts:.1f} pts / Vol Total {total_vol}")
+                                    logger.info(f"⏳ [BLOQUEIO] Piramidação não permitida: Lucro {profit_pts:.1f} pts / Vol Total {total_vol}")
 
                             if can_trade:
                                 is_scaling_in = len(positions) > 0

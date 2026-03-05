@@ -208,7 +208,7 @@ class AICore:
 
             self.sentiment_anchor_price = 0.0
 
-            logging.debug(f"⚓ SOTA v5: Sentiment Anchor Reset (Delta > 0.3). New Score: {value:.2f}")
+            logging.debug(f"⚓ SOTA v5: Reinicialização da Âncora de Sentimento (Delta > 0.3). Novo Score: {value:.2f}")
 
         self._latest_sentiment_score = value
 
@@ -292,7 +292,7 @@ class AICore:
 
                 logging.warning(
 
-                    f"⏰ Sentiment expirado [{risk_level}]: {age_seconds/60:.0f}min > TTL {ttl/60:.0f}min. Neutralizando."
+                    f"⏰ Sentimento expirado [{risk_level}]: {age_seconds/60:.0f}min > TTL {ttl/60:.0f}min. Neutralizando."
 
                 )
 
@@ -674,11 +674,11 @@ class AICore:
             # [ANTIVIBE-CODING] Veto se preço esticado > threshold da VWAP sem fluxo extremo
             if price_dist_vwap > target_vwap_veto and abs(ofi) < 1.5:
                 logging.debug(f"DEBUG_VETO_VWAP_UP: {price_dist_vwap:.1f} pts")
-                logging.warning(f"🛑 [VWAP VETO] Preço muito acima da VWAP (+{price_dist_vwap:.1f} pts). Risco de exaustão.")
+                logging.warning(f"🛑 [VETO VWAP] Preço muito acima da VWAP (+{price_dist_vwap:.1f} pts). Risco de exaustão.")
                 return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "VWAP_OVEREXTENDED_UP"}
             if price_dist_vwap < -target_vwap_veto and abs(ofi) < 1.5:
                 logging.debug(f"DEBUG_VETO_VWAP_DOWN: {price_dist_vwap:.1f} pts")
-                logging.warning(f"🛑 [VWAP VETO] Preço muito abaixo da VWAP ({price_dist_vwap:.1f} pts). Risco de exaustão.")
+                logging.warning(f"🛑 [VETO VWAP] Preço muito abaixo da VWAP ({price_dist_vwap:.1f} pts). Risco de exaustão.")
                 return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "VWAP_OVEREXTENDED_DOWN"}
         # --- 0.1 [v52.0 - INSTITUCIONAL] VETO/GATILHO DE DIVERGÊNCIA CVD ---
         # Detecta absorção institucional (preço sobe com agressão de venda ou vice-versa)
@@ -950,8 +950,8 @@ class AICore:
 
 
         # [SOTA v25] MACRO SENTIMENT LOCKS (70% ASSERTIVENESS TARGET)
-
-        if veto_reason is None:
+        # [MODIFICADO 05/03/2026] Ignora locks se sentiment for 0.0 (Bypass manual ativo)
+        if veto_reason is None and abs(sentiment) > 0.001:
             ai_dir_raw = ai_dir if 'ai_dir' in locals() else 0
             if ai_dir_raw < 0:
                 if self.macro_bull_lock:

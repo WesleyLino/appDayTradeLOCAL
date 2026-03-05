@@ -55,7 +55,7 @@ class RiskManager:
         self.kelly_fraction = 0.25              # Quarter-Kelly (Segurança HFT)
 
         # [NOVO] Switches de Controle Manual do Frontend
-        self.enable_news_filter = True
+        self.enable_news_filter = False
         self.enable_calendar_filter = True
         self.enable_macro_filter = True
         
@@ -181,7 +181,7 @@ class RiskManager:
                     if not self.post_event_momentum:
                         logging.info(
                             f"🚀 [MOMENTUM PÓS-EVENTO] Janela de 10 min ativa após '{event['event']}'. "
-                            f"Threshold relaxado para 65%."
+                            "Threshold relaxado para 65%."
                         )
                     self.post_event_momentum = True
                     self.post_event_name = event["event"]
@@ -268,7 +268,7 @@ class RiskManager:
         """
         if elapsed_seconds > self.velocity_time_limit_sec and current_profit_points <= self.velocity_drawdown_limit:
             logging.warning(f"⏳ LIMITE DE VELOCIDADE EXCEDIDO: Operação amarrada em {current_profit_points} pts por {elapsed_seconds:.1f}s. Abortando cedo.")
-            return True, "LIMITE_VELOCIDADE_DRAWDOWN"
+            return True, "LIMITE_VELOCIDADE_PERDA"
             
         return False, "VELOCIDADE_OK"
 
@@ -582,7 +582,7 @@ class RiskManager:
                         "pyramid_max_volume": params.get("pyramid_max_volume")
                     }
                     self.dynamic_params[symbol] = mapped_params
-                    logging.info(f"✅ RISK: Parâmetros para {symbol} mapeados: {mapped_params}")
+                    logging.info(f"✅ RISCO: Parâmetros para {symbol} mapeados: {mapped_params}")
                     return True
             except Exception as e:
                 logging.error(f"❌ RISK: Erro ao carregar parâmetros de {json_path}: {e}")
