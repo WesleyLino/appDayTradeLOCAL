@@ -513,18 +513,20 @@ export function TradingDashboard() {
                         <br />
                         notícias Payroll/Fed
                       </span>
+                      <div className="mt-5">
+                        <Switch
+                          id="calendar-filter"
+                          checked={calendarFilterEnabled}
+                          onCheckedChange={handleToggleCalendar}
+                          disabled={isUpdatingFilters}
+                          className={
+                            calendarFilterEnabled
+                              ? "data-[state=checked]:bg-amber-500"
+                              : ""
+                          }
+                        />
+                      </div>
                     </div>
-                    <Switch
-                      id="calendar-filter"
-                      checked={calendarFilterEnabled}
-                      onCheckedChange={handleToggleCalendar}
-                      disabled={isUpdatingFilters}
-                      className={
-                        calendarFilterEnabled
-                          ? "data-[state=checked]:bg-amber-500"
-                          : ""
-                      }
-                    />
                   </div>
 
                   {/* Toggle: Filtro de Notícias NLP */}
@@ -553,18 +555,20 @@ export function TradingDashboard() {
                         Bloqueia contra a<br />
                         manchete atual
                       </span>
+                      <div className="mt-5">
+                        <Switch
+                          id="news-filter"
+                          checked={newsFilterEnabled}
+                          onCheckedChange={handleToggleNews}
+                          disabled={isUpdatingFilters}
+                          className={
+                            newsFilterEnabled
+                              ? "data-[state=checked]:bg-amber-500"
+                              : ""
+                          }
+                        />
+                      </div>
                     </div>
-                    <Switch
-                      id="news-filter"
-                      checked={newsFilterEnabled}
-                      onCheckedChange={handleToggleNews}
-                      disabled={isUpdatingFilters}
-                      className={
-                        newsFilterEnabled
-                          ? "data-[state=checked]:bg-amber-500"
-                          : ""
-                      }
-                    />
                   </div>
 
                   {/* Toggle: Filtro Macro S&P 500 */}
@@ -593,18 +597,20 @@ export function TradingDashboard() {
                         <br />
                         queda \u003e 0.5%
                       </span>
+                      <div className="mt-5">
+                        <Switch
+                          id="macro-filter"
+                          checked={macroFilterEnabled}
+                          onCheckedChange={handleToggleMacro}
+                          disabled={isUpdatingFilters}
+                          className={
+                            macroFilterEnabled
+                              ? "data-[state=checked]:bg-amber-500"
+                              : ""
+                          }
+                        />
+                      </div>
                     </div>
-                    <Switch
-                      id="macro-filter"
-                      checked={macroFilterEnabled}
-                      onCheckedChange={handleToggleMacro}
-                      disabled={isUpdatingFilters}
-                      className={
-                        macroFilterEnabled
-                          ? "data-[state=checked]:bg-amber-500"
-                          : ""
-                      }
-                    />
                   </div>
                 </div>
 
@@ -631,6 +637,7 @@ export function TradingDashboard() {
                         </span>
                       </div>
                     </div>
+
                     <Switch
                       id="sniper-mode"
                       checked={isSniperRunning}
