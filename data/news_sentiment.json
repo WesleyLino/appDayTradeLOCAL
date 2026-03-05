@@ -1,59 +1,59 @@
 {
-  "score": 0.325,
+  "score": -0.2,
   "reliability": "high",
   "risk_classification": "MEDIUM",
-  "fact_check": "Mercados globais apresentam desempenho misto, com EUA, Canad\u00e1 e M\u00e9xico em alta, enquanto R\u00fassia recua. No Brasil, GPA, PagBank e setor banc\u00e1rio registram fortes altas impulsionadas por reestrutura\u00e7\u00e3o, lucros e mudan\u00e7as regulat\u00f3rias. Petrobras, contudo, opera em queda em dia vol\u00e1til para o petr\u00f3leo.",
+  "fact_check": "O mercado brasileiro apresenta um cen\u00e1rio misto. A Ra\u00edzen enfrenta desafios significativos, com a possibilidade de recupera\u00e7\u00e3o extrajudicial e o fracasso de sua capitaliza\u00e7\u00e3o, resultando em queda acentuada das a\u00e7\u00f5es. Em contraste, o setor banc\u00e1rio reage positivamente \u00e0 autoriza\u00e7\u00e3o para descontar aportes antecipados ao FGC. GPA e PagBank reportaram lucros no 4\u00ba trimestre. O setor de petr\u00f3leo exibe volatilidade, com Petrobras em baixa e PRIO/Brava em alta. Not\u00edcias internacionais sobre diplomacia com o Ir\u00e3 trazem um tom positivo global, mas com impacto indireto no Brasil.",
   "news": [
     {
-      "headline": "R\u00fassia: A\u00e7\u00f5es caem 0,54% no \u00cdndice MOEX Russia.",
-      "relevance": 0.2,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "\u00cdndices dos EUA sobem com setor de tecnologia liderando recupera\u00e7\u00e3o.",
-      "relevance": 0.6,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "GPA (PCAR3) salta 14,7% ap\u00f3s not\u00edcias de reestrutura\u00e7\u00e3o.",
-      "relevance": 0.9,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "PagBank: Lucro de R$ 678 mi no 4T e expectativa de R$ 1,2 bi em dividendos.",
+      "headline": "A\u00e7\u00f5es da GPA (PCAR3) sobem 14,7% ap\u00f3s not\u00edcias de reestrutura\u00e7\u00e3o.",
       "relevance": 0.8,
       "impact": "BULLISH"
     },
     {
+      "headline": "Ra\u00edzen considera buscar recupera\u00e7\u00e3o extrajudicial, se necess\u00e1rio.",
+      "relevance": 1.0,
+      "impact": "BEARISH"
+    },
+    {
       "headline": "A\u00e7\u00f5es de bancos sobem ap\u00f3s autoriza\u00e7\u00e3o para descontar aportes antecipados ao FGC.",
-      "relevance": 0.85,
+      "relevance": 0.9,
       "impact": "BULLISH"
     },
     {
-      "headline": "A\u00e7\u00f5es em movimento no after-hours: Broadcom, StubHub e mais.",
+      "headline": "Dexco registra lucro de R$36,4 milh\u00f5es no 4\u00ba trimestre.",
+      "relevance": 0.4,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "OpenAI manteve conversas com The Trade Desk para vender an\u00fancios.",
       "relevance": 0.1,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Canad\u00e1: A\u00e7\u00f5es sobem 0,47% no \u00cdndice S&P/TSX.",
-      "relevance": 0.2,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "PagBank registra lucro recorrente de R$678 mi no 4\u00ba tri.",
+      "headline": "PagBank reporta lucro recorrente de R$678 milh\u00f5es no 4\u00ba trimestre.",
       "relevance": 0.7,
       "impact": "BULLISH"
     },
     {
-      "headline": "Petrobras cai, PRIO e Brava sobem em dia vol\u00e1til para petr\u00f3leo.",
-      "relevance": 0.9,
+      "headline": "Petrobras cai, PRIO e Brava sobem em dia vol\u00e1til para o petr\u00f3leo.",
+      "relevance": 0.6,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "M\u00e9xico: A\u00e7\u00f5es sobem 2,82% no \u00cdndice S&P/BMV IPC.",
+      "headline": "Wall Street sobe com esperan\u00e7as de diplomacia com Ir\u00e3; techs lideram.",
       "relevance": 0.3,
       "impact": "BULLISH"
+    },
+    {
+      "headline": "PRIO3: Gr\u00e1fico da Prio indica exaust\u00e3o t\u00e9cnica em meio a crise geopol\u00edtica.",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "A\u00e7\u00f5es da Ra\u00edzen caem 13% ap\u00f3s Cosan e Shell deixarem conversas sobre capitaliza\u00e7\u00e3o.",
+      "relevance": 1.0,
+      "impact": "BEARISH"
     }
   ],
-  "timestamp": 1772661292.199344
+  "timestamp": 1772670195.1946025
 }

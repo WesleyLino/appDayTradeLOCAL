@@ -1,6 +1,7 @@
 "use client";
 
 import { useTradingStore, useTradingWebSocket } from "@/hooks/use-trading-ws";
+import { API_CONFIG } from "@/lib/api-config";
 import { TradingChart } from "./TradingChart";
 import { FlowMeter } from "./FlowMeter";
 import { OrderBookHeatmap } from "./OrderBookHeatmap";
@@ -30,8 +31,14 @@ import { Label } from "@/components/ui/label";
 
 export function TradingDashboard() {
   const { data, connected } = useTradingStore();
-  const { sendOrder, setAutonomous, startSniper, stopSniper } =
-    useTradingWebSocket();
+  const {
+    sendOrder,
+    setAutonomous,
+    startSniper,
+    stopSniper,
+    toggleNewsFilter,
+    toggleCalendarFilter,
+  } = useTradingWebSocket();
 
   // Dados SOTA (Buscando das chaves mapeadas no backend/main.py packet)
   const sotaData = {
@@ -72,6 +79,48 @@ export function TradingDashboard() {
   // [ANTIVIBE-CODING] - Sincronização de Estado Autônomo via WebSocket
   const [autonomousMode, setAutonomousMode] = useState(false);
   const [isUpdatingAuto, setIsUpdatingAuto] = useState(false);
+
+  // Estados para os novos filtros Manuais
+  const [newsFilterEnabled, setNewsFilterEnabled] = useState(true);
+  const [calendarFilterEnabled, setCalendarFilterEnabled] = useState(true);
+  const [isUpdatingFilters, setIsUpdatingFilters] = useState(false);
+
+  // Buscar estado inicial ao carregar a página
+  useEffect(() => {
+    fetch(`${API_CONFIG.http}/config/filters`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.status === "success") {
+          setNewsFilterEnabled(json.news);
+          setCalendarFilterEnabled(json.calendar);
+        }
+      })
+      .catch((err) =>
+        console.error("Erro ao carregar configurações de filtro:", err),
+      );
+  }, []);
+
+  const handleToggleNews = async () => {
+    if (isUpdatingFilters) return;
+    setIsUpdatingFilters(true);
+    const newState = !newsFilterEnabled;
+    const response = await toggleNewsFilter(newState);
+    if (response?.status === "success") {
+      setNewsFilterEnabled(newState);
+    }
+    setTimeout(() => setIsUpdatingFilters(false), 500);
+  };
+
+  const handleToggleCalendar = async () => {
+    if (isUpdatingFilters) return;
+    setIsUpdatingFilters(true);
+    const newState = !calendarFilterEnabled;
+    const response = await toggleCalendarFilter(newState);
+    if (response?.status === "success") {
+      setCalendarFilterEnabled(newState);
+    }
+    setTimeout(() => setIsUpdatingFilters(false), 500);
+  };
 
   // Sincroniza estado local com dado do servidor quando o pacote chega
   useEffect(() => {
@@ -406,7 +455,91 @@ export function TradingDashboard() {
                   </div>
                 )}
 
-                <div className="flex flex-col gap-2 p-3 bg-indigo-500/5 rounded-lg border border-indigo-500/20">
+                {/* Filtros HFT (Toggles Manuais) */}
+                <div className="grid grid-cols-2 gap-2 mt-2 border-t border-border/40 pt-4">
+                  {/* Toggle: Calendário Econômico */}
+                  <div
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-lg border transition-all duration-300",
+                      calendarFilterEnabled
+                        ? "bg-amber-500/10 border-amber-500/30"
+                        : "bg-white/5 border-white/10",
+                    )}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <Label
+                        htmlFor="calendar-filter"
+                        className={cn(
+                          "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
+                          calendarFilterEnabled
+                            ? "text-amber-500"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        Veto Agenda{" "}
+                        <span className="opacity-60 text-xs">🕒</span>
+                      </Label>
+                      <span className="text-[9px] text-muted-foreground leading-tight">
+                        Bloqueia 10min em
+                        <br />
+                        notícias Payroll/Fed
+                      </span>
+                    </div>
+                    <Switch
+                      id="calendar-filter"
+                      checked={calendarFilterEnabled}
+                      onCheckedChange={handleToggleCalendar}
+                      disabled={isUpdatingFilters}
+                      className={
+                        calendarFilterEnabled
+                          ? "data-[state=checked]:bg-amber-500"
+                          : ""
+                      }
+                    />
+                  </div>
+
+                  {/* Toggle: Filtro de Notícias NLP */}
+                  <div
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-lg border transition-all duration-300",
+                      newsFilterEnabled
+                        ? "bg-amber-500/10 border-amber-500/30"
+                        : "bg-white/5 border-white/10",
+                    )}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <Label
+                        htmlFor="news-filter"
+                        className={cn(
+                          "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
+                          newsFilterEnabled
+                            ? "text-amber-500"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        Veto Origem{" "}
+                        <span className="opacity-60 text-xs">📰</span>
+                      </Label>
+                      <span className="text-[9px] text-muted-foreground leading-tight">
+                        Bloqueia contra a<br />
+                        manchete atual
+                      </span>
+                    </div>
+                    <Switch
+                      id="news-filter"
+                      checked={newsFilterEnabled}
+                      onCheckedChange={handleToggleNews}
+                      disabled={isUpdatingFilters}
+                      className={
+                        newsFilterEnabled
+                          ? "data-[state=checked]:bg-amber-500"
+                          : ""
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 p-3 bg-indigo-500/5 rounded-lg border border-indigo-500/20 mt-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Zap

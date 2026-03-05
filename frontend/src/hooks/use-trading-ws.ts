@@ -211,5 +211,38 @@ export function useTradingWebSocket(url: string = API_CONFIG.ws) {
     }
   };
 
-  return { sendOrder, setAutonomous, startSniper, stopSniper };
+  const toggleNewsFilter = async (enabled: boolean) => {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.http}/config/filters/news?enabled=${enabled}`,
+        { method: "POST" },
+      );
+      return await response.json();
+    } catch (error) {
+      console.error("News Filter Config Error:", error);
+      return { status: "error", message: "Falha na rede" };
+    }
+  };
+
+  const toggleCalendarFilter = async (enabled: boolean) => {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.http}/config/filters/calendar?enabled=${enabled}`,
+        { method: "POST" },
+      );
+      return await response.json();
+    } catch (error) {
+      console.error("Calendar Filter Config Error:", error);
+      return { status: "error", message: "Falha na rede" };
+    }
+  };
+
+  return {
+    sendOrder,
+    setAutonomous,
+    startSniper,
+    stopSniper,
+    toggleNewsFilter,
+    toggleCalendarFilter,
+  };
 }

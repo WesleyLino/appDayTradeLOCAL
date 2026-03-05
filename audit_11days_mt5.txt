@@ -1,0 +1,183 @@
+===================================================================
+🚀 BACKTEST PANORÂMICO 11 DIAS (MT5) - SOTA V22 GOLDEN STATE
+===================================================================
+⏳ Coletando base histórica de ultra-fidelidade do terminal MT5...
+🧠 Analisando dias solicitados...
+
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 4068.00
+Lucro Líquido: R$ 978.00
+Total Trades:  15
+Win Rate:      60.0%
+Profit Factor: inf
+Max Drawdown:  0.00%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+[19/02/2026] PnL: R$ +1068.00 | Trades: 15 | Assertividade:  60.0% | Compras: 14 | Vendas:  1
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2972.00
+Lucro Líquido: R$ -82.00
+Total Trades:  10
+Win Rate:      50.0%
+Profit Factor: 0.75
+Max Drawdown:  7.85%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+[20/02/2026] PnL: R$  -28.00 | Trades: 10 | Assertividade:  50.0% | Compras:  8 | Vendas:  2
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 3586.54
+Lucro Líquido: R$ 496.54
+Total Trades:  14
+Win Rate:      64.3%
+Profit Factor: 5.14
+Max Drawdown:  3.33%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+[23/02/2026] PnL: R$ +586.54 | Trades: 14 | Assertividade:  64.3% | Compras: 11 | Vendas:  3
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2942.89
+Lucro Líquido: R$ -111.11
+Total Trades:  11
+Win Rate:      63.6%
+Profit Factor: 0.67
+Max Drawdown:  9.78%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+[24/02/2026] PnL: R$  -57.11 | Trades: 11 | Assertividade:  63.6% | Compras:  9 | Vendas:  2
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 2973.74
+Lucro Líquido: R$ -53.26
+Total Trades:  9
+Win Rate:      55.6%
+Profit Factor: 0.74
+Max Drawdown:  4.00%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+[25/02/2026] PnL: R$  -26.26 | Trades:  9 | Assertividade:  55.6% | Compras:  6 | Vendas:  3
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 3425.14
+Lucro Líquido: R$ 371.14
+Total Trades:  12
+Win Rate:      58.3%
+Profit Factor: 1.77
+Max Drawdown:  12.31%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+[26/02/2026] PnL: R$ +425.14 | Trades: 12 | Assertividade:  58.3% | Compras:  8 | Vendas:  4
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 3207.00
+Lucro Líquido: R$ 117.00
+Total Trades:  13
+Win Rate:      61.5%
+Profit Factor: 1.38
+Max Drawdown:  7.25%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+[27/02/2026] PnL: R$ +207.00 | Trades: 13 | Assertividade:  61.5% | Compras: 12 | Vendas:  1
+[28/02/2026] -> SEM PREGÃO (Final de Semana/Feriado) ou Sem Dados
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 3248.00
+Lucro Líquido: R$ 203.00
+Total Trades:  7
+Win Rate:      57.1%
+Profit Factor: 3.26
+Max Drawdown:  2.00%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+[02/03/2026] PnL: R$ +248.00 | Trades:  7 | Assertividade:  57.1% | Compras:  6 | Vendas:  1
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 4384.12
+Lucro Líquido: R$ 1330.12
+Total Trades:  10
+Win Rate:      70.0%
+Profit Factor: 3.22
+Max Drawdown:  11.51%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+[03/03/2026] PnL: R$ +1384.12 | Trades: 10 | Assertividade:  70.0% | Compras: 10 | Vendas:  0
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 3409.00
+Lucro Líquido: R$ 319.00
+Total Trades:  14
+Win Rate:      64.3%
+Profit Factor: 1.61
+Max Drawdown:  8.16%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+[04/03/2026] PnL: R$ +409.00 | Trades: 14 | Assertividade:  64.3% | Compras: 13 | Vendas:  1
+
+===================================================================
+🏆 RESULTADO AGREGADO DOS 11 DIAS
+===================================================================
+Capital Inicial Simulado: R$ 3000.00
+Lucro/Prejuízo Total:     R$ +4216.43
+Evolução Patrimonial:     R$ 7216.43
+Total de Trades:          115
+Assertividade Global:     60.87%
+
+--- PERFORMANCE BI-DIRECIONAL ---
+🟢 COMPRAS Totais:  97 trades | PnL Somado: R$ +3490.12 | Assertividade: 62.9%
+🔴 VENDAS Totais:   18 trades | PnL Somado: R$  +78.31 | Assertividade: 50.0%
+
+--- OPORTUNIDADES VS BLINDAGEM (SHADOW ANALYSIS) ---
+- Total de Indícios Mapeados (IA Base 22): 5622
+- Bloqueios por Rigor de Incerteza (Cone): 241
+- Bloqueios por Fluxo Institucional OFI:   0
+
+💡 DIAGNÓSTICO DE APRIMORAMENTO / MELHORIAS:
+-> [OK] Vendas (Shorts) mantiveram consistência estável.
+-> [OK] Compras (Longs) capturaram a liquidez do mercado efetivamente.
+
+⚠️ Status: CALIBRAÇÃO GOLDEN V22 MANTIDA.
+Mestre, a parametrização super restritiva do código não foi tocada. As proteções vigoraram nos 11 dias.
+===================================================================

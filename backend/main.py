@@ -1243,14 +1243,13 @@ async def autonomous_bot_loop():
 
                 
 
+                # [ANTIVIBE-CODING] Override de Controle Manual de Notícias
+                effective_sentiment = ai.latest_sentiment_score if (getattr(risk, 'enable_news_filter', True)) else 0.0
+                
                 # Score Final (0-100) e Direção
-
                 decision = ai.calculate_decision(
-
                     obi, 
-
-                    ai.latest_sentiment_score, 
-
+                    effective_sentiment, 
                     ai_predict_data, # Passamos o dict completo para o veto de incerteza
 
                     regime,
@@ -1571,7 +1570,7 @@ async def autonomous_bot_loop():
 
                 try:
 
-                    rl_state = [current_atr, obi, ai.latest_sentiment_score, ai_confidence, volatility, cvd_val, synthetic_idx]
+                    rl_state = [current_atr, obi, effective_sentiment, ai_confidence, volatility, cvd_val, synthetic_idx]
 
                     action, log_prob = rl_agent.select_action(rl_state)
 
@@ -2411,15 +2410,34 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 @app.post("/config/autonomous")
-
 async def toggle_autonomous(enabled: bool):
-
     risk.allow_autonomous = enabled
-
     logging.info(f"Modo Autônomo: {'ATIVO' if enabled else 'INATIVO'}")
-
     return {"status": "success", "autonomous": enabled}
 
+@app.get("/config/filters")
+async def get_filters():
+    return {
+        "status": "success",
+        "news": risk.enable_news_filter,
+        "calendar": risk.enable_calendar_filter
+    }
+
+@app.post("/config/filters/news")
+async def toggle_news_filter(enabled: bool):
+    risk.enable_news_filter = enabled
+    if hasattr(sniper_bot, "risk") and sniper_bot.risk:
+        sniper_bot.risk.enable_news_filter = enabled
+    logging.info(f"Filtro de Notícias NLP: {'ATIVADO' if enabled else 'DESATIVADO'} manualmente.")
+    return {"status": "success", "news": enabled}
+
+@app.post("/config/filters/calendar")
+async def toggle_calendar_filter(enabled: bool):
+    risk.enable_calendar_filter = enabled
+    if hasattr(sniper_bot, "risk") and sniper_bot.risk:
+        sniper_bot.risk.enable_calendar_filter = enabled
+    logging.info(f"Filtro de Calendário: {'ATIVADO' if enabled else 'DESATIVADO'} manualmente.")
+    return {"status": "success", "calendar": enabled}
 
 
 @app.post("/config/sniper/start")

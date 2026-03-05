@@ -53,6 +53,10 @@ class RiskManager:
         
         # [FASE 2] Quarter-Kelly (Ajuste de Expectativa)
         self.kelly_fraction = 0.25              # Quarter-Kelly (Segurança HFT)
+
+        # [NOVO] Switches de Controle Manual do Frontend
+        self.enable_news_filter = True
+        self.enable_calendar_filter = True
         
         # [FASE 28] DYNAMIC PARAMS CACHE
         self.dynamic_params = {} # Carregado via load_optimized_params
@@ -160,7 +164,7 @@ class RiskManager:
                 return False
 
         # --- [PRO] Blindagem de Calendário Econômico ---
-        if hasattr(self, 'calendar_events'):
+        if hasattr(self, 'calendar_events') and hasattr(self, 'enable_calendar_filter') and self.enable_calendar_filter:
             for event in self.calendar_events:
 
                 # Janela de Veto Total (pré + pós evento)
@@ -199,6 +203,10 @@ class RiskManager:
             True  → direção permitida pelo sentimento
             False → direção vetada (lado contrário ao sentimento)
         """
+        # Se o usuário desativou manualmente o filtro de notícias, libera as operações incondicionalmente desta barreira
+        if hasattr(self, 'enable_news_filter') and not self.enable_news_filter:
+            return True
+
         if sentiment_score > 0.5:
             # Mercado com viés BULLISH forte → bloqueia VENDA
             if direction == "SELL":
