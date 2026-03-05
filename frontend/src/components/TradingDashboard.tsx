@@ -484,136 +484,6 @@ export function TradingDashboard() {
                   </div>
                 )}
 
-                {/* Filtros HFT (Toggles Manuais) */}
-                <div className="grid grid-cols-3 gap-2 mt-2 border-t border-border/40 pt-4">
-                  {/* Toggle: Calendário Econômico */}
-                  <div
-                    className={cn(
-                      "flex items-center justify-between p-3 rounded-lg border transition-all duration-300",
-                      calendarFilterEnabled
-                        ? "bg-amber-500/10 border-amber-500/30"
-                        : "bg-white/5 border-white/10",
-                    )}
-                  >
-                    <div className="flex flex-col gap-1">
-                      <Label
-                        htmlFor="calendar-filter"
-                        className={cn(
-                          "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
-                          calendarFilterEnabled
-                            ? "text-amber-500"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        Veto Agenda{" "}
-                        <span className="opacity-60 text-xs">🕒</span>
-                      </Label>
-                      <span className="text-[9px] text-muted-foreground leading-tight">
-                        Bloqueia 10min em
-                        <br />
-                        notícias Payroll/Fed
-                      </span>
-                      <div className="mt-5">
-                        <Switch
-                          id="calendar-filter"
-                          checked={calendarFilterEnabled}
-                          onCheckedChange={handleToggleCalendar}
-                          disabled={isUpdatingFilters}
-                          className={
-                            calendarFilterEnabled
-                              ? "data-[state=checked]:bg-amber-500"
-                              : ""
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Toggle: Filtro de Notícias NLP */}
-                  <div
-                    className={cn(
-                      "flex items-center justify-between p-3 rounded-lg border transition-all duration-300",
-                      newsFilterEnabled
-                        ? "bg-amber-500/10 border-amber-500/30"
-                        : "bg-white/5 border-white/10",
-                    )}
-                  >
-                    <div className="flex flex-col gap-1">
-                      <Label
-                        htmlFor="news-filter"
-                        className={cn(
-                          "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
-                          newsFilterEnabled
-                            ? "text-amber-500"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        Veto Origem{" "}
-                        <span className="opacity-60 text-xs">📰</span>
-                      </Label>
-                      <span className="text-[9px] text-muted-foreground leading-tight">
-                        Bloqueia contra a<br />
-                        manchete atual
-                      </span>
-                      <div className="mt-5">
-                        <Switch
-                          id="news-filter"
-                          checked={newsFilterEnabled}
-                          onCheckedChange={handleToggleNews}
-                          disabled={isUpdatingFilters}
-                          className={
-                            newsFilterEnabled
-                              ? "data-[state=checked]:bg-amber-500"
-                              : ""
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Toggle: Filtro Macro S&P 500 */}
-                  <div
-                    className={cn(
-                      "flex items-center justify-between p-3 rounded-lg border transition-all duration-300",
-                      macroFilterEnabled
-                        ? "bg-amber-500/10 border-amber-500/30"
-                        : "bg-white/5 border-white/10",
-                    )}
-                  >
-                    <div className="flex flex-col gap-1">
-                      <Label
-                        htmlFor="macro-filter"
-                        className={cn(
-                          "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
-                          macroFilterEnabled
-                            ? "text-amber-500"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        Veto S&P <span className="opacity-60 text-xs">🌍</span>
-                      </Label>
-                      <span className="text-[9px] text-muted-foreground leading-tight">
-                        Corta buys em
-                        <br />
-                        queda \u003e 0.5%
-                      </span>
-                      <div className="mt-5">
-                        <Switch
-                          id="macro-filter"
-                          checked={macroFilterEnabled}
-                          onCheckedChange={handleToggleMacro}
-                          disabled={isUpdatingFilters}
-                          className={
-                            macroFilterEnabled
-                              ? "data-[state=checked]:bg-amber-500"
-                              : ""
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="flex flex-col gap-2 p-3 bg-indigo-500/5 rounded-lg border border-indigo-500/20 mt-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -1053,9 +923,127 @@ export function TradingDashboard() {
             </div>
           </div>
           <div className="md:col-span-1">
-            <FlowMeter />
-          </div>
+            {/* Filtros HFT (Toggles Manuais) */}
+            <div className="grid grid-cols-3 gap-2 mt-2 border-t border-border/40 pt-4">
+              {/* Toggle: Calendário Econômico */}
+              <div
+                className={cn(
+                  "flex items-center justify-between p-3 rounded-lg border transition-all duration-300",
+                  calendarFilterEnabled
+                    ? "bg-amber-500/10 border-amber-500/30"
+                    : "bg-white/5 border-white/10",
+                )}
+              >
+                <div className="flex flex-col gap-1">
+                  <Label
+                    htmlFor="calendar-filter"
+                    className={cn(
+                      "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
+                      calendarFilterEnabled
+                        ? "text-amber-500"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    Veto Agenda <span className="opacity-60 text-xs">🕒</span>
+                  </Label>
+                  <span className="text-[14px] text-muted-foreground leading-tight">
+                    Bloqueia 10min em
+                    <br />
+                    notícias Payroll/Fed
+                  </span>
+                </div>
+                <Switch
+                  id="calendar-filter"
+                  checked={calendarFilterEnabled}
+                  onCheckedChange={handleToggleCalendar}
+                  disabled={isUpdatingFilters}
+                  className={
+                    calendarFilterEnabled
+                      ? "data-[state=checked]:bg-amber-500"
+                      : ""
+                  }
+                />
+              </div>
 
+              {/* Toggle: Filtro de Notícias NLP */}
+              <div
+                className={cn(
+                  "flex items-center justify-between p-3 rounded-lg border transition-all duration-300",
+                  newsFilterEnabled
+                    ? "bg-amber-500/10 border-amber-500/30"
+                    : "bg-white/5 border-white/10",
+                )}
+              >
+                <div className="flex flex-col gap-1">
+                  <Label
+                    htmlFor="news-filter"
+                    className={cn(
+                      "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
+                      newsFilterEnabled
+                        ? "text-amber-500"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    Veto Origem <span className="opacity-60 text-xs">📰</span>
+                  </Label>
+                  <span className="text-[14px] text-muted-foreground leading-tight">
+                    Bloqueia contra a<br />
+                    manchete atual
+                  </span>
+                </div>
+                <Switch
+                  id="news-filter"
+                  checked={newsFilterEnabled}
+                  onCheckedChange={handleToggleNews}
+                  disabled={isUpdatingFilters}
+                  className={
+                    newsFilterEnabled ? "data-[state=checked]:bg-amber-500" : ""
+                  }
+                />
+              </div>
+
+              {/* Toggle: Filtro Macro S&P 500 */}
+              <div
+                className={cn(
+                  "flex items-center justify-between p-3 rounded-lg border transition-all duration-300",
+                  macroFilterEnabled
+                    ? "bg-amber-500/10 border-amber-500/30"
+                    : "bg-white/5 border-white/10",
+                )}
+              >
+                <div className="flex flex-col gap-1">
+                  <Label
+                    htmlFor="macro-filter"
+                    className={cn(
+                      "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
+                      macroFilterEnabled
+                        ? "text-amber-500"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    Veto S&P <span className="opacity-60 text-xs">🌍</span>
+                  </Label>
+                  <span className="text-[14px] text-muted-foreground leading-tight">
+                    Corta buys em
+                    <br />
+                    queda \u003e 0.5%
+                  </span>
+                </div>
+                <Switch
+                  id="macro-filter"
+                  checked={macroFilterEnabled}
+                  onCheckedChange={handleToggleMacro}
+                  disabled={isUpdatingFilters}
+                  className={
+                    macroFilterEnabled
+                      ? "data-[state=checked]:bg-amber-500"
+                      : ""
+                  }
+                />
+              </div>
+            </div>
+          </div>
+          <FlowMeter />
           {/* Heatmap L2 (Novo - Phase 29) */}
           <OrderBookHeatmap />
         </div>
