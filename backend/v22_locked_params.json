@@ -1,7 +1,7 @@
 {
   "comment": "PARÂMETROS V22 ATUALIZADOS EM 2026-03-03 - v52.1 ALTA PERFORMANCE (MODO ILIMITADO)",
   "account_config": {
-    "initial_balance": 3000.0,
+    "initial_balance": 500.0,
     "symbol": "WIN$",
     "timeframe": "M1"
   },

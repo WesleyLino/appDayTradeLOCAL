@@ -30,7 +30,7 @@ class SniperBotWIN:
     def __init__(self, bridge=None, risk=None, ai=None, dry_run=True):
         self.bridge = bridge or MT5Bridge()
         # [ANTIVIBE-CODING] - Calibração para saldo de R$ 500,00
-        self.risk = risk or RiskManager(max_daily_loss=150.0, daily_trade_limit=3) 
+        self.risk = risk or RiskManager(max_daily_loss=100.0, daily_trade_limit=3) 
         
         # Só define dry_run se o risk for novo ou se explicitamente passado
         if risk is None:
@@ -127,8 +127,8 @@ class SniperBotWIN:
         wr = perf.get("win_rate", 55.0) 
         pf = perf.get("profit_factor", 1.2)
         
-        # Saldo base para Kelly
-        balance = 3000.0
+        # Saldo base para Kelly - [ANTIVIBE-CODING]
+        balance = getattr(self.risk, 'initial_balance', 500.0)
         kelly_volume = self.risk.calculate_quarter_kelly(balance, wr, pf, current_atr or 150.0)
         
         # Escalonamento Alpha (Vitórias consecutivas)

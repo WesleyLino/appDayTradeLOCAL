@@ -7,10 +7,11 @@ import os
 
 # [ANTIVIBE-CODING] - Classe Crítica de Risco
 class RiskManager:
-    def __init__(self, max_daily_loss=600.00, daily_trade_limit=999, max_daily_loss_pct=0.60):
+    def __init__(self, max_daily_loss=100.00, daily_trade_limit=999, max_daily_loss_pct=0.20, initial_balance=500.0):
         self.max_daily_loss = max_daily_loss
         self.max_daily_loss_pct = max_daily_loss_pct
         self.daily_trade_limit = daily_trade_limit # v52.1 - MODO ILIMITADO
+        self.initial_balance = initial_balance
         self.max_deviation = 5 
         self.allow_autonomous = True 
         self.dry_run = False # [REAL-EXECUTION-ACTIVE] - Ativação de ordens reais no MT5

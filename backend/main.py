@@ -258,9 +258,23 @@ app.add_middleware(
 
 # --- Inicialização Global de Componentes (HFT v2.1) ---
 
+# [ANTIVIBE-CODING] - Carregamento de Parâmetros Bloqueados V22
+LOCKED_PARAMS_FILE = os.path.join("backend", "v22_locked_params.json")
+locked_config = {}
+if os.path.exists(LOCKED_PARAMS_FILE):
+    try:
+        with open(LOCKED_PARAMS_FILE, "r") as f:
+            locked_config = json.load(f)
+            logging.info("🛡️ Parâmetros V22 Bloqueados carregados com sucesso.")
+    except Exception as e:
+        logging.error(f"⚠️ Falha ao carregar parâmetros bloqueados: {e}")
+
+account_cfg = locked_config.get("account_config", {})
+v22_initial_balance = account_cfg.get("initial_balance", 500.0)
+
 bridge = MT5Bridge()
 
-risk = RiskManager(max_daily_loss=150.0)
+risk = RiskManager(max_daily_loss=100.0, initial_balance=v22_initial_balance)
 
 ai = AICore()
 

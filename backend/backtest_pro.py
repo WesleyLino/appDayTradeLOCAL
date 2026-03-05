@@ -96,7 +96,7 @@ class BacktestPro:
         logging.info(f"🔧 [v52.1] RiskManager sincronizado: limite={self.risk.daily_trade_limit} | parcial={self.risk.partial_profit_points}pts | BE={self.risk.be_trigger}pts")
 
         # Estado do Backtest
-        self.initial_balance = kwargs.get('initial_balance', 10000.0)
+        self.initial_balance = kwargs.get('initial_balance', 500.0)
         self.balance = self.initial_balance
         self.equity_curve = [self.initial_balance]
         self.sentiment_stream = kwargs.get('sentiment_stream', None) # {timestamp: score}
