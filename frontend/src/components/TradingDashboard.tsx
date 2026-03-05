@@ -922,6 +922,7 @@ export function TradingDashboard() {
               </div>
             </div>
           </div>
+
           <div className="md:col-span-1">
             {/* Filtros HFT (Toggles Manuais) */}
             <div className="grid grid-cols-3 gap-2 mt-2 border-t border-border/40 pt-4">
