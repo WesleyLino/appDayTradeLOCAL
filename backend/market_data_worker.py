@@ -93,7 +93,7 @@ class MarketDataWorker:
                 "real_cvd_wdo": float(wdo_cvd),
                 "wdo_win_signal": wdo_win_signal,
                 "low_liquidity": bool(liquidity_data.get("low_liquidity", False)),
-                "volume_today": int(liquidity_data.get("volume_today", 0)),
+                "volume_d1": int(liquidity_data.get("volume_d1", 0)),
                 "avg_volume_10d": float(liquidity_data.get("avg_volume_10d", 0)),
                 "commission_today": float(commission_today),
             }

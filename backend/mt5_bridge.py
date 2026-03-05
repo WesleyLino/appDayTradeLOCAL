@@ -996,29 +996,37 @@ class MT5Bridge:
 
     def get_daily_volume_and_liquidity(self, symbol):
         """
-        [MT5-INTEG #6] Retorna o volume real negociado no dia e classifica a liquidez.
-        Compara com a média dos últimos 10 dias para detectar dias de baixa liquidez.
-        Retorna: dict com 'volume_today', 'avg_volume_10d', 'low_liquidity' (bool)
+        [MT5-INTEG #6] Retorna o volume do dia D-1 e classifica a liquidez 
+        evitando falsos bloqueios matinais.
+        Compara o D-1 com a média dos 10 dias anteriores (D-11 a D-2).
+        Retorna: dict com 'volume_d1', 'avg_volume_10d', 'low_liquidity' (bool)
         """
         if not self.connected:
-            return {"volume_today": 0, "avg_volume_10d": 0, "low_liquidity": False}
+            return {"volume_d1": 0, "avg_volume_10d": 0, "low_liquidity": False}
         try:
-            rates_10d = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, 11)
-            if rates_10d is None or len(rates_10d) < 2:
-                return {"volume_today": 0, "avg_volume_10d": 0, "low_liquidity": False}
-            volume_today  = int(rates_10d[-1]['real_volume'] or rates_10d[-1]['tick_volume'])
+            # Pegamos os ultimos 12 dias (indice 11 eh hoje, indice 10 eh D-1, indices 0 a 9 sao D-11 a D-2)
+            rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, 12)
+            
+            if rates is None or len(rates) < 3:
+                return {"volume_d1": 0, "avg_volume_10d": 0, "low_liquidity": False}
+                
+            volume_d1 = int(rates[-2]['real_volume'] or rates[-2]['tick_volume'])
+            
+            dias_anteriores = rates[:-2] # 10 dias anteriores ao D-1
             avg_10d = sum(
-                int(r['real_volume'] or r['tick_volume']) for r in rates_10d[:-1]
-            ) / max(len(rates_10d) - 1, 1)
-            low_liquidity = (avg_10d > 0) and (volume_today < avg_10d * 0.6)
+                int(r['real_volume'] or r['tick_volume']) for r in dias_anteriores
+            ) / max(len(dias_anteriores), 1)
+            
+            low_liquidity = (avg_10d > 0) and (volume_d1 < avg_10d * 0.6)
+            
             return {
-                "volume_today": volume_today,
+                "volume_d1": volume_d1,
                 "avg_volume_10d": round(avg_10d, 0),
                 "low_liquidity": low_liquidity
             }
         except Exception as e:
             logging.error(f"Erro em get_daily_volume_and_liquidity para {symbol}: {sanitize_log(e)}")
-            return {"volume_today": 0, "avg_volume_10d": 0, "low_liquidity": False}
+            return {"volume_d1": 0, "avg_volume_10d": 0, "low_liquidity": False}
 
     def get_floating_pnl(self):
         """
