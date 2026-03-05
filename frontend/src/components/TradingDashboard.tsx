@@ -66,6 +66,7 @@ export function TradingDashboard() {
   // Derived Metrics
   const aiScore = data?.ai_prediction?.score ?? 0;
   const aiDirection = data?.ai_prediction?.direction ?? "NEUTRO";
+  const aiVeto = data?.ai_prediction?.veto ?? null;
 
   const isObiOk = Math.abs(data?.obi ?? 0) > 0.2; // Exemplo de threshold
   const isConfidenceOk = (data?.ai_confidence ?? 0) > 0.6;
@@ -402,6 +403,7 @@ export function TradingDashboard() {
             <ConfluenceGauge
               score={aiScore}
               direction={aiDirection}
+              veto={aiVeto}
               obi={data?.obi ?? 0}
               sentiment={
                 typeof data?.sentiment === "object"

@@ -34,6 +34,7 @@ interface TradeData {
     score?: number;
     direction?: string;
     lot_multiplier?: number;
+    veto?: string;
   };
   sota?: {
     forecast: number;

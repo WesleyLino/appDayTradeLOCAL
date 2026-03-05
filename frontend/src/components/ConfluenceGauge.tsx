@@ -10,6 +10,7 @@ interface ConfluenceGaugeProps {
   obi: number;
   sentiment: number;
   syntheticIndex: number;
+  veto?: string | null;
   className?: string;
 }
 
@@ -19,6 +20,7 @@ export function ConfluenceGauge({
   obi = 0,
   sentiment = 0,
   syntheticIndex = 0,
+  veto = null,
   className,
 }: ConfluenceGaugeProps) {
   // Configuração do arco do velocímetro
@@ -30,17 +32,19 @@ export function ConfluenceGauge({
 
   // Cores dinâmicas baseadas na confluência
   const confluenceColor = useMemo(() => {
+    if (veto) return "text-orange-400";
     if (score >= 85) return "text-emerald-400";
     if (score <= 15) return "text-red-400";
     if (score >= 50) return "text-blue-400";
     return "text-gray-400";
-  }, [score]);
+  }, [score, veto]);
 
   const glowColor = useMemo(() => {
+    if (veto) return "rgba(251, 146, 60, 0.5)"; // Orange glow
     if (score >= 85) return "rgba(52, 211, 153, 0.5)";
     if (score <= 15) return "rgba(248, 113, 113, 0.5)";
     return "rgba(59, 130, 246, 0.5)";
-  }, [score]);
+  }, [score, veto]);
 
   return (
     <div
@@ -62,11 +66,15 @@ export function ConfluenceGauge({
         </h3>
         <span
           className={cn(
-            "px-2 py-0.5 rounded text-[10px] font-bold border border-white/5 bg-white/5",
+            "px-2 py-0.5 rounded text-[10px] font-bold border border-white/5 bg-white/5 whitespace-nowrap",
             confluenceColor,
           )}
         >
-          {score >= 85 || score <= 15 ? "PRECISÃO EXTREMA" : "SCORE NORMAL"}
+          {veto
+            ? "VETO ATIVO"
+            : score >= 85 || score <= 15
+              ? "PRECISÃO EXTREMA"
+              : "SCORE NORMAL"}
         </span>
       </div>
 
@@ -105,7 +113,7 @@ export function ConfluenceGauge({
         </svg>
 
         {/* Central Display */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
           <span
             className={cn(
               "text-4xl font-black tracking-tighter tabular-nums",
@@ -115,8 +123,13 @@ export function ConfluenceGauge({
             {score.toFixed(0)}
           </span>
           <span className="text-[10px] font-medium text-muted-foreground uppercase">
-            Score
+            {veto ? "VETADO" : "Score"}
           </span>
+          {veto && (
+            <span className="text-[9px] font-bold text-orange-400/80 mt-1 leading-tight max-w-[100px] uppercase">
+              {veto.replace(/_/g, " ")}
+            </span>
+          )}
         </div>
       </div>
 

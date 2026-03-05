@@ -1406,6 +1406,9 @@ async def autonomous_bot_loop():
                         ai_total_score = 50.0
 
                         ai_direction = "NEUTRAL"
+                        decision["score"] = 50.0
+                        decision["direction"] = "NEUTRAL"
+                        decision["veto"] = f"SETTLEMENT_VETO: {settlement_msg}"
 
                 
 
@@ -1446,7 +1449,9 @@ async def autonomous_bot_loop():
                             ai_total_score = 50.0
 
                             ai_direction = "NEUTRAL"
-
+                            decision["score"] = 50.0
+                            decision["direction"] = "NEUTRAL"
+                            decision["veto"] = f"GAP_TRAP: Alta ({gap_pct:.1f}%) + Fluxo Comprador"
                         elif gap_pct < -0.5 and cvd_val < 0 and ai_direction == "BUY":
 
                             logging.warning(f"GAP TRAP VETO: Baixa ({gap_pct:.2f}%) + Fluxo Vendedor.")
@@ -1454,6 +1459,9 @@ async def autonomous_bot_loop():
                             ai_total_score = 50.0
 
                             ai_direction = "NEUTRAL"
+                            decision["score"] = 50.0
+                            decision["direction"] = "NEUTRAL"
+                            decision["veto"] = f"GAP_TRAP: Baixa ({gap_pct:.1f}%) + Fluxo Vendedor"
 
                 except Exception as gap_e:
 
@@ -1526,6 +1534,9 @@ async def autonomous_bot_loop():
                     ai_total_score = 50.0
 
                     ai_direction = "NEUTRAL"
+                    decision["score"] = 50.0
+                    decision["direction"] = "NEUTRAL"
+                    decision["veto"] = veto_reason
 
 
 
@@ -1545,6 +1556,9 @@ async def autonomous_bot_loop():
                     add_operational_log("VETO: Baixa Liquidez D1 — Volume abaixo de 60% da media 10D", "warning")
                     ai_total_score = 50.0
                     ai_direction   = "NEUTRAL"
+                    decision["score"] = 50.0
+                    decision["direction"] = "NEUTRAL"
+                    decision["veto"] = "BAIXA_LIQUIDEZ_D1"
 
                 # [MT5-INTEG #4] Correlação WDO-WIN: sinal DIVERGENTE reduz score
                 if wdo_win_signal == "DIVERGENTE" and ai_direction in ["BUY", "SELL"]:

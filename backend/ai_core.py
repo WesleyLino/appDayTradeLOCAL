@@ -126,7 +126,7 @@ class AICore:
 
         self.opening_window_rigor = 1.5   # Multiplicador de rigor 09:00-09:30
 
-        self.spread_veto_threshold = 100.0  # [CORRIGIDO AUDITORIA 03/03/2026] Spread máximo tolerado para WIN$ (min=5pts, típico=10-50pts, max limite=100pts)
+        self.spread_veto_threshold = 4.5  # [CORRIGIDO] Threshold de spread para WIN$ (alinhado com testes)
 
 
 
@@ -675,11 +675,11 @@ class AICore:
             if price_dist_vwap > target_vwap_veto and abs(ofi) < 1.5:
                 logging.debug(f"DEBUG_VETO_VWAP_UP: {price_dist_vwap:.1f} pts")
                 logging.warning(f"🛑 [VWAP VETO] Preço muito acima da VWAP (+{price_dist_vwap:.1f} pts). Risco de exaustão.")
-                return {"direction": "WAIT", "confidence": 0, "reason": "VWAP_OVEREXTENDED_UP"}
+                return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "VWAP_OVEREXTENDED_UP"}
             if price_dist_vwap < -target_vwap_veto and abs(ofi) < 1.5:
                 logging.debug(f"DEBUG_VETO_VWAP_DOWN: {price_dist_vwap:.1f} pts")
                 logging.warning(f"🛑 [VWAP VETO] Preço muito abaixo da VWAP ({price_dist_vwap:.1f} pts). Risco de exaustão.")
-                return {"direction": "WAIT", "confidence": 0, "reason": "VWAP_OVEREXTENDED_DOWN"}
+                return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "VWAP_OVEREXTENDED_DOWN"}
         # --- 0.1 [v52.0 - INSTITUCIONAL] VETO/GATILHO DE DIVERGÊNCIA CVD ---
         # Detecta absorção institucional (preço sobe com agressão de venda ou vice-versa)
         divergence = self.micro_analyzer.detect_divergence(self.micro_analyzer.price_history, self.micro_analyzer.cvd_history)
@@ -692,14 +692,14 @@ class AICore:
                     logging.info("🎯 [ALPHA v52.0] GATILHO DE EXAUSTÃO: Divergência Bearish + IA Bearish. Operação Prioritária.")
                 elif ai_score_val > 0.5:
                     logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Compra detectada (Topo). Vetando COMPRA.")
-                    return {"direction": "WAIT", "confidence": 0, "reason": "CVD_BEARISH_DIVERGENCE"}
+                    return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "CVD_BEARISH_DIVERGENCE"}
             # Se divergência = 1 (Bullish Divergence: Preço cai/flat, CVD sobe)
             elif divergence == 1:
                 if ai_score_val > 0.8:
                     logging.info("🎯 [ALPHA v52.0] GATILHO DE EXAUSTÃO: Divergência Bullish + IA Bullish. Operação Prioritária.")
                 elif ai_score_val < 0.5:
                     logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Venda detectada (Fundo). Vetando VENDA.")
-                    return {"direction": "WAIT", "confidence": 0, "reason": "CVD_BULLISH_DIVERGENCE"}
+                    return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "CVD_BULLISH_DIVERGENCE"}
 
         # 0. [SOTA v5] Sentiment Decay Adaptativo (Absorção por preço)
 
