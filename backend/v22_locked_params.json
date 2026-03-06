@@ -13,7 +13,7 @@
     "flux_imbalance_threshold": 0.95,  
     "confidence_threshold": 0.75,
     "sl_dist": 150.0,
-    "tp_dist": 550.0,
+    "tp_dist": 450.0,
     "daily_trade_limit": 999,
     "use_ai_core": true,
     "cooldown_minutes": 3,
