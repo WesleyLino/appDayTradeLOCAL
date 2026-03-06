@@ -1,59 +1,49 @@
 {
-  "score": 0.65,
+  "score": -0.7,
   "reliability": "high",
-  "risk_classification": "MEDIUM",
-  "fact_check": "Resultados corporativos positivos dominam, com Petrobras, Eneva, Tenda e CPFL reportando lucros e/ou proventos significativos. 3tentos registra queda de lucro. Mercados futuros dos EUA estabilizam. IPO de MiniMed precificado.",
+  "risk_classification": "EXTREME",
+  "fact_check": "A avers\u00e3o a risco global, impulsionada pelo conflito no Ir\u00e3, derruba os futuros do Ibovespa e da TSX. Not\u00edcias corporativas positivas para Ecorodovias, Embraer e Moura Dubeux, e mistas para Petrobras, n\u00e3o compensam o sentimento negativo sist\u00eamico.",
   "news": [
     {
-      "headline": "IPO MiniMed precificado a US$20, arrecadando US$560 mi.",
+      "headline": "Ecorodovias registra alta de 22,6% no tr\u00e1fego consolidado em fevereiro",
+      "relevance": 0.6,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Oncocl\u00ednicas (ONCO3) elege Carlos Ferreira como novo CEO",
       "relevance": 0.4,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Eneva (ENEV3) reverte preju\u00edzo e lucra R$57 mi no 4T.",
+      "headline": "Futuros da TSX caem com conflito no Ir\u00e3 prejudicando o sentimento global",
       "relevance": 0.8,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Futuros EUA estabilizam ap\u00f3s queda de Wall Street e alta do petr\u00f3leo.",
-      "relevance": 0.7,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Petrobras (PETR4) aprova R$8,1 bi em proventos.",
-      "relevance": 0.9,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Tenda (TEND3) quintuplica lucro para R$104,6 mi no 4T.",
-      "relevance": 0.7,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Eneva reverte preju\u00edzo e lucra R$57 mi no 4T.",
-      "relevance": 0.8,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Mercados Financeiros - \u00daltimas Not\u00edcias.",
-      "relevance": 0.0,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "3tentos (TTEN3) lucra R$82,4 mi no 4T, queda de 39%.",
-      "relevance": 0.6,
       "impact": "BEARISH"
     },
     {
-      "headline": "CPFL lucra R$1,56 bi no 4T, anuncia R$4,3 bi em dividendos e investimentos.",
-      "relevance": 0.8,
+      "headline": "Ibovespa Futuro cai com continuidade da avers\u00e3o a risco em meio ao conflito no Ir\u00e3",
+      "relevance": 0.9,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Petrobras: gera\u00e7\u00e3o de caixa garante bons dividendos, mas capex segue como quest\u00e3o",
+      "relevance": 0.7,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Wizz Air UK obt\u00e9m permiss\u00f5es para voos EUA-Reino Unido",
+      "relevance": 0.3,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Moura Dubeux (MDNE3) pagar\u00e1 R$ 100 milh\u00f5es em dividendos",
+      "relevance": 0.5,
       "impact": "BULLISH"
     },
     {
-      "headline": "Petrobras (PETR4) reverte preju\u00edzo e lucra R$15,6 bi no 4T.",
-      "relevance": 0.9,
+      "headline": "Embraer (EMBJ3) aprova recompra de at\u00e9 10,9 milh\u00f5es de a\u00e7\u00f5es",
+      "relevance": 0.6,
       "impact": "BULLISH"
     }
   ],
-  "timestamp": 1772763677.9137573
+  "timestamp": 1772801206.8342557
 }

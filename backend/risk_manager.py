@@ -28,13 +28,13 @@ class RiskManager:
         self.trailing_step = 20.0    # Move a cada 20 pontos de avanço
         
         # [v52.1] Breakeven Ultra-Rápido
-        self.be_trigger = 40.0       # Ativa com 40 pontos de lucro (Garante o zero rápido)
+        self.be_trigger = 25.0       # Ativa com 25 pontos de lucro (Garante o zero rápido)
         self.be_lock = 0.0           # Move para o preço de entrada
         
         # [v52.0] Scaling Out (Saída Parcial HFT)
         self.base_volume = 2.0       # 2 contratos para permitir parcial
         self.partial_volume = 1.0    # Zera 1 contrato na parcial
-        self.partial_profit_points = 45.0 # [v52.1] Lucro travado cedo para maior assertividade
+        self.partial_profit_points = 30.0 # [v52.1] Lucro travado cedo para maior assertividade
         
         # [FASE 2] Velocity Limit (Drawdown Acelerado no Tempo)
         self.velocity_time_limit_sec = 20.0     # Segundos máximos engatado negativamente

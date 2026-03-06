@@ -24,9 +24,9 @@
     "pyramid_profit_threshold": 30.0,
     "pyramid_signal_threshold": 0.6,
     "pyramid_max_volume": 3,
-    "be_trigger": 40.0,
+    "be_trigger": 25.0,
     "be_lock": 0.0,
-    "partial_profit_points": 45.0,
+    "partial_profit_points": 30.0,
     "vwap_dist_threshold": 450.0
   },
   "anti_vibe_seal": "20260303_GOLDEN_V52_1_UNLIMITED_PROFIT_FINAL"
