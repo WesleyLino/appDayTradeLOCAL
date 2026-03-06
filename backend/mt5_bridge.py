@@ -1017,7 +1017,7 @@ class MT5Bridge:
                 int(r['real_volume'] or r['tick_volume']) for r in dias_anteriores
             ) / max(len(dias_anteriores), 1)
             
-            low_liquidity = (avg_10d > 0) and (volume_d1 < avg_10d * 0.6)
+            low_liquidity = (avg_10d > 0) and (volume_d1 < avg_10d * 0.4) # [RELAXADO] De 60% para 40% da média 10D
             
             return {
                 "volume_d1": volume_d1,

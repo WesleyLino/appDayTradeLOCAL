@@ -143,7 +143,7 @@ class MicrostructureAnalyzer:
             slope_cvd = np.polyfit(x, cvd_arr[-10:], 1)[0]
             
             # Divergência de Absorção (Preço e Volume andando em direções opostas)
-            if corr < -0.6:
+            if corr < -0.85: # [RELAXADO] Somente divergências extremas causam veto
                 # Bearish Absorption: Preço Sobe mas CVD Cai (Institucional Vendendo Passivo)
                 if slope_price > 0 and slope_cvd < 0:
                     logging.info(f"🚨 [ABSORÇÃO BEARISH] Divergência Detectada! Corr: {corr:.2f}")

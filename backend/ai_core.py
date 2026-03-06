@@ -122,11 +122,12 @@ class AICore:
 
         self.sentiment_anchor_time = 0
 
-        self.max_sentiment_drift = 150.0 # Pontos do WIN para absorção total
+        self.max_sentiment_drift = 300.0 # [RELAXADO] 300 pts para evitar neutralizar sinal em tendências fortes
 
         self.opening_window_rigor = 1.5   # Multiplicador de rigor 09:00-09:30
 
-        self.spread_veto_threshold = 4.5  # [CORRIGIDO] Threshold de spread para WIN$ (alinhado com testes)
+        self.spread_veto_threshold = 15.1 # [CORRIGIDO] 15.1 permite até 3 ticks no WIN$ (Filtro Anti-Gargalo)
+        self.vwap_dist_threshold = 400.0  # [RELAXADO] 400 pts permite seguir tendências esticadas sem veto precoce
 
 
 
@@ -818,7 +819,7 @@ class AICore:
 
         if regime == 2 or abs(ofi) > 2.0:
 
-            uncertainty_threshold = 0.20 # Rigor em ruído
+            uncertainty_threshold = 0.30 # [RELAXADO] Rigor em ruído de 0.20 para 0.30
 
             logging.info("🛡️ FILTRO DE RUÍDO: Rigor 0.20")
 

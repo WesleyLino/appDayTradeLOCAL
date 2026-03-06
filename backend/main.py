@@ -1774,8 +1774,8 @@ async def autonomous_bot_loop():
                     _threshold_sell = 35
                     logging.debug(f"⚡ [MOMENTUM] Threshold relaxado: Buy>={_threshold_buy} / Sell<={_threshold_sell}")
                 else:
-                    _threshold_buy  = 85  # Padrão normal
-                    _threshold_sell = 15
+                    _threshold_buy  = 80  # [SNIPER MODE] Reduzido de 85 para 80 para maior agressividade
+                    _threshold_sell = 20  # [SNIPER MODE] Aumentado de 15 para 20
 
                 is_threshold_met = ai_total_score >= _threshold_buy or ai_total_score <= _threshold_sell
 

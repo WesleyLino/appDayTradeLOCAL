@@ -417,7 +417,7 @@ class RiskManager:
         if not returns_list: return True, 1.0
         
         psr = self.calculate_psr(returns_list)
-        if psr < 0.95:
+        if psr < 0.80: # [RELAXADO] De 95% para 80% (Mais autonomia estatística)
             return False, psr
         return True, psr
 
@@ -435,17 +435,22 @@ class RiskManager:
         3. Panic Threshold ajustado por ativo.
         """
         # Regra 1: Regime de Mercado (0=Indefinido, 1=Tendência, 2=Ruído)
-        if regime == 2:
+        # [RELAXADO] Permitir operação em Ruído (Pois a IA já penaliza o score internamente)
+        if regime == 2 and not getattr(self, 'force_noise_veto', False):
+            logging.debug("⚠️ Regime de Ruído Detectado, permitindo operação cautelosa.")
+            # Retornamos True para allowed, mas a IA terá score menor
+            # A lógica continua para verificar outras condições
+        elif regime == 2: # Se force_noise_veto for True, ainda bloqueia
             return {
                 "allowed": False,
                 "reason": "Regime de Mercado: RUÍDO/VOLÁTIL (2)"
             }
 
         # Regra 2: Circuit Breaker Dinâmico (Relativo)
-        if avg_atr > 0 and current_atr > (3 * avg_atr):
+        if avg_atr > 0 and current_atr > (5 * avg_atr): # [RELAXADO] De 3x para 5x
             return {
                 "allowed": False,
-                "reason": f"Circuit Breaker: ATR {current_atr:.1f} > 3x Média {avg_atr:.1f}"
+                "reason": f"Circuit Breaker: ATR {current_atr:.1f} > 5x Média {avg_atr:.1f}"
             }
             
         # Regra 3: Panic Threshold Absoluto (Fallback se média estiver descalibrada)
