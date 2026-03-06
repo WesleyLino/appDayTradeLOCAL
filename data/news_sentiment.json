@@ -1,44 +1,59 @@
 {
-  "score": 0.66,
+  "score": 0.65,
   "reliability": "high",
   "risk_classification": "MEDIUM",
-  "fact_check": "Resultados do 4\u00ba trimestre de diversas empresas brasileiras, com destaque para lucros robustos de Eneva, Alupar, Petrobras e CPFL. A Petrobras e a CPFL tamb\u00e9m anunciaram pagamentos significativos de proventos e dividendos. A Tenda quintuplicou o lucro dentro do esperado, enquanto a 3tentos registrou queda de 39% no lucro anual.",
+  "fact_check": "Resultados corporativos positivos dominam, com Petrobras, Eneva, Tenda e CPFL reportando lucros e/ou proventos significativos. 3tentos registra queda de lucro. Mercados futuros dos EUA estabilizam. IPO de MiniMed precificado.",
   "news": [
     {
-      "headline": "Eneva (ENEV3) reverte preju\u00edzo e lucra R$ 57 milh\u00f5es no 4\u00ba tri.",
-      "relevance": 0.7,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Tenda quintuplica lucro no 4\u00ba tri, em linha com o esperado.",
-      "relevance": 0.5,
+      "headline": "IPO MiniMed precificado a US$20, arrecadando US$560 mi.",
+      "relevance": 0.4,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Alupar lucra R$ 340 milh\u00f5es no 4\u00ba tri, alta de 51,1% anual.",
-      "relevance": 0.6,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Petrobras (PETR4) reverte preju\u00edzo e lucra R$ 15,6 bilh\u00f5es no 4\u00ba tri.",
-      "relevance": 0.9,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "3tentos (TTEN3) lucra R$ 82,4 milh\u00f5es no 4\u00ba tri, queda de 39% anual.",
-      "relevance": 0.6,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "CPFL lucra no 4\u00ba tri, anuncia R$ 4,3 bi em dividendos e investimentos.",
+      "headline": "Eneva (ENEV3) reverte preju\u00edzo e lucra R$57 mi no 4T.",
       "relevance": 0.8,
       "impact": "BULLISH"
     },
     {
-      "headline": "Conselho da Petrobras (PETR4) aprova R$ 8,1 bilh\u00f5es em proventos.",
+      "headline": "Futuros EUA estabilizam ap\u00f3s queda de Wall Street e alta do petr\u00f3leo.",
+      "relevance": 0.7,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Petrobras (PETR4) aprova R$8,1 bi em proventos.",
+      "relevance": 0.9,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Tenda (TEND3) quintuplica lucro para R$104,6 mi no 4T.",
+      "relevance": 0.7,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Eneva reverte preju\u00edzo e lucra R$57 mi no 4T.",
+      "relevance": 0.8,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Mercados Financeiros - \u00daltimas Not\u00edcias.",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "3tentos (TTEN3) lucra R$82,4 mi no 4T, queda de 39%.",
+      "relevance": 0.6,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "CPFL lucra R$1,56 bi no 4T, anuncia R$4,3 bi em dividendos e investimentos.",
+      "relevance": 0.8,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Petrobras (PETR4) reverte preju\u00edzo e lucra R$15,6 bi no 4T.",
       "relevance": 0.9,
       "impact": "BULLISH"
     }
   ],
-  "timestamp": 1772755206.712706
+  "timestamp": 1772763677.9137573
 }

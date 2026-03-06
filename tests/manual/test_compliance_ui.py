@@ -30,7 +30,7 @@ async def websocket_endpoint(websocket: WebSocket):
             current_price = 120000 + (random.random() - 0.5) * 500
             
             # Simulate approaching limit
-            # current_price = upper_limit * 0.99 
+           # current_price = upper_limit * 0.99 
             
             packet = {
                 "symbol": "WINJ24",
