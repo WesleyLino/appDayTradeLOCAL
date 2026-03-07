@@ -1,0 +1,32 @@
+
+============================================================
+[LINT RUNNER] Unified Linting
+============================================================
+Project: C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL
+Time: 2026-03-07 20:28:13
+Type: python
+Linters: 1
+------------------------------------------------------------
+
+Running: ruff...
+  [FAIL] ruff
+
+============================================================
+SUMMARY
+============================================================
+[FAIL] ruff
+
+{
+  "script": "lint_runner",
+  "project": "C:\\Users\\Wesley Lino\\Documents\\ProjetosApp\\appDayTradeLOCAL",
+  "type": "python",
+  "checks": [
+    {
+      "name": "ruff",
+      "passed": false,
+      "output": "F541 [*] f-string without any placeholders\n   --> backend\\calibrate_05mar.py:169:11\n    |\n167 |         json.dump(output, f, indent=4, cls=CustomEncoder)\n168 |         \n169 |     print(f\"\\n\u2705 Resultados salvos em backend/calibragem_05mar_resultado.json\")\n    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n170 |\n171 | if __name__ == \"__main__\":\n    |\nhelp: Remove extraneous `f` prefix\n\nFound 1 error.\n[*] 1 fixable with the `--fix` option.\n",
+      "error": ""
+    }
+  ],
+  "passed": false
+}

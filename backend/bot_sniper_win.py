@@ -8,6 +8,8 @@ from backend.ai_core import AICore
 from backend.persistence import PersistenceManager
 import pandas as pd
 import numpy as np
+import os
+import json
 
 # Configuração de Logs com Rotação Diária
 log_handler = TimedRotatingFileHandler("backend/bot_sniper.log", when="midnight", interval=1, backupCount=7, encoding='utf-8')
@@ -365,7 +367,7 @@ class SniperBotWIN:
                     self.stop()
                     break
 
-                if not (self.start_time <= now.time() <= self.end_time):
+                if not (self.start_time <= now.time() <= self.end_time) or not self.risk.is_time_allowed():
                     await asyncio.sleep(30)
                     continue
 
@@ -431,13 +433,20 @@ class SniperBotWIN:
                 comprar_cond = last['rsi'] < 30 and last['tick_volume'] > (last['vol_sma'] * flux_mult)
                 vender_cond = last['rsi'] > 70 and last['tick_volume'] > (last['vol_sma'] * flux_mult)
                 
+                # [ANTIVIBE-CODING] Carregamento de Contexto Macro para Veto
+                market_ctx = self._load_market_context()
+                synthetic_idx = market_ctx.get("synthetic_index", 0.0)
+                
                 if comprar_cond or vender_cond:
                     side = "buy" if comprar_cond else "sell"
                     if (side == "buy" and pressure > 1.2) or (side == "sell" and pressure < -1.2):
                         patchtst_score = await self.ai.predict_with_patchtst(self.ai.inference_engine, df)
+                        # [ANTIVIBE-CODING] Override de Controle Manual de Notícias
+                        effective_sentiment = await self.ai.update_sentiment() if (getattr(self.risk, 'enable_news_filter', True)) else 0.0
+
                         ai_decision = self.ai.calculate_decision(
                             obi=pressure, 
-                            sentiment=await self.ai.update_sentiment(),
+                            sentiment=effective_sentiment, 
                             patchtst_score=patchtst_score, 
                             regime=self.ai.detect_regime(0.1, pressure),
                             atr=atr, 
@@ -447,6 +456,12 @@ class SniperBotWIN:
                             ofi=weighted_ofi, # Passando OFI real para o Veto de VWAP
                             current_price=last['close']
                         )
+                        
+                        # [ANTIVIBE-CODING] Veto Macro Sincronizado
+                        direction = "BUY" if side == "buy" else "SELL"
+                        if not self.risk.is_macro_allowed(direction, synthetic_idx):
+                            ai_decision["direction"] = "WAIT"
+                            ai_decision["reason"] = f"VETO_MACRO: Blue Chips {synthetic_idx:.2f}%"
                         
                         if self.dia_pausado_vol:
                             ai_decision["direction"] = "WAIT"
@@ -475,6 +490,16 @@ class SniperBotWIN:
             except Exception as e:
                 logger.error(f"Erro Sniper: {sanitize_log(e)}")
                 await asyncio.sleep(2)
+
+    def _load_market_context(self):
+        """[ANTIVIBE-CODING] Método auxiliar para carregar contexto global."""
+        ctx_path = os.path.join("data", "market_context.json")
+        if os.path.exists(ctx_path):
+            try:
+                with open(ctx_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except: pass
+        return {}
 
     def stop(self):
         self.running = False

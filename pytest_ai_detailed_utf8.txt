@@ -1,0 +1,81 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\Wesley Lino\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL
+configfile: pytest.ini
+plugins: anyio-4.12.1
+collecting ... collected 4 items
+
+tests/test_ai_decision.py::TestAIDecision::test_conflicting_signal PASSED [ 25%]
+tests/test_ai_decision.py::TestAIDecision::test_neutral_signal PASSED    [ 50%]
+tests/test_ai_decision.py::TestAIDecision::test_strong_buy_signal FAILED [ 75%]
+tests/test_ai_decision.py::TestAIDecision::test_super_strong_sell_signal FAILED [100%]
+
+================================== FAILURES ===================================
+____________________ TestAIDecision.test_strong_buy_signal ____________________
+
+self = <test_ai_decision.TestAIDecision testMethod=test_strong_buy_signal>
+
+    def test_strong_buy_signal(self):
+        """Testa um cenário de compra forte onde todos indicadores são positivos."""
+        obi = 1.0          # Compra extrema no book (v30/v40)
+        sentiment = 0.9    # Notícias muito otimistas
+        patchtst = 0.95    # Previsão de alta agressiva
+    
+        # Norm PatchTST = 0.8
+        # Composite = (0.9 * 0.3) + (0.8 * 0.5) + (0.8 * 0.2)
+        # Weights (regime 0): obi 0.3, patch 0.5, sent 0.2?
+        # Wait, strictly following ai_core logic:
+        # regime default is 0? No, check ai.calculate_decision default.
+    
+        decision = self.ai.calculate_decision(obi, sentiment, patchtst)
+    
+        print(f"\nStrong Buy Case: {decision}")
+>       self.assertEqual(decision['direction'], "BUY")
+E       AssertionError: 'COMPRA' != 'BUY'
+E       - COMPRA
+E       + BUY
+
+tests\test_ai_decision.py:35: AssertionError
+---------------------------- Captured stdout call -----------------------------
+
+Strong Buy Case: {'score': 97.0, 'direction': 'COMPRA', 'lot_multiplier': 1.0, 'tp_multiplier': 1.0, 'veto': None, 'forecast': 1.0, 'uncertainty': 0.0, 'quantile_confidence': 'NORMAL', 'h1_trend': 0, 'breakdown': {'obi_contribution': 0.4, 'patchtst_contribution': 0.36, 'sentiment_contribution': 0.18000000000000002, 'raw_signal': 97.0, 'meta_score': 97.0, 'q10': None, 'q50': None, 'q90': None, 'veto': None}}
+________________ TestAIDecision.test_super_strong_sell_signal _________________
+
+self = <test_ai_decision.TestAIDecision testMethod=test_super_strong_sell_signal>
+
+    def test_super_strong_sell_signal(self):
+        """Testa um cenário de venda extrema."""
+        obi = -0.9         # Venda forte
+        sentiment = -0.9   # Pânico
+        patchtst = 0.05    # Previsão de queda forte
+    
+        decision = self.ai.calculate_decision(obi, sentiment, patchtst)
+    
+        print(f"\nSuper Sell Case: {decision}")
+>       self.assertEqual(decision['direction'], "SELL")
+E       AssertionError: 'VENDA' != 'SELL'
+E       - VENDA
+E       + SELL
+
+tests\test_ai_decision.py:49: AssertionError
+---------------------------- Captured stdout call -----------------------------
+
+Super Sell Case: {'score': 4.999999999999993, 'direction': 'VENDA', 'lot_multiplier': 1.0, 'tp_multiplier': 1.0, 'veto': None, 'forecast': 1.0, 'uncertainty': 0.0, 'quantile_confidence': 'NORMAL', 'h1_trend': 0, 'breakdown': {'obi_contribution': -0.36000000000000004, 'patchtst_contribution': -0.36000000000000004, 'sentiment_contribution': -0.18000000000000002, 'raw_signal': 4.999999999999993, 'meta_score': 4.999999999999993, 'q10': None, 'q50': None, 'q90': None, 'veto': None}}
+============================== warnings summary ===============================
+backend\ai_core.py:18
+  C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\backend\ai_core.py:18: FutureWarning: 
+  
+  All support for the `google.generativeai` package has ended. It will no longer be receiving 
+  updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+  See README for more details:
+  
+  https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+  
+    import google.generativeai as genai
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_ai_decision.py::TestAIDecision::test_strong_buy_signal - As...
+FAILED tests/test_ai_decision.py::TestAIDecision::test_super_strong_sell_signal
+=================== 2 failed, 2 passed, 1 warning in 4.67s ====================

@@ -57,6 +57,7 @@ class RiskManager:
 
         # [NOVO] Switches de Controle Manual do Frontend
         self.enable_news_filter = False
+        # [ANTIVIBE-CODING] - Filtros de Proteção Institucional
         self.enable_calendar_filter = True
         self.enable_macro_filter = True
         
@@ -256,6 +257,25 @@ class RiskManager:
             f"Operação {direction} suspensa."
         )
         return False
+
+    def is_macro_allowed(self, direction: str, synthetic_idx: float) -> bool:
+        """[ANTIVIBE-CODING] Veto Macro via Blue Chips/S&P 500.
+        
+        Bloqueia operações se o mercado global estiver fortemente contra a direção.
+        Respeita o switch de controle manual do Dashboard.
+        """
+        if not getattr(self, 'enable_macro_filter', True):
+            return True
+
+        # Se Blue Chips estão fortemente contra, aplica veto preventivo
+        if direction == "BUY" and synthetic_idx < -0.2:
+            logging.warning(f"🛑 [VETO MACRO] COMPRA bloqueada: Blue Chips caindo forte ({synthetic_idx:.2f}%)")
+            return False
+        elif direction == "SELL" and synthetic_idx > 0.2:
+            logging.warning(f"🛑 [VETO MACRO] VENDA bloqueada: Blue Chips subindo forte ({synthetic_idx:.2f}%)")
+            return False
+            
+        return True
 
     def validate_environmental_risk(self, ping_ms, spread_points, max_ping=150.0, max_spread=15.0):
         """

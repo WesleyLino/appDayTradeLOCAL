@@ -1514,30 +1514,20 @@ async def autonomous_bot_loop():
                 
 
                 # Se Blue Chips estão fortemente contra, reduz o score
-
                 if ai_direction == "BUY" and synthetic_idx < -0.05:
-
-                    penalty = abs(synthetic_idx) * 100 # ex: 0.1% contra -> -10 pontos
-
-                    ai_total_score = max(50.0, ai_total_score - penalty)
-
-                    if synthetic_idx < -0.2: # Hard Veto se queda for > 0.2%
-
-                         veto_active = True
-
-                         veto_reason = f"VETO QUANT EXTREMO: Blue Chips Caindo Forte ({synthetic_idx:.2f}%)"
-
+                    if getattr(risk, 'enable_macro_filter', True):
+                        penalty = abs(synthetic_idx) * 100 # ex: 0.1% contra -> -10 pontos
+                        ai_total_score = max(50.0, ai_total_score - penalty)
+                        if synthetic_idx < -0.2: # Hard Veto se queda for > 0.2%
+                             veto_active = True
+                             veto_reason = f"VETO QUANT EXTREMO: Blue Chips Caindo Forte ({synthetic_idx:.2f}%)"
                 elif ai_direction == "SELL" and synthetic_idx > 0.05:
-
-                    penalty = abs(synthetic_idx) * 100
-
-                    ai_total_score = max(50.0, ai_total_score - penalty)
-
-                    if synthetic_idx > 0.2: # Hard Veto se alta for > 0.2%
-
-                         veto_active = True
-
-                         veto_reason = f"VETO QUANT EXTREMO: Blue Chips Subindo Forte ({synthetic_idx:.2f}%)"
+                    if getattr(risk, 'enable_macro_filter', True):
+                        penalty = abs(synthetic_idx) * 100
+                        ai_total_score = max(50.0, ai_total_score - penalty)
+                        if synthetic_idx > 0.2: # Hard Veto se alta for > 0.2%
+                             veto_active = True
+                             veto_reason = f"VETO QUANT EXTREMO: Blue Chips Subindo Forte ({synthetic_idx:.2f}%)"
 
                 
 

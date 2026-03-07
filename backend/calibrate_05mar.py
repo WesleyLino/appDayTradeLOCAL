@@ -166,7 +166,7 @@ async def run_calibration():
     with open("backend/calibragem_05mar_resultado.json", "w") as f:
         json.dump(output, f, indent=4, cls=CustomEncoder)
         
-    print(f"\n✅ Resultados salvos em backend/calibragem_05mar_resultado.json")
+    print("\n✅ Resultados salvos em backend/calibragem_05mar_resultado.json")
 
 if __name__ == "__main__":
     asyncio.run(run_calibration())
