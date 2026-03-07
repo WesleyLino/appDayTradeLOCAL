@@ -10,7 +10,7 @@ def sync_today():
     if not collector.connect():
         return
 
-    today = datetime(2026, 2, 25)
+    today = datetime(2026, 3, 6)
     tomorrow = today + dt.timedelta(days=1)
     
     symbols = {
