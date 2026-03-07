@@ -146,6 +146,29 @@ class RiskManager:
         except Exception as e:
             logging.error(f"Erro ao carregar economic_calendar.json: {e}")
 
+    def calculate_dynamic_tp(self, base_tp, current_atr):
+        """
+        [V22.2] ALVO DINÂMICO (TP) POR VOLATILIDADE.
+        Reduz o Take Profit em 15% se a volatilidade (ATR) estiver acima de 120.
+        Objetivo: Garantir o lucro no bolso em mercados rápidos antes da reversão.
+        """
+        if current_atr > 120.0:
+            new_tp = base_tp * 0.85
+            logging.info(f"🎯 [ALVO DINÂMICO] ATR {current_atr:.1f} > 120. Ajustando TP: {base_tp} -> {new_tp:.1f} (-15%)")
+            return float(new_tp)
+        return float(base_tp)
+
+    def check_gap_safety(self, opening_price, prev_close):
+        """
+        [V22.2] FILTRO DE GAP DE ABERTURA.
+        Veta operações se o Gap de abertura for superior a 800 pontos.
+        """
+        gap_size = abs(opening_price - prev_close)
+        if gap_size > 800.0:
+            logging.warning(f"⚠️ [FILTRO DE GAP] Abertura com gap de {gap_size:.1f} pts (> 800). Risco de anomalia detectado.")
+            return False, f"Gap Excessivo ({gap_size:.1f} pts)"
+        return True, "Gap Seguro"
+
     def is_time_allowed(self):
         """Verifica se o horário atual é permitido para operar.
 

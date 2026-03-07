@@ -1,0 +1,92 @@
+[
+    {
+        "Data": "2026-02-19",
+        "Trades": 15,
+        "Compras": "14 (6W)",
+        "Vendas": "1 (0W)",
+        "Lucro_liq": 265.0,
+        "Prejuizo": -60.0,
+        "Perdas_Op": 0,
+        "Saldo": 3265.0
+    },
+    {
+        "Data": "2026-02-20",
+        "Trades": 10,
+        "Compras": "8 (4W)",
+        "Vendas": "2 (0W)",
+        "Lucro_liq": -42.0,
+        "Prejuizo": -150.0,
+        "Perdas_Op": 0,
+        "Saldo": 2958.0
+    },
+    {
+        "Data": "2026-02-23",
+        "Trades": 16,
+        "Compras": "13 (7W)",
+        "Vendas": "3 (3W)",
+        "Lucro_liq": 294.53571428571604,
+        "Prejuizo": -60.0,
+        "Perdas_Op": 0,
+        "Saldo": 3294.535714285716
+    },
+    {
+        "Data": "2026-02-24",
+        "Trades": 11,
+        "Compras": "9 (5W)",
+        "Vendas": "2 (2W)",
+        "Lucro_liq": 157.54285714285788,
+        "Prejuizo": -72.0,
+        "Perdas_Op": 0,
+        "Saldo": 3157.542857142858
+    },
+    {
+        "Data": "2026-02-25",
+        "Trades": 15,
+        "Compras": "9 (4W)",
+        "Vendas": "6 (5W)",
+        "Lucro_liq": 71.97857142856765,
+        "Prejuizo": -214.0,
+        "Perdas_Op": 0,
+        "Saldo": 3071.9785714285676
+    },
+    {
+        "Data": "2026-02-26",
+        "Trades": 13,
+        "Compras": "9 (7W)",
+        "Vendas": "4 (1W)",
+        "Lucro_liq": 103.14285714285779,
+        "Prejuizo": -120.0,
+        "Perdas_Op": 0,
+        "Saldo": 3103.142857142858
+    },
+    {
+        "Data": "2026-02-27",
+        "Trades": 14,
+        "Compras": "13 (6W)",
+        "Vendas": "1 (0W)",
+        "Lucro_liq": 261.0,
+        "Prejuizo": -60.0,
+        "Perdas_Op": 0,
+        "Saldo": 3261.0
+    },
+    {
+        "Data": "2026-03-02",
+        "Trades": 10,
+        "Compras": "9 (7W)",
+        "Vendas": "1 (0W)",
+        "Lucro_liq": 276.0,
+        "Prejuizo": -30.0,
+        "Perdas_Op": 0,
+        "Saldo": 3276.0
+    },
+    {
+        "Data": "2026-03-06",
+        "Trades": 0,
+        "Compras": "0 (0W)",
+        "Vendas": "0 (0W)",
+        "Lucro_liq": 0.0,
+        "Prejuizo": 0,
+        "Perdas_Op": 0,
+        "Saldo": 3000.0
+    }
+]

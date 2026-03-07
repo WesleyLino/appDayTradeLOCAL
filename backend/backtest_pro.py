@@ -365,6 +365,21 @@ class BacktestPro:
                 logging.info(f"📅 Mudança de dia detectada ({self.last_day} -> {current_date}). Resetando métricas diárias.")
                 self.daily_pnl = 0.0
                 self.daily_trade_count = 0
+                
+                # [V22.2] VERIFICAÇÃO DE GAP DE ABERTURA
+                try:
+                    # Busca o fechamento do dia anterior para o cálculo do GAP
+                    prev_day_data = data[data.index.date < current_date].tail(1)
+                    if not prev_day_data.empty:
+                        prev_close = prev_day_data['close'].iloc[0]
+                        opening_price = row['open']
+                        gap_ok, gap_msg = self.risk.check_gap_safety(opening_price, prev_close)
+                        if not gap_ok:
+                            self._dia_pausado_atr = True # Usa a mesma flag de pausa para o Gap
+                            logging.warning(f"🚫 [VETO V22.2] Dia {current_date} pausado por: {gap_msg}")
+                except Exception as e_gap:
+                    logging.error(f"Erro ao calcular Gap: {e_gap}")
+
             self.last_day = current_date
 
             # 1. Verificar saída de posição aberta (Simulação OCO)
@@ -797,6 +812,9 @@ class BacktestPro:
                         self.shadow_signals['filtered_by_bias'] = self.shadow_signals.get('filtered_by_bias', 0) + 1
                         logging.debug(f"🚫 [H] SELL vetado por tendência diária de ALTA em {row.name}")
                         continue
+
+                    # [V22.2] CÁLCULO DE ALVO DINÂMICO (TP)
+                    dyn_tp = self.risk.calculate_dynamic_tp(dyn_tp, atr_current)
 
                     # --- [DYNAMIC ATR TARGETS V3] ---
                     # Replica a lógica do RiskManager ajustada por regime
