@@ -1048,12 +1048,11 @@ class AICore:
                                    (norm_patchtst < -0.5 and sentiment > 0.3)
 
         if patchtst_obi_divergence and veto_reason is None:
-            # PatchTST contradiz fluxo de mercado — reduz seu peso
-            excess = w_patchtst * 0.50  # Redistribui 50% do peso do PatchTST
+            # [AJUSTE ASSERTIVIDADE 09/03] IA agora mantém 0.35 de peso (menos vetada pelo OBI neutro)
+            excess = w_patchtst * 0.125 # Remove apenas 12.5% do peso (0.40 -> 0.35) 
             w_patchtst -= excess
-            w_obi += excess * 0.65   # OBI recebe 65%
-            w_sent += excess * 0.35  # Sentimento recebe 35%
-            logging.info(f"⚖️ [DIVERGÊNCIA TÉCNICA] PatchTST conflita com OBI. Pesos ajustados: OBI={w_obi:.2f} PATCHTST={w_patchtst:.2f} SENT={w_sent:.2f}")
+            w_obi += excess # Todo o excesso vai para o OBI (0.40 -> 0.45)
+            logging.info(f"⚖️ [DIVERGÊNCIA TÉCNICA] Pesos recalibrados para assertividade: OBI={w_obi:.2f} PATCHTST={w_patchtst:.2f}")
 
         elif patchtst_sent_divergence and veto_reason is None:
             # PatchTST contradiz sentimento dominante — leve ajuste

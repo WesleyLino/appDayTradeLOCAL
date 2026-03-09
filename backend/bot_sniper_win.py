@@ -50,11 +50,11 @@ class SniperBotWIN:
         
         # Parâmetros Sniper (Otimizados em Backtest)
         self.start_time = time(10, 0)
-        self.end_time = time(15, 0) # Expandido para janela da tarde
+        self.end_time = time(17, 15) # Expandido para janela da tarde (conforme v22_locked_params)
         self.consecutive_wins = 0 # Alpha Scaling tracker
         self.rsi_period = 14
         self.flux_threshold = 1.2 # Sniper Pro: 1.2x (Validated)
-        self.vol_spike_mult = 1.2 # Sniper Pro: 1.2x (Validated)
+        self.vol_spike_mult = 1.0 # Reduzido levemente para maior assertividade (Plano de Ajustes)
         self.last_trade_time = None
         # [PAUSA PARCIAL] Controle de Volatilidade de Abertura (H-L Extremo)
         self.dia_pausado_vol = False
@@ -442,9 +442,9 @@ class SniperBotWIN:
                     except Exception as e:
                         logger.error(f"Erro ao calcular H-L abertura (Live): {e}")
 
-                if self.dia_pausado_vol and 0 < atr < 80.0:
+                if self.dia_pausado_vol and 0 < atr < 100.0:
                     self.dia_pausado_vol = False
-                    logger.info(f"✅ [PAUSA VOLATILIDADE] ATR={atr:.1f}pts normalizou. Retomando operações.")
+                    logger.info(f"✅ [PAUSA VOLATILIDADE] ATR={atr:.1f}pts normalizou abaixo de 100. Retomando operações.")
                 
                 # [SOTA] Filtro de Fluxo Adaptativo
                 flux_mult = self.vol_spike_mult if atr < 200 else 1.05
