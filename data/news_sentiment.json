@@ -1,59 +1,59 @@
 {
-  "score": -0.65,
+  "score": -0.23,
   "reliability": "high",
   "risk_classification": "HIGH",
-  "fact_check": "O d\u00f3lar se mant\u00e9m em alta impulsionado por risco geopol\u00edtico. H\u00e1 dificuldades pontuais na aquisi\u00e7\u00e3o de diesel no Rio Grande do Sul. Mercados europeus (Espanha, Portugal, Reino Unido, Fran\u00e7a) fecharam em queda. A\u00e7\u00f5es da Netflix subiram 30% ap\u00f3s desist\u00eancia de acordo. Embraer avalia produ\u00e7\u00e3o na \u00cdndia sob condi\u00e7\u00e3o de encomendas.",
+  "fact_check": "A defasagem do diesel atinge 85% devido \u00e0 alta do petr\u00f3leo, gerando risco de abastecimento e press\u00e3o inflacion\u00e1ria no Brasil. A Ra\u00edzen (RAIZ4) sofre queda acentuada, com a a\u00e7\u00e3o a R$ 0,50. A BRK avalia adiar seu IPO de R$ 4 bilh\u00f5es devido \u00e0 piora nas condi\u00e7\u00f5es de mercado. A Ultrapar contratou o BTG para uma poss\u00edvel venda de participa\u00e7\u00e3o na Ipiranga. O Ibovespa opera em alta, impulsionado pelo exterior. A United Therapeutics anunciou um programa de recompra de a\u00e7\u00f5es de US$ 2 bilh\u00f5es. Trump sugere que a guerra com o Ir\u00e3 est\u00e1 pr\u00f3xima do fim.",
   "news": [
     {
-      "headline": "A\u00e7\u00f5es da Netflix sobem 30% ap\u00f3s desist\u00eancia de acordo com Warner.",
-      "relevance": 0.6,
+      "headline": "United Therapeutics: A\u00e7\u00f5es sobem 9% com recompra de US$ 2 bi.",
+      "relevance": 0.3,
       "impact": "BULLISH"
     },
     {
-      "headline": "Espanha: \u00cdndice IBEX 35 recuou 0,76%.",
-      "relevance": 0.3,
+      "headline": "Trump sugere fim iminente de guerra com Ir\u00e3.",
+      "relevance": 0.7,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "BRK avalia adiar IPO de R$ 4 bi devido a piora de mercado.",
+      "relevance": 0.6,
       "impact": "BEARISH"
     },
     {
-      "headline": "Portugal: \u00cdndice PSI recuou 0,78%.",
+      "headline": "Ibovespa acelera com exterior, acima dos 181 mil pontos.",
+      "relevance": 0.4,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Apple adia display inteligente por atrasos no Siri.",
       "relevance": 0.2,
       "impact": "BEARISH"
     },
     {
-      "headline": "Reino Unido: \u00cdndice Investing.com Reino Unido 100 recuou 0,26%.",
-      "relevance": 0.4,
+      "headline": "Brown-Forman: Press\u00e3o nas margens por custos de whisky.",
+      "relevance": 0.2,
       "impact": "BEARISH"
     },
     {
-      "headline": "Embraer poder\u00e1 produzir jatos E175 na \u00cdndia em 2028 se conseguir 200 encomendas.",
-      "relevance": 0.7,
-      "impact": "NEUTRAL"
+      "headline": "Petr\u00f3leo dispara, defasagem do diesel a 85% e risco de abastecimento.",
+      "relevance": 1.0,
+      "impact": "BEARISH"
     },
     {
-      "headline": "Fran\u00e7a: \u00cdndice CAC 40 recuou 0,98%.",
+      "headline": "Ultrapar contrata BTG para poss\u00edvel venda de fatia na Ipiranga.",
       "relevance": 0.5,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Mercados Financeiros - \u00daltimas Not\u00edcias | InfoMoney.",
-      "relevance": 0.0,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Embraer depois da queda p\u00f3s-balan\u00e7o: houve mudan\u00e7as na vis\u00e3o sobre as a\u00e7\u00f5es ap\u00f3s 4T?",
-      "relevance": 0.1,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "ANP recebeu informa\u00e7\u00e3o sobre dificuldades pontuais de aquisi\u00e7\u00e3o de diesel no RS.",
-      "relevance": 0.8,
+      "headline": "Ra\u00edzen (RAIZ4) cai forte, a\u00e7\u00e3o atinge R$ 0,50.",
+      "relevance": 0.7,
       "impact": "BEARISH"
     },
     {
-      "headline": "D\u00f3lar: alta se sustenta com risco geopol\u00edtico.",
-      "relevance": 0.9,
-      "impact": "BEARISH"
+      "headline": "Nexperia China inicia produ\u00e7\u00e3o pr\u00f3pria de chips.",
+      "relevance": 0.2,
+      "impact": "BULLISH"
     }
   ],
-  "timestamp": 1773077361.605092
+  "timestamp": 1773085801.0380528
 }
