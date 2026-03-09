@@ -160,7 +160,8 @@ class SniperBotWIN:
             logger.info(f"[QUARTER-KELLY] WR={wr}% PF={pf} -> VolKelly={kelly_volume:.2f} | Alpha={scaling} Confiança={quantile_confidence} -> Total={lots}")
         
         if self.risk.dry_run:
-            msg = f"🧪 [SIMULAÇÃO] Sniper {side.upper()} (LIMITE) disparado @ {limit_price} com {lots} lotes"
+            side_pt = "COMPRA" if side == "buy" else "VENDA"
+            msg = f"🧪 [SIMULAÇÃO] Sniper {side_pt} (LIMITE) disparado @ {limit_price} com {lots} lotes"
             logger.info(msg)
             self._log_to_dashboard(msg, "info")
             self.trade_count += 1
@@ -202,7 +203,8 @@ class SniperBotWIN:
                 if status == "FILLED":
                     self.trade_count += 1
                     self._save_state()
-                    msg = f"🎯 [EXECUÇÃO] {side.upper()} {lots} @ {limit_price}"
+                    side_pt = "COMPRA" if side == "buy" else "VENDA"
+                    msg = f"🎯 [EXECUÇÃO] {side_pt} {lots} @ {limit_price}"
                     logger.info(msg)
                     self._log_to_dashboard(msg, "success")
                     return True
@@ -455,7 +457,8 @@ class SniperBotWIN:
                 
                 if comprar_cond or vender_cond:
                     side = "buy" if comprar_cond else "sell"
-                    self._log_to_dashboard(f"🔍 Setup detectado ({side.upper()}). Analisando filtros de IA e Macro...", "info")
+                    side_pt = "COMPRA" if side == "buy" else "VENDA"
+                    self._log_to_dashboard(f"🔍 Setup detectado ({side_pt}). Analisando filtros de IA e Macro...", "info")
                     
                     if (side == "buy" and pressure > 1.2) or (side == "sell" and pressure < -1.2):
                         patchtst_score = await self.ai.predict_with_patchtst(self.ai.inference_engine, df)
@@ -487,8 +490,10 @@ class SniperBotWIN:
 
                         if ai_decision["direction"] == "WAIT":
                             reason = ai_decision.get("reason", "Inconsistência técnica")
-                            self._log_to_dashboard(f"🛡️ Oportunidade de {side.upper()} VETADA: {reason}", "warning")
-                            logger.info(f"[VETO] {side.upper()} bloqueado: {reason}")
+                            side_pt = "COMPRA" if side == "buy" else "VENDA"
+                            self._log_to_dashboard(f"🛡️ Oportunidade de {side_pt} VETADA: {reason}", "warning")
+                            side_pt = "COMPRA" if side == "buy" else "VENDA"
+                            logger.info(f"[VETO] {side_pt} bloqueado: {reason}")
                         elif (side == "buy" and ai_decision["direction"] == "COMPRA") or (side == "sell" and ai_decision["direction"] == "VENDA"):
                             self._log_to_dashboard(f"🎯 Sinal de {ai_decision['direction']} VALIDADO. Score: {ai_decision['score']:.1f}", "success")
                             
@@ -511,7 +516,8 @@ class SniperBotWIN:
                                     self.persistence.save_state("last_quantile_confidence", ai_decision["quantile_confidence"])
                                     self.last_trade_time = now
                     else:
-                        block_msg = f"🛡️ Fluxo insuficiente para {side.upper()} (Pressão: {pressure:.2f})"
+                        side_pt = "COMPRA" if side == "buy" else "VENDA"
+                        block_msg = f"🛡️ Fluxo insuficiente para {side_pt} (Pressão: {pressure:.2f})"
                         self._log_to_dashboard(block_msg, "info")
                         logger.info(block_msg)
 

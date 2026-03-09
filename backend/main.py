@@ -1787,16 +1787,12 @@ async def autonomous_bot_loop():
 
                             brk = decision.get("breakdown", {})
 
+                            side_pt = "COMPRA" if side == "buy" else "VENDA"
                             log_msg = (
-
-                                f"🚀 [SCORE MACRO: {ai_total_score:.1f}] Disparando {side.upper()} | "
-
+                                f"🚀 [SCORE MACRO: {ai_total_score:.1f}] Disparando {side_pt} | "
                                 f"Sent: {brk.get('sentiment_contribution', 0)*100:+.1f} | "
-
                                 f"Blue: {synthetic_idx*100:+.2f}% | "
-
                                 f"OBI: {brk.get('obi_contribution', 0)*100:+.1f}"
-
                             )
 
                             logging.info(log_msg)
@@ -1865,7 +1861,8 @@ async def autonomous_bot_loop():
 
                                 if risk.dry_run:
 
-                                    logging.warning(f"DRY-RUN: Simulando Ordem SNIPER LIMIT {side.upper()} de {final_lots} lotes @ {current_order_price}")
+                                    side_pt = "COMPRA" if side == "buy" else "VENDA"
+                                    logging.warning(f"DRY-RUN: Simulando Ordem SNIPER LIMIT {side_pt} de {final_lots} lotes @ {current_order_price}")
 
                                     class MockResult:
 
@@ -1923,7 +1920,8 @@ async def autonomous_bot_loop():
 
                                         persistence.save_state("last_auto_trade", f"{side} at {current_order_price}")
 
-                                        msg_log = f"TRADE SUCESSO: {side.upper()} {final_lots} lotes @ {current_order_price}"
+                                        side_pt = "COMPRA" if side == "buy" else "VENDA"
+                                        msg_log = f"TRADE SUCESSO: {side_pt} {final_lots} lotes @ {current_order_price}"
 
                                         add_operational_log(msg_log, "success")
 
@@ -2005,7 +2003,8 @@ async def autonomous_bot_loop():
 
                                     if risk.dry_run:
 
-                                        logging.warning(f"DRY-RUN: Simulando Ordem LIMIT {side.upper()} de {final_lots} lotes @ {limit_price}")
+                                        side_pt = "COMPRA" if side == "buy" else "VENDA"
+                                        logging.warning(f"DRY-RUN: Simulando Ordem LIMIT {side_pt} de {final_lots} lotes @ {limit_price}")
 
                                         class MockResultLimit:
 
@@ -2116,7 +2115,8 @@ async def autonomous_bot_loop():
 
                                                 logging.info(f"HFT FILL: Ordem {order_ticket} executada no spread!")
 
-                                                add_operational_log(f"HFT FILL: {side.upper()} {final_lots} lotes @ {limit_price}", "success")
+                                                side_pt = "COMPRA" if side == "buy" else "VENDA"
+                                                add_operational_log(f"HFT FILL: {side_pt} {final_lots} lotes @ {limit_price}", "success")
 
                                                 persistence.save_trade(symbol, side, limit_price, final_lots, "AUTO_LIMIT_FILLED")
 
@@ -2148,7 +2148,8 @@ async def autonomous_bot_loop():
 
                                                     logging.info(f"VITÓRIA POR CONDIÇÃO DE CORRIDA: Ordem {order_ticket} preenchida!")
 
-                                                    add_operational_log(f"VITÓRIA POR CONDIÇÃO DE CORRIDA: {side.upper()} {final_lots} lotes!", "success")
+                                                    side_pt = "COMPRA" if side == "buy" else "VENDA"
+                                                    add_operational_log(f"VITÓRIA POR CONDIÇÃO DE CORRIDA: {side_pt} {final_lots} lotes!", "success")
 
                                                     persistence.save_trade(symbol, side, limit_price, final_lots, "AUTO_LIMIT_FILLED_RACE")
 

@@ -99,10 +99,11 @@ class DeepAnalyzer(BacktestPro):
                             'index': i,
                             'time': row.name
                         }
+                        side_pt = "COMPRA" if side == "buy" else "VENDA"
                         self.daily_trade_count += 1
                         diagnostics.append({
                             'time': row.name,
-                            'event': f"EXECUÇÃO: {side.upper()}",
+                            'event': f"EXECUÇÃO: {side_pt}",
                             'side': side,
                             'rsi': row['rsi'],
                             'vol_mult': row['tick_volume'] / row['vol_sma']

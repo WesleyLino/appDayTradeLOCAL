@@ -80,7 +80,8 @@ async def run_validated_backtest():
                 sl = row['close'] - params['sl_dist'] if side == "buy" else row['close'] + params['sl_dist']
                 tp = row['close'] + params['tp_dist'] if side == "buy" else row['close'] - params['tp_dist']
                 bt.position = {'side': side, 'entry_price': row['close'], 'sl': sl, 'tp': tp, 'lots': 1, 'index': i}
-                logging.info(f"🎯 ENTRADA {side.upper()} @ {row['close']} [{row.name.time()}]")
+                side_pt = "COMPRA" if side == "buy" else "VENDA"
+                logging.info(f"🎯 ENTRADA {side_pt} @ {row['close']} [{row.name.time()}]")
 
     # 4. Resultados
     print("\n" + "="*50)
