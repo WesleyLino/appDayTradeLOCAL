@@ -60,11 +60,23 @@ async def trace_all_candidates():
             for j in range(i+1, min(i+120, len(df))):
                 f_row = df.iloc[j]
                 if side == 'buy':
-                    if f_row['low'] <= sl: outcome = 'STOP'; pnl = -30.0; break
-                    if f_row['high'] >= tp: outcome = 'TAKE'; pnl = 90.0; break
+                    if f_row['low'] <= sl:
+                        outcome = 'STOP'
+                        pnl = -30.0
+                        break
+                    if f_row['high'] >= tp:
+                        outcome = 'TAKE'
+                        pnl = 90.0
+                        break
                 else:
-                    if f_row['high'] >= sl: outcome = 'STOP'; pnl = -30.0; break
-                    if f_row['low'] <= tp: outcome = 'TAKE'; pnl = 90.0; break
+                    if f_row['high'] >= sl:
+                        outcome = 'STOP'
+                        pnl = -30.0
+                        break
+                    if f_row['low'] <= tp:
+                        outcome = 'TAKE'
+                        pnl = 90.0
+                        break
             
             candidates.append({
                 "time": row.name.strftime("%H:%M"),

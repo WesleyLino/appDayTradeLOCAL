@@ -1939,7 +1939,7 @@ async def autonomous_bot_loop():
 
                                 else:
 
-                                    msg = result.comment if hasattr(result, 'comment') else "Timeout/None"
+                                    msg = result.comment if hasattr(result, 'comment') else "Tempo_Esgotado/Nulo"
 
                                     logging.error(f"Falha Crítica na Execução Sniper: {msg}")
 
@@ -2075,7 +2075,7 @@ async def autonomous_bot_loop():
 
                                                         "loss_ok": risk_ok,
 
-                                                        "order_status": "PENDING_HFT",
+                                                        "order_status": "PENDENTE_HFT",
 
                                                         "ticket": order_ticket,
 
@@ -2148,7 +2148,7 @@ async def autonomous_bot_loop():
 
                                                     logging.info(f"VITÓRIA POR CONDIÇÃO DE CORRIDA: Ordem {order_ticket} preenchida!")
 
-                                                    add_operational_log(f"RACE CONDITION WIN: {side.upper()} {final_lots} lotes!", "success")
+                                                    add_operational_log(f"VITÓRIA POR CONDIÇÃO DE CORRIDA: {side.upper()} {final_lots} lotes!", "success")
 
                                                     persistence.save_trade(symbol, side, limit_price, final_lots, "AUTO_LIMIT_FILLED_RACE")
 

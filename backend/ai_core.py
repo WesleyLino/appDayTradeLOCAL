@@ -42,7 +42,7 @@ load_dotenv()
 class AICore:
 
     def __init__(self):
-        self._latest_sentiment_score = 0.0 # [SOTA v5] Valor real (atras do decorator)
+        self._latest_sentiment_score = 0.0 # [SOTA v5] Valor real (atrás do decorador)
         self.obi_ema = 0.5 # Valor inicial neutro
         self.ema_alpha = 0.2 # Fator de suavização
         

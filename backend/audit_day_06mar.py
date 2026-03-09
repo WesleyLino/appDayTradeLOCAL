@@ -131,10 +131,10 @@ async def run_audit():
     with open("backend/audit_06mar_results.md", "w", encoding="utf-8") as f:
         f.write("# Relatório de Auditoria SOTA - 06/03/2026\n\n")
         f.write(f"**Capital:** R$ {initial_balance:.2f}\n")
-        f.write(f"**Data da Auditoria:** 06/03/2026\n\n")
+        f.write("**Data da Auditoria:** 06/03/2026\n\n")
         f.write("## 1. Proteção v22.3 (Ativa)\n")
         f.write(f"- Status: {'🔴 PAUSADO' if bt._dia_pausado_atr else '🟢 OPERACIONAL'}\n")
-        f.write(f"- Motivo: Volatilidade na abertura (H-L médio) excedeu 250pts.\n")
+        f.write("- Motivo: Volatilidade na abertura (H-L médio) excedeu 250pts.\n")
         f.write(f"- Trades Executados: {len(trades_protected)}\n\n")
         f.write("## 2. Potencial Bruto (Vetos Ignorados)\n")
         f.write(f"- Sinais Técnicos (Candidatos): {shadow.get('v22_candidates', 0)}\n")
@@ -150,7 +150,7 @@ async def run_audit():
         f.write(f"Houve {shadow.get('filtered_by_ai', 0)} vetos por baixa convicção do PatchTST. ")
         f.write("Isso indica que o mercado estava em regime de ruído, onde o Risco de Stop é maior que o Ganho Médio.\n")
 
-    print(f"\n✅ Resultados atualizados em: backend/audit_06mar_results.md")
+    print("\n✅ Resultados atualizados em: backend/audit_06mar_results.md")
 
 if __name__ == "__main__":
     asyncio.run(run_audit())

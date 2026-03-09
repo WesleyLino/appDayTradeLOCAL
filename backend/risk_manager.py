@@ -64,7 +64,7 @@ class RiskManager:
         # [FASE 28] DYNAMIC PARAMS CACHE
         self.dynamic_params = {} # Carregado via load_optimized_params
 
-        # [PERFORMANCE METRICS]
+        # [MÉTRICAS DE PERFORMANCE]
         self.total_trades = 0
         self.wins = 0
         self.gross_profit = 0.0

@@ -1,4 +1,5 @@
 import MetaTrader5 as mt5
+import os
 import pandas as pd
 from datetime import datetime, timedelta
 import logging
@@ -9,14 +10,21 @@ def sanitize_log(e):
     try:
         return str(e).encode('utf-8', 'replace').decode('utf-8')
     except:
-        return "Unknown error (encoding failure)"
+        return "Erro desconhecido (falha de codificação)"
 
-# Configuração de Logs
+# Garantir que a pasta backend existe para o log
+log_path = os.path.join(os.getcwd(), "backend", "trading_bridge.log")
+if "backend" not in os.path.basename(os.getcwd()):
+    if not os.path.exists("backend"):
+        os.makedirs("backend", exist_ok=True)
+else:
+    log_path = "trading_bridge.log"
+
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("backend/trading_bridge.log", encoding='utf-8'),
+        logging.FileHandler(log_path, encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -27,7 +35,7 @@ class MT5Bridge:
         self.connected = False
         self._macro_symbol_cache = None # [HFT v2.1] Cache para evitar busca repetitiva
         
-        # self.connect() # Moved to explicit call
+        # self.connect() # Movido para chamada explícita
 
     def connect(self):
         """Estabelece conexão com o MetaTrader 5 local."""
@@ -150,7 +158,7 @@ class MT5Bridge:
             latency = (time.time() - start_time) * 1000
             
             if result is None:
-                logging.error("MT5 order_send retornou None inesperadamente.")
+                logging.error("MT5 order_send retornou Nulo inesperadamente.")
                 break
 
             if result.retcode == mt5.TRADE_RETCODE_DONE:
@@ -220,7 +228,7 @@ class MT5Bridge:
 
         result = mt5.order_send(request)
         if result is None:
-            logging.error("MT5 order_send retornou None.")
+            logging.error("MT5 order_send retornou Nulo (None).")
             return None
 
         if result.retcode != mt5.TRADE_RETCODE_DONE:
@@ -361,22 +369,22 @@ class MT5Bridge:
         if orders and len(orders) > 0:
             return "PENDING"
             
-        # 2. Checar se foi FINALIZADA (History)
+        # 2. Checar se foi FINALIZADA (Histórico)
         from_date = datetime.now() - timedelta(days=1)
         hist_orders = mt5.history_orders_get(from_date, datetime.now(), ticket=ticket)
         
         if hist_orders and len(hist_orders) > 0:
             state = hist_orders[0].state
             if state == mt5.ORDER_STATE_FILLED:
-                return "FILLED"
+                return "PREENCHIDO"
             elif state == mt5.ORDER_STATE_CANCELED:
-                return "CANCELED"
+                return "CANCELADO"
             elif state == mt5.ORDER_STATE_PARTIAL:
-                return "PARTIAL"
+                return "PARCIAL"
             else:
-                return f"STATE_{state}"
+                return f"ESTADO_{state}"
                 
-        return "UNKNOWN"
+        return "DESCONHECIDO"
 
     def validate_order_compliance(self, symbol, price):
         """
@@ -431,7 +439,7 @@ class MT5Bridge:
             "price": float(price),
             "deviation": 20,
             "magic": 123456,
-            "comment": "CLOSE AUTO",
+            "comment": "FECHAMENTO AUTO",
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC if "WIN" in symbol or "WDO" in symbol else mt5.ORDER_FILLING_RETURN,
         }
@@ -476,7 +484,7 @@ class MT5Bridge:
             "price": float(price),
             "deviation": 20,
             "magic": 123456,
-            "comment": "CLOSE PARTIAL",
+            "comment": "FECHAMENTO PARCIAL",
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC if "WIN" in symbol or "WDO" in symbol else mt5.ORDER_FILLING_RETURN,
         }

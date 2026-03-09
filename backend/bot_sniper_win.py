@@ -160,7 +160,7 @@ class SniperBotWIN:
             logger.info(f"[QUARTER-KELLY] WR={wr}% PF={pf} -> VolKelly={kelly_volume:.2f} | Alpha={scaling} Confiança={quantile_confidence} -> Total={lots}")
         
         if self.risk.dry_run:
-            msg = f"🧪 [SIMULAÇÃO] Sniper {side.upper()} (LIMIT) disparado @ {limit_price} com {lots} lotes"
+            msg = f"🧪 [SIMULAÇÃO] Sniper {side.upper()} (LIMITE) disparado @ {limit_price} com {lots} lotes"
             logger.info(msg)
             self._log_to_dashboard(msg, "info")
             self.trade_count += 1
@@ -380,6 +380,8 @@ class SniperBotWIN:
                     break
 
                 if not (self.start_time <= now.time() <= self.end_time) or not self.risk.is_time_allowed():
+                    if now.second == 0 and now.minute % 15 == 0: # Log periódico
+                        self._log_to_dashboard("🕒 Fora da janela operacional principal ou tempo bloqueado.", "info")
                     await asyncio.sleep(30)
                     continue
 
@@ -453,6 +455,8 @@ class SniperBotWIN:
                 
                 if comprar_cond or vender_cond:
                     side = "buy" if comprar_cond else "sell"
+                    self._log_to_dashboard(f"🔍 Setup detectado ({side.upper()}). Analisando filtros de IA e Macro...", "info")
+                    
                     if (side == "buy" and pressure > 1.2) or (side == "sell" and pressure < -1.2):
                         patchtst_score = await self.ai.predict_with_patchtst(self.ai.inference_engine, df)
                         # [ANTIVIBE-CODING] Override de Controle Manual de Notícias
@@ -481,7 +485,13 @@ class SniperBotWIN:
                             ai_decision["direction"] = "WAIT"
                             ai_decision["reason"] = "ATR_DIA_PAUSADO"
 
-                        if (side == "buy" and ai_decision["direction"] == "COMPRA") or (side == "sell" and ai_decision["direction"] == "VENDA"):
+                        if ai_decision["direction"] == "WAIT":
+                            reason = ai_decision.get("reason", "Inconsistência técnica")
+                            self._log_to_dashboard(f"🛡️ Oportunidade de {side.upper()} VETADA: {reason}", "warning")
+                            logger.info(f"[VETO] {side.upper()} bloqueado: {reason}")
+                        elif (side == "buy" and ai_decision["direction"] == "COMPRA") or (side == "sell" and ai_decision["direction"] == "VENDA"):
+                            self._log_to_dashboard(f"🎯 Sinal de {ai_decision['direction']} VALIDADO. Score: {ai_decision['score']:.1f}", "success")
+                            
                             # [v40 - PIRAMIDAÇÃO]
                             positions = self.bridge.mt5.positions_get(symbol=self.symbol)
                             can_trade = True
@@ -491,13 +501,19 @@ class SniperBotWIN:
                                 total_vol = sum(p.volume for p in positions)
                                 if not self.risk.allow_pyramiding(profit_pts, pressure, total_vol, symbol=self.symbol):
                                     can_trade = False
-                                    logger.info(f"⏳ [BLOQUEIO] Piramidação não permitida: Lucro {profit_pts:.1f} pts / Vol Total {total_vol}")
+                                    block_msg = f"⏳ [BLOQUEIO] Piramidação negada: Lucro {profit_pts:.1f} pts / Vol Total {total_vol}"
+                                    logger.info(block_msg)
+                                    self._log_to_dashboard(block_msg, "warning")
 
                             if can_trade:
                                 is_scaling_in = len(positions) > 0
                                 if await self.execute_trade(side, ai_decision=ai_decision, quantile_confidence=ai_decision["quantile_confidence"], tp_multiplier=ai_decision.get("tp_multiplier", 1.0), current_atr=atr, is_scaling_in=is_scaling_in):
                                     self.persistence.save_state("last_quantile_confidence", ai_decision["quantile_confidence"])
                                     self.last_trade_time = now
+                    else:
+                        block_msg = f"🛡️ Fluxo insuficiente para {side.upper()} (Pressão: {pressure:.2f})"
+                        self._log_to_dashboard(block_msg, "info")
+                        logger.info(block_msg)
 
                 await asyncio.sleep(0.1)
                 

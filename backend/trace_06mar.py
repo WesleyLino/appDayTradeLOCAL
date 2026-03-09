@@ -61,11 +61,23 @@ async def trace_signals():
             for j in range(i+1, min(i+61, len(df))):
                 f_row = df.iloc[j]
                 if side == 'buy':
-                    if f_row['low'] <= sl: outcome = 'STOP'; exit_price = sl; break
-                    if f_row['high'] >= tp: outcome = 'TAKE'; exit_price = tp; break
+                    if f_row['low'] <= sl:
+                        outcome = 'STOP'
+                        exit_price = sl
+                        break
+                    if f_row['high'] >= tp:
+                        outcome = 'TAKE'
+                        exit_price = tp
+                        break
                 else:
-                    if f_row['high'] >= sl: outcome = 'STOP'; exit_price = sl; break
-                    if f_row['low'] <= tp: outcome = 'TAKE'; exit_price = tp; break
+                    if f_row['high'] >= sl:
+                        outcome = 'STOP'
+                        exit_price = sl
+                        break
+                    if f_row['low'] <= tp:
+                        outcome = 'TAKE'
+                        exit_price = tp
+                        break
             
             signals.append({
                 "time": row.name.strftime("%H:%M"),

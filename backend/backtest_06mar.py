@@ -115,7 +115,7 @@ async def run_audit():
     with open("backend/audit_06mar_final.json", "w") as f:
         json.dump(results, f, indent=2)
     
-    print(f"\n📊 AUDITORIA CONCLUÍDA")
+    print("\n📊 AUDITORIA CONCLUÍDA")
     print(f"Produção: PnL R$ {bt_prod.daily_pnl:.2f} ({len(bt_prod.trades)} trades)")
     print(f"Shadow (No ATR): PnL R$ {results['shadow_no_atr']['pnl']:.2f}")
     print(f"Brute Force: PnL R$ {results['brute_force']['pnl']:.2f} ({results['brute_force']['trades']} trades)")
