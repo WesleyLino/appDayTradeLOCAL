@@ -35,7 +35,7 @@ def diagnose():
     setup_sell = last['rsi'] > 70
     vol_ok = last['tick_volume'] > (last['vol_sma'] * 1.0)
     
-    print(f"\nStatus Atual:")
+    print("\nStatus Atual:")
     print(f"- Gatilho Compra (RSI < 30): {setup_buy}")
     print(f"- Gatilho Venda (RSI > 70): {setup_sell}")
     print(f"- Volume > Média: {vol_ok}")

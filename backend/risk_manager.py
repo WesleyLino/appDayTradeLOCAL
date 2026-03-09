@@ -19,7 +19,7 @@ class RiskManager:
         self.forbidden_hours = [
             (time(8, 55), time(9, 10)),  # Abertura (Aguarda formação das 10 primeiras velas de M1 para cálculo de volatilidade)
             (time(12, 0), time(13, 0)),  # Almoço/Baixa liquidez
-            (time(16, 55), time(18, 0))  # Fechamento
+            (time(17, 15), time(18, 0))  # Fechamento (Sincronizado com v22_locked_params)
         ]
         
         # [SOTA] Parâmetros de Trailing Stop (Campeão WIN Padrão)
