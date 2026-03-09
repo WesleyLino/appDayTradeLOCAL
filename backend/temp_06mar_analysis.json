@@ -1,0 +1,19 @@
+{
+  "date": "2026-03-06",
+  "production": {
+    "status": "\ud83d\udd34 PAUSADO",
+    "pnl": 0.0,
+    "trades": 0
+  },
+  "shadow": {
+    "pnl": 0,
+    "trades": 0,
+    "candidates": 13,
+    "buy_pnl": 0,
+    "sell_pnl": 0
+  },
+  "vetos": {
+    "LOW_CONFIDENCE": 8,
+    "ATR_DIA_PAUSADO": 493
+  }
+}

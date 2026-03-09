@@ -1,0 +1,611 @@
+[
+  {
+    "time": "09:27",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 82.50750989244847,
+    "pnl": -30.0
+  },
+  {
+    "time": "09:28",
+    "side": "sell",
+    "outcome": "TAKE",
+    "rsi": 87.09757174071977,
+    "pnl": 90.0
+  },
+  {
+    "time": "09:51",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 19.69039921035838,
+    "pnl": -30.0
+  },
+  {
+    "time": "09:52",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 14.804720681938804,
+    "pnl": 90.0
+  },
+  {
+    "time": "09:54",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 19.117315921250793,
+    "pnl": 90.0
+  },
+  {
+    "time": "10:01",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 87.59101007573628,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:02",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 91.00560674992876,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:03",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 91.63730151683009,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:04",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 91.63730151658491,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:06",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 78.59331467078539,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:07",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 82.68177590782379,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:26",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 81.34958474582507,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:30",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 79.94262771435903,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:32",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 72.47694740034592,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:33",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 78.38349404947947,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:34",
+    "side": "sell",
+    "outcome": "TAKE",
+    "rsi": 79.88497480431231,
+    "pnl": 90.0
+  },
+  {
+    "time": "10:46",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 15.551872662891327,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:47",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 9.379134317484628,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:48",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 7.04794946726291,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:50",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 18.41849298072472,
+    "pnl": -30.0
+  },
+  {
+    "time": "10:51",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 13.905257911702876,
+    "pnl": 90.0
+  },
+  {
+    "time": "11:06",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 5.220347814437716,
+    "pnl": 90.0
+  },
+  {
+    "time": "11:28",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 83.98893427612069,
+    "pnl": -30.0
+  },
+  {
+    "time": "11:29",
+    "side": "sell",
+    "outcome": "TAKE",
+    "rsi": 87.15256681167615,
+    "pnl": 90.0
+  },
+  {
+    "time": "11:32",
+    "side": "sell",
+    "outcome": "TAKE",
+    "rsi": 74.48858734309371,
+    "pnl": 90.0
+  },
+  {
+    "time": "11:40",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 22.171669904977506,
+    "pnl": 90.0
+  },
+  {
+    "time": "11:58",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 14.832438788027389,
+    "pnl": 90.0
+  },
+  {
+    "time": "12:09",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 19.173191564214633,
+    "pnl": 90.0
+  },
+  {
+    "time": "12:10",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 18.265730043492127,
+    "pnl": 90.0
+  },
+  {
+    "time": "12:13",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 76.8999642295182,
+    "pnl": -30.0
+  },
+  {
+    "time": "12:21",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 77.74544870967091,
+    "pnl": -30.0
+  },
+  {
+    "time": "12:22",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 84.54439723562527,
+    "pnl": -30.0
+  },
+  {
+    "time": "12:23",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 85.29323676434822,
+    "pnl": -30.0
+  },
+  {
+    "time": "12:24",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 89.0967912231487,
+    "pnl": -30.0
+  },
+  {
+    "time": "12:41",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 11.64254022864884,
+    "pnl": 90.0
+  },
+  {
+    "time": "12:42",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 23.264369733435046,
+    "pnl": 90.0
+  },
+  {
+    "time": "12:43",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 19.312857425984447,
+    "pnl": 90.0
+  },
+  {
+    "time": "12:55",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 87.6178268611707,
+    "pnl": -30.0
+  },
+  {
+    "time": "12:56",
+    "side": "sell",
+    "outcome": "TAKE",
+    "rsi": 92.23145952716808,
+    "pnl": 90.0
+  },
+  {
+    "time": "12:57",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 76.50418947521969,
+    "pnl": -30.0
+  },
+  {
+    "time": "13:14",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 24.3248994800977,
+    "pnl": 90.0
+  },
+  {
+    "time": "13:19",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 86.99112760945322,
+    "pnl": -30.0
+  },
+  {
+    "time": "13:32",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 77.55982508685813,
+    "pnl": -30.0
+  },
+  {
+    "time": "13:36",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 73.98261895432566,
+    "pnl": -30.0
+  },
+  {
+    "time": "13:37",
+    "side": "sell",
+    "outcome": "TAKE",
+    "rsi": 79.11658186710184,
+    "pnl": 90.0
+  },
+  {
+    "time": "13:49",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 26.51130150343252,
+    "pnl": -30.0
+  },
+  {
+    "time": "13:50",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 21.417755466709337,
+    "pnl": -30.0
+  },
+  {
+    "time": "13:54",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 17.138304847234636,
+    "pnl": -30.0
+  },
+  {
+    "time": "13:55",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 15.351169863191572,
+    "pnl": -30.0
+  },
+  {
+    "time": "13:56",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 14.89108077314728,
+    "pnl": -30.0
+  },
+  {
+    "time": "14:22",
+    "side": "sell",
+    "outcome": "TAKE",
+    "rsi": 74.84115687897992,
+    "pnl": 90.0
+  },
+  {
+    "time": "14:36",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 22.86183645774237,
+    "pnl": -30.0
+  },
+  {
+    "time": "14:38",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 23.64094275479843,
+    "pnl": -30.0
+  },
+  {
+    "time": "14:39",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 22.891336491451938,
+    "pnl": -30.0
+  },
+  {
+    "time": "14:40",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 16.581969669362167,
+    "pnl": 90.0
+  },
+  {
+    "time": "15:06",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 73.99515669302832,
+    "pnl": -30.0
+  },
+  {
+    "time": "15:07",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 75.66657093218345,
+    "pnl": -30.0
+  },
+  {
+    "time": "15:13",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 87.19502040826654,
+    "pnl": -30.0
+  },
+  {
+    "time": "15:17",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 83.16206118516612,
+    "pnl": -30.0
+  },
+  {
+    "time": "15:31",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 79.51116955996045,
+    "pnl": -30.0
+  },
+  {
+    "time": "15:32",
+    "side": "sell",
+    "outcome": "TAKE",
+    "rsi": 83.42981446246053,
+    "pnl": 90.0
+  },
+  {
+    "time": "15:33",
+    "side": "sell",
+    "outcome": "TAKE",
+    "rsi": 86.42910231358535,
+    "pnl": 90.0
+  },
+  {
+    "time": "16:01",
+    "side": "sell",
+    "outcome": "TAKE",
+    "rsi": 72.17455320145869,
+    "pnl": 90.0
+  },
+  {
+    "time": "16:08",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 17.792748866238313,
+    "pnl": -30.0
+  },
+  {
+    "time": "16:09",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 17.792748866155108,
+    "pnl": -30.0
+  },
+  {
+    "time": "16:10",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 16.271142061883566,
+    "pnl": -30.0
+  },
+  {
+    "time": "16:38",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 21.384164845166495,
+    "pnl": -30.0
+  },
+  {
+    "time": "16:47",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 9.65575977068572,
+    "pnl": 90.0
+  },
+  {
+    "time": "16:48",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 13.130110679658927,
+    "pnl": 90.0
+  },
+  {
+    "time": "16:53",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 12.172150140579049,
+    "pnl": 90.0
+  },
+  {
+    "time": "17:06",
+    "side": "sell",
+    "outcome": "TAKE",
+    "rsi": 79.21513630487597,
+    "pnl": 90.0
+  },
+  {
+    "time": "17:07",
+    "side": "sell",
+    "outcome": "TAKE",
+    "rsi": 85.00678111545375,
+    "pnl": 90.0
+  },
+  {
+    "time": "17:20",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 19.415904041568083,
+    "pnl": -30.0
+  },
+  {
+    "time": "17:21",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 18.576698982278728,
+    "pnl": -30.0
+  },
+  {
+    "time": "17:22",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 16.2373059331061,
+    "pnl": -30.0
+  },
+  {
+    "time": "17:24",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 10.918112700446386,
+    "pnl": -30.0
+  },
+  {
+    "time": "17:25",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 4.684771517795852,
+    "pnl": -30.0
+  },
+  {
+    "time": "17:26",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 3.5396305993383095,
+    "pnl": -30.0
+  },
+  {
+    "time": "17:27",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 2.332332417386752,
+    "pnl": -30.0
+  },
+  {
+    "time": "17:28",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 16.411531402073223,
+    "pnl": -30.0
+  },
+  {
+    "time": "17:32",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 11.148923083691656,
+    "pnl": -30.0
+  },
+  {
+    "time": "17:35",
+    "side": "buy",
+    "outcome": "STOP",
+    "rsi": 19.868570050929165,
+    "pnl": -30.0
+  },
+  {
+    "time": "17:36",
+    "side": "buy",
+    "outcome": "TAKE",
+    "rsi": 14.739506974070935,
+    "pnl": 90.0
+  },
+  {
+    "time": "17:56",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 83.47221931109044,
+    "pnl": -30.0
+  },
+  {
+    "time": "17:57",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 86.96293056158383,
+    "pnl": -30.0
+  },
+  {
+    "time": "17:58",
+    "side": "sell",
+    "outcome": "STILL_OPEN",
+    "rsi": 91.56508057080053,
+    "pnl": 0.0
+  },
+  {
+    "time": "17:59",
+    "side": "sell",
+    "outcome": "STOP",
+    "rsi": 78.46105677343749,
+    "pnl": -30.0
+  }
+]

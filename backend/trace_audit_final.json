@@ -1,0 +1,585 @@
+{
+  "summary": {
+    "buy": {
+      "trades": 0,
+      "gain": 0,
+      "loss": 0,
+      "net": 0
+    },
+    "sell": {
+      "trades": 0,
+      "gain": 0,
+      "loss": 0,
+      "net": 0
+    }
+  },
+  "signals": [
+    {
+      "time": "09:27",
+      "side": "sell",
+      "rsi": 82.51,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "09:28",
+      "side": "sell",
+      "rsi": 87.1,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "09:51",
+      "side": "buy",
+      "rsi": 19.69,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "09:52",
+      "side": "buy",
+      "rsi": 14.8,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "09:54",
+      "side": "buy",
+      "rsi": 19.12,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "10:01",
+      "side": "sell",
+      "rsi": 87.59,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:02",
+      "side": "sell",
+      "rsi": 91.01,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:03",
+      "side": "sell",
+      "rsi": 91.64,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:04",
+      "side": "sell",
+      "rsi": 91.64,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:06",
+      "side": "sell",
+      "rsi": 78.59,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:07",
+      "side": "sell",
+      "rsi": 82.68,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:26",
+      "side": "sell",
+      "rsi": 81.35,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:30",
+      "side": "sell",
+      "rsi": 79.94,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:32",
+      "side": "sell",
+      "rsi": 72.48,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:33",
+      "side": "sell",
+      "rsi": 78.38,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:34",
+      "side": "sell",
+      "rsi": 79.88,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "10:46",
+      "side": "buy",
+      "rsi": 15.55,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:47",
+      "side": "buy",
+      "rsi": 9.38,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:48",
+      "side": "buy",
+      "rsi": 7.05,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:50",
+      "side": "buy",
+      "rsi": 18.42,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "10:51",
+      "side": "buy",
+      "rsi": 13.91,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "11:06",
+      "side": "buy",
+      "rsi": 5.22,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "11:28",
+      "side": "sell",
+      "rsi": 83.99,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "11:29",
+      "side": "sell",
+      "rsi": 87.15,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "11:32",
+      "side": "sell",
+      "rsi": 74.49,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "11:40",
+      "side": "buy",
+      "rsi": 22.17,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "12:09",
+      "side": "buy",
+      "rsi": 19.17,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "12:10",
+      "side": "buy",
+      "rsi": 18.27,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "12:13",
+      "side": "sell",
+      "rsi": 76.9,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "12:21",
+      "side": "sell",
+      "rsi": 77.75,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "12:22",
+      "side": "sell",
+      "rsi": 84.54,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "12:23",
+      "side": "sell",
+      "rsi": 85.29,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "12:24",
+      "side": "sell",
+      "rsi": 89.1,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "12:41",
+      "side": "buy",
+      "rsi": 11.64,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "12:42",
+      "side": "buy",
+      "rsi": 23.26,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "12:43",
+      "side": "buy",
+      "rsi": 19.31,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "12:55",
+      "side": "sell",
+      "rsi": 87.62,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "12:56",
+      "side": "sell",
+      "rsi": 92.23,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "12:57",
+      "side": "sell",
+      "rsi": 76.5,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "13:14",
+      "side": "buy",
+      "rsi": 24.32,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "13:19",
+      "side": "sell",
+      "rsi": 86.99,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "13:32",
+      "side": "sell",
+      "rsi": 77.56,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "13:36",
+      "side": "sell",
+      "rsi": 73.98,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "13:37",
+      "side": "sell",
+      "rsi": 79.12,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "13:49",
+      "side": "buy",
+      "rsi": 26.51,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "13:50",
+      "side": "buy",
+      "rsi": 21.42,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "13:54",
+      "side": "buy",
+      "rsi": 17.14,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "13:55",
+      "side": "buy",
+      "rsi": 15.35,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "13:56",
+      "side": "buy",
+      "rsi": 14.89,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "14:22",
+      "side": "sell",
+      "rsi": 74.84,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "14:36",
+      "side": "buy",
+      "rsi": 22.86,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "14:38",
+      "side": "buy",
+      "rsi": 23.64,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "14:40",
+      "side": "buy",
+      "rsi": 16.58,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "15:06",
+      "side": "sell",
+      "rsi": 74.0,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "15:13",
+      "side": "sell",
+      "rsi": 87.2,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "15:17",
+      "side": "sell",
+      "rsi": 83.16,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "15:31",
+      "side": "sell",
+      "rsi": 79.51,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "15:32",
+      "side": "sell",
+      "rsi": 83.43,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "15:33",
+      "side": "sell",
+      "rsi": 86.43,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "16:01",
+      "side": "sell",
+      "rsi": 72.17,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "16:08",
+      "side": "buy",
+      "rsi": 17.79,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "16:10",
+      "side": "buy",
+      "rsi": 16.27,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "16:38",
+      "side": "buy",
+      "rsi": 21.38,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "16:47",
+      "side": "buy",
+      "rsi": 9.66,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "16:48",
+      "side": "buy",
+      "rsi": 13.13,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "16:53",
+      "side": "buy",
+      "rsi": 12.17,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "17:06",
+      "side": "sell",
+      "rsi": 79.22,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "17:07",
+      "side": "sell",
+      "rsi": 85.01,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "17:20",
+      "side": "buy",
+      "rsi": 19.42,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "17:21",
+      "side": "buy",
+      "rsi": 18.58,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "17:24",
+      "side": "buy",
+      "rsi": 10.92,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "17:25",
+      "side": "buy",
+      "rsi": 4.68,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "17:26",
+      "side": "buy",
+      "rsi": 3.54,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "17:27",
+      "side": "buy",
+      "rsi": 2.33,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "17:28",
+      "side": "buy",
+      "rsi": 16.41,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "17:32",
+      "side": "buy",
+      "rsi": 11.15,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "17:35",
+      "side": "buy",
+      "rsi": 19.87,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "17:36",
+      "side": "buy",
+      "rsi": 14.74,
+      "outcome": "TAKE",
+      "potential_pnl": 90.0
+    },
+    {
+      "time": "17:56",
+      "side": "sell",
+      "rsi": 83.47,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "17:57",
+      "side": "sell",
+      "rsi": 86.96,
+      "outcome": "STOP",
+      "potential_pnl": -30.0
+    },
+    {
+      "time": "17:58",
+      "side": "sell",
+      "rsi": 91.57,
+      "outcome": "STILL_OPEN",
+      "potential_pnl": 0
+    }
+  ]
+}

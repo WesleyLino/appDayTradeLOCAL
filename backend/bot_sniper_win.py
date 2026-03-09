@@ -29,8 +29,9 @@ def sanitize_log(e):
         return "Erro desconhecido (falha de codificação)"
 
 class SniperBotWIN:
-    def __init__(self, bridge=None, risk=None, ai=None, dry_run=True):
+    def __init__(self, bridge=None, risk=None, ai=None, dry_run=True, log_callback=None):
         self.bridge = bridge or MT5Bridge()
+        self.log_callback = log_callback
         # [ANTIVIBE-CODING] - Calibração para saldo de R$ 500,00
         self.risk = risk or RiskManager(max_daily_loss=100.0, daily_trade_limit=3) 
         
@@ -65,6 +66,11 @@ class SniperBotWIN:
         self.risk.load_optimized_params("WINJ26", "best_params_WIN.json") # Fallback para símbolo específico
         
         self._load_state()
+
+    def _log_to_dashboard(self, msg, log_type="info"):
+        """Envia mensagem para o Dashboard se o callback estiver configurado."""
+        if self.log_callback:
+            self.log_callback(msg, log_type)
         
     async def get_flux_pressure(self):
         """Calcula a pressão de compra/venda baseada no Book L2."""
@@ -154,7 +160,9 @@ class SniperBotWIN:
             logger.info(f"[QUARTER-KELLY] WR={wr}% PF={pf} -> VolKelly={kelly_volume:.2f} | Alpha={scaling} Confiança={quantile_confidence} -> Total={lots}")
         
         if self.risk.dry_run:
-            logger.info(f"🧪 [SIMULAÇÃO] Sniper {side.upper()} (LIMIT) disparado @ {limit_price} com {lots} lotes")
+            msg = f"🧪 [SIMULAÇÃO] Sniper {side.upper()} (LIMIT) disparado @ {limit_price} com {lots} lotes"
+            logger.info(msg)
+            self._log_to_dashboard(msg, "info")
             self.trade_count += 1
             self._save_state()
             return True
@@ -194,7 +202,9 @@ class SniperBotWIN:
                 if status == "FILLED":
                     self.trade_count += 1
                     self._save_state()
-                    logger.info(f"🎯 [EXECUÇÃO] {side.upper()} {lots} @ {limit_price}")
+                    msg = f"🎯 [EXECUÇÃO] {side.upper()} {lots} @ {limit_price}"
+                    logger.info(msg)
+                    self._log_to_dashboard(msg, "success")
                     return True
                 elif status == "CANCELED":
                     return False
@@ -308,7 +318,9 @@ class SniperBotWIN:
                             logger.info(f"⚡ [TRAILING MASTER] VENDA movida: {potential_sl} (ATR: {current_atr:.1f})")
 
     async def run(self):
-        logger.info("🚀 Sniper Bot WIN v2.0 (Quarter-Kelly & Time-Stops)")
+        msg_init = "🚀 Sniper Bot WIN v2.0 (Quarter-Kelly & Time-Stops)"
+        logger.info(msg_init)
+        self._log_to_dashboard(msg_init, "info")
         if not self.bridge.connected and not self.bridge.connect():
             return
 
@@ -418,7 +430,9 @@ class SniperBotWIN:
                                 self.hl_abertura_cache = float(hl_10.mean())
                                 if self.hl_abertura_cache > 250.0:
                                     self.dia_pausado_vol = True
-                                    logger.warning(f"⚠️ [PAUSA VOLATILIDADE] H-L abertura={self.hl_abertura_cache:.1f}pts (limiar=250.0). Operações PAUSADAS.")
+                                    msg_vol = f"⚠️ [PAUSA VOLATILIDADE] H-L abertura={self.hl_abertura_cache:.1f}pts (limiar=250.0). Operações PAUSADAS."
+                                    logger.warning(msg_vol)
+                                    self._log_to_dashboard(msg_vol, "warning")
                             else:
                                 logger.debug("Início do dia aguardando colunas OHLC consistentes.")
                     except Exception as e:

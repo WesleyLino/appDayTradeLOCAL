@@ -292,7 +292,7 @@ from backend.bot_sniper_win import SniperBotWIN
 
 # Sniper compartilha os mesmos componentes de infra para economizar recursos
 
-sniper_bot = SniperBotWIN(bridge=bridge, risk=risk, ai=ai)
+sniper_bot = SniperBotWIN(bridge=bridge, risk=risk, ai=ai, log_callback=add_operational_log)
 
 bot_task = None # Task para rodar o loop do bot
 
@@ -2393,7 +2393,7 @@ async def autonomous_bot_loop():
 
     
 
-                await asyncio.sleep(0.01)
+                await asyncio.sleep(0.05)
 
             except asyncio.CancelledError: raise
 

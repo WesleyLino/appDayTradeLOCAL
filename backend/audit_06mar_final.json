@@ -1,0 +1,43 @@
+{
+  "date": "2026-03-06",
+  "config": {
+    "rsi_period": 7,
+    "bb_dev": 1.8,
+    "vol_spike_mult": 0.8,
+    "use_flux_filter": true,
+    "flux_imbalance_threshold": 0.95,
+    "confidence_threshold": 0.65,
+    "sl_dist": 150.0,
+    "tp_dist": 450.0,
+    "daily_trade_limit": 999,
+    "use_ai_core": true,
+    "cooldown_minutes": 3,
+    "adaptive_flux_active": true,
+    "use_trailing_stop": true,
+    "start_time": "09:15",
+    "end_time": "17:15",
+    "pyramid_profit_threshold": 30.0,
+    "pyramid_signal_threshold": 0.6,
+    "pyramid_max_volume": 3,
+    "be_trigger": 25.0,
+    "be_lock": 0.0,
+    "partial_profit_points": 30.0,
+    "vwap_dist_threshold": 450.0
+  },
+  "production": {
+    "pnl": 0.0,
+    "trades": 0,
+    "status": "PAUSADO"
+  },
+  "shadow_no_atr": {
+    "pnl": 0,
+    "trades": 0,
+    "buy_pnl": 0,
+    "sell_pnl": 0
+  },
+  "brute_force": {
+    "pnl": 28.5,
+    "trades": 1,
+    "candidates": 13
+  }
+}
