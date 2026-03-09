@@ -846,8 +846,7 @@ class MT5Bridge:
 
     def get_bluechips_data(self):
         """
-        Lê a variação percentual intradiária das Blue Chips.
-        Usa Candle D1 Open para precisão máxima.
+        Lê a variação percentual das Blue Chips baseada no padrão B3 (vs Fechamento Anterior).
         """
         if not self.connected:
             return {}
@@ -861,15 +860,16 @@ class MT5Bridge:
                     continue
 
                 tick = mt5.symbol_info_tick(symbol)
-                # Pegar candle D1 do dia atual (índice 0 com data especifica ou from_pos)
-                rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, 1)
+                # Pegar 2 candles D1: [0] anterior, [1] atual
+                rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, 2)
 
-                if tick and rates is not None and len(rates) > 0:
-                    open_price = rates[0]['open']
+                if tick and rates is not None and len(rates) >= 2:
+                    # [ANTIVIBE-CODING] Balizamento B3: Fechamento de Ontem
+                    reference_price = rates[0]['close']
                     current_price = tick.last if tick.last > 0 else (tick.bid if tick.bid > 0 else tick.ask)
                     
-                    if open_price > 0:
-                        variation = ((current_price - open_price) / open_price) * 100
+                    if reference_price > 0:
+                        variation = ((current_price - reference_price) / reference_price) * 100
                         data[symbol] = round(variation, 2)
                     else:
                         data[symbol] = 0.0

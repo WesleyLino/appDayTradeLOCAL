@@ -1,59 +1,59 @@
 {
-  "score": -0.23,
+  "score": -0.6,
   "reliability": "high",
-  "risk_classification": "HIGH",
-  "fact_check": "A defasagem do diesel atinge 85% devido \u00e0 alta do petr\u00f3leo, gerando risco de abastecimento e press\u00e3o inflacion\u00e1ria no Brasil. A Ra\u00edzen (RAIZ4) sofre queda acentuada, com a a\u00e7\u00e3o a R$ 0,50. A BRK avalia adiar seu IPO de R$ 4 bilh\u00f5es devido \u00e0 piora nas condi\u00e7\u00f5es de mercado. A Ultrapar contratou o BTG para uma poss\u00edvel venda de participa\u00e7\u00e3o na Ipiranga. O Ibovespa opera em alta, impulsionado pelo exterior. A United Therapeutics anunciou um programa de recompra de a\u00e7\u00f5es de US$ 2 bilh\u00f5es. Trump sugere que a guerra com o Ir\u00e3 est\u00e1 pr\u00f3xima do fim.",
+  "risk_classification": "EXTREME",
+  "fact_check": "A guerra no Oriente M\u00e9dio e a disparada do petr\u00f3leo s\u00e3o os principais riscos, elevando a defasagem do diesel a 85% e amea\u00e7ando o abastecimento. Bolsas europeias caem e companhias a\u00e9reas pausam pedidos. Apesar da fala de Trump sobre o fim da guerra ter impulsionado o Ibovespa e derrubado d\u00f3lar/petr\u00f3leo WTI, o G7 adia libera\u00e7\u00e3o de reservas e o Fed mais restritivo pesa.",
   "news": [
     {
-      "headline": "United Therapeutics: A\u00e7\u00f5es sobem 9% com recompra de US$ 2 bi.",
-      "relevance": 0.3,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Trump sugere fim iminente de guerra com Ir\u00e3.",
-      "relevance": 0.7,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "BRK avalia adiar IPO de R$ 4 bi devido a piora de mercado.",
+      "headline": "Nexperia China inicia produ\u00e7\u00e3o pr\u00f3pria de chips",
       "relevance": 0.6,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "G7 adia uso de reservas de petr\u00f3leo",
+      "relevance": 0.7,
       "impact": "BEARISH"
     },
     {
-      "headline": "Ibovespa acelera com exterior, acima dos 181 mil pontos.",
+      "headline": "Trump sugere fim pr\u00f3ximo da guerra com Ir\u00e3",
       "relevance": 0.4,
       "impact": "BULLISH"
     },
     {
-      "headline": "Apple adia display inteligente por atrasos no Siri.",
-      "relevance": 0.2,
+      "headline": "Bolsas europeias caem com petr\u00f3leo em alta e guerra no Oriente M\u00e9dio",
+      "relevance": 0.8,
       "impact": "BEARISH"
     },
     {
-      "headline": "Brown-Forman: Press\u00e3o nas margens por custos de whisky.",
-      "relevance": 0.2,
-      "impact": "BEARISH"
+      "headline": "Ibovespa salta, d\u00f3lar e petr\u00f3leo WTI caem ap\u00f3s fala de Trump",
+      "relevance": 0.9,
+      "impact": "BULLISH"
     },
     {
-      "headline": "Petr\u00f3leo dispara, defasagem do diesel a 85% e risco de abastecimento.",
-      "relevance": 1.0,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Ultrapar contrata BTG para poss\u00edvel venda de fatia na Ipiranga.",
-      "relevance": 0.5,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Ra\u00edzen (RAIZ4) cai forte, a\u00e7\u00e3o atinge R$ 0,50.",
+      "headline": "A\u00e9reas pausam pedidos de aeronaves por incerteza da guerra no Ir\u00e3",
       "relevance": 0.7,
       "impact": "BEARISH"
     },
     {
-      "headline": "Nexperia China inicia produ\u00e7\u00e3o pr\u00f3pria de chips.",
+      "headline": "Apple adia lan\u00e7amento de display por atrasos no Siri",
+      "relevance": 0.5,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Morgan Stanley lista 6 a\u00e7\u00f5es globais de g\u00e1s para acompanhar",
       "relevance": 0.2,
-      "impact": "BULLISH"
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Petr\u00f3leo dispara, defasagem do diesel atinge 85% e amea\u00e7a abastecimento",
+      "relevance": 0.9,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Ouro fecha em baixa com guerra e Fed mais restritivo",
+      "relevance": 0.8,
+      "impact": "BEARISH"
     }
   ],
-  "timestamp": 1773085801.0380528
+  "timestamp": 1773086293.3654346
 }
