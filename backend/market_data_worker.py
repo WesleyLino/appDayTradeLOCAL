@@ -10,7 +10,7 @@ class MarketDataWorker:
     Worker para coleta de dados lentos em background.
     Responsável por atualizar Blue Chips, Macro, Ajuste e Calendário.
     """
-    def __init__(self, bridge, calendar, interval=2): # [ANTIVIBE-CODING]
+    def __init__(self, bridge, calendar, interval=2): # [ANTIVIBE-CODING] - Intervalo Protegido
         self.bridge = bridge
         self.calendar = calendar
         self.interval = interval
@@ -27,9 +27,9 @@ class MarketDataWorker:
             bluechips = await asyncio.to_thread(self.bridge.get_bluechips_data)
             
             # Cálculo do Índice Sintético (Média das Variações das Blue Chips)
-            # Cálculo do Índice Sintético Ponderado (Plano Mestre 2.0)
             synthetic_index = 0.0
             if bluechips and isinstance(bluechips, dict):
+                # [ANTIVIBE-CODING] - Pesos Estratégicos Bloqueados (Lockdown SOTA 09/03)
                 weights = {
                     "VALE3": 0.14,
                     "PETR4": 0.12,

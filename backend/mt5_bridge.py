@@ -860,7 +860,7 @@ class MT5Bridge:
                     continue
 
                 tick = mt5.symbol_info_tick(symbol)
-                # Pegar 2 candles D1: [0] anterior, [1] atual
+                # [ANTIVIBE-CODING] - Balizamento B3 Oficial: Pegar 2 candles D1: [0] anterior, [1] atual
                 rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, 2)
 
                 if tick and rates is not None and len(rates) >= 2:

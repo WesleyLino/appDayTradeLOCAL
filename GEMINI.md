@@ -46,12 +46,30 @@ Before committing changes to `backend/models/` or `backend/ai_core.py`:
 
 ---
 
+## 🇧🇷 PROTOCOLO DE IDIOMA (OBRIGATÓRIO)
+
+- **Regra**: TODA a comunicação da IA, comentários de código, instruções, logs e alertas da aplicação DEVEM ser em **Português do Brasil (PT-BR)**.
+- **Exceção**: Nomes de variáveis, funções e classes permanecem em Inglês por padrão técnico de programação.
+
+---
+
+## 🔒 LOCKDOWN DE CONFIGURAÇÕES (SOTA 09/03)
+
+Para garantir a estabilidade absoluta após as melhorias de assertividade e sincronização:
+
+1. **Pesos das Blue Chips**: Os pesos no `market_data_worker.py` (VALE3: 0.14, PETR4: 0.12, etc.) são EXCLUSIVOS e estão bloqueados.
+2. **Balizamento B3**: O cálculo de variação via `copy_rates_from_pos(..., 2)` e `rates[0].close` no `mt5_bridge.py` é a única fonte de verdade permitida.
+3. **Janela Operacional**: O encerramento às 17:15 e o filtro de notícias são regras pétreas do `risk_manager.py`.
+4. **Hiperparâmetros da IA**: Qualquer alteração em `ai_core.py` ou `v22_locked_params.json` exige 48h de backtest comprovado.
+
+---
+
 ## 🛡️ ANTI-VIBE-CODING PROTOCOL (MANDATORY)
 
 To preserve the absolute stability of the HFT ecosystem and defend against AI hallucinations or unnecessary "clean-ups":
 
 1. **Working Code is Sacred**: NEVER alter, refactor, or delete code that is currently functioning without errors just because it could be "optimized" or "looks better" (vibe coding).
 2. **Mandatory Authorization**: If an alteration to fully functioning code is deemed STRICTLY NECESSARY (e.g., to append a new requested feature, patch an edge-case, or explicitly required enhancement), the AI **MUST** halt and use `notify_user` to request explicit authorization _before_ making the change.
-3. **Justification Requirement**: When requesting authorization, the AI must explicitly state WHY the update is needed (e.g., "required for the UI to reflect X", "critical bug fix", or "required enhancement for Y to take effect").
+3. **Justification Requirement**: When requesting authorization, the AI must explicitly state WHY the update is needed (e.g., "necessário para o UI refletir X", "correção de bug crítico", ou "ajuste solicitado pelo usuário").
 4. **Contract Freeze**: Critical API payloads and UI mappings (like numbers 0, 1, 2 for regimes) must be frozen with a `# [ANTIVIBE-CODING]` inline comment.
 5. **V22 GOLDEN PARAMS**: The file `backend/v22_locked_params.json` contains the validated golden parameters for the 3000 BRL account. **NO AI** is allowed to modify this file or the corresponding hardcoded defaults in `BacktestPro` without a dedicated validation session (Min 2 days of backtest proof) AND explicit user authorization.
