@@ -47,8 +47,8 @@ class AICore:
         self.ema_alpha = 0.2 # Fator de suavização
         
         # [v52.1] Thresholds Dinâmicos para Alta Performance (MODO ILIMITADO)
-        self.buy_threshold = 75.0
-        self.sell_threshold = 25.0
+        self.buy_threshold = 60.0
+        self.sell_threshold = 40.0
 
         self.regime_model = KMeans(n_clusters=3, n_init=10)
 
@@ -127,7 +127,7 @@ class AICore:
         self.opening_window_rigor = 1.5   # Multiplicador de rigor 09:00-09:30
 
         self.spread_veto_threshold = 15.1 # [CORRIGIDO] 15.1 permite até 3 ticks no WIN$ (Filtro Anti-Gargalo)
-        self.vwap_dist_threshold = 400.0  # [RELAXADO] 400 pts permite seguir tendências esticadas sem veto precoce
+        self.vwap_dist_threshold = 450.0  # [SINCRONIZADO] 450 pts alinhado com v22_locked_params e RiskManager
 
 
 

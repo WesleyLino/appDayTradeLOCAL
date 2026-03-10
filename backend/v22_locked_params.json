@@ -11,7 +11,7 @@
     "vol_spike_mult": 0.8,
     "use_flux_filter": true,
     "flux_imbalance_threshold": 0.95,  
-    "confidence_threshold": 0.65,
+    "confidence_threshold": 0.60,
     "sl_dist": 150.0,
     "tp_dist": 450.0,
     "daily_trade_limit": 999,
@@ -27,7 +27,9 @@
     "be_trigger": 25.0,
     "be_lock": 0.0,
     "partial_profit_points": 30.0,
-    "vwap_dist_threshold": 450.0
+    "vwap_dist_threshold": 450.0,
+    "volatility_pause_threshold": 300.0,
+    "rsi_sell_level": 65
   },
   "anti_vibe_seal": "20260307_GOLDEN_V22_1_SOTA_RECALIBRATED_FINAL"
 }

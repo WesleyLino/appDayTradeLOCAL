@@ -55,32 +55,35 @@ class BacktestPro:
             logging.warning(f"⚠️ Falha ao carregar Golden Params ({e}). Usando defaults hardcoded.")
 
         self.opt_params = {
-            'rsi_period': kwargs.get('rsi_period', locked_params.get('rsi_period', 9)), # [ANTIVIBE-CODING]
-            'bb_dev': kwargs.get('bb_dev', locked_params.get('bb_dev', 2.0)), # [ANTIVIBE-CODING]
-            'vol_spike_mult': kwargs.get('vol_spike_mult', locked_params.get('vol_spike_mult', 1.0)), # [ANTIVIBE-CODING]
-            'trailing_trigger': kwargs.get('trailing_trigger', locked_params.get('trailing_trigger', 70.0)), # [ANTIVIBE-CODING]
-            'trailing_lock': kwargs.get('trailing_lock', locked_params.get('trailing_lock', 50.0)), # [ANTIVIBE-CODING]
-            'trailing_step': kwargs.get('trailing_step', locked_params.get('trailing_step', 20.0)), # [ANTIVIBE-CODING]
-            'sl_dist': kwargs.get('sl_dist', locked_params.get('sl_dist', 150.0)), # [ANTIVIBE-CODING]
-            'tp_dist': kwargs.get('tp_dist', locked_params.get('tp_dist', 400.0)), # [ANTIVIBE-CODING]
-            'confidence_threshold': kwargs.get('confidence_threshold', locked_params.get('confidence_threshold', 0.70)), # [MELHORIA A - 03/03/2026] 0.85→0.70 para capturar trades borderline com PatchTST ao vivo
+            'rsi_period': kwargs.get('rsi_period', locked_params.get('rsi_period', 9)),
+            'bb_dev': kwargs.get('bb_dev', locked_params.get('bb_dev', 2.0)),
+            'vol_spike_mult': kwargs.get('vol_spike_mult', locked_params.get('vol_spike_mult', 1.0)),
+            'trailing_trigger': kwargs.get('trailing_trigger', locked_params.get('trailing_trigger', 70.0)),
+            'trailing_lock': kwargs.get('trailing_lock', locked_params.get('trailing_lock', 50.0)),
+            'trailing_step': kwargs.get('trailing_step', locked_params.get('trailing_step', 20.0)),
+            'sl_dist': kwargs.get('sl_dist', locked_params.get('sl_dist', 150.0)),
+            'tp_dist': kwargs.get('tp_dist', locked_params.get('tp_dist', 400.0)),
+            'confidence_threshold': kwargs.get('confidence_threshold', locked_params.get('confidence_threshold', 0.60)), 
             'aggressive_mode': kwargs.get('aggressive_mode', True),
             'use_trailing_stop': kwargs.get('use_trailing_stop', True),
             'dynamic_lot': kwargs.get('dynamic_lot', locked_params.get('dynamic_lot', False)),
-            'start_time': kwargs.get('start_time', "09:00"),  # [MELHORIA B - 03/03/2026] 09:15→09:00 para capturar abertura de gap
+            'start_time': kwargs.get('start_time', "09:00"),
             'end_time': kwargs.get('end_time', "17:15"),
             'daily_trade_limit': kwargs.get('daily_trade_limit', locked_params.get('daily_trade_limit', 999)),
-            'use_flux_filter': kwargs.get('use_flux_filter', locked_params.get('use_flux_filter', True)), # [ANTIVIBE-CODING]
-            'flux_imbalance_threshold': kwargs.get('flux_imbalance_threshold', locked_params.get('flux_imbalance_threshold', 0.95)), # [ANTIVIBE-CODING] Sincronizado com v22_locked_params.json
+            'use_flux_filter': kwargs.get('use_flux_filter', locked_params.get('use_flux_filter', True)),
+            'flux_imbalance_threshold': kwargs.get('flux_imbalance_threshold', locked_params.get('flux_imbalance_threshold', 0.95)),
             'be_trigger': kwargs.get('be_trigger', locked_params.get('be_trigger', 40.0)),
             'be_lock': kwargs.get('be_lock', locked_params.get('be_lock', 0.0)),
             'partial_profit_points': kwargs.get('partial_profit_points', locked_params.get('partial_profit_points', 45.0)),
-            'base_lot': kwargs.get('base_lot', locked_params.get('base_lot', 1)), # [ANTIVIBE-CODING]
-            'use_ai_core': kwargs.get('use_ai_core', locked_params.get('use_ai_core', True)), # [ANTIVIBE-CODING] v27 Default
-            'vwap_dist_threshold': kwargs.get('vwap_dist_threshold', locked_params.get('vwap_dist_threshold', 400.0)), # [v50.1] Hyper-Opt
+            'base_lot': kwargs.get('base_lot', locked_params.get('base_lot', 1)),
+            'use_ai_core': kwargs.get('use_ai_core', locked_params.get('use_ai_core', True)),
+            'vwap_dist_threshold': kwargs.get('vwap_dist_threshold', locked_params.get('vwap_dist_threshold', 400.0)),
             'pyramid_profit_threshold': kwargs.get('pyramid_profit_threshold', locked_params.get('pyramid_profit_threshold', 30.0)),
-            'pyramid_signal_threshold': kwargs.get('pyramid_signal_threshold', locked_params.get('pyramid_signal_threshold', 0.6)), # [ANTIVIBE-CODING] Sincronizado com v22_locked_params.json
-            'pyramid_max_volume': kwargs.get('pyramid_max_volume', 3)
+            'pyramid_signal_threshold': kwargs.get('pyramid_signal_threshold', locked_params.get('pyramid_signal_threshold', 0.6)),
+            'pyramid_max_volume': kwargs.get('pyramid_max_volume', 3),
+            'volatility_pause_threshold': kwargs.get('volatility_pause_threshold', locked_params.get('volatility_pause_threshold', 250.0)),
+            'rsi_buy_level': kwargs.get('rsi_buy_level', locked_params.get('rsi_buy_level', 32)),
+            'rsi_sell_level': kwargs.get('rsi_sell_level', locked_params.get('rsi_sell_level', 68))
         }
 
         # [v52.1] SINCRONIZAÇÃO DE PARÂMETROS: Injeta opt_params no RiskManager
@@ -461,7 +464,7 @@ class BacktestPro:
 
                 # [PAUSA PARCIAL - 03/03/2026] VERIFICA VOLATILIDADE M1 NA ABERTURA
                 # H-L médio imune a gaps overnight. 03/03 = 314pts. Dias normais = ~180pts.
-                HL_EXTREMO     = 250.0  # Limiar de detecção extrema
+                HL_EXTREMO     = self.opt_params.get('volatility_pause_threshold', 250.0)  # [v52.2] Sincronizado
                 ATR_NORMALIZA  = 80.0   # Limiar de normalização: retoma a operar
 
                 if self._velas_hoje == 10 and not self._dia_pausado_atr:

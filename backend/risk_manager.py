@@ -628,9 +628,18 @@ class RiskManager:
                         "vol_spike_mult": params.get("vol_spike_mult"),
                         "pyramid_profit_threshold": params.get("pyramid_profit_threshold"),
                         "pyramid_signal_threshold": params.get("pyramid_signal_threshold"),
-                        "pyramid_max_volume": params.get("pyramid_max_volume")
+                        "pyramid_max_volume": params.get("pyramid_max_volume"),
+                        "be_trigger": params.get("be_trigger"),
+                        "be_lock": params.get("be_lock"),
+                        "confidence_threshold": params.get("confidence_threshold")
                     }
                     self.dynamic_params[symbol] = mapped_params
+                    
+                    # [v50.1] Injeção direta nos atributos se for o símbolo principal
+                    if "WIN" in symbol:
+                        self.be_trigger = mapped_params.get("be_trigger", self.be_trigger)
+                        self.be_lock = mapped_params.get("be_lock", self.be_lock)
+                        self.daily_trade_limit = params.get("daily_trade_limit", self.daily_trade_limit)
                     logging.info(f"✅ RISCO: Parâmetros para {symbol} mapeados: {mapped_params}")
                     return True
             except Exception as e:
