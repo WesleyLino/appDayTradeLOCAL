@@ -300,6 +300,20 @@ class BacktestPro:
                        (data['low'] - data['close'].shift()).abs()], axis=1).max(axis=1)
         data['atr_current'] = tr.rolling(window=14).mean()
 
+        # [v22.3] Cálculo do ADX 14 (Vectorized)
+        plus_dm = (data['high'] - data['high'].shift(1)).clip(lower=0)
+        minus_dm = (data['low'].shift(1) - data['low']).clip(lower=0)
+        
+        # Filtro de direção do DM
+        plus_dm.loc[plus_dm < minus_dm] = 0
+        minus_dm.loc[minus_dm < plus_dm] = 0
+        
+        tr_smooth = tr.ewm(span=14, adjust=False).mean()
+        plus_di = 100 * (plus_dm.ewm(span=14, adjust=False).mean() / tr_smooth)
+        minus_di = 100 * (minus_dm.ewm(span=14, adjust=False).mean() / tr_smooth)
+        dx = 100 * (abs(plus_di - minus_di) / (plus_di + minus_di + 1e-9))
+        data['adx'] = dx.ewm(span=14, adjust=False).mean()
+
         # [MELHORIA H - V28] EMA30 e EMA90 para Filtro de Tendência Diária
         data['ema30'] = data['close'].ewm(span=30, adjust=False).mean()
         data['ema90'] = data['close'].ewm(span=90, adjust=False).mean()
@@ -625,6 +639,20 @@ class BacktestPro:
                     # Decisão Final: Precisa do gatilho técnico + viés de direção da IA com confiança
                     v22_buy = v22_buy_raw and (ai_dir == "COMPRA") and (ai_stability >= self.opt_params['confidence_threshold'])
                     v22_sell = v22_sell_raw and (ai_dir == "VENDA") and (ai_stability >= self.opt_params['confidence_threshold'])
+                    
+                    # [v22.3] Filtro Anti-Lateralidade (Anti-Sideways)
+                    if v22_buy or v22_sell:
+                        is_sideways, s_reason = self.risk.is_sideways_market(
+                            adx=data.loc[row.name, 'adx'],
+                            bb_upper=upper_bb,
+                            bb_lower=lower_bb,
+                            atr=atr_current
+                        )
+                        if is_sideways:
+                            logging.info(f"🛑 [VETO LATERALIDADE] {row.name} | Motivo: {s_reason} | Sinal Abortado.")
+                            self.shadow_signals['veto_reasons'][s_reason] = self.shadow_signals['veto_reasons'].get(s_reason, 0) + 1
+                            v22_buy = False
+                            v22_sell = False
                     
                     # [AUTORIZADO 03/03/2026] GATE TÉCNICO DE VENDA (sem exigir ai_dir=="VENDA")
                     # Quando RSI+BB+Vol confirmam sobrecompra E IA não contradiz (score < 60):

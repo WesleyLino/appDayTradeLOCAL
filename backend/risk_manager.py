@@ -31,6 +31,12 @@ class RiskManager:
         self.be_trigger = 70.0       
         self.be_lock = 15.0          
         
+        # [v22.3] Filtro Anti-Lateralidade (Anti-Sideways)
+        self.adx_min_threshold = 20.0
+        self.adx_volatility_threshold = 18.0
+        self.atr_volatility_trigger = 120.0
+        self.bollinger_squeeze_threshold = 1.2
+        
         # [v52.0] Scaling Out (Saída Parcial HFT)
         self.base_volume = 2.0       # 2 contratos para permitir parcial
         self.partial_volume = 1.0    # Zera 1 contrato na parcial
@@ -509,6 +515,30 @@ class RiskManager:
 
         return {"allowed": True, "reason": "Condição de Mercado OK"}
 
+    def is_sideways_market(self, adx, bb_upper, bb_lower, atr):
+        """
+        [v22.3] Detecta se o mercado está lateral/sem tendência.
+        """
+        # Critério 1: ADX Dinâmico (SOTA V22.4)
+        # Se ATR > 120 (Volatilidade Alta), reduz threshold para 18.0 para capturar rompimentos rápidos
+        threshold = self.adx_min_threshold
+        if atr > self.atr_volatility_trigger:
+            threshold = self.adx_volatility_threshold
+            logging.info(f"⚡ [ADX DINÂMICO] Alta Volatilidade (ATR {atr:.1f} > {self.atr_volatility_trigger}). Threshold: {threshold}")
+            
+        if adx is not None and adx < threshold:
+            logging.warning(f"🛑 [VETO LATERALIDADE] ADX {adx:.1f} < {threshold} (Tendência Fraca)")
+            return True, "ADX_BAIXO"
+            
+        # Critério 2: Bollinger Squeeze (Estreitamento de bandas)
+        bb_width = bb_upper - bb_lower
+        min_width = atr * self.bollinger_squeeze_threshold
+        if bb_width < min_width:
+            logging.warning(f"🛑 [VETO LATERALIDADE] BB Width {bb_width:.1f} < {min_width:.1f} (Bollinger Squeeze)")
+            return True, "BB_SQUEEZE"
+            
+        return False, "PROPRIO_PARA_OPERAR"
+
     def check_macro_filter(self, side, macro_change_pct):
         """
         Filtro Macro (HFT Impact):
@@ -631,6 +661,8 @@ class RiskManager:
                         "pyramid_max_volume": params.get("pyramid_max_volume"),
                         "be_trigger": params.get("be_trigger"),
                         "be_lock": params.get("be_lock"),
+                        "adx_min_threshold": params.get("adx_min_threshold", 20.0),
+                        "bollinger_squeeze_threshold": params.get("bollinger_squeeze_threshold", 1.2),
                         "confidence_threshold": params.get("confidence_threshold")
                     }
                     self.dynamic_params[symbol] = mapped_params
@@ -639,6 +671,10 @@ class RiskManager:
                     if "WIN" in symbol:
                         self.be_trigger = mapped_params.get("be_trigger", self.be_trigger)
                         self.be_lock = mapped_params.get("be_lock", self.be_lock)
+                        self.adx_min_threshold = mapped_params.get("adx_min_threshold", self.adx_min_threshold)
+                        self.adx_volatility_threshold = params.get("adx_volatility_threshold", self.adx_volatility_threshold)
+                        self.atr_volatility_trigger = params.get("atr_volatility_trigger", self.atr_volatility_trigger)
+                        self.bollinger_squeeze_threshold = mapped_params.get("bollinger_squeeze_threshold", self.bollinger_squeeze_threshold)
                         self.daily_trade_limit = params.get("daily_trade_limit", self.daily_trade_limit)
                     logging.info(f"✅ RISCO: Parâmetros para {symbol} mapeados: {mapped_params}")
                     return True
