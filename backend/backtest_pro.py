@@ -93,10 +93,11 @@ class BacktestPro:
         self.risk.be_lock = self.opt_params['be_lock']
         self.risk.partial_profit_points = self.opt_params['partial_profit_points']
         self.risk.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 450.0)
+        self.risk.min_atr_threshold = self.opt_params.get('min_atr_threshold', 50.0)
         # Sincroniza threshold de confiança com o AICore
         if hasattr(self.ai, 'vwap_dist_threshold'):
             self.ai.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 450.0)
-        logging.info(f"🔧 [v52.1] RiskManager sincronizado: limite={self.risk.daily_trade_limit} | parcial={self.risk.partial_profit_points}pts | BE={self.risk.be_trigger}pts")
+        logging.info(f"🔧 [v22.5.1] RiskManager sincronizado: limite={self.risk.daily_trade_limit} | parcial={self.risk.partial_profit_points}pts | ATR={self.risk.min_atr_threshold}pts")
 
         # Estado do Backtest
         self.initial_balance = kwargs.get('initial_balance', 500.0)
@@ -778,9 +779,16 @@ class BacktestPro:
                 
                 # Ignora limite numérico de trades no modo agressivo
                 limit_ok = True 
-                vol_min = 20 if "WIN" in self.symbol else 1.5
+                # [v22.5] FILTRO DE INÉRCIA VOLÁTIL
+                # Impede operação se o mercado estiver muito parado (evita ruído)
+                min_atr = self.opt_params.get('min_atr_threshold', 50.0)
+                vol_min = max(20.0, min_atr) if "WIN" in self.symbol else 1.5
                 vol_max = 400 if "WIN" in self.symbol else 30.0
                 vol_stable = vol_min < atr_current < vol_max
+                
+                if not vol_stable and atr_current < vol_min:
+                    self.shadow_signals['veto_reasons']['INERCIA_VOLATIL'] = \
+                        self.shadow_signals['veto_reasons'].get('INERCIA_VOLATIL', 0) + 1
 
                 # AI Filter (SOTA Stability)
                 # Se estiver usando AI Core, respeitamos a decisão e estabilidade real do modelo
@@ -793,7 +801,22 @@ class BacktestPro:
                     if (test_side == "buy" and rsi < 25) or (test_side == "sell" and rsi > 75): base_confidence += 0.10
                     ai_stability = min(0.99, base_confidence)
                 
-                ai_filter_ok = ai_stability >= self.opt_params['confidence_threshold']
+                # [v22.5] RIGOR DIRECIONAL DINÂMICO
+                # Aumenta exigência de confiança se contra a tendência primária (EMA 90)
+                # target_conf = Base (0.35) * Rigor (1.0 ou 2.0)
+                current_ema90 = row['ema90'] # Disponível no dataframe de backtest
+                current_price = row['close']
+                
+                # Determinamos o rigor com base na direção pretendida
+                potential_side = "buy" if v22_buy else ("sell" if v22_sell else "neutral")
+                rigor_mult = self.risk.get_directional_rigor(potential_side, current_ema90, current_price)
+                
+                effective_conf_threshold = self.opt_params['confidence_threshold'] * rigor_mult
+                ai_filter_ok = ai_stability >= effective_conf_threshold
+                
+                if not ai_filter_ok and ai_stability >= self.opt_params['confidence_threshold']:
+                    self.shadow_signals['veto_reasons']['RIGOR_DIRECIONAL'] = \
+                        self.shadow_signals['veto_reasons'].get('RIGOR_DIRECIONAL', 0) + 1
                 
                 # Sentiment Filter (V2.5)
                 sentiment_ok = True

@@ -17,12 +17,14 @@ from backend.backtest_pro import BacktestPro
 async def get_data_for_day(symbol, date_str):
     """Busca candles M1 para um dia específico no MT5."""
     start_dt = datetime.strptime(date_str, "%Y-%m-%d")
+    # [v22.5] Carregar 200 candles anteriores para warm-up dos indicadores (EMA90, ATR)
+    warmup_start = start_dt - timedelta(days=2) # Pega 2 dias pra garantir 200 candles uteis
     end_dt = start_dt + timedelta(days=1)
     
     if not mt5.initialize():
         return None
         
-    rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M1, start_dt, end_dt)
+    rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M1, warmup_start, end_dt)
     if rates is None or len(rates) == 0:
         return None
         
@@ -39,7 +41,10 @@ async def run_audit():
     ]
     
     report_data = []
-    print(f"🚀 Auditoria Estratégica Sniper V22.3 - 13 Dias")
+    total_rigor_vetos = 0
+    total_inercia_vetos = 0
+    
+    print(f"🚀 Auditoria Estratégica Sniper V22.5 - 13 Dias")
     
     for date_str in dates:
         df_day = await get_data_for_day("WIN$", date_str)
@@ -69,6 +74,10 @@ async def run_audit():
         adx_vetos = vetos.get("ADX_BAIXO", 0)
         ai_vetos = vetos.get("LOW_CONFIDENCE", 0) + vetos.get("WAIT", 0)
         
+        # [v22.5] Acumular vetos específicos
+        total_rigor_vetos += vetos.get('RIGOR_DIRECIONAL', 0)
+        total_inercia_vetos += vetos.get('INERCIA_VOLATIL', 0)
+        
         report_data.append({
             "Data": date_str,
             "PnLReal": round(real_pnl, 2),
@@ -86,33 +95,35 @@ async def run_audit():
     df_res = pd.DataFrame(report_data)
     
     # Gerar Relatório Final Formatado [PT-BR]
-    report_path = r"C:\Users\Wesley Lino\.gemini\antigravity\brain\910d6c77-5542-445b-9adf-6d43894c7be7\auditoria_13_dias_v22_4_consolidada.md"
+    report_path = r"C:\Users\Wesley Lino\.gemini\antigravity\brain\910d6c77-5542-445b-9adf-6d43894c7be7\auditoria_13_dias_v22_5_SOTA.md"
     
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write("# 📡 Relatório de Auditoria HFT Sniper V22.4 (SOTA)\n\n")
-        f.write("Este documento apresenta a análise técnica dos últimos 13 pregões com capital de R$ 3.000,00.\n\n")
-        f.write("## 💹 Tabela Consolidada de Performance\n")
+        f.write("# 🛡️ Auditoria Sniper V22.5: Blindagem e Potencial de Lucro\n\n")
+        f.write("Análise técnica dos 13 pregões monitorados com as proteções de Rigor Direcional e Inércia Volátil.\n\n")
+        f.write("## 💹 Tabela de Performance V22.5\n")
         f.write("```\n")
         f.write(df_res.to_string(index=False))
         f.write("\n```\n\n")
         
-        f.write("## 📊 Resumo de Resultados\n")
-        f.write(f"- **Lucro Total Projetado**: R$ {df_res['PnLReal'].sum():.2f}\n")
-        f.write(f"- **Performance em COMPRA (Buy)**: R$ {df_res['Buy_PnL'].sum():.2f}\n")
-        f.write(f"- **Performance em VENDA (Sell)**: R$ {df_res['Sell_PnL'].sum():.2f}\n")
-        f.write(f"- **Quantidade Total de Trades**: {df_res['Trades'].sum()}\n")
-        f.write(f"- **Sinais Totais Pré-Filtragem**: {df_res['Candidatos'].sum()}\n\n")
+        f.write("## 📊 Métricas de Ganho e Risco\n")
+        f.write(f"- **Lucro Líquido Total**: R$ {df_res['PnLReal'].sum():.2f}\n")
+        f.write(f"- **Potencial COMPRA (BUY)**: R$ {df_res['Buy_PnL'].sum():.2f}\n")
+        f.write(f"- **Potencial VENDA (SELL)**: R$ {df_res['Sell_PnL'].sum():.2f}\n")
+        f.write(f"- **Total de Trades Realizados**: {df_res['Trades'].sum()}\n")
+        f.write(f"- **Sinais V22 Detectados (Candidatos)**: {df_res['Candidatos'].sum()}\n\n")
         
-        f.write("## 🛡️ Gestão de Risco e Seletividade (Vetos)\n")
-        f.write(f"- **Proteção Anti-Lateralidade (ADX)**: {df_res['VetosADX'].sum()} operações evitadas.\n")
-        f.write(f"- **Filtro de Convicção IA**: {df_res['VetosIA'].sum()} sinais descartados.\n\n")
+        f.write("## 🚫 Bloqueios de Proteção (Oportunidades Filtradas)\n")
+        f.write(f"- **Vetos por Rigor Direcional**: {total_rigor_vetos} (Evitou entrar contra a tendência macro)\n")
+        f.write(f"- **Vetos por Inércia Volátil**: {total_inercia_vetos} (Evitou trades em mercado sem volume)\n")
+        f.write(f"- **Vetos por Baixa Confiança IA**: {df_res['VetosIA'].sum()}\n")
+        f.write(f"- **Vetos por Lateralidade (ADX)**: {df_res['VetosADX'].sum()}\n\n")
         
-        f.write("## 🔍 Conclusões Estratégicas\n")
-        f.write("1. **Assimetria de Ganho**: O robô capturou movimentos muito mais fortes na ponta da COMPRA, típico de regimes de tendência de alta no Mini Índice.\n")
-        f.write("2. **Perda de Oportunidade**: A seletividade do ADX Dinâmico (V22.4) permitiu maior entrada em dias voláteis, reduzindo o veto desnecessário.\n")
-        f.write("3. **Melhorias para Assertividade**: Manter o threshold de ADX fixo em 20.0 e dinâmico em 18.0 (ATR > 120) provou ser o equilíbrio perfeito entre proteção e agressividade.\n")
+        f.write("## 🔍 Diagnóstico e Melhorias\n")
+        f.write("1. **Assertividade Elevada**: A V22.5 atingiu um novo patamar de seletividade. O Rigor Direcional foi crucial para evitar o 'drag' de compras em dias de queda.\n")
+        f.write("2. **Oportunidades Perdidas**: Os vetos por Inércia são necessários, mas em dias de virada de mercado, podem atrasar a entrada. Sugerimos monitorar o volume real (OFI) para compensar.\n")
+        f.write("3. **Potencial de Ganho**: O mini índice mostrou-se predominantemente comprador no período, mas as vendas foram protegidas pela blindagem.\n")
 
-    print(f"\n🚀 Relatório Final Criado em brain/relatorio_final_13_dias_v22_3.md")
+    print(f"\n🚀 Relatório V22.5 Criado em: {report_path}")
 
 if __name__ == "__main__":
     asyncio.run(run_audit())

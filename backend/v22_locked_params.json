@@ -1,5 +1,5 @@
 {
-  "comment": "PARÂMETROS V22.1 ATUALIZADOS EM 2026-03-07 - RECALIBRADO PARA ALTA PERFORMANCE (06/03)",
+  "comment": "PARÂMETROS V22.5 ATUALIZADOS EM 2026-03-10 - BLINDAGEM DE PERFORMANCE (SOTA)",
   "account_config": {
     "initial_balance": 3000.0,
     "symbol": "WIN$",
@@ -33,10 +33,11 @@
     "atr_volatility_trigger": 120.0,
     "bollinger_squeeze_threshold": 1.2,
     "confidence_threshold": 0.35,
+    "min_atr_threshold": 50.0,
     "partial_profit_points": 30.0,
     "vwap_dist_threshold": 450.0,
     "volatility_pause_threshold": 500.0,
     "rsi_sell_level": 65
   },
-  "anti_vibe_seal": "20260309_AGRESSIVO_SOTA_OPTIMIZED_V22_2"
+  "anti_vibe_seal": "20260310_BLINDAGEM_SOTA_V22_5_1_INSTITUCIONAL"
 }

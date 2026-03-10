@@ -36,6 +36,7 @@ class RiskManager:
         self.adx_volatility_threshold = 18.0
         self.atr_volatility_trigger = 120.0
         self.bollinger_squeeze_threshold = 1.2
+        self.min_atr_threshold = 50.0  # [v22.5.1] Inércia Institucional: Ignora mercado "parado" (pts)
         
         # [v52.0] Scaling Out (Saída Parcial HFT)
         self.base_volume = 2.0       # 2 contratos para permitir parcial
@@ -263,6 +264,24 @@ class RiskManager:
             f"Operação {direction} suspensa."
         )
         return False
+
+    def get_directional_rigor(self, direction: str, ema_long: float, price: float) -> float:
+        """
+        [v22.5] RIGOR DIRECIONAL.
+        Aumenta o threshold de confiança da IA se a operação for contra a tendência primária.
+        EMA Longa (90) serve como balizador de tendência macro.
+        """
+        if not ema_long or not price:
+            return 1.0 # Sem rigor extra se faltar dados
+            
+        trend_is_up = price > ema_long
+        
+        # Se tentar COMPRA em tendência de BAIXA ou VENDA em tendência de ALTA
+        if (direction.upper() == "BUY" and not trend_is_up) or (direction.upper() == "SELL" and trend_is_up):
+            logging.info(f"🛡️ [RIGOR V22.5] Operação contra-tendência detectada ({direction}). Elevando exigência de confiança.")
+            return 2.0 # Dobra o threshold necessário (ex: 0.35 -> 0.70)
+            
+        return 1.0 # Rigor normal se a favor da tendência
 
     def is_macro_allowed(self, direction: str, synthetic_idx: float) -> bool:
         """[ANTIVIBE-CODING] Veto Macro via Blue Chips/S&P 500.
@@ -502,15 +521,15 @@ class RiskManager:
                 "reason": f"Circuit Breaker: ATR {current_atr:.1f} > 5x Média {avg_atr:.1f}"
             }
             
-        # Regra 3: Panic Threshold Absoluto (Fallback se média estiver descalibrada)
-        # WIN: ~150-300 pts é alto. 500 é extremo.
-        # WDO: ~5-10 pts é alto. 20 é extremo.
-        panic_threshold = 500.0 if ("WIN" in symbol or "IND" in symbol) else 20.0
+        # Regra 4: Veto de Inércia (Inércia Institucional V22.5.1)
+        # Ignora mercado "parado" ou sem volume institucional
+        min_atr = getattr(self, 'min_atr_threshold', 50.0)
+        vol_min = max(20.0, min_atr) if ("WIN" in symbol or "IND" in symbol) else 1.5
         
-        if current_atr > panic_threshold:
-             return {
+        if current_atr < vol_min:
+            return {
                 "allowed": False,
-                "reason": f"Volatilidade Extrema ({current_atr:.1f} > {panic_threshold})"
+                "reason": f"Inércia Institucional: ATR {current_atr:.1f} < Mínimo {vol_min:.1f} (Mercado muito parado)"
             }
 
         return {"allowed": True, "reason": "Condição de Mercado OK"}
@@ -663,6 +682,7 @@ class RiskManager:
                         "be_lock": params.get("be_lock"),
                         "adx_min_threshold": params.get("adx_min_threshold", 20.0),
                         "bollinger_squeeze_threshold": params.get("bollinger_squeeze_threshold", 1.2),
+                        "min_atr_threshold": params.get("min_atr_threshold", 50.0),
                         "confidence_threshold": params.get("confidence_threshold")
                     }
                     self.dynamic_params[symbol] = mapped_params
