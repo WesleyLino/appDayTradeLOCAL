@@ -1,7 +1,7 @@
 {
   "comment": "PARÂMETROS V22.1 ATUALIZADOS EM 2026-03-07 - RECALIBRADO PARA ALTA PERFORMANCE (06/03)",
   "account_config": {
-    "initial_balance": 500.0,
+    "initial_balance": 3000.0,
     "symbol": "WIN$",
     "timeframe": "M1"
   },
@@ -11,7 +11,7 @@
     "vol_spike_mult": 0.8,
     "use_flux_filter": true,
     "flux_imbalance_threshold": 0.95,  
-    "confidence_threshold": 0.60,
+    "confidence_threshold": 0.58,
     "sl_dist": 150.0,
     "tp_dist": 450.0,
     "daily_trade_limit": 999,
@@ -19,17 +19,20 @@
     "cooldown_minutes": 3,
     "adaptive_flux_active": true,
     "use_trailing_stop": true,
+    "trailing_step": 15.0,
     "start_time": "09:15",
     "end_time": "17:15",
+    "base_lot": 3,
+    "dynamic_lot": true,
     "pyramid_profit_threshold": 30.0,
     "pyramid_signal_threshold": 0.6,
-    "pyramid_max_volume": 3,
-    "be_trigger": 25.0,
-    "be_lock": 0.0,
+    "pyramid_max_volume": 6,
+    "be_trigger": 70.0,
+    "be_lock": 15.0,
     "partial_profit_points": 30.0,
     "vwap_dist_threshold": 450.0,
-    "volatility_pause_threshold": 300.0,
+    "volatility_pause_threshold": 500.0,
     "rsi_sell_level": 65
   },
-  "anti_vibe_seal": "20260307_GOLDEN_V22_1_SOTA_RECALIBRATED_FINAL"
+  "anti_vibe_seal": "20260309_AGRESSIVO_SOTA_OPTIMIZED_V22_2"
 }

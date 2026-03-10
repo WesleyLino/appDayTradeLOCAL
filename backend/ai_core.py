@@ -72,7 +72,7 @@ class AICore:
 
         # [NOVOS PARÂMETROS CONFIGURÁVEIS - PESQUISA DE ALTO GANHO]
 
-        self.uncertainty_threshold_base = 0.35 # [ANTIVIBE-CODING] Relaxado de 0.25 para 0.35 para maior volume
+        self.uncertainty_threshold_base = 0.40 # [MODO AGRESSIVO SOTA] Relaxado para maior volume operacional
 
         self.lot_multiplier_partial = 0.25     # [ANTIVIBE-CODING] Padrão Seguro
 
@@ -813,15 +813,15 @@ class AICore:
                 uncertainty_threshold = 0.45
                 logging.info(f"📈 [INCERTEZA ELÁSTICA] Volatilidade em expansão ({vol_expansion:.1f}x). Threshold: 45%")
             else:
-                uncertainty_threshold = 0.38 # Relaxado de 0.30 para 0.38 (Sniper Permissivo)
+                uncertainty_threshold = 0.42 # [MODO AGRESSIVO] Sniper Altamente Permissivo
         else:
-            uncertainty_threshold = 0.38 
+            uncertainty_threshold = 0.42 
 
         if regime == 2 or abs(ofi) > 2.0:
 
-            uncertainty_threshold = 0.30 # [RELAXADO] Rigor em ruído de 0.20 para 0.30
+            uncertainty_threshold = 0.35 # [MODO AGRESSIVO] Maior tolerância ao ruído
 
-            logging.info("🛡️ FILTRO DE RUÍDO: Rigor 0.20")
+            logging.info("🛡️ FILTRO DE RUÍDO: Rigor 0.35")
 
             
 

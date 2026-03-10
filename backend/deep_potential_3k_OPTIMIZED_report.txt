@@ -1,43 +1,47 @@
 DEEP POTENTIAL ANALYSIS - OPTIMIZED - WIN$ - R$ 3000
 {
-    "final_balance": 3072.0,
-    "total_pnl": 72.0,
+    "final_balance": 2994.0,
+    "total_pnl": -6.0,
     "trades": [
         {
-            "entry_time": "2026-02-20T12:02:00",
-            "exit_time": "2026-02-20T12:03:00",
+            "entry_time": "2026-03-09T15:01:00",
+            "exit_time": "2026-03-09T15:04:00",
             "side": "sell",
-            "entry": 191995.0,
-            "exit": 191895.0,
-            "lots": 3,
-            "pnl_points": 100.0,
-            "pnl_fin": 60.0,
-            "reason": "TP"
-        },
-        {
-            "entry_time": "2026-02-20T15:33:00",
-            "exit_time": "2026-02-20T15:35:00",
-            "side": "sell",
-            "entry": 193165.0,
-            "exit": 193150.0,
-            "lots": 4,
-            "pnl_points": 15.0,
-            "pnl_fin": 12.0,
-            "reason": "SL"
+            "entry_price": 181500.0,
+            "exit_price": 181530.0,
+            "lots": 1,
+            "pnl_pts": -30.0,
+            "pnl_fin": -6.0,
+            "reason": "ALPHA_DECAY",
+            "quantile_confidence": "NORMAL",
+            "execution_mode": "TECH_GATE"
         }
     ],
-    "win_rate": 100.0,
-    "profit_factor": Infinity,
-    "max_drawdown": 0.0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "max_drawdown": 0.2,
     "shadow_signals": {
-        "total_missed": 0,
-        "filtered_by_ai": 0,
+        "total_missed": 25,
+        "filtered_by_ai": 24,
         "filtered_by_flux": 0,
-        "filtered_by_vol": 0,
+        "filtered_by_bias": 25,
+        "veto_reasons": {
+            "LOW_CONFIDENCE": 48
+        },
+        "v22_candidates": 604,
+        "component_fail": {
+            "rsi": 0,
+            "bb": 0,
+            "volume": 0,
+            "ai_veto_total": 61,
+            "time": 2
+        },
         "tiers": {
             "70-75": 0,
             "75-80": 0,
             "80-85": 0
-        }
+        },
+        "buy_vetos_ai": 1,
+        "sell_vetos_ai": 33
     }
 }
