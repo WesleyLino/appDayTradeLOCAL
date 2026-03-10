@@ -2330,7 +2330,7 @@ async def autonomous_bot_loop():
                     }
 
                     # [DINAMISMO] Alertas de Latência
-                    if latency_ms > 300:
+                    if latency_ms > 500:
                         add_operational_log(f"ALERTA DE ALTA LATÊNCIA: {latency_ms:.1f}ms", "warning")
                     
                     # [DINAMISMO] Alertas de Exaustão (ATR Alto)
