@@ -48,13 +48,13 @@ class SniperBotWIN:
         self.running = False
         self.last_total_trades = 0 # Para detectar fechamento de trades
         
-        # Parâmetros Sniper (Otimizados em Backtest)
-        self.start_time = time(10, 0)
-        self.end_time = time(17, 15) # Expandido para janela da tarde (conforme v22_locked_params)
-        self.consecutive_wins = 0 # Alpha Scaling tracker
+        # Parâmetros Sniper (Carregados dinamicamente de v22_locked_params.json)
+        self.start_time = None
+        self.end_time = None
         self.rsi_period = 14
-        self.flux_threshold = 1.2 # Sniper Pro: 1.2x (Validated)
-        self.vol_spike_mult = 1.0 # Reduzido levemente para maior assertividade (Plano de Ajustes)
+        self.flux_threshold = 0.95 
+        self.vol_spike_mult = 1.0 
+        self.consecutive_wins = 0 # Alpha Scaling tracker
         self.last_trade_time = None
         # [PAUSA PARCIAL] Controle de Volatilidade de Abertura (H-L Extremo)
         self.dia_pausado_vol = False
@@ -62,8 +62,22 @@ class SniperBotWIN:
         self.dia_abertura_cache = None
         
         # [FASE 28] Sincronização de Parâmetros Calibrados (Grid Search)
-        self.risk.load_optimized_params("WIN", "best_params_WIN.json")
-        self.risk.load_optimized_params("WINJ26", "best_params_WIN.json") # Fallback para símbolo específico
+        # BUGFIX: Apontando para o arquivo de parâmetros bloqueado (v22_locked_params.json)
+        self.risk.load_optimized_params("WIN", "backend/v22_locked_params.json")
+        self.risk.load_optimized_params("WINJ26", "backend/v22_locked_params.json") 
+        
+        # Sincroniza parâmetros operacionais com o arquivo JSON (Garantia de Ajuste)
+        self.flux_threshold = getattr(self.risk, 'flux_imbalance_threshold', 0.95)
+        self.rsi_period = int(self.risk.dynamic_params.get("WIN", {}).get("rsi_period", self.rsi_period))
+        self.vol_spike_mult = float(self.risk.dynamic_params.get("WIN", {}).get("vol_spike_mult", self.vol_spike_mult))
+        
+        # Sincroniza horários (v22_locked_params)
+        raw_start = self.risk.dynamic_params.get("WIN", {}).get("start_time", "10:00")
+        raw_end = self.risk.dynamic_params.get("WIN", {}).get("end_time", "17:15")
+        self.start_time = datetime.strptime(raw_start, "%H:%M").time() if isinstance(raw_start, str) else time(10,0)
+        self.end_time = datetime.strptime(raw_end, "%H:%M").time() if isinstance(raw_end, str) else time(17,15)
+
+        logger.info(f"🛡️ [SOTA V22.5.1] Sincronização de Setup: OBI={self.flux_threshold}, RSI={self.rsi_period}, Vol={self.vol_spike_mult}, Janela={self.start_time}-{self.end_time}")
         
         self._load_state()
 
@@ -460,7 +474,7 @@ class SniperBotWIN:
                     side_pt = "COMPRA" if side == "buy" else "VENDA"
                     self._log_to_dashboard(f"🔍 Setup detectado ({side_pt}). Analisando filtros de IA e Macro...", "info")
                     
-                    if (side == "buy" and pressure > 1.2) or (side == "sell" and pressure < -1.2):
+                    if (side == "buy" and pressure > self.flux_threshold) or (side == "sell" and pressure < -self.flux_threshold):
                         patchtst_score = await self.ai.predict_with_patchtst(self.ai.inference_engine, df)
                         # [ANTIVIBE-CODING] Override de Controle Manual de Notícias
                         effective_sentiment = await self.ai.update_sentiment() if (getattr(self.risk, 'enable_news_filter', True)) else 0.0

@@ -58,6 +58,9 @@ class RiskManager:
         
         # [v50.1] TRAILING ESTRANGULADOR (VENDA)
         self.sell_trailing_step_atr = 0.3        # Passo de 0.3 ATR para vendas (Paranoia Institucional)
+
+        # [SOTA V22.5.1] Filtro de Fluxo (OBJ/Book L2) - Sincronizado com JSON
+        self.flux_imbalance_threshold = 0.95
         
         # [FASE 2] Quarter-Kelly (Ajuste de Expectativa)
         self.kelly_fraction = 0.25              # Quarter-Kelly (Segurança HFT)
@@ -669,7 +672,7 @@ class RiskManager:
             try:
                 with open(json_path, 'r') as f:
                     raw_data = json.load(f)
-                    params = raw_data.get("params", raw_data)
+                    params = raw_data.get("params", raw_data.get("strategy_params", raw_data))
                     mapped_params = {
                         "sl": params.get("sl_dist", params.get("sl")),
                         "tp": params.get("tp_dist", params.get("tp")),
@@ -683,6 +686,9 @@ class RiskManager:
                         "adx_min_threshold": params.get("adx_min_threshold", 20.0),
                         "bollinger_squeeze_threshold": params.get("bollinger_squeeze_threshold", 1.2),
                         "min_atr_threshold": params.get("min_atr_threshold", 50.0),
+                        "flux_imbalance_threshold": params.get("flux_imbalance_threshold", params.get("flux_threshold", 0.95)),
+                        "start_time": params.get("start_time"),
+                        "end_time": params.get("end_time"),
                         "confidence_threshold": params.get("confidence_threshold")
                     }
                     self.dynamic_params[symbol] = mapped_params
@@ -696,6 +702,7 @@ class RiskManager:
                         self.atr_volatility_trigger = params.get("atr_volatility_trigger", self.atr_volatility_trigger)
                         self.bollinger_squeeze_threshold = mapped_params.get("bollinger_squeeze_threshold", self.bollinger_squeeze_threshold)
                         self.daily_trade_limit = params.get("daily_trade_limit", self.daily_trade_limit)
+                        self.flux_imbalance_threshold = mapped_params.get("flux_imbalance_threshold", self.flux_imbalance_threshold)
                     logging.info(f"✅ RISCO: Parâmetros para {symbol} mapeados: {mapped_params}")
                     return True
             except Exception as e:

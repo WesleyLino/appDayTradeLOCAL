@@ -1,59 +1,59 @@
 {
-  "score": 0.18,
+  "score": -0.27,
   "reliability": "high",
-  "risk_classification": "MEDIUM",
-  "fact_check": "O GPA (Brasil) firmou acordo de recupera\u00e7\u00e3o extrajudicial de d\u00edvidas de R$4,5 bilh\u00f5es, reduzindo incertezas. H\u00e1 uma escassez de GNL que amea\u00e7a cadeias de suprimentos tecnol\u00f3gicas na \u00c1sia, com potenciais repercuss\u00f5es globais. As demais not\u00edcias s\u00e3o majoritariamente opini\u00f5es de analistas ou movimentos de mercado espec\u00edficos sem dados fundamentais claros.",
+  "risk_classification": "EXTREME",
+  "fact_check": "O mercado pode ter precificado de forma otimista o fim de conflitos, enquanto o petr\u00f3leo Brent cai 10% com expectativa de libera\u00e7\u00e3o de reservas. O diesel da Petrobras est\u00e1 35% abaixo do pre\u00e7o internacional, indicando risco de ajuste. O d\u00f3lar cai em meio a incertezas no Oriente M\u00e9dio, que assusta investidores. Mercados europeus fecharam em alta.",
   "news": [
     {
-      "headline": "Rivian sobe 5% ap\u00f3s recomenda\u00e7\u00e3o de compra do TD Cowen.",
-      "relevance": 0.1,
-      "impact": "NEUTRAL"
+      "headline": "Mercado otimista sobre fim de guerra, risco de corre\u00e7\u00e3o",
+      "relevance": 1.0,
+      "impact": "BEARISH"
     },
     {
-      "headline": "ExxonMobil e Chevron caem no pr\u00e9-mercado; HPE sobe.",
-      "relevance": 0.1,
-      "impact": "NEUTRAL"
+      "headline": "Petr\u00f3leo Brent cai 10% com expectativa de libera\u00e7\u00e3o de reservas",
+      "relevance": 0.9,
+      "impact": "BEARISH"
     },
     {
-      "headline": "Macquarie eleva recomenda\u00e7\u00e3o de a\u00e7\u00f5es japonesas de GNL.",
-      "relevance": 0.1,
-      "impact": "NEUTRAL"
+      "headline": "IBEX 35 (Espanha) avan\u00e7a 3,05%",
+      "relevance": 0.4,
+      "impact": "BULLISH"
     },
     {
-      "headline": "Jefferies prev\u00ea resultados mistos para emissores de cart\u00f5es.",
-      "relevance": 0.1,
-      "impact": "NEUTRAL"
+      "headline": "Diesel Petrobras 35% abaixo do pre\u00e7o internacional",
+      "relevance": 0.9,
+      "impact": "BEARISH"
     },
     {
-      "headline": "Prosus salta 8% e lidera Stoxx 600 com alta da Tencent.",
+      "headline": "AEX (Holanda) avan\u00e7a 1,98%",
       "relevance": 0.3,
       "impact": "BULLISH"
     },
     {
-      "headline": "Mercado de a\u00e7\u00f5es da Ar\u00e1bia Saudita avan\u00e7a 0,92%.",
-      "relevance": 0.1,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "J.P. Morgan v\u00ea potencial em fornecedores ferrovi\u00e1rios europeus.",
-      "relevance": 0.1,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Barclays v\u00ea valor em Unum e Equitable em seguros de vida.",
-      "relevance": 0.1,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "GPA fecha acordo de recupera\u00e7\u00e3o extrajudicial de d\u00edvidas de R$4,5 bilh\u00f5es.",
-      "relevance": 0.9,
+      "headline": "FTSE 100 (Reino Unido) avan\u00e7a 1,53%",
+      "relevance": 0.3,
       "impact": "BULLISH"
     },
     {
-      "headline": "Escassez de GNL amea\u00e7a cadeias de suprimentos de tecnologia na \u00c1sia.",
-      "relevance": 0.7,
+      "headline": "DAX (Alemanha) avan\u00e7a 2,25%",
+      "relevance": 0.4,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "D\u00f3lar cai com incertezas sobre Oriente M\u00e9dio",
+      "relevance": 0.8,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Oriente M\u00e9dio assusta investidores globalmente",
+      "relevance": 1.0,
       "impact": "BEARISH"
+    },
+    {
+      "headline": "Not\u00edcias gerais de mercados financeiros",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
     }
   ],
-  "timestamp": 1773148515.6722512
+  "timestamp": 1773164254.6687822
 }
