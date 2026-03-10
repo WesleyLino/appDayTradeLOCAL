@@ -1,0 +1,128 @@
+{
+    "consolidado": {
+        "pnl_total": -50.07857142857392,
+        "win_rate": 53.84615384615385,
+        "total_trades": 26,
+        "pnl_buy": -64.0,
+        "pnl_sell": 13.921428571426077
+    },
+    "diario": [
+        {
+            "data": "2026-02-19",
+            "pnl": 0,
+            "buy": 0,
+            "sell": 0,
+            "trades": 0,
+            "wins": 0,
+            "vetos": 70
+        },
+        {
+            "data": "2026-02-20",
+            "pnl": 0,
+            "buy": 0,
+            "sell": 0,
+            "trades": 0,
+            "wins": 0,
+            "vetos": 70
+        },
+        {
+            "data": "2026-02-23",
+            "pnl": 0,
+            "buy": 0,
+            "sell": 0,
+            "trades": 0,
+            "wins": 0,
+            "vetos": 70
+        },
+        {
+            "data": "2026-02-24",
+            "pnl": 0,
+            "buy": 0,
+            "sell": 0,
+            "trades": 0,
+            "wins": 0,
+            "vetos": 70
+        },
+        {
+            "data": "2026-02-25",
+            "pnl": 314.75,
+            "buy": 206.0,
+            "sell": 108.75,
+            "trades": 14,
+            "wins": 10,
+            "vetos": 70
+        },
+        {
+            "data": "2026-02-26",
+            "pnl": -47.085714285715945,
+            "buy": -30.0,
+            "sell": -17.085714285715948,
+            "trades": 5,
+            "wins": 2,
+            "vetos": 70
+        },
+        {
+            "data": "2026-02-27",
+            "pnl": 12.257142857142027,
+            "buy": 0,
+            "sell": 12.257142857142027,
+            "trades": 1,
+            "wins": 1,
+            "vetos": 70
+        },
+        {
+            "data": "2026-03-02",
+            "pnl": -30.0,
+            "buy": 0,
+            "sell": -30.0,
+            "trades": 1,
+            "wins": 0,
+            "vetos": 70
+        },
+        {
+            "data": "2026-03-03",
+            "pnl": 0,
+            "buy": 0,
+            "sell": 0,
+            "trades": 0,
+            "wins": 0,
+            "vetos": 70
+        },
+        {
+            "data": "2026-03-04",
+            "pnl": -270.0,
+            "buy": -240.0,
+            "sell": -30.0,
+            "trades": 4,
+            "wins": 1,
+            "vetos": 70
+        },
+        {
+            "data": "2026-03-05",
+            "pnl": 0,
+            "buy": 0,
+            "sell": 0,
+            "trades": 0,
+            "wins": 0,
+            "vetos": 70
+        },
+        {
+            "data": "2026-03-06",
+            "pnl": 0,
+            "buy": 0,
+            "sell": 0,
+            "trades": 0,
+            "wins": 0,
+            "vetos": 70
+        },
+        {
+            "data": "2026-03-09",
+            "pnl": -30.0,
+            "buy": 0,
+            "sell": -30.0,
+            "trades": 1,
+            "wins": 0,
+            "vetos": 70
+        }
+    ]
+}
