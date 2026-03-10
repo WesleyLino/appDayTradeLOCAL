@@ -2329,6 +2329,19 @@ async def autonomous_bot_loop():
 
                     }
 
+                    # [DINAMISMO] Alertas de Latência
+                    if latency_ms > 300:
+                        add_operational_log(f"ALERTA DE ALTA LATÊNCIA: {latency_ms:.1f}ms", "warning")
+                    
+                    # [DINAMISMO] Alertas de Exaustão (ATR Alto)
+                    if current_atr > risk.atr_volatility_trigger:
+                        if loop_count % 30 == 0:
+                            add_operational_log(f"EXAUSTÃO DE VOLATILIDADE: Apertando o rigor (ATR: {current_atr:.1f})", "warning")
+                    
+                    # [DINAMISMO] Pulso de Mercado (Heartbeat)
+                    if loop_count % 60 == 0:
+                        add_operational_log(f"PULSO DE MERCADO: IA ativa (Confiança: {ai_confidence:.1f}%, OBI: {obi:.2f}).", "info")
+
                     latest_market_packet = packet
                     disconnected_ws = []
                     for ws in list(active_websockets):
