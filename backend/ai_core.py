@@ -128,6 +128,9 @@ class AICore:
 
         self.spread_veto_threshold = 15.1 # [CORRIGIDO] 15.1 permite até 3 ticks no WIN$ (Filtro Anti-Gargalo)
         self.vwap_dist_threshold = 450.0  # [SINCRONIZADO] 450 pts alinhado com v22_locked_params e RiskManager
+        
+        # [Otimização de Logs] Throttle para evitar spam no terminal
+        self._last_log_times = {}
 
 
 
@@ -471,7 +474,7 @@ class AICore:
 
                 self.toxic_flow_score = -0.9
 
-                logging.warning(f"🔥 ALPHA-X SPOOFING: Compra sumiu por cancelamento (CR: {cr_bid:.2f})")
+                logging.debug(f"🔥 ALPHA-X SPOOFING: Compra sumiu por cancelamento (CR: {cr_bid:.2f})") # Reduzido para DEBUG
 
 
 
@@ -481,7 +484,7 @@ class AICore:
 
                 self.toxic_flow_score = 0.9
 
-                logging.warning(f"🔥 ALPHA-X SPOOFING: Venda sumiu por cancelamento (CR: {cr_ask:.2f})")
+                logging.debug(f"🔥 ALPHA-X SPOOFING: Venda sumiu por cancelamento (CR: {cr_ask:.2f})") # Reduzido para DEBUG
 
                 
 
@@ -493,19 +496,12 @@ class AICore:
 
         self.prev_book = order_book
 
-        
-
         # Ajusta o OBI final com base no fluxo tóxico
-
         final_signal = self.obi_ema + self.toxic_flow_score
 
-        
-
-        # [AUDITORIA] Log de Pressão OBI Ponderada
-
+        # [Otimização de Logs] Log de Pressão OBI Ponderada movido para DEBUG para evitar saturação
         if abs(final_signal) > 0.4:
-
-            logging.info(f"🛡️ [OBI-SOTA] Pressão (Ponderada): {final_signal:.2f} | Fluxo Tóxico: {self.toxic_flow_score:.2f}")
+            logging.debug(f"🛡️ [OBI-SOTA] Pressão (Ponderada): {final_signal:.2f} | Fluxo Tóxico: {self.toxic_flow_score:.2f}")
 
         return max(-1.0, min(1.0, final_signal))
 
@@ -1052,14 +1048,15 @@ class AICore:
             excess = w_patchtst * 0.125 # Remove apenas 12.5% do peso (0.40 -> 0.35) 
             w_patchtst -= excess
             w_obi += excess # Todo o excesso vai para o OBI (0.40 -> 0.45)
-            logging.info(f"⚖️ [DIVERGÊNCIA TÉCNICA] Pesos recalibrados para assertividade: OBI={w_obi:.2f} PATCHTST={w_patchtst:.2f}")
+            # [Otimização] Log movido para DEBUG para evitar saturação visual
+            logging.debug(f"⚖️ [DIVERGÊNCIA TÉCNICA] Pesos recalibrados: OBI={w_obi:.2f} PATCHTST={w_patchtst:.2f}")
 
         elif patchtst_sent_divergence and veto_reason is None:
             # PatchTST contradiz sentimento dominante — leve ajuste
             excess = w_patchtst * 0.25
             w_patchtst -= excess
             w_sent += excess
-            logging.info(f"⚖️ [DIVERGÊNCIA SENT] PatchTST conflita com sentimento. Pesos ajustados: SENT={w_sent:.2f} PATCHTST={w_patchtst:.2f}")
+            logging.debug(f"⚖️ [DIVERGÊNCIA SENT] PatchTST conflita com sentimento. Pesos ajustados: SENT={w_sent:.2f} PATCHTST={w_patchtst:.2f}")
 
         composite_signal = (obi * w_obi) + (norm_patchtst * w_patchtst) + (sentiment * w_sent)
 
@@ -1566,8 +1563,10 @@ class InferenceEngine:
 
             self.ort_session.run(None, {input_name: dummy_input})
 
-            logging.info(f"🔥 DirectML Warm-up Concluído (Channels: {c_in}).")
-
+            if c_in == 8:
+                logging.debug(f"🔥 DirectML Warm-up Concluído (Channels: {c_in}).")
+            else:
+                logging.warning(f"⚠️ Aviso: Modelo ONNX esperado 8 canais, detectado {c_in}.")
         except Exception as e:
 
             logging.warning(f"Erro no warm-up ONNX: {e}")

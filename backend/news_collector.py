@@ -16,12 +16,13 @@ class NewsCollector:
         }
 
     def get_latest_headlines(self, limit=10):
-        """Coleta manchetes das fontes configuradas."""
+        """Coleta manchetes das fontes configuradas com timeout reduzido."""
         all_headlines = []
         
         for url in self.sources:
             try:
-                response = requests.get(url, headers=self.headers, timeout=10)
+                # [Otimização] Timeout reduzido para 3s para evitar engasgos no loop
+                response = requests.get(url, headers=self.headers, timeout=3)
                 if response.status_code == 200:
                     # Regex simples para extrair <title> de itens no RSS
                     titles = re.findall(r'<title><!\[CDATA\[(.*?)\]\]></title>', response.text)
@@ -33,12 +34,14 @@ class NewsCollector:
                     if titles: titles = titles[1:]
                     
                     all_headlines.extend(titles[:limit])
-            except Exception as e:
-                logging.error(f"Erro ao coletar notícias de {url}: {e}")
+            except Exception:
+                # Silencioso para não poluir o terminal, logado apenas se necessário
+                pass
         
         # Remover duplicatas e limpar strings
         unique_headlines = list(set([h.strip() for h in all_headlines if len(h) > 10]))
-        logging.info(f"📰 Coletadas {len(unique_headlines)} manchetes financeiras.")
+        if unique_headlines:
+            logging.info(f"📰 Coletadas {len(unique_headlines)} manchetes financeiras.")
         return unique_headlines[:limit]
 
 if __name__ == "__main__":

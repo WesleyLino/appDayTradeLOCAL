@@ -1,59 +1,59 @@
 {
-  "score": 0.05,
+  "score": 0.18,
   "reliability": "high",
-  "risk_classification": "HIGH",
-  "fact_check": "Resultados corporativos mistos no Brasil (MRV e Tegma com quedas, Direcional com alta). Petrobras limita cotas de diesel, gerando distor\u00e7\u00e3o no mercado dom\u00e9stico. Globalmente, EUA avaliam flexibilizar san\u00e7\u00f5es ao petr\u00f3leo russo, e mercados asi\u00e1ticos se recuperam com recuo do pre\u00e7o do petr\u00f3leo, indicando potencial al\u00edvio nas press\u00f5es inflacion\u00e1rias e geopol\u00edticas. Greve localizada na JBS nos EUA.",
+  "risk_classification": "MEDIUM",
+  "fact_check": "O GPA (Brasil) firmou acordo de recupera\u00e7\u00e3o extrajudicial de d\u00edvidas de R$4,5 bilh\u00f5es, reduzindo incertezas. H\u00e1 uma escassez de GNL que amea\u00e7a cadeias de suprimentos tecnol\u00f3gicas na \u00c1sia, com potenciais repercuss\u00f5es globais. As demais not\u00edcias s\u00e3o majoritariamente opini\u00f5es de analistas ou movimentos de mercado espec\u00edficos sem dados fundamentais claros.",
   "news": [
     {
-      "headline": "MRV (MRVE3): a\u00e7\u00f5es caem mais de 7% ap\u00f3s resultados do quarto trimestre",
-      "relevance": 0.7,
-      "impact": "BEARISH"
+      "headline": "Rivian sobe 5% ap\u00f3s recomenda\u00e7\u00e3o de compra do TD Cowen.",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
     },
     {
-      "headline": "EUA avaliam flexibilizar san\u00e7\u00f5es contra petr\u00f3leo russo para amenizar alta dos pre\u00e7os",
+      "headline": "ExxonMobil e Chevron caem no pr\u00e9-mercado; HPE sobe.",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Macquarie eleva recomenda\u00e7\u00e3o de a\u00e7\u00f5es japonesas de GNL.",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Jefferies prev\u00ea resultados mistos para emissores de cart\u00f5es.",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Prosus salta 8% e lidera Stoxx 600 com alta da Tencent.",
+      "relevance": 0.3,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Mercado de a\u00e7\u00f5es da Ar\u00e1bia Saudita avan\u00e7a 0,92%.",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "J.P. Morgan v\u00ea potencial em fornecedores ferrovi\u00e1rios europeus.",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Barclays v\u00ea valor em Unum e Equitable em seguros de vida.",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "GPA fecha acordo de recupera\u00e7\u00e3o extrajudicial de d\u00edvidas de R$4,5 bilh\u00f5es.",
       "relevance": 0.9,
       "impact": "BULLISH"
     },
     {
-      "headline": "Ibovespa e d\u00f3lar hoje observam guerra, pre\u00e7o do petr\u00f3leo, relat\u00f3rio EIA e mais",
-      "relevance": 0.6,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Petrobras limita cotas extras de diesel, enquanto n\u00e3o reajusta pre\u00e7o e trava mercado",
-      "relevance": 0.8,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "A\u00e7\u00f5es asi\u00e1ticas se recuperam com recuo do petr\u00f3leo e Trump dizendo que guerra com Ir\u00e3 pode acabar em breve",
-      "relevance": 0.8,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Tegma (TGMA3) tem queda de 39% no lucro do 4\u00ba tri, a R$ 52,2 milh\u00f5es",
-      "relevance": 0.6,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "A\u00e7\u00f5es da Telix Pharma disparam com resultados positivos de ensaio de fase 3 para c\u00e2ncer de pr\u00f3stata",
-      "relevance": 0.5,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Trabalhadores da JBS entrar\u00e3o em greve em f\u00e1brica de carne bovina nos EUA",
-      "relevance": 0.6,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "AAR Manufacturing conquista contrato de US$ 159,7 milh\u00f5es para reparo de paletes da For\u00e7a A\u00e9rea",
-      "relevance": 0.4,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Direcional (DIRR3) tem lucro l\u00edquido de R$ 211 mi no 4\u00ba tri, alta anual de 27,7%",
+      "headline": "Escassez de GNL amea\u00e7a cadeias de suprimentos de tecnologia na \u00c1sia.",
       "relevance": 0.7,
-      "impact": "BULLISH"
+      "impact": "BEARISH"
     }
   ],
-  "timestamp": 1773113630.7621086
+  "timestamp": 1773148515.6722512
 }

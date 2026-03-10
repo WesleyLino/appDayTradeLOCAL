@@ -1,7 +1,7 @@
 {
   "comment": "PARÂMETROS V22.5 ATUALIZADOS EM 2026-03-10 - BLINDAGEM DE PERFORMANCE (SOTA)",
   "account_config": {
-    "initial_balance": 3000.0,
+    "initial_balance": 500.0,
     "symbol": "WIN$",
     "timeframe": "M1"
   },

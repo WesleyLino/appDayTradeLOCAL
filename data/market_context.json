@@ -1,15 +1,15 @@
 {
-  "timestamp": 1773114517.5914743,
+  "timestamp": 1773148934.3890798,
   "bluechips": {
-    "VALE3": 0.8095546418606436,
-    "PETR4": 1.5393872364538723,
-    "ITUB4": 0.5594596908762496,
-    "BBDC4": 0.6092189948243956,
-    "ELET3": 2.009200467718531
+    "VALE3": 0.9985505404399949,
+    "PETR4": -1.458973851256736,
+    "ITUB4": 0.12098576973372044,
+    "BBDC4": 1.1295496443002566,
+    "ELET3": 2.008836326420757
   },
-  "synthetic_index": 1.0079408062788162,
+  "synthetic_index": 0.37494416884908544,
   "macro": {
-    "score": 0.9874281863955892,
+    "score": -0.29628776226578085,
     "reason": "S&P 500 Change"
   },
   "calendar": {
@@ -17,12 +17,12 @@
     "reason": "Mercado Est\u00e1vel"
   },
   "settlement_price": 0.0,
-  "htf_bias": "NEUTRAL",
+  "htf_bias": "BULL",
   "real_cvd": 0.0,
   "real_cvd_wdo": 0.0,
   "wdo_win_signal": "NEUTRO",
   "low_liquidity": false,
-  "volume_d1": 21917021,
-  "avg_volume_10d": 19046094.0,
+  "volume_d1": 22867615,
+  "avg_volume_10d": 19447422.0,
   "commission_today": 0.0
 }

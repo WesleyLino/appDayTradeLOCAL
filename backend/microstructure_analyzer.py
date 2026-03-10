@@ -146,11 +146,11 @@ class MicrostructureAnalyzer:
             if corr < -0.85: # [RELAXADO] Somente divergências extremas causam veto
                 # Bearish Absorption: Preço Sobe mas CVD Cai (Institucional Vendendo Passivo)
                 if slope_price > 0 and slope_cvd < 0:
-                    logging.info(f"🚨 [ABSORÇÃO BEARISH] Divergência Detectada! Corr: {corr:.2f}")
+                    logging.debug(f"🚨 [ABSORÇÃO BEARISH] Divergência Detectada! Corr: {corr:.2f}")
                     return -1.0
                 # Bullish Absorption: Preço Cai mas CVD Sobe (Institucional Comprando Passivo)
                 if slope_price < 0 and slope_cvd > 0:
-                    logging.info(f"🚨 [ABSORÇÃO BULLISH] Divergência Detectada! Corr: {corr:.2f}")
+                    logging.debug(f"🚨 [ABSORÇÃO BULLISH] Divergência Detectada! Corr: {corr:.2f}")
                     return 1.0
         except Exception as e:
             logging.error(f"Erro em detect_divergence: {e}")
@@ -182,11 +182,11 @@ class MicrostructureAnalyzer:
             delta_ask_vol = current_book['asks'][0]['volume'] - self.prev_book_levels['asks'][0]['volume'] if (current_book['asks'] and self.prev_book_levels['asks']) else 0
             
             if sell_vol > abs(delta_bid_vol) * threshold_ratio and sell_vol > 50:
-                logging.warning(f"❄️ [ICEBERG COMPRA] Executado: {sell_vol} | Sumiu do Book: {abs(delta_bid_vol)}")
+                logging.debug(f"❄️ [ICEBERG COMPRA] Executado: {sell_vol} | Sumiu do Book: {abs(delta_bid_vol)}")
                 return 1.0
                 
             if buy_vol > abs(delta_ask_vol) * threshold_ratio and buy_vol > 50:
-                logging.warning(f"❄️ [ICEBERG VENDA] Executado: {buy_vol} | Sumiu do Book: {abs(delta_ask_vol)}")
+                logging.debug(f"❄️ [ICEBERG VENDA] Executado: {buy_vol} | Sumiu do Book: {abs(delta_ask_vol)}")
                 return -1.0
         except Exception as e:
             logging.error(f"Erro em detect_icebergs: {e}")
