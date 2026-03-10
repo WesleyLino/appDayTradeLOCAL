@@ -19,7 +19,7 @@
     "cooldown_minutes": 3,
     "adaptive_flux_active": true,
     "use_trailing_stop": true,
-    "trailing_step": 15.0,
+    "trailing_step": 10.0,
     "start_time": "09:15",
     "end_time": "17:15",
     "base_lot": 3,

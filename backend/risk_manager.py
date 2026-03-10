@@ -25,11 +25,11 @@ class RiskManager:
         # [SOTA] Parâmetros de Trailing Stop (Campeão WIN Padrão)
         self.trailing_trigger = 70.0  # Ativa com 70 pontos (Otimizado)
         self.trailing_lock = 50.0    # Trava 50 pontos iniciais
-        self.trailing_step = 20.0    # Move a cada 20 pontos de avanço
+        self.trailing_step = 10.0    # [SOTA V22.2.1] Trailing mais curto para capturar momentum HFT
         
-        # [v52.1] Breakeven Ultra-Rápido
-        self.be_trigger = 25.0       # Ativa com 25 pontos de lucro (Garante o zero rápido)
-        self.be_lock = 0.0           # Move para o preço de entrada
+        # [v52.1] Breakeven Ultra-Rápido - Sincronizado com JSON
+        self.be_trigger = 70.0       
+        self.be_lock = 15.0          
         
         # [v52.0] Scaling Out (Saída Parcial HFT)
         self.base_volume = 2.0       # 2 contratos para permitir parcial
