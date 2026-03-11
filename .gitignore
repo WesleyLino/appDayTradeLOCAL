@@ -44,3 +44,6 @@ backend/*.log.*
 data/*.csv
 data/*.xlsx
 data/*.parquet
+
+debug_*.txt
+backend/forensic_*.txt

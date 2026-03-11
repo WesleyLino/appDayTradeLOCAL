@@ -16,7 +16,7 @@ def verify():
     # Verifica o valor no RiskManager
     current_atr_threshold = bot.risk.min_atr_threshold
     
-    print(f"Símbolo Alvo: WIN$")
+    print("Símbolo Alvo: WIN$")
     print(f"Threshold ATR Ativo: {current_atr_threshold}")
     
     if current_atr_threshold == 40.0:

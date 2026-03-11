@@ -42,9 +42,9 @@ async def run_sota_v22_5_4_audit():
         print("❌ Erro: Não foi possível carregar dados do MT5.")
         return
 
-    report = f"# 📋 Relatório de Auditoria SOTA V22.5.4\n"
+    report = "# 📋 Relatório de Auditoria SOTA V22.5.4\n"
     report += f"**Data da Auditoria**: {datetime.now().strftime('%d/%m/%Y %H:%M')}\n"
-    report += f"**Versão**: SOTA v22.5.4 (H1 Bias + Confidence Relax)\n\n"
+    report += "**Versão**: SOTA v22.5.4 (H1 Bias + Confidence Relax)\n\n"
     
     summary_table = "### 📊 Resumo Comparativo de Performance\n\n"
     summary_table += "| Data | PnL v22.5.4 | Trades | Win Rate | Ganho de Assertividade |\n"

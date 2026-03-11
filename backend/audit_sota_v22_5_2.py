@@ -93,7 +93,7 @@ async def run_sota_v22_5_2_audit():
         detailed_info += f"### 📅 Pregão: {date_str}\n"
         detailed_info += f"- **Resultado**: R$ {day_pnl:.2f} (Compras: R$ {buy_pnl:.2f} | Vendas: R$ {sell_pnl:.2f})\n"
         detailed_info += f"- **Trades Totais**: {len(day_trades)} ({len(buy_trades)}C / {len(sell_trades)}V)\n"
-        detailed_info += f"- **Shadow Mode (Vetos)**:\n"
+        detailed_info += "- **Shadow Mode (Vetos)**:\n"
         detailed_info += f"  - Filtros de IA (SOTA): {missed_ai} oportunidades vetadas por baixa confiança.\n"
         detailed_info += f"  - Filtros de Fluxo: {missed_flux} oportunidades vetadas por falta de agressão.\n"
         

@@ -158,7 +158,7 @@ async def rodar_auditoria_14dias():
     md.append("# 📊 Auditoria SOTA V22.5.4 — 14 Dias (19/02 → 10/03/2026)")
     md.append(f"- **Ativo**: {symbol} | **Timeframe**: M1")
     md.append(f"- **Capital Inicial**: R$ {initial_capital:.2f}")
-    md.append(f"- **Configurações**: V22.5.4 (Confidence Relax H1 + Sell-Only Mode)\n")
+    md.append("- **Configurações**: V22.5.4 (Confidence Relax H1 + Sell-Only Mode)\n")
 
     # Tabela resumo
     md.append("## 📈 Resumo Diário\n")
@@ -203,8 +203,8 @@ async def rodar_auditoria_14dias():
 
     md.append("\n---\n")
     md.append("## 🏆 Resultado Consolidado (14 Pregões)\n")
-    md.append(f"| Métrica | Valor |")
-    md.append(f"|:--------|------:|")
+    md.append("| Métrica | Valor |")
+    md.append("|:--------|------:|")
     md.append(f"| 💰 PnL Total Acumulado | **R$ {pnl_acumulado:+.2f}** |")
     md.append(f"| 🏦 Saldo Final | **R$ {saldo_corrente:.2f}** |")
     md.append(f"| 📈 Retorno sobre Capital | **{(pnl_acumulado/initial_capital*100):+.1f}%** |")
@@ -257,8 +257,8 @@ async def rodar_auditoria_14dias():
     # ─── Análise COMPRA vs VENDA ──────────────────────────────────────────────
     md.append("---\n")
     md.append("## ⚖️ Análise COMPRA vs VENDA — Contribuição para o Resultado\n")
-    md.append(f"| Lado | Total Trades | PnL Acumulado | % do Resultado |")
-    md.append(f"|:-----|:------------:|:-------------:|:--------------:|")
+    md.append("| Lado | Total Trades | PnL Acumulado | % do Resultado |")
+    md.append("|:-----|:------------:|:-------------:|:--------------:|")
     contrib_c = (pnl_compras_total / abs(pnl_acumulado) * 100) if pnl_acumulado != 0 else 0
     contrib_v = (pnl_vendas_total / abs(pnl_acumulado) * 100) if pnl_acumulado != 0 else 0
     md.append(f"| 🟢 COMPRA | {total_compras} | R$ {pnl_compras_total:+.2f} | {contrib_c:+.1f}% |")

@@ -88,7 +88,8 @@ async def comparar_fatores():
     logging.basicConfig(level=logging.WARNING, format='%(message)s')
     console = logging.getLogger("comp")
     console.setLevel(logging.INFO)
-    ch = logging.StreamHandler(); ch.setLevel(logging.INFO)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
     console.addHandler(ch)
 
     console.info("=" * 70)
@@ -168,7 +169,7 @@ async def comparar_fatores():
             md.append("   - **Recomendação**: Atualizar `confidence_relax_factor = 0.75` no JSON.")
         else:
             md.append(f"   - Win Rate piorou {delta_wr:.1f}pp → mais trades, mas menor precisão.")
-            md.append(f"   - **Recomendação**: Avaliar trade-off PnL×WR antes de aplicar.")
+            md.append("   - **Recomendação**: Avaliar trade-off PnL×WR antes de aplicar.")
     elif delta_pnl < 0:
         md.append(f"⚠️ **Fator 0.80 é MELHOR**: Fator 0.75 gerou {delta_pnl:.2f} de resultado inferior.")
         md.append("   - As entradas adicionais liberadas com 0.75 não foram lucrativas.")

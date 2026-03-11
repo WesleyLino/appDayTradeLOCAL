@@ -16,7 +16,8 @@ async def diagnosticar_h1_10mar():
     logging.basicConfig(level=logging.WARNING, format='%(message)s')
     console = logging.getLogger("diag")
     console.setLevel(logging.INFO)
-    ch = logging.StreamHandler(); ch.setLevel(logging.INFO)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
     console.addHandler(ch)
 
     console.info("=" * 70)
@@ -95,10 +96,10 @@ async def diagnosticar_h1_10mar():
 
     console.info("-" * 70)
     console.info("")
-    console.info(f"🔎 RESUMO DO DIAGNÓSTICO:")
+    console.info("🔎 RESUMO DO DIAGNÓSTICO:")
     console.info(f"   ⏱  Candles com Sell-Only ATIVO (h1_trend=-1) : {sell_only_contagem} / {len(day_data)}")
     console.info(f"   📉 Máxima diferença negativa Preço/MA60      : {tendencia_negativa_max:.3f}%")
-    console.info(f"   🎯 Limiar de ativação do Sell-Only            : < -0.200%")
+    console.info("   🎯 Limiar de ativação do Sell-Only            : < -0.200%")
     console.info("")
 
     if sell_only_contagem == 0:
