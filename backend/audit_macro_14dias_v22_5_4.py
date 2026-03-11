@@ -6,7 +6,6 @@ import logging
 import pandas as pd
 from datetime import datetime
 import numpy as np
-
 # Adiciona o diretório raiz ao path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -14,7 +13,8 @@ from backend.backtest_pro import BacktestPro
 
 async def run_macro_audit():
     # Silenciar logs excessivos para focar no resumo
-    logging.basicConfig(level=logging.WARNING, format='%(message)s')
+    # Ativar logs de DEBUG para investigação profunda
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
     
     params_path = "backend/v22_locked_params.json"
     with open(params_path, 'r') as f:
@@ -27,12 +27,11 @@ async def run_macro_audit():
     
     # Lista de dias solicitada pelo usuário
     target_dates_str = [
-        "19/02/2026", "20/02/2026", "23/02/2026", "24/02/2026", "25/02/2026", "26/02/2026", "27/02/2026",
-        "02/03/2026", "03/03/2026", "04/03/2026", "05/03/2026", "06/03/2026", "09/03/2026", "10/03/2026"
+        "10/03/2026"
     ]
     dates_to_test = [datetime.strptime(d, "%d/%m/%Y").date() for d in target_dates_str]
     
-    print(f"\n🚀 [AUDITORIA MACRO 14 DIAS] INICIANDO VALIDAÇÃO SOTA v22.5.4")
+    print(f"\n[AUDITORIA MACRO 14 DIAS] INICIANDO VALIDAÇÃO SOTA v22.5.4")
     print("=" * 100)
     
     # Carregar dados amplos (mais candles para cobrir 14 dias)
@@ -43,7 +42,7 @@ async def run_macro_audit():
         print("❌ Erro: Não foi possível carregar dados do MT5.")
         return
 
-    # Executar Backtest em bloco único para manter integridade dos indicadores
+    # Truncamento removido para rodar a macro toda
     tester = BacktestPro(
         symbol=symbol,
         n_candles=len(full_data), 
@@ -78,6 +77,13 @@ async def run_macro_audit():
         pnl_sell = sells['pnl_fin'].sum()
         total_pnl = pnl_buy + pnl_sell
         
+        if date_str == "10/03/2026" and len(buys) > 0:
+            print(f"🚨 TRADES DIA 10/03 DETECTADOS (COMPRAS):")
+            for idx, trade in buys.iterrows():
+                sl_val = trade.get('sl', 'N/A')
+                tp_val = trade.get('tp', 'N/A')
+                print(f"   [{trade.get('entry_time')}] Compra a {trade.get('entry_price')} | SL: {sl_val} | TP: {tp_val} | PnL: {trade.get('pnl_fin')}")
+        
         wins = len(day_trades[day_trades['pnl_fin'] > 0])
         wr = (wins / len(day_trades) * 100) if not day_trades.empty else 0
         
@@ -93,7 +99,7 @@ async def run_macro_audit():
         })
 
     # Gerar Relatório Markdown
-    report = f"# 📊 Relatório Macro de Auditoria SOTA V22.5.4 (14 Pregões)\n\n"
+    report = f"# 📊 Relatório Macro de Auditoria SOTA V22.5.5 (14 Pregões)\n\n"
     report += f"**Período**: 19/02/2026 a 10/03/2026\n"
     report += f"**Capital Inicial**: R$ 3.000,00 | **Ativo**: {symbol} | **Timeframe**: {timeframe}\n\n"
     

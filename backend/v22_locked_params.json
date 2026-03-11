@@ -22,7 +22,7 @@
     "rsi_dynamic_sell": 62,
     "use_h1_trend_bias": true,
     "h1_ma_period": 20,
-    "h1_hysteresis_pts": 50.0,
+    "h1_hysteresis_pts": 400.0,
     "atr_confidence_relax_trigger": 100.0,
     "confidence_relax_factor": 0.80
   },
