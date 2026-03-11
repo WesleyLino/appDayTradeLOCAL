@@ -23,8 +23,12 @@
     "use_h1_trend_bias": true,
     "h1_ma_period": 20,
     "h1_hysteresis_pts": 400.0,
+    "h1_circuit_breaker_pts": 800.0,
     "atr_confidence_relax_trigger": 100.0,
-    "confidence_relax_factor": 0.80
+    "confidence_relax_factor": 0.75,
+    "pyramid_profit_threshold": 100.0,
+    "pyramid_signal_threshold": 60.0,
+    "pyramid_max_volume": 1
   },
-  "anti_vibe_seal": "20260310_BLINDAGEM_SOTA_V22_5_1_INSTITUCIONAL"
+  "anti_vibe_seal": "20260311_SOTA_ASSERTIVIDADE_MAX_V22_5_6_B"
 }

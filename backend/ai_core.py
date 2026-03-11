@@ -629,6 +629,9 @@ class AICore:
         # Heurística: Preço acima/abaixo da MA dinâmica configurada em H1
         ma_p = getattr(self, "h1_ma_period", 20)
         ma_h1 = h1_data['close'].rolling(ma_p).mean().iloc[-1] if len(h1_data) >= ma_p else last_close
+        
+        # [v22.5.6-CIRCUIT] Salva a Média H1 base para bloqueio intra-H1 M1
+        self._last_ma_h1 = ma_h1
 
         # [SOTA v22.5.5-REV] Lógica de Hysteresis Pura (Schmitt Trigger)
         # Mais teimosa e protetiva: Remove a zona neutra para evitar indecisão em quedas.
@@ -682,8 +685,21 @@ class AICore:
     def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0, sma_20=0.0, wdo_aggression=0.0):
         # [v50.1] DEBUG GLOBAL
         import sys
+        
+        # --- 0. [SOTA V22.5.6] CIRCUIT BREAKER INTRA-H1 ---
+        cb_pts = getattr(self, "h1_circuit_breaker_pts", 800.0)
+        last_ma_h1 = getattr(self, "_last_ma_h1", current_price)
+        cur_trend = getattr(self, "h1_trend", 0)
+        if last_ma_h1 > 0:
+            if cur_trend == 1 and current_price < (last_ma_h1 - cb_pts):
+                logging.warning(f"🛑 [CIRCUIT BREAKER] Preço M1 {current_price} caiu {cb_pts} pts abaixo da Média H1 Institucional ({last_ma_h1:.1f}). Facas caindo! Veto total M1.")
+                return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "H1_CIRCUIT_BREAKER_BUY_LOCK"}
+            elif cur_trend == -1 and current_price > (last_ma_h1 + cb_pts):
+                logging.warning(f"🛑 [CIRCUIT BREAKER] Preço M1 {current_price} disparou {cb_pts} pts acima da Média H1 Institucional ({last_ma_h1:.1f}). Foguete! Veto total M1.")
+                return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "H1_CIRCUIT_BREAKER_SELL_LOCK"}
+                
         # sys.stderr.write(f"DEBUG: AICore calculating for price {current_price}\n")
-        # --- 0. [v30] VWAP MEAN REVERSION GUARD ---
+        # --- 0.1 [v30] VWAP MEAN REVERSION GUARD ---
         # Se o MicrostructureAnalyzer já calculou a VWAP no loop anterior
         vwap_val, vwap_std = self.micro_analyzer.calculate_vwap(None) # Puxa do cache interno se df for None
         if vwap_val > 0:
