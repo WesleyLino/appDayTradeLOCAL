@@ -630,26 +630,34 @@ class AICore:
         ma_p = getattr(self, "h1_ma_period", 20)
         ma_h1 = h1_data['close'].rolling(ma_p).mean().iloc[-1] if len(h1_data) >= ma_p else last_close
 
-        # [SOTA v22.5.5] Lógica de Hysteresis (Margem de Segurança)
-        # Se tendência é ALTA, só vira NEUTRO/BAIXA se cair abaixo de (MA - Hysteresis)
-        # Se tendência é BAIXA, só vira NEUTRO/ALTA se subir acima de (MA + Hysteresis)
-        hysteresis = getattr(self, "h1_hysteresis_pts", 50.0) 
-        
-        # Margem percentual aproximada baseada na MA para maior robustez
-        # No WIN (120k pts), 50 pts é ~0.04%
-        h_factor = hysteresis / ma_h1 if ma_h1 > 0 else 0.0004
+        # [SOTA v22.5.5-REV] Lógica de Hysteresis Pura (Schmitt Trigger)
+        # Mais teimosa e protetiva: Remove a zona neutra para evitar indecisão em quedas.
+        # [v22.5.5-REV] Schmitt Trigger Real para Proteção Institucional
+        # 50 pontos era apenas o ruído de um único tick (WDO) e irrelevante no WIN (130 mil pontos).
+        # Para histerese real contra "whipsaws" do M1 num MA de 20 horas, precisamos filtrar retrocessos curtos.
+        hysteresis = getattr(self, "h1_hysteresis_pts", 400.0)
+        h_factor = hysteresis / ma_h1 if ma_h1 > 0 else 0.003
 
-        if self.h1_trend == 1: # Já em ALTA
-            if last_close < ma_h1 * (1.0 - h_factor): # Cruzou para baixo da margem
-                self.h1_trend = -1 if last_close < ma_h1 * 0.998 else 0
-        elif self.h1_trend == -1: # Já em BAIXA
-            if last_close > ma_h1 * (1.0 + h_factor): # Cruzou para cima da margem
-                self.h1_trend = 1 if last_close > ma_h1 * 1.002 else 0
-        else: # NEUTRO
-            if last_close > ma_h1 * 1.002: # Cruzou forte para ALTA
-                self.h1_trend = 1
-            elif last_close < ma_h1 * 0.998: # Cruzou forte para BAIXA
-                self.h1_trend = -1
+        upper_limit = ma_h1 * (1.0 + h_factor)
+        lower_limit = ma_h1 * (1.0 - h_factor)
+
+        if last_close > upper_limit:
+            self.h1_trend = 1
+        elif last_close < lower_limit:
+            self.h1_trend = -1
+
+
+        else:
+            # Se for a primeira vez e cairmos aqui, precisamos inicializar 
+            if not hasattr(self, 'h1_trend'):
+                self.h1_trend = 0
+                
+        # [v22.5.5-DEBUG] Imprimir os estados esporadicamente
+        if not hasattr(self, '_h1_debug_print_cnt'):
+            self._h1_debug_print_cnt = 0
+        self._h1_debug_print_cnt += 1
+
+        # Isso evita "flickering" na média e mantém o viés de proteção.
 
 
 

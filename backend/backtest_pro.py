@@ -87,6 +87,8 @@ class BacktestPro:
             'rsi_buy_level': kwargs.get('rsi_buy_level', locked_params.get('rsi_buy_level', 32)),
             'rsi_sell_level': kwargs.get('rsi_sell_level', locked_params.get('rsi_sell_level', 68))
         }
+        
+        logging.warning(f"⚠️ [INIT-STATE] use_ai_core_param={self.opt_params['use_ai_core']}")
 
         # [v52.1] SINCRONIZAÇÃO DE PARÂMETROS: Injeta opt_params no RiskManager
         # Garante que os valores do JSON (golden params) sejam usados em execução
@@ -104,11 +106,12 @@ class BacktestPro:
         # [SOTA v22.5.3] Sincroniza Bias H1 (paridade com bot live)
         self.ai.use_h1_trend_bias = bool(kwargs.get('use_h1_trend_bias', locked_params.get('use_h1_trend_bias', True)))
         self.ai.h1_ma_period = int(kwargs.get('h1_ma_period', locked_params.get('h1_ma_period', 20)))
+        self.ai.h1_hysteresis_pts = float(locked_params.get('h1_hysteresis_pts', 400.0))
         # [SOTA v22.5.4] Confidence Relax (paridade com bot live)
         self.ai.confidence_relax_factor = float(locked_params.get('confidence_relax_factor', 0.80))
         self.ai.atr_confidence_relax_trigger = float(locked_params.get('atr_confidence_relax_trigger', 100.0))
         logging.info(f"🔧 [v22.5.1] RiskManager sincronizado: limite={self.risk.daily_trade_limit} | OBI={self.risk.flux_imbalance_threshold} | Squeeze={self.risk.bollinger_squeeze_threshold}")
-        logging.info(f"📊 [v22.5.3/4] H1 + Confidence Relax: use_h1={self.ai.use_h1_trend_bias} | MA={self.ai.h1_ma_period} | Relax={self.ai.confidence_relax_factor} | Trigger={self.ai.atr_confidence_relax_trigger}")
+        logging.info(f"📊 [v22.5.3/4/5] H1 + Hysteresis: use_h1={self.ai.use_h1_trend_bias} | MA={self.ai.h1_ma_period} | Hyst={self.ai.h1_hysteresis_pts} | Relax={self.ai.confidence_relax_factor}")
 
 
         # Estado do Backtest
@@ -616,21 +619,26 @@ class BacktestPro:
                     # Atualizar vwap_dist_threshold no AICore se disponível
                     self.ai.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 250.0)
                     
-                    # [v52.6] Simulação de Tendência H1 (Trend Bias H1)
-                    # No backtest, usamos uma média móvel de 240 períodos (4h) como proxy para a MA20 de H1 (aproximadamente)
-                    try:
-                        ma_h1_proxy = data['close'].iloc[max(0, i-240):i].mean()
-                        if row['close'] > ma_h1_proxy: # Sem zona neutra para backtest conservador
-                            self.ai.h1_trend = 1
-                        else:
-                            self.ai.h1_trend = -1
-                    except:
-                        self.ai.h1_trend = 0
+                    # [v22.5.5-SYNC] Sincronização de Tendência H1 (Alta Frequência - 1 min)
+                    if True: 
+                        try:
+                            # Janela ampliada (3000 min = 50h) para garantir SMA20 H1 após gaps noturnos
+                            h1_window = data.iloc[max(0, i-3000):i+1]
+                            h1_resampled = h1_window['close'].resample('1h').last().dropna().to_frame()
+                            self.ai.update_h1_trend(h1_resampled)
+                        except Exception as e:
+                            if i % 60 == 0:
+                                logging.error(f"🚨 CRASH em update_h1_trend no índice {i}: {e}")
+
 
                     # [v52.5] Sincronização de Histórico para Gatilhos de Squeeze
                     self.ai.micro_analyzer.price_history.append(row['close'])
                     if len(self.ai.micro_analyzer.price_history) > 50:
                         self.ai.micro_analyzer.price_history.pop(0)
+                    
+                    if row.name.day == 10 and row.name.month == 3 and getattr(self, '_debug_printed', 0) < 3:
+                        logging.warning(f"⚠️ [v22.5.5-STATE] use_ai_core={self.opt_params['use_ai_core']}")
+                        self._debug_printed = getattr(self, '_debug_printed', 0) + 1
                     
                     ai_decision = self.ai.calculate_decision(
                         obi=obi,
@@ -655,8 +663,11 @@ class BacktestPro:
 
                     # [SOTA v22.5.4] MODE SELL-ONLY: Paridade com bot live
                     # Quando H1 está em queda estrutural, bloqueia compras zerando o threshold de RSI.
-                    if self.ai.use_h1_trend_bias and self.ai.h1_trend == -1:
-                        rsi_buy_level = 0.0  # Threshold impossível → compras nunca disparam
+                    # [v22.5.5-PROTECT] Bloqueio Rigoroso de Compras se tendência não for ALTA
+                    if self.ai.use_h1_trend_bias and self.ai.h1_trend <= 0:
+                        rsi_buy_level = 0.0  # Lock total no Neutral e na Baixa
+                        if i % 60 == 0: # Log menos frequente para não poluir
+                            logging.debug(f"🛡️ [v22.5.5-PROTECT] Compras bloqueadas: H1 Trend={self.ai.h1_trend}")
                         if row.name.minute % 30 == 0:
                              logging.info(f"🛡️ [SELL-ONLY BACKTEST] Bloqueio de compras ativo para {row.name}")
 
@@ -665,7 +676,6 @@ class BacktestPro:
                     # [MODO FUSÃO SOTA] Gatilhos Matemáticos (RSI/BB) + Filtro de Convicção IA
                     v22_buy_raw = (rsi < rsi_buy_level and row['close'] < lower_bb) and vol_spike_eff
                     v22_sell_raw = (rsi > rsi_sell_level and row['close'] > upper_bb) and vol_spike_eff
-
                     
                     self.shadow_signals['v22_candidates'] = self.shadow_signals.get('v22_candidates', 0) + 1
                     
@@ -675,6 +685,7 @@ class BacktestPro:
                     
                     if v22_buy_raw or v22_sell_raw:
                         logging.debug(f"[SINAL] {row.name} | Dir: {ai_dir} | Stability: {ai_stability:.2f} | Veto: {ai_decision.get('veto')} | Reason: {ai_decision.get('reason')}")
+
                     
                     # [v50.1] Diagnóstico Granulado de Filtros
                     if v22_buy_raw or v22_sell_raw:
@@ -685,9 +696,21 @@ class BacktestPro:
                         elif ai_stability < self.opt_params['confidence_threshold']:
                             self.shadow_signals['veto_reasons']['LOW_CONFIDENCE'] = self.shadow_signals['veto_reasons'].get('LOW_CONFIDENCE', 0) + 1
 
-                    # Decisão Final: Precisa do gatilho técnico + viés de direção da IA com confiança
-                    v22_buy = v22_buy_raw and (ai_dir == "COMPRA") and (ai_stability >= self.opt_params['confidence_threshold'])
-                    v22_sell = v22_sell_raw and (ai_dir == "VENDA") and (ai_stability >= self.opt_params['confidence_threshold'])
+                    # Decisão Final: Precisa do gatilho técnico + viés de direção da IA + confiança + travas operacionais
+                    v22_buy = (
+                        v22_buy_raw 
+                        and (ai_dir == "COMPRA") 
+                        and (ai_stability >= self.opt_params['confidence_threshold'])
+                        and cooldown_ok 
+                        and not bias_veto_buy
+                    )
+                    v22_sell = (
+                        v22_sell_raw 
+                        and (ai_dir == "VENDA") 
+                        and (ai_stability >= self.opt_params['confidence_threshold'])
+                        and cooldown_ok 
+                        and not bias_veto_sell
+                    )
                     
                     # [v22.3] Filtro Anti-Lateralidade (Anti-Sideways)
                     if v22_buy or v22_sell:
