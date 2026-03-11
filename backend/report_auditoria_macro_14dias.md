@@ -5,39 +5,39 @@
 
 ## 📈 Resumo Geral
 
-- **PnL Total Acumulado**: **R$ 201.89**
-- **ROI sobre Capital**: **6.73%**
-- **Total de Operações**: 64 (Compra: 34 | Venda: 30)
-- **Performance Compra**: R$ 109.27
-- **Performance Venda**: R$ 92.61
-- **Taxa de Acerto Média**: 75.0%
-- **Vetos Totais (IA/Fluxo/Bias)**: 361
+- **PnL Total Acumulado**: **R$ 36.11**
+- **ROI sobre Capital**: **1.20%**
+- **Total de Operações**: 28 (Compra: 5 | Venda: 23)
+- **Performance Compra**: R$ 25.00
+- **Performance Venda**: R$ 11.11
+- **Taxa de Acerto Média**: 67.9%
+- **Vetos Totais (IA/Fluxo/Bias)**: 164
 
 ## 📅 Detalhamento Diário
 
 | Data | PnL Total | Trades | Compra (PnL) | Venda (PnL) | Win Rate |
 | :--- | :--- | :---: | :---: | :---: | :---: |
-| 19/02/2026 | **R$ 155.00** | 9 | 8 (R$ 152.00) | 1 (R$ 3.00) | 100.0% |
-| 20/02/2026 | **R$ -23.29** | 2 | 0 (R$ 0.00) | 2 (R$ -23.29) | 50.0% |
-| 23/02/2026 | **R$ 67.22** | 3 | 0 (R$ 0.00) | 3 (R$ 67.22) | 100.0% |
-| 24/02/2026 | **R$ 164.56** | 10 | 8 (R$ 132.27) | 2 (R$ 32.29) | 80.0% |
-| 25/02/2026 | **R$ -23.99** | 7 | 4 (R$ -55.00) | 3 (R$ 31.01) | 71.4% |
-| 26/02/2026 | **R$ 35.00** | 4 | 0 (R$ 0.00) | 4 (R$ 35.00) | 100.0% |
-| 27/02/2026 | **R$ 3.00** | 1 | 0 (R$ 0.00) | 1 (R$ 3.00) | 100.0% |
+| 19/02/2026 | **R$ 12.11** | 1 | 0 (R$ 0.00) | 1 (R$ 12.11) | 100.0% |
+| 20/02/2026 | **R$ -25.29** | 5 | 3 (R$ -2.00) | 2 (R$ -23.29) | 60.0% |
+| 23/02/2026 | **R$ 17.30** | 1 | 0 (R$ 0.00) | 1 (R$ 17.30) | 100.0% |
+| 24/02/2026 | **R$ 12.18** | 1 | 0 (R$ 0.00) | 1 (R$ 12.18) | 100.0% |
+| 25/02/2026 | **R$ 25.10** | 2 | 0 (R$ 0.00) | 2 (R$ 25.10) | 100.0% |
+| 26/02/2026 | **R$ 41.30** | 5 | 0 (R$ 0.00) | 5 (R$ 41.30) | 80.0% |
+| 27/02/2026 | **R$ 0.00** | 0 | 0 (R$ 0.00) | 0 (R$ 0.00) | 0.0% |
 | 02/03/2026 | **R$ -30.00** | 1 | 0 (R$ 0.00) | 1 (R$ -30.00) | 0.0% |
 | 03/03/2026 | **R$ 0.00** | 0 | 0 (R$ 0.00) | 0 (R$ 0.00) | 0.0% |
-| 04/03/2026 | **R$ 48.80** | 4 | 3 (R$ 43.00) | 1 (R$ 5.80) | 100.0% |
+| 04/03/2026 | **R$ 32.80** | 3 | 2 (R$ 27.00) | 1 (R$ 5.80) | 100.0% |
 | 05/03/2026 | **R$ 0.00** | 0 | 0 (R$ 0.00) | 0 (R$ 0.00) | 0.0% |
 | 06/03/2026 | **R$ 0.00** | 0 | 0 (R$ 0.00) | 0 (R$ 0.00) | 0.0% |
-| 09/03/2026 | **R$ 3.00** | 1 | 0 (R$ 0.00) | 1 (R$ 3.00) | 100.0% |
-| 10/03/2026 | **R$ -182.00** | 6 | 6 (R$ -182.00) | 0 (R$ 0.00) | 33.3% |
+| 09/03/2026 | **R$ 0.00** | 0 | 0 (R$ 0.00) | 0 (R$ 0.00) | 0.0% |
+| 10/03/2026 | **R$ 0.00** | 0 | 0 (R$ 0.00) | 0 (R$ 0.00) | 0.0% |
 
 ## 🛡️ Análise de Assertividade e Melhorias
 
 ### 1. Comportamento em Crises (Ex: 10/03)
-- **⚠️ Observação**: Dia 10/03 ainda registrou trades (6). Verificar logs para confirmar se foram rebotes técnicos válidos.
+- **✅ Proteção SOTA**: O sistema mitigou perdas agressivas em dias de queda livre (10/03).
 
 ### 2. Potencial por Lado (COMPRA vs VENDA)
-- O potencial de **COMPRA** gerou R$ 109.27 (34 trades).
-- O potencial de **VENDA** gerou R$ 92.61 (30 trades).
+- O potencial de **COMPRA** gerou R$ 25.00 (5 trades).
+- O potencial de **VENDA** gerou R$ 11.11 (23 trades).
 - A assimetria sugere que o robô ainda é mais 'atento' a setups de compra.

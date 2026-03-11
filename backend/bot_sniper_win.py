@@ -92,6 +92,10 @@ class SniperBotWIN:
         # [SOTA v22.5.4] Confidence Relax Factor e Gatilho ATR (Adaptativo por ATR + H1)
         self.ai.confidence_relax_factor = float(strategy.get("confidence_relax_factor", 0.80))
         self.ai.atr_confidence_relax_trigger = float(strategy.get("atr_confidence_relax_trigger", 100.0))
+        
+        # [v36.1] Sincronização de Thresholds de Confiança Assimétricos (PatchTST)
+        self.ai.confidence_buy_threshold = float(strategy.get("confidence_buy_threshold", 0.55)) * 100.0
+        self.ai.confidence_sell_threshold = (1.0 - float(strategy.get("confidence_sell_threshold", 0.55))) * 100.0
 
 
         logger.info(f"🛡️ [SOTA V22.5.1] Sincronização de Setup: OBI={self.flux_threshold}, RSI={self.rsi_period}, Vol={self.vol_spike_mult}, Janela={self.start_time}-{self.end_time}")

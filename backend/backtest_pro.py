@@ -80,12 +80,14 @@ class BacktestPro:
             'base_lot': kwargs.get('base_lot', locked_params.get('base_lot', 1)),
             'use_ai_core': kwargs.get('use_ai_core', locked_params.get('use_ai_core', True)),
             'vwap_dist_threshold': kwargs.get('vwap_dist_threshold', locked_params.get('vwap_dist_threshold', 400.0)),
-            'pyramid_profit_threshold': kwargs.get('pyramid_profit_threshold', locked_params.get('pyramid_profit_threshold', 30.0)),
+            'pyramid_profit_threshold': kwargs.get('pyramid_profit_threshold', locked_params.get('pyramid_profit_threshold', 100.0)),
             'pyramid_signal_threshold': kwargs.get('pyramid_signal_threshold', locked_params.get('pyramid_signal_threshold', 0.6)),
-            'pyramid_max_volume': kwargs.get('pyramid_max_volume', 3),
+            'pyramid_max_volume': kwargs.get('pyramid_max_volume', locked_params.get('pyramid_max_volume', 1)),
             'volatility_pause_threshold': kwargs.get('volatility_pause_threshold', locked_params.get('volatility_pause_threshold', 250.0)),
             'rsi_buy_level': kwargs.get('rsi_buy_level', locked_params.get('rsi_buy_level', 32)),
-            'rsi_sell_level': kwargs.get('rsi_sell_level', locked_params.get('rsi_sell_level', 68))
+            'rsi_sell_level': kwargs.get('rsi_sell_level', locked_params.get('rsi_sell_level', 68)),
+            'confidence_buy_threshold': kwargs.get('confidence_buy_threshold', None),
+            'confidence_sell_threshold': kwargs.get('confidence_sell_threshold', None)
         }
         
         logging.warning(f"⚠️ [INIT-STATE] use_ai_core_param={self.opt_params['use_ai_core']}")
@@ -453,7 +455,7 @@ class BacktestPro:
             # [SOTA v22.5.3] Atualizar Bias H1 (resample M1→H1 sem olhar o futuro)
             if self.ai.use_h1_trend_bias and i % 60 == 0: # Atualiza a cada ~60 candles M1 (1h)
                 try:
-                    h1_slice = data.iloc[:i].resample('1H').agg({
+                    h1_slice = data.iloc[:i].resample('1h').agg({
                         'open': 'first', 'high': 'max', 'low': 'min',
                         'close': 'last', 'tick_volume': 'sum'
                     }).dropna()
@@ -681,7 +683,14 @@ class BacktestPro:
                     
                     ai_dir = ai_decision.get('direction', 'NEUTRAL')
                     ai_score = ai_decision.get('score', 50.0)
-                    ai_stability = ai_score / 100.0
+                    
+                    # [v36.1] Estabilidade Direcional Corrigida (0=Sell, 100=Buy)
+                    if ai_dir == "COMPRA":
+                        ai_stability = ai_score / 100.0
+                    elif ai_dir == "VENDA":
+                        ai_stability = (100.0 - ai_score) / 100.0
+                    else:
+                        ai_stability = 0.5 # Neutro
                     
                     if v22_buy_raw or v22_sell_raw:
                         logging.debug(f"[SINAL] {row.name} | Dir: {ai_dir} | Stability: {ai_stability:.2f} | Veto: {ai_decision.get('veto')} | Reason: {ai_decision.get('reason')}")
@@ -693,21 +702,29 @@ class BacktestPro:
                         if ai_dir == "WAIT":
                             reason = ai_decision.get('reason', 'UNKNOWN')
                             self.shadow_signals['veto_reasons'][reason] = self.shadow_signals['veto_reasons'].get(reason, 0) + 1
-                        elif ai_stability < self.opt_params['confidence_threshold']:
-                            self.shadow_signals['veto_reasons']['LOW_CONFIDENCE'] = self.shadow_signals['veto_reasons'].get('LOW_CONFIDENCE', 0) + 1
+                        else:
+                            # Threshold assimétrico ou global
+                            thr_buy = self.opt_params.get('confidence_buy_threshold') or self.opt_params['confidence_threshold']
+                            thr_sell = self.opt_params.get('confidence_sell_threshold') or self.opt_params['confidence_threshold']
+                            
+                            if (v22_buy_raw and ai_stability < thr_buy) or (v22_sell_raw and ai_stability < thr_sell):
+                                self.shadow_signals['veto_reasons']['LOW_CONFIDENCE'] = self.shadow_signals['veto_reasons'].get('LOW_CONFIDENCE', 0) + 1
 
                     # Decisão Final: Precisa do gatilho técnico + viés de direção da IA + confiança + travas operacionais
+                    thr_buy = self.opt_params.get('confidence_buy_threshold') or self.opt_params['confidence_threshold']
+                    thr_sell = self.opt_params.get('confidence_sell_threshold') or self.opt_params['confidence_threshold']
+
                     v22_buy = (
                         v22_buy_raw 
                         and (ai_dir == "COMPRA") 
-                        and (ai_stability >= self.opt_params['confidence_threshold'])
+                        and (ai_stability >= thr_buy)
                         and cooldown_ok 
                         and not bias_veto_buy
                     )
                     v22_sell = (
                         v22_sell_raw 
                         and (ai_dir == "VENDA") 
-                        and (ai_stability >= self.opt_params['confidence_threshold'])
+                        and (ai_stability >= thr_sell)
                         and cooldown_ok 
                         and not bias_veto_sell
                     )

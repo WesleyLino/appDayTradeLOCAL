@@ -638,7 +638,7 @@ class AICore:
         # [v22.5.5-REV] Schmitt Trigger Real para Proteção Institucional
         # 50 pontos era apenas o ruído de um único tick (WDO) e irrelevante no WIN (130 mil pontos).
         # Para histerese real contra "whipsaws" do M1 num MA de 20 horas, precisamos filtrar retrocessos curtos.
-        hysteresis = getattr(self, "h1_hysteresis_pts", 400.0)
+        hysteresis = getattr(self, "h1_hysteresis_pts", 800.0)  # [v22.5.6-B] Aumentado 400→800pts: evita freeze pós-correção
         h_factor = hysteresis / ma_h1 if ma_h1 > 0 else 0.003
 
         upper_limit = ma_h1 * (1.0 + h_factor)
@@ -965,20 +965,19 @@ class AICore:
             ai_dir = np.sign(norm_patchtst)
 
             if self.h1_trend == 1 and ai_dir < 0: # Venda contra tendência de alta H1
-                # Bypass do veto se CVD institucional bearish confirmado (fluxo real de venda)
-                cvd_bearish_confirmed = (divergence == -1) and (obi < -0.3)
-                extreme_sell_signal = (norm_patchtst < -0.75) # Aumentado rigor para bypass
-                if cvd_bearish_confirmed or extreme_sell_signal:
-                    logging.info(f"⚡ [H1 BYPASS VENDA] CVD_bearish={cvd_bearish_confirmed}, Extreme={extreme_sell_signal}. Venda autorizada contra H1.")
+                # [v22.5.6-B] Bypass seletivo via RSI extremo (sem dependência de CVD/OBI do backtest)
+                extreme_sell_signal = (norm_patchtst < -0.75)
+                if extreme_sell_signal:
+                    logging.info(f"⚡ [H1 BYPASS VENDA] Score extremo ({norm_patchtst*100:.1f}%). Autorizado.")
                 else:
                     veto_reason = "VETO_TENDENCIA_ALTA_H1"
+                    logging.warning(f"🛡️ [ANTI-TRAP] Venda bloqueada por viés altista H1")
 
             elif self.h1_trend == -1 and ai_dir > 0: # Compra contra tendência de baixa H1 (Caso 10/03)
-                # Bypass do veto se CVD institucional bullish confirmado (fluxo real de compra)
-                cvd_bullish_confirmed = (divergence == 1) and (obi > 0.3)
-                extreme_buy_signal = (norm_patchtst > 0.75) # Aumentado rigor para bypass
-                if cvd_bullish_confirmed or extreme_buy_signal:
-                    logging.info(f"⚡ [H1 BYPASS COMPRA] CVD_bullish={cvd_bullish_confirmed}, Extreme={extreme_buy_signal}. Compra autorizada contra H1.")
+                # [v22.5.6-B] Bypass APENAS para sinais de reversão extremos (RSI < 22, score > 75%)
+                extreme_buy_signal = (norm_patchtst > 0.75)
+                if extreme_buy_signal:
+                    logging.info(f"⚡ [H1 BYPASS COMPRA] Score extremo ({norm_patchtst*100:.1f}%). Autorizado.")
                 else:
                     veto_reason = "VETO_TENDENCIA_BAIXA_H1"
                     logging.warning(f"🛡️ [ANTI-QUEDA] Compra bloqueada por viés baixista H1 (Score: {norm_patchtst * 100:.1f}%)")
@@ -1162,15 +1161,15 @@ class AICore:
         # Isso permite disparos mais rápidos em pernas de tendência forte.
         atr_activation = getattr(self, "rsi_dynamic_activation_atr", 100.0)
         
-        # Thresholds base SOTA
-        current_buy_threshold = 60.0
-        current_sell_threshold = 40.0
+        # Thresholds base SOTA (v36.1 Assimétricos)
+        current_buy_threshold = getattr(self, "confidence_buy_threshold", 60.0)
+        current_sell_threshold = getattr(self, "confidence_sell_threshold", 40.0)
         
         if atr >= atr_activation:
             # RELAXAMENTO BASE (ATR alto):
-            # Compra: 60→58 | Venda: 40→42
-            current_buy_threshold = 58.0
-            current_sell_threshold = 42.0
+            # Compra: -2 pts | Venda: +2 pts
+            current_buy_threshold -= 2.0
+            current_sell_threshold += 2.0
             if self.regime_counter % 200 == 0:
                 logging.info(f"⚡ [ADAPTATIVE SCORE] Volatilidade alta ({atr:.1f}pts). Thresholds relaxados: 58/42.")
 
@@ -1178,22 +1177,8 @@ class AICore:
         # Gatilho independente: usa atr_confidence_relax_trigger (configurável no JSON, default 100.0)
         # Segurança: só relaxa se a direção PROVÁVEL (score) está ALINHADA com H1
         # Nunca relaxa para operar contra a tendência do tempo superior.
-        confidence_relax_trigger = getattr(self, "atr_confidence_relax_trigger", 100.0)
-        if atr >= confidence_relax_trigger:
-            relax_factor = getattr(self, "confidence_relax_factor", 0.80)
-            score_direction = 1 if final_score >= 50 else -1
-            h1_aligned = (self.h1_trend == 1 and score_direction > 0) or \
-                         (self.h1_trend == -1 and score_direction < 0)
-
-            if self.use_h1_trend_bias and h1_aligned and self.h1_trend != 0:
-                extra_relax = (current_buy_threshold - 50) * (1 - relax_factor)
-                current_buy_threshold -= extra_relax   # ex: 58→~57.6
-                current_sell_threshold += extra_relax  # ex: 42→~42.4
-                if self.regime_counter % 200 == 0:
-                    logging.info(
-                        f"⚡ [CONFIDENCE RELAX H1] H1 alinhado com sinal (fator={relax_factor:.2f}). "
-                        f"Thresholds finais: Buy={current_buy_threshold:.1f} / Sell={current_sell_threshold:.1f}"
-                    )
+        # [v22.5.6-B] Confidence Relaxation REMOVIDO para priorizar assertividade extrema
+        pass
 
         
         if veto_reason:

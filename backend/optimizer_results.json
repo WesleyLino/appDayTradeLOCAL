@@ -1,0 +1,4124 @@
+[
+  {
+    "config": "ACTIVE_SNIPER_V25",
+    "descricao": "FREQUÊNCIA: RSI 24/76 | 1 Lote | Buscando +Trades/Dia",
+    "dias_analisados": 15,
+    "dias_positivos": 2,
+    "dias_negativos": 4,
+    "buy_ativos": 3,
+    "buy_takes": 1,
+    "buy_stops": 2,
+    "buy_assert": 33.3,
+    "sell_ativos": 3,
+    "sell_takes": 1,
+    "sell_stops": 2,
+    "sell_assert": 33.3,
+    "total_ativos": 6,
+    "total_assert": 33.3,
+    "ganho_total_brl": 240.0,
+    "perda_total_brl": 160.0,
+    "pnl_total_brl": 80.0,
+    "profit_factor": 1.5,
+    "por_dia": [
+      {
+        "data": "2026-02-19",
+        "dia_pausado": true,
+        "hl_abertura": 343.6,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-20",
+        "dia_pausado": true,
+        "hl_abertura": 292.7,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-23",
+        "dia_pausado": true,
+        "hl_abertura": 250.0,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "pnl_dia": 120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-24",
+        "dia_pausado": true,
+        "hl_abertura": 284.5,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-25",
+        "dia_pausado": true,
+        "hl_abertura": 619.1,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-26",
+        "dia_pausado": true,
+        "hl_abertura": 333.2,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 40.0,
+          "pnl_liquido": -40.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -40.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-27",
+        "dia_pausado": true,
+        "hl_abertura": 390.0,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-02",
+        "dia_pausado": true,
+        "hl_abertura": 340.5,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 1,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 40.0,
+          "pnl_liquido": -40.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -40.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-03",
+        "dia_pausado": true,
+        "hl_abertura": 518.9,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-04",
+        "dia_pausado": true,
+        "hl_abertura": 423.6,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-05",
+        "dia_pausado": true,
+        "hl_abertura": 351.9,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-06",
+        "dia_pausado": true,
+        "hl_abertura": 418.8,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 1,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 40.0,
+          "pnl_liquido": -40.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -40.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-09",
+        "dia_pausado": true,
+        "hl_abertura": 419.5,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-10",
+        "dia_pausado": true,
+        "hl_abertura": 396.4,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 40.0,
+          "pnl_liquido": -40.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -40.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-11",
+        "dia_pausado": true,
+        "hl_abertura": 389.5,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      }
+    ]
+  },
+  {
+    "config": "SCALE_SNIPER_V25",
+    "descricao": "ALAVANCAGEM: V24 Asymmetric | 2 Lotes | R$ 3k Capital",
+    "dias_analisados": 15,
+    "dias_positivos": 3,
+    "dias_negativos": 2,
+    "buy_ativos": 3,
+    "buy_takes": 2,
+    "buy_stops": 1,
+    "buy_assert": 66.7,
+    "sell_ativos": 2,
+    "sell_takes": 1,
+    "sell_stops": 1,
+    "sell_assert": 50.0,
+    "total_ativos": 5,
+    "total_assert": 60.0,
+    "ganho_total_brl": 320.0,
+    "perda_total_brl": 160.0,
+    "pnl_total_brl": 160.0,
+    "profit_factor": 2.0,
+    "por_dia": [
+      {
+        "data": "2026-02-19",
+        "dia_pausado": true,
+        "hl_abertura": 343.6,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-20",
+        "dia_pausado": true,
+        "hl_abertura": 292.7,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-23",
+        "dia_pausado": true,
+        "hl_abertura": 250.0,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-24",
+        "dia_pausado": true,
+        "hl_abertura": 284.5,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 80.0,
+          "perda_brl": 0,
+          "pnl_liquido": 80.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-25",
+        "dia_pausado": true,
+        "hl_abertura": 619.1,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-26",
+        "dia_pausado": true,
+        "hl_abertura": 333.2,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 80.0,
+          "pnl_liquido": -80.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-27",
+        "dia_pausado": true,
+        "hl_abertura": 390.0,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 160.0,
+          "perda_brl": 0,
+          "pnl_liquido": 160.0,
+          "assertividade": 100.0
+        },
+        "pnl_dia": 160.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-02",
+        "dia_pausado": true,
+        "hl_abertura": 340.5,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-03",
+        "dia_pausado": true,
+        "hl_abertura": 518.9,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-04",
+        "dia_pausado": true,
+        "hl_abertura": 423.6,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-05",
+        "dia_pausado": true,
+        "hl_abertura": 351.9,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-06",
+        "dia_pausado": true,
+        "hl_abertura": 418.8,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 80.0,
+          "perda_brl": 0,
+          "pnl_liquido": 80.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-09",
+        "dia_pausado": true,
+        "hl_abertura": 419.5,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-10",
+        "dia_pausado": true,
+        "hl_abertura": 396.4,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 1,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 80.0,
+          "pnl_liquido": -80.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-11",
+        "dia_pausado": true,
+        "hl_abertura": 389.5,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      }
+    ]
+  },
+  {
+    "config": "SAFE_DAY_V23",
+    "descricao": "REFERÊNCIA: SAFE V23 (A SER MANTIDA)",
+    "dias_analisados": 15,
+    "dias_positivos": 3,
+    "dias_negativos": 2,
+    "buy_ativos": 3,
+    "buy_takes": 2,
+    "buy_stops": 1,
+    "buy_assert": 66.7,
+    "sell_ativos": 2,
+    "sell_takes": 1,
+    "sell_stops": 1,
+    "sell_assert": 50.0,
+    "total_ativos": 5,
+    "total_assert": 60.0,
+    "ganho_total_brl": 120.0,
+    "perda_total_brl": 80.0,
+    "pnl_total_brl": 40.0,
+    "profit_factor": 1.5,
+    "por_dia": [
+      {
+        "data": "2026-02-19",
+        "dia_pausado": true,
+        "hl_abertura": 343.6,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-20",
+        "dia_pausado": true,
+        "hl_abertura": 292.7,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-23",
+        "dia_pausado": true,
+        "hl_abertura": 250.0,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-24",
+        "dia_pausado": true,
+        "hl_abertura": 284.5,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 40.0,
+          "perda_brl": 0,
+          "pnl_liquido": 40.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 40.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-25",
+        "dia_pausado": true,
+        "hl_abertura": 619.1,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-26",
+        "dia_pausado": true,
+        "hl_abertura": 333.2,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 40.0,
+          "pnl_liquido": -40.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -40.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-27",
+        "dia_pausado": true,
+        "hl_abertura": 390.0,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 40.0,
+          "perda_brl": 0,
+          "pnl_liquido": 40.0,
+          "assertividade": 100.0
+        },
+        "pnl_dia": 40.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-02",
+        "dia_pausado": true,
+        "hl_abertura": 340.5,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-03",
+        "dia_pausado": true,
+        "hl_abertura": 518.9,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-04",
+        "dia_pausado": true,
+        "hl_abertura": 423.6,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-05",
+        "dia_pausado": true,
+        "hl_abertura": 351.9,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-06",
+        "dia_pausado": true,
+        "hl_abertura": 418.8,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 40.0,
+          "perda_brl": 0,
+          "pnl_liquido": 40.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 40.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-09",
+        "dia_pausado": true,
+        "hl_abertura": 419.5,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-10",
+        "dia_pausado": true,
+        "hl_abertura": 396.4,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 1,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 40.0,
+          "pnl_liquido": -40.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -40.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-11",
+        "dia_pausado": true,
+        "hl_abertura": 389.5,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      }
+    ]
+  },
+  {
+    "config": "TREND_RIDER_V26",
+    "descricao": "ELITE: V24 + Trailing Stop | Capital 3k | 2 Lotes",
+    "dias_analisados": 15,
+    "dias_positivos": 3,
+    "dias_negativos": 2,
+    "buy_ativos": 3,
+    "buy_takes": 2,
+    "buy_stops": 1,
+    "buy_assert": 66.7,
+    "sell_ativos": 2,
+    "sell_takes": 0,
+    "sell_stops": 1,
+    "sell_assert": 0.0,
+    "total_ativos": 5,
+    "total_assert": 40.0,
+    "ganho_total_brl": 160.0,
+    "perda_total_brl": 160.0,
+    "pnl_total_brl": 138.0,
+    "profit_factor": 1.0,
+    "por_dia": [
+      {
+        "data": "2026-02-19",
+        "dia_pausado": true,
+        "hl_abertura": 343.6,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-20",
+        "dia_pausado": true,
+        "hl_abertura": 292.7,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-23",
+        "dia_pausado": true,
+        "hl_abertura": 250.0,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-24",
+        "dia_pausado": true,
+        "hl_abertura": 284.5,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 80.0,
+          "perda_brl": 0,
+          "pnl_liquido": 80.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-25",
+        "dia_pausado": true,
+        "hl_abertura": 619.1,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-26",
+        "dia_pausado": true,
+        "hl_abertura": 333.2,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 80.0,
+          "pnl_liquido": -80.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-27",
+        "dia_pausado": true,
+        "hl_abertura": 390.0,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 138.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 138.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-02",
+        "dia_pausado": true,
+        "hl_abertura": 340.5,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-03",
+        "dia_pausado": true,
+        "hl_abertura": 518.9,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-04",
+        "dia_pausado": true,
+        "hl_abertura": 423.6,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-05",
+        "dia_pausado": true,
+        "hl_abertura": 351.9,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-06",
+        "dia_pausado": true,
+        "hl_abertura": 418.8,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 80.0,
+          "perda_brl": 0,
+          "pnl_liquido": 80.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-09",
+        "dia_pausado": true,
+        "hl_abertura": 419.5,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-10",
+        "dia_pausado": true,
+        "hl_abertura": 396.4,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 1,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 80.0,
+          "pnl_liquido": -80.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-11",
+        "dia_pausado": true,
+        "hl_abertura": 389.5,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      }
+    ]
+  },
+  {
+    "config": "SCALE_SNIPER_V26_3LOTS",
+    "descricao": "AGRESSIVO: V24 | 3 Lotes | Alvo R$ 200+/dia",
+    "dias_analisados": 15,
+    "dias_positivos": 3,
+    "dias_negativos": 2,
+    "buy_ativos": 3,
+    "buy_takes": 2,
+    "buy_stops": 1,
+    "buy_assert": 66.7,
+    "sell_ativos": 2,
+    "sell_takes": 1,
+    "sell_stops": 1,
+    "sell_assert": 50.0,
+    "total_ativos": 5,
+    "total_assert": 60.0,
+    "ganho_total_brl": 480.0,
+    "perda_total_brl": 240.0,
+    "pnl_total_brl": 240.0,
+    "profit_factor": 2.0,
+    "por_dia": [
+      {
+        "data": "2026-02-19",
+        "dia_pausado": true,
+        "hl_abertura": 343.6,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-20",
+        "dia_pausado": true,
+        "hl_abertura": 292.7,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-23",
+        "dia_pausado": true,
+        "hl_abertura": 250.0,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-24",
+        "dia_pausado": true,
+        "hl_abertura": 284.5,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-25",
+        "dia_pausado": true,
+        "hl_abertura": 619.1,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-26",
+        "dia_pausado": true,
+        "hl_abertura": 333.2,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-27",
+        "dia_pausado": true,
+        "hl_abertura": 390.0,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 240.0,
+          "perda_brl": 0,
+          "pnl_liquido": 240.0,
+          "assertividade": 100.0
+        },
+        "pnl_dia": 240.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-02",
+        "dia_pausado": true,
+        "hl_abertura": 340.5,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-03",
+        "dia_pausado": true,
+        "hl_abertura": 518.9,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-04",
+        "dia_pausado": true,
+        "hl_abertura": 423.6,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-05",
+        "dia_pausado": true,
+        "hl_abertura": 351.9,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-06",
+        "dia_pausado": true,
+        "hl_abertura": 418.8,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-09",
+        "dia_pausado": true,
+        "hl_abertura": 419.5,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-10",
+        "dia_pausado": true,
+        "hl_abertura": 396.4,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 1,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-11",
+        "dia_pausado": true,
+        "hl_abertura": 389.5,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      }
+    ]
+  },
+  {
+    "config": "ACTIVE_SNIPER_V26_3TRADES",
+    "descricao": "FREQUÊNCIA+: RSI 18/82 | 2 Lotes | Até 3 Trades/Dia",
+    "dias_analisados": 15,
+    "dias_positivos": 3,
+    "dias_negativos": 4,
+    "buy_ativos": 4,
+    "buy_takes": 2,
+    "buy_stops": 2,
+    "buy_assert": 50.0,
+    "sell_ativos": 4,
+    "sell_takes": 2,
+    "sell_stops": 2,
+    "sell_assert": 50.0,
+    "total_ativos": 8,
+    "total_assert": 50.0,
+    "ganho_total_brl": 480.0,
+    "perda_total_brl": 320.0,
+    "pnl_total_brl": 160.0,
+    "profit_factor": 1.5,
+    "por_dia": [
+      {
+        "data": "2026-02-19",
+        "dia_pausado": true,
+        "hl_abertura": 343.6,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-20",
+        "dia_pausado": true,
+        "hl_abertura": 292.7,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 80.0,
+          "pnl_liquido": -80.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-23",
+        "dia_pausado": true,
+        "hl_abertura": 250.0,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-24",
+        "dia_pausado": true,
+        "hl_abertura": 284.5,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 80.0,
+          "perda_brl": 0,
+          "pnl_liquido": 80.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-25",
+        "dia_pausado": true,
+        "hl_abertura": 619.1,
+        "buy": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-26",
+        "dia_pausado": true,
+        "hl_abertura": 333.2,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 1,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 80.0,
+          "pnl_liquido": -80.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-27",
+        "dia_pausado": true,
+        "hl_abertura": 390.0,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 2,
+          "vetados": 0,
+          "takes": 2,
+          "stops": 0,
+          "ganho_brl": 320.0,
+          "perda_brl": 0,
+          "pnl_liquido": 320.0,
+          "assertividade": 100.0
+        },
+        "pnl_dia": 320.0,
+        "total_sinais_ativos": 2
+      },
+      {
+        "data": "2026-03-02",
+        "dia_pausado": true,
+        "hl_abertura": 340.5,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 1,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 80.0,
+          "pnl_liquido": -80.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-03",
+        "dia_pausado": true,
+        "hl_abertura": 518.9,
+        "buy": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-04",
+        "dia_pausado": true,
+        "hl_abertura": 423.6,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-05",
+        "dia_pausado": true,
+        "hl_abertura": 351.9,
+        "buy": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-06",
+        "dia_pausado": true,
+        "hl_abertura": 418.8,
+        "buy": {
+          "sinais_brutos": 1,
+          "ativos": 1,
+          "vetados": 0,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 80.0,
+          "perda_brl": 0,
+          "pnl_liquido": 80.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-09",
+        "dia_pausado": true,
+        "hl_abertura": 419.5,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-10",
+        "dia_pausado": true,
+        "hl_abertura": 396.4,
+        "buy": {
+          "sinais_brutos": 3,
+          "ativos": 1,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 80.0,
+          "pnl_liquido": -80.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -80.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-11",
+        "dia_pausado": true,
+        "hl_abertura": 389.5,
+        "buy": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      }
+    ]
+  },
+  {
+    "config": "UNLIMITED_GOLD_V31",
+    "descricao": "GOLD: RSI 18/82 | 3 Lotes | Ilimitado | Meta R$500",
+    "dias_analisados": 15,
+    "dias_positivos": 5,
+    "dias_negativos": 4,
+    "buy_ativos": 11,
+    "buy_takes": 8,
+    "buy_stops": 3,
+    "buy_assert": 72.7,
+    "sell_ativos": 7,
+    "sell_takes": 3,
+    "sell_stops": 4,
+    "sell_assert": 42.9,
+    "total_ativos": 18,
+    "total_assert": 61.1,
+    "ganho_total_brl": 1680.0,
+    "perda_total_brl": 840.0,
+    "pnl_total_brl": 840.0,
+    "profit_factor": 2.0,
+    "por_dia": [
+      {
+        "data": "2026-02-19",
+        "dia_pausado": true,
+        "hl_abertura": 343.6,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 10,
+          "ativos": 0,
+          "vetados": 10,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-20",
+        "dia_pausado": true,
+        "hl_abertura": 292.7,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 1,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-23",
+        "dia_pausado": true,
+        "hl_abertura": 250.0,
+        "buy": {
+          "sinais_brutos": 5,
+          "ativos": 1,
+          "vetados": 4,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 5,
+          "ativos": 0,
+          "vetados": 5,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-24",
+        "dia_pausado": true,
+        "hl_abertura": 284.5,
+        "buy": {
+          "sinais_brutos": 3,
+          "ativos": 3,
+          "vetados": 0,
+          "takes": 3,
+          "stops": 0,
+          "ganho_brl": 360.0,
+          "perda_brl": 0,
+          "pnl_liquido": 360.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 9,
+          "ativos": 0,
+          "vetados": 9,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 360.0,
+        "total_sinais_ativos": 3
+      },
+      {
+        "data": "2026-02-25",
+        "dia_pausado": true,
+        "hl_abertura": 619.1,
+        "buy": {
+          "sinais_brutos": 15,
+          "ativos": 0,
+          "vetados": 15,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-26",
+        "dia_pausado": true,
+        "hl_abertura": 333.2,
+        "buy": {
+          "sinais_brutos": 8,
+          "ativos": 1,
+          "vetados": 7,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 5,
+          "ativos": 1,
+          "vetados": 4,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0.0,
+        "total_sinais_ativos": 2
+      },
+      {
+        "data": "2026-02-27",
+        "dia_pausado": true,
+        "hl_abertura": 390.0,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 1,
+          "vetados": 1,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 6,
+          "ativos": 2,
+          "vetados": 4,
+          "takes": 2,
+          "stops": 0,
+          "ganho_brl": 480.0,
+          "perda_brl": 0,
+          "pnl_liquido": 480.0,
+          "assertividade": 100.0
+        },
+        "pnl_dia": 600.0,
+        "total_sinais_ativos": 3
+      },
+      {
+        "data": "2026-03-02",
+        "dia_pausado": true,
+        "hl_abertura": 340.5,
+        "buy": {
+          "sinais_brutos": 4,
+          "ativos": 1,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-03",
+        "dia_pausado": true,
+        "hl_abertura": 518.9,
+        "buy": {
+          "sinais_brutos": 9,
+          "ativos": 0,
+          "vetados": 9,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-04",
+        "dia_pausado": true,
+        "hl_abertura": 423.6,
+        "buy": {
+          "sinais_brutos": 11,
+          "ativos": 1,
+          "vetados": 10,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-05",
+        "dia_pausado": true,
+        "hl_abertura": 351.9,
+        "buy": {
+          "sinais_brutos": 8,
+          "ativos": 0,
+          "vetados": 8,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-06",
+        "dia_pausado": true,
+        "hl_abertura": 418.8,
+        "buy": {
+          "sinais_brutos": 4,
+          "ativos": 2,
+          "vetados": 2,
+          "takes": 1,
+          "stops": 1,
+          "ganho_brl": 120.0,
+          "perda_brl": 120.0,
+          "pnl_liquido": 0.0,
+          "assertividade": 50.0
+        },
+        "sell": {
+          "sinais_brutos": 7,
+          "ativos": 1,
+          "vetados": 6,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 3
+      },
+      {
+        "data": "2026-03-09",
+        "dia_pausado": true,
+        "hl_abertura": 419.5,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-10",
+        "dia_pausado": true,
+        "hl_abertura": 396.4,
+        "buy": {
+          "sinais_brutos": 8,
+          "ativos": 1,
+          "vetados": 7,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 1,
+          "vetados": 2,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 240.0,
+          "perda_brl": 0,
+          "pnl_liquido": 240.0,
+          "assertividade": 100.0
+        },
+        "pnl_dia": 120.0,
+        "total_sinais_ativos": 2
+      },
+      {
+        "data": "2026-03-11",
+        "dia_pausado": true,
+        "hl_abertura": 389.5,
+        "buy": {
+          "sinais_brutos": 6,
+          "ativos": 0,
+          "vetados": 6,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 8,
+          "ativos": 1,
+          "vetados": 7,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 1
+      }
+    ]
+  },
+  {
+    "config": "UNLIMITED_PRECISION_V31",
+    "descricao": "PRECISION: RSI 16/84 | 3 Lotes | Ilimitado | Dia Inteiro",
+    "dias_analisados": 15,
+    "dias_positivos": 2,
+    "dias_negativos": 7,
+    "buy_ativos": 11,
+    "buy_takes": 5,
+    "buy_stops": 6,
+    "buy_assert": 45.5,
+    "sell_ativos": 12,
+    "sell_takes": 3,
+    "sell_stops": 9,
+    "sell_assert": 25.0,
+    "total_ativos": 23,
+    "total_assert": 34.8,
+    "ganho_total_brl": 1320.0,
+    "perda_total_brl": 1800.0,
+    "pnl_total_brl": -480.0,
+    "profit_factor": 0.73,
+    "por_dia": [
+      {
+        "data": "2026-02-19",
+        "dia_pausado": true,
+        "hl_abertura": 343.6,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 12,
+          "ativos": 0,
+          "vetados": 12,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-20",
+        "dia_pausado": true,
+        "hl_abertura": 292.7,
+        "buy": {
+          "sinais_brutos": 5,
+          "ativos": 0,
+          "vetados": 5,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 17,
+          "ativos": 2,
+          "vetados": 15,
+          "takes": 0,
+          "stops": 2,
+          "ganho_brl": 0,
+          "perda_brl": 240.0,
+          "pnl_liquido": -240.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -240.0,
+        "total_sinais_ativos": 2
+      },
+      {
+        "data": "2026-02-23",
+        "dia_pausado": true,
+        "hl_abertura": 250.0,
+        "buy": {
+          "sinais_brutos": 9,
+          "ativos": 2,
+          "vetados": 7,
+          "takes": 1,
+          "stops": 1,
+          "ganho_brl": 120.0,
+          "perda_brl": 120.0,
+          "pnl_liquido": 0.0,
+          "assertividade": 50.0
+        },
+        "sell": {
+          "sinais_brutos": 6,
+          "ativos": 0,
+          "vetados": 6,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0.0,
+        "total_sinais_ativos": 2
+      },
+      {
+        "data": "2026-02-24",
+        "dia_pausado": true,
+        "hl_abertura": 284.5,
+        "buy": {
+          "sinais_brutos": 4,
+          "ativos": 1,
+          "vetados": 3,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 7,
+          "ativos": 0,
+          "vetados": 7,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-25",
+        "dia_pausado": true,
+        "hl_abertura": 619.1,
+        "buy": {
+          "sinais_brutos": 17,
+          "ativos": 0,
+          "vetados": 17,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-26",
+        "dia_pausado": true,
+        "hl_abertura": 333.2,
+        "buy": {
+          "sinais_brutos": 12,
+          "ativos": 2,
+          "vetados": 10,
+          "takes": 1,
+          "stops": 1,
+          "ganho_brl": 120.0,
+          "perda_brl": 120.0,
+          "pnl_liquido": 0.0,
+          "assertividade": 50.0
+        },
+        "sell": {
+          "sinais_brutos": 9,
+          "ativos": 1,
+          "vetados": 8,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 3
+      },
+      {
+        "data": "2026-02-27",
+        "dia_pausado": true,
+        "hl_abertura": 390.0,
+        "buy": {
+          "sinais_brutos": 5,
+          "ativos": 1,
+          "vetados": 4,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 8,
+          "ativos": 2,
+          "vetados": 6,
+          "takes": 2,
+          "stops": 0,
+          "ganho_brl": 480.0,
+          "perda_brl": 0,
+          "pnl_liquido": 480.0,
+          "assertividade": 100.0
+        },
+        "pnl_dia": 360.0,
+        "total_sinais_ativos": 3
+      },
+      {
+        "data": "2026-03-02",
+        "dia_pausado": true,
+        "hl_abertura": 340.5,
+        "buy": {
+          "sinais_brutos": 10,
+          "ativos": 1,
+          "vetados": 9,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 9,
+          "ativos": 0,
+          "vetados": 9,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-03",
+        "dia_pausado": true,
+        "hl_abertura": 518.9,
+        "buy": {
+          "sinais_brutos": 7,
+          "ativos": 0,
+          "vetados": 7,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 11,
+          "ativos": 1,
+          "vetados": 10,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-04",
+        "dia_pausado": true,
+        "hl_abertura": 423.6,
+        "buy": {
+          "sinais_brutos": 12,
+          "ativos": 1,
+          "vetados": 11,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 14,
+          "ativos": 1,
+          "vetados": 13,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0.0,
+        "total_sinais_ativos": 2
+      },
+      {
+        "data": "2026-03-05",
+        "dia_pausado": true,
+        "hl_abertura": 351.9,
+        "buy": {
+          "sinais_brutos": 13,
+          "ativos": 0,
+          "vetados": 13,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 4,
+          "ativos": 0,
+          "vetados": 4,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-06",
+        "dia_pausado": true,
+        "hl_abertura": 418.8,
+        "buy": {
+          "sinais_brutos": 4,
+          "ativos": 2,
+          "vetados": 2,
+          "takes": 1,
+          "stops": 1,
+          "ganho_brl": 120.0,
+          "perda_brl": 120.0,
+          "pnl_liquido": 0.0,
+          "assertividade": 50.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 1,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 3
+      },
+      {
+        "data": "2026-03-09",
+        "dia_pausado": true,
+        "hl_abertura": 419.5,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 9,
+          "ativos": 1,
+          "vetados": 8,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-10",
+        "dia_pausado": true,
+        "hl_abertura": 396.4,
+        "buy": {
+          "sinais_brutos": 15,
+          "ativos": 1,
+          "vetados": 14,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 8,
+          "ativos": 2,
+          "vetados": 6,
+          "takes": 1,
+          "stops": 1,
+          "ganho_brl": 240.0,
+          "perda_brl": 120.0,
+          "pnl_liquido": 120.0,
+          "assertividade": 50.0
+        },
+        "pnl_dia": 0.0,
+        "total_sinais_ativos": 3
+      },
+      {
+        "data": "2026-03-11",
+        "dia_pausado": true,
+        "hl_abertura": 389.5,
+        "buy": {
+          "sinais_brutos": 10,
+          "ativos": 0,
+          "vetados": 10,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 7,
+          "ativos": 1,
+          "vetados": 6,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 1
+      }
+    ]
+  },
+  {
+    "config": "HIGH_PERF_CALIBRADA_V36",
+    "descricao": "V36: Calibragem 11/03 | RSI 18/82 | Thr 0.52 SELL | 3 Lotes",
+    "dias_analisados": 15,
+    "dias_positivos": 5,
+    "dias_negativos": 4,
+    "buy_ativos": 11,
+    "buy_takes": 8,
+    "buy_stops": 3,
+    "buy_assert": 72.7,
+    "sell_ativos": 7,
+    "sell_takes": 3,
+    "sell_stops": 4,
+    "sell_assert": 42.9,
+    "total_ativos": 18,
+    "total_assert": 61.1,
+    "ganho_total_brl": 1680.0,
+    "perda_total_brl": 840.0,
+    "pnl_total_brl": 840.0,
+    "profit_factor": 2.0,
+    "por_dia": [
+      {
+        "data": "2026-02-19",
+        "dia_pausado": true,
+        "hl_abertura": 343.6,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 10,
+          "ativos": 0,
+          "vetados": 10,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-20",
+        "dia_pausado": true,
+        "hl_abertura": 292.7,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 1,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-23",
+        "dia_pausado": true,
+        "hl_abertura": 250.0,
+        "buy": {
+          "sinais_brutos": 5,
+          "ativos": 1,
+          "vetados": 4,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 5,
+          "ativos": 0,
+          "vetados": 5,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-02-24",
+        "dia_pausado": true,
+        "hl_abertura": 284.5,
+        "buy": {
+          "sinais_brutos": 3,
+          "ativos": 3,
+          "vetados": 0,
+          "takes": 3,
+          "stops": 0,
+          "ganho_brl": 360.0,
+          "perda_brl": 0,
+          "pnl_liquido": 360.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 9,
+          "ativos": 0,
+          "vetados": 9,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 360.0,
+        "total_sinais_ativos": 3
+      },
+      {
+        "data": "2026-02-25",
+        "dia_pausado": true,
+        "hl_abertura": 619.1,
+        "buy": {
+          "sinais_brutos": 15,
+          "ativos": 0,
+          "vetados": 15,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-02-26",
+        "dia_pausado": true,
+        "hl_abertura": 333.2,
+        "buy": {
+          "sinais_brutos": 8,
+          "ativos": 1,
+          "vetados": 7,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 5,
+          "ativos": 1,
+          "vetados": 4,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0.0,
+        "total_sinais_ativos": 2
+      },
+      {
+        "data": "2026-02-27",
+        "dia_pausado": true,
+        "hl_abertura": 390.0,
+        "buy": {
+          "sinais_brutos": 2,
+          "ativos": 1,
+          "vetados": 1,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 7,
+          "ativos": 2,
+          "vetados": 5,
+          "takes": 2,
+          "stops": 0,
+          "ganho_brl": 480.0,
+          "perda_brl": 0,
+          "pnl_liquido": 480.0,
+          "assertividade": 100.0
+        },
+        "pnl_dia": 600.0,
+        "total_sinais_ativos": 3
+      },
+      {
+        "data": "2026-03-02",
+        "dia_pausado": true,
+        "hl_abertura": 340.5,
+        "buy": {
+          "sinais_brutos": 4,
+          "ativos": 1,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-03",
+        "dia_pausado": true,
+        "hl_abertura": 518.9,
+        "buy": {
+          "sinais_brutos": 9,
+          "ativos": 0,
+          "vetados": 9,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 2,
+          "ativos": 0,
+          "vetados": 2,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-04",
+        "dia_pausado": true,
+        "hl_abertura": 423.6,
+        "buy": {
+          "sinais_brutos": 11,
+          "ativos": 1,
+          "vetados": 10,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 120.0,
+          "perda_brl": 0,
+          "pnl_liquido": 120.0,
+          "assertividade": 100.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 120.0,
+        "total_sinais_ativos": 1
+      },
+      {
+        "data": "2026-03-05",
+        "dia_pausado": true,
+        "hl_abertura": 351.9,
+        "buy": {
+          "sinais_brutos": 8,
+          "ativos": 0,
+          "vetados": 8,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 1,
+          "ativos": 0,
+          "vetados": 1,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-06",
+        "dia_pausado": true,
+        "hl_abertura": 418.8,
+        "buy": {
+          "sinais_brutos": 4,
+          "ativos": 2,
+          "vetados": 2,
+          "takes": 1,
+          "stops": 1,
+          "ganho_brl": 120.0,
+          "perda_brl": 120.0,
+          "pnl_liquido": 0.0,
+          "assertividade": 50.0
+        },
+        "sell": {
+          "sinais_brutos": 7,
+          "ativos": 1,
+          "vetados": 6,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 3
+      },
+      {
+        "data": "2026-03-09",
+        "dia_pausado": true,
+        "hl_abertura": 419.5,
+        "buy": {
+          "sinais_brutos": 0,
+          "ativos": 0,
+          "vetados": 0,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 0,
+          "vetados": 3,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": 0,
+        "total_sinais_ativos": 0
+      },
+      {
+        "data": "2026-03-10",
+        "dia_pausado": true,
+        "hl_abertura": 396.4,
+        "buy": {
+          "sinais_brutos": 8,
+          "ativos": 1,
+          "vetados": 7,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 3,
+          "ativos": 1,
+          "vetados": 2,
+          "takes": 1,
+          "stops": 0,
+          "ganho_brl": 240.0,
+          "perda_brl": 0,
+          "pnl_liquido": 240.0,
+          "assertividade": 100.0
+        },
+        "pnl_dia": 120.0,
+        "total_sinais_ativos": 2
+      },
+      {
+        "data": "2026-03-11",
+        "dia_pausado": true,
+        "hl_abertura": 389.5,
+        "buy": {
+          "sinais_brutos": 6,
+          "ativos": 0,
+          "vetados": 6,
+          "takes": 0,
+          "stops": 0,
+          "ganho_brl": 0,
+          "perda_brl": 0,
+          "pnl_liquido": 0,
+          "assertividade": 0.0
+        },
+        "sell": {
+          "sinais_brutos": 8,
+          "ativos": 1,
+          "vetados": 7,
+          "takes": 0,
+          "stops": 1,
+          "ganho_brl": 0,
+          "perda_brl": 120.0,
+          "pnl_liquido": -120.0,
+          "assertividade": 0.0
+        },
+        "pnl_dia": -120.0,
+        "total_sinais_ativos": 1
+      }
+    ]
+  }
+]

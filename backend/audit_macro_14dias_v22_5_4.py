@@ -80,12 +80,10 @@ async def run_macro_audit():
         pnl_sell = sells['pnl_fin'].sum()
         total_pnl = pnl_buy + pnl_sell
         
-        if date_str == "10/03/2026" and len(buys) > 0:
-            print("🚨 TRADES DIA 10/03 DETECTADOS (COMPRAS):")
-            for idx, trade in buys.iterrows():
-                sl_val = trade.get('sl', 'N/A')
-                tp_val = trade.get('tp', 'N/A')
-                print(f"   [{trade.get('entry_time')}] Compra a {trade.get('entry_price')} | SL: {sl_val} | TP: {tp_val} | PnL: {trade.get('pnl_fin')}")
+        if date_str == "10/03/2026" and len(day_trades) > 0:
+            print(f"🚨 TRADES DIA {date_str} DETECTADOS:")
+            for idx, trade in day_trades.iterrows():
+                print(f"   [{trade.get('entry_time')}] {trade.get('side').upper()} @ {trade.get('entry_price')} | SL: {trade.get('sl')} | PnL: {trade.get('pnl_fin')} | Modo: {trade.get('execution_mode', 'IA')}")
         
         wins = len(day_trades[day_trades['pnl_fin'] > 0])
         wr = (wins / len(day_trades) * 100) if not day_trades.empty else 0
