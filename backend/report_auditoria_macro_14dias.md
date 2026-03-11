@@ -11,7 +11,7 @@
 - **Performance Compra**: R$ 586.54
 - **Performance Venda**: R$ 218.52
 - **Taxa de Acerto Média**: 78.0%
-- **Vetos Totais (IA/Fluxo/Bias)**: 323
+- **Vetos Totais (IA/Fluxo/Bias)**: 324
 
 ## 📅 Detalhamento Diário
 

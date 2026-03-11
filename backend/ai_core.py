@@ -630,14 +630,26 @@ class AICore:
         ma_p = getattr(self, "h1_ma_period", 20)
         ma_h1 = h1_data['close'].rolling(ma_p).mean().iloc[-1] if len(h1_data) >= ma_p else last_close
 
-        if last_close > ma_h1 * 1.002: # 0.2% acima da média → Alta
-            self.h1_trend = 1
+        # [SOTA v22.5.5] Lógica de Hysteresis (Margem de Segurança)
+        # Se tendência é ALTA, só vira NEUTRO/BAIXA se cair abaixo de (MA - Hysteresis)
+        # Se tendência é BAIXA, só vira NEUTRO/ALTA se subir acima de (MA + Hysteresis)
+        hysteresis = getattr(self, "h1_hysteresis_pts", 50.0) 
+        
+        # Margem percentual aproximada baseada na MA para maior robustez
+        # No WIN (120k pts), 50 pts é ~0.04%
+        h_factor = hysteresis / ma_h1 if ma_h1 > 0 else 0.0004
 
-        elif last_close < ma_h1 * 0.998: # 0.2% abaixo da média → Baixa
-            self.h1_trend = -1
-
-        else:
-            self.h1_trend = 0 # Neutro
+        if self.h1_trend == 1: # Já em ALTA
+            if last_close < ma_h1 * (1.0 - h_factor): # Cruzou para baixo da margem
+                self.h1_trend = -1 if last_close < ma_h1 * 0.998 else 0
+        elif self.h1_trend == -1: # Já em BAIXA
+            if last_close > ma_h1 * (1.0 + h_factor): # Cruzou para cima da margem
+                self.h1_trend = 1 if last_close > ma_h1 * 1.002 else 0
+        else: # NEUTRO
+            if last_close > ma_h1 * 1.002: # Cruzou forte para ALTA
+                self.h1_trend = 1
+            elif last_close < ma_h1 * 0.998: # Cruzou forte para BAIXA
+                self.h1_trend = -1
 
 
 
