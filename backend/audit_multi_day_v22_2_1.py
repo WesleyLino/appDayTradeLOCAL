@@ -107,7 +107,7 @@ async def run_multi_day_audit():
             "diario": resultados_diarios
         }, f, indent=4)
 
-    print(f"\n✅ Relatório salvo em backend/audit_multi_day_result.json")
+    print("\n✅ Relatório salvo em backend/audit_multi_day_result.json")
 
 if __name__ == "__main__":
     asyncio.run(run_multi_day_audit())

@@ -72,6 +72,8 @@ class BacktestPro:
             'daily_trade_limit': kwargs.get('daily_trade_limit', locked_params.get('daily_trade_limit', 999)),
             'use_flux_filter': kwargs.get('use_flux_filter', locked_params.get('use_flux_filter', True)),
             'flux_imbalance_threshold': kwargs.get('flux_imbalance_threshold', locked_params.get('flux_imbalance_threshold', 0.95)),
+            'bollinger_squeeze_threshold': kwargs.get('bollinger_squeeze_threshold', locked_params.get('bollinger_squeeze_threshold', 1.2)),
+            'min_atr_threshold': kwargs.get('min_atr_threshold', locked_params.get('min_atr_threshold', 50.0)),
             'be_trigger': kwargs.get('be_trigger', locked_params.get('be_trigger', 40.0)),
             'be_lock': kwargs.get('be_lock', locked_params.get('be_lock', 0.0)),
             'partial_profit_points': kwargs.get('partial_profit_points', locked_params.get('partial_profit_points', 45.0)),
@@ -94,10 +96,20 @@ class BacktestPro:
         self.risk.partial_profit_points = self.opt_params['partial_profit_points']
         self.risk.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 450.0)
         self.risk.min_atr_threshold = self.opt_params.get('min_atr_threshold', 50.0)
+        self.risk.bollinger_squeeze_threshold = self.opt_params.get('bollinger_squeeze_threshold', 1.2)
+        self.risk.flux_imbalance_threshold = self.opt_params.get('flux_imbalance_threshold', 0.95)
         # Sincroniza threshold de confiança com o AICore
         if hasattr(self.ai, 'vwap_dist_threshold'):
             self.ai.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 450.0)
-        logging.info(f"🔧 [v22.5.1] RiskManager sincronizado: limite={self.risk.daily_trade_limit} | parcial={self.risk.partial_profit_points}pts | ATR={self.risk.min_atr_threshold}pts")
+        # [SOTA v22.5.3] Sincroniza Bias H1 (paridade com bot live)
+        self.ai.use_h1_trend_bias = bool(kwargs.get('use_h1_trend_bias', locked_params.get('use_h1_trend_bias', True)))
+        self.ai.h1_ma_period = int(kwargs.get('h1_ma_period', locked_params.get('h1_ma_period', 20)))
+        # [SOTA v22.5.4] Confidence Relax (paridade com bot live)
+        self.ai.confidence_relax_factor = float(locked_params.get('confidence_relax_factor', 0.80))
+        self.ai.atr_confidence_relax_trigger = float(locked_params.get('atr_confidence_relax_trigger', 100.0))
+        logging.info(f"🔧 [v22.5.1] RiskManager sincronizado: limite={self.risk.daily_trade_limit} | OBI={self.risk.flux_imbalance_threshold} | Squeeze={self.risk.bollinger_squeeze_threshold}")
+        logging.info(f"📊 [v22.5.3/4] H1 + Confidence Relax: use_h1={self.ai.use_h1_trend_bias} | MA={self.ai.h1_ma_period} | Relax={self.ai.confidence_relax_factor} | Trigger={self.ai.atr_confidence_relax_trigger}")
+
 
         # Estado do Backtest
         self.initial_balance = kwargs.get('initial_balance', 500.0)
@@ -435,6 +447,18 @@ class BacktestPro:
             # [SOTA v5] Sincronizar Âncora de Sentimento (Price-Based Decay)
             self.ai.update_sentiment_anchor(row['close'])
 
+            # [SOTA v22.5.3] Atualizar Bias H1 (resample M1→H1 sem olhar o futuro)
+            if self.ai.use_h1_trend_bias and i % 60 == 0: # Atualiza a cada ~60 candles M1 (1h)
+                try:
+                    h1_slice = data.iloc[:i].resample('1H').agg({
+                        'open': 'first', 'high': 'max', 'low': 'min',
+                        'close': 'last', 'tick_volume': 'sum'
+                    }).dropna()
+                    if not h1_slice.empty:
+                        self.ai.update_h1_trend(h1_slice)
+                except Exception as e_h1_bt:
+                    logging.debug(f"Bias H1 backtest: {e_h1_bt}")
+
             # 2. Lógica de Entrada (Se estiver zerado)
             if not self.position:
                 # --- INDICADORES ALPHA V21 (Pré-calculados) ---
@@ -592,6 +616,22 @@ class BacktestPro:
                     # Atualizar vwap_dist_threshold no AICore se disponível
                     self.ai.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 250.0)
                     
+                    # [v52.6] Simulação de Tendência H1 (Trend Bias H1)
+                    # No backtest, usamos uma média móvel de 240 períodos (4h) como proxy para a MA20 de H1 (aproximadamente)
+                    try:
+                        ma_h1_proxy = data['close'].iloc[max(0, i-240):i].mean()
+                        if row['close'] > ma_h1_proxy: # Sem zona neutra para backtest conservador
+                            self.ai.h1_trend = 1
+                        else:
+                            self.ai.h1_trend = -1
+                    except:
+                        self.ai.h1_trend = 0
+
+                    # [v52.5] Sincronização de Histórico para Gatilhos de Squeeze
+                    self.ai.micro_analyzer.price_history.append(row['close'])
+                    if len(self.ai.micro_analyzer.price_history) > 50:
+                        self.ai.micro_analyzer.price_history.pop(0)
+                    
                     ai_decision = self.ai.calculate_decision(
                         obi=obi,
                         sentiment=self.ai.latest_sentiment_score, # Usa score com decay v5
@@ -612,12 +652,20 @@ class BacktestPro:
                     rsi_buy_level = self.opt_params.get('rsi_buy_level', 32)  # [MELHORIA C - 03/03/2026] 30→32 para capturar compras antes do RSI extremo
                     rsi_sell_level = self.opt_params.get('rsi_sell_level', 68)  # [MELHORIA C - 03/03/2026] 70→68 simétrico para vendas
                     v_spike_mult = self.opt_params.get('vol_spike_mult', 1.5)
-                    
+
+                    # [SOTA v22.5.4] MODE SELL-ONLY: Paridade com bot live
+                    # Quando H1 está em queda estrutural, bloqueia compras zerando o threshold de RSI.
+                    if self.ai.use_h1_trend_bias and self.ai.h1_trend == -1:
+                        rsi_buy_level = 0.0  # Threshold impossível → compras nunca disparam
+                        if row.name.minute % 30 == 0:
+                             logging.info(f"🛡️ [SELL-ONLY BACKTEST] Bloqueio de compras ativo para {row.name}")
+
                     vol_spike_eff = row['tick_volume'] > (vol_sma * v_spike_mult)
 
                     # [MODO FUSÃO SOTA] Gatilhos Matemáticos (RSI/BB) + Filtro de Convicção IA
                     v22_buy_raw = (rsi < rsi_buy_level and row['close'] < lower_bb) and vol_spike_eff
                     v22_sell_raw = (rsi > rsi_sell_level and row['close'] > upper_bb) and vol_spike_eff
+
                     
                     self.shadow_signals['v22_candidates'] = self.shadow_signals.get('v22_candidates', 0) + 1
                     
@@ -643,6 +691,7 @@ class BacktestPro:
                     
                     # [v22.3] Filtro Anti-Lateralidade (Anti-Sideways)
                     if v22_buy or v22_sell:
+                        # [SOTA V22.5.1] Sincronização Absoluta de Parâmetros
                         is_sideways, s_reason = self.risk.is_sideways_market(
                             adx=data.loc[row.name, 'adx'],
                             bb_upper=upper_bb,

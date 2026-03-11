@@ -41,3 +41,6 @@ rules_utf8.txt
 backend/*.log
 backend/*.log.*
 *.log.*
+data/*.csv
+data/*.xlsx
+data/*.parquet

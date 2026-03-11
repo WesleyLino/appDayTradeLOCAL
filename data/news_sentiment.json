@@ -1,59 +1,49 @@
 {
-  "score": -0.27,
+  "score": -0.2,
   "reliability": "high",
-  "risk_classification": "EXTREME",
-  "fact_check": "O mercado pode ter precificado de forma otimista o fim de conflitos, enquanto o petr\u00f3leo Brent cai 10% com expectativa de libera\u00e7\u00e3o de reservas. O diesel da Petrobras est\u00e1 35% abaixo do pre\u00e7o internacional, indicando risco de ajuste. O d\u00f3lar cai em meio a incertezas no Oriente M\u00e9dio, que assusta investidores. Mercados europeus fecharam em alta.",
+  "risk_classification": "MEDIUM",
+  "fact_check": "GPA anuncia plano de recupera\u00e7\u00e3o extrajudicial e suas a\u00e7\u00f5es caem. Prio reporta preju\u00edzo l\u00edquido de US$185 milh\u00f5es no 4\u00ba trimestre. Cury e Allos registram forte aumento de lucro no 4\u00ba trimestre. Bolsas de NY fecham mistas ap\u00f3s declara\u00e7\u00f5es de Trump sobre Ormuz. Petrobras far\u00e1 leil\u00e3o de diesel no RS em meio a relatos de escassez.",
   "news": [
     {
-      "headline": "Mercado otimista sobre fim de guerra, risco de corre\u00e7\u00e3o",
-      "relevance": 1.0,
+      "headline": "GPA (PCAR3): A\u00e7\u00e3o cai 3% ap\u00f3s an\u00fancio de recupera\u00e7\u00e3o extrajudicial.",
+      "relevance": 0.7,
       "impact": "BEARISH"
     },
     {
-      "headline": "Petr\u00f3leo Brent cai 10% com expectativa de libera\u00e7\u00e3o de reservas",
-      "relevance": 0.9,
+      "headline": "Prio registra preju\u00edzo l\u00edquido de US$185 milh\u00f5es no 4\u00ba trimestre.",
+      "relevance": 0.6,
       "impact": "BEARISH"
     },
     {
-      "headline": "IBEX 35 (Espanha) avan\u00e7a 3,05%",
-      "relevance": 0.4,
+      "headline": "Cury (CURY3) tem aumento de 63% no lucro do 4\u00ba trimestre, para R$ 270 milh\u00f5es.",
+      "relevance": 0.6,
       "impact": "BULLISH"
     },
     {
-      "headline": "Diesel Petrobras 35% abaixo do pre\u00e7o internacional",
-      "relevance": 0.9,
+      "headline": "Bolsas de NY fecham mistas ap\u00f3s declara\u00e7\u00f5es de Trump sobre Ormuz.",
+      "relevance": 0.5,
       "impact": "BEARISH"
     },
     {
-      "headline": "AEX (Holanda) avan\u00e7a 1,98%",
-      "relevance": 0.3,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "FTSE 100 (Reino Unido) avan\u00e7a 1,53%",
-      "relevance": 0.3,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "DAX (Alemanha) avan\u00e7a 2,25%",
-      "relevance": 0.4,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "D\u00f3lar cai com incertezas sobre Oriente M\u00e9dio",
-      "relevance": 0.8,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Oriente M\u00e9dio assusta investidores globalmente",
-      "relevance": 1.0,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Not\u00edcias gerais de mercados financeiros",
-      "relevance": 0.0,
+      "headline": "Petrobras far\u00e1 leil\u00e3o de diesel no RS em meio a relatos de escassez.",
+      "relevance": 0.5,
       "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Allos (ALOS3) tem alta de 62% no lucro do 4\u00ba trimestre, para R$ 252 milh\u00f5es.",
+      "relevance": 0.6,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Starboard adquire participa\u00e7\u00e3o de US$ 350 milh\u00f5es na CarMax (EUA).",
+      "relevance": 0.2,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "A\u00e7\u00f5es da NIO disparam com lucro forte e entregas robustas no 4\u00ba trimestre.",
+      "relevance": 0.2,
+      "impact": "BULLISH"
     }
   ],
-  "timestamp": 1773164254.6687822
+  "timestamp": 1773196790.2811844
 }

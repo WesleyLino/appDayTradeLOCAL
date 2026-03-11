@@ -1,0 +1,212 @@
+{
+    "capital_inicial": 3000.0,
+    "saldo_final": 2394.0,
+    "total_trades": 34,
+    "trades": [
+        {
+            "type": "BUY",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 12:25:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 12:30:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 12:37:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 12:56:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 12:58:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 13:07:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 13:20:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 13:32:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 13:34:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 13:38:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 13:53:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 13:57:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 14:01:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 14:06:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 14:17:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 14:29:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 14:34:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 14:36:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 14:38:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 15:15:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 15:17:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 15:19:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 15:21:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 15:23:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 15:42:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 16:15:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 16:17:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 16:21:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 16:26:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 16:28:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 16:31:00"
+        },
+        {
+            "type": "BUY",
+            "pnl": -60.0,
+            "reason": "STOP_LOSS",
+            "time": "2026-03-10 16:33:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": 24.0,
+            "reason": "TAKE_PROFIT",
+            "time": "2026-03-10 16:41:00"
+        },
+        {
+            "type": "SELL",
+            "pnl": 30.0,
+            "reason": "TIME_LIMIT",
+            "time": "2026-03-10 17:15:00"
+        }
+    ],
+    "vetos": []
+}

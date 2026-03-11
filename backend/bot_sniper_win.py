@@ -63,19 +63,36 @@ class SniperBotWIN:
         
         # [FASE 28] Sincronização de Parâmetros Calibrados (Grid Search)
         # BUGFIX: Apontando para o arquivo de parâmetros bloqueado (v22_locked_params.json)
-        self.risk.load_optimized_params("WIN", "backend/v22_locked_params.json")
-        self.risk.load_optimized_params("WINJ26", "backend/v22_locked_params.json") 
+        # Usamos a chave genérica "WIN$" para garantir carregamento inicial
+        self.risk.load_optimized_params("WIN$", "backend/v22_locked_params.json")
         
         # Sincroniza parâmetros operacionais com o arquivo JSON (Garantia de Ajuste)
+        norm_key = "WIN$"
         self.flux_threshold = getattr(self.risk, 'flux_imbalance_threshold', 0.95)
-        self.rsi_period = int(self.risk.dynamic_params.get("WIN", {}).get("rsi_period", self.rsi_period))
-        self.vol_spike_mult = float(self.risk.dynamic_params.get("WIN", {}).get("vol_spike_mult", self.vol_spike_mult))
+        self.rsi_period = int(self.risk.dynamic_params.get(norm_key, {}).get("rsi_period", self.rsi_period))
+        self.vol_spike_mult = float(self.risk.dynamic_params.get(norm_key, {}).get("vol_spike_mult", self.vol_spike_mult))
         
-        # Sincroniza horários (v22_locked_params)
-        raw_start = self.risk.dynamic_params.get("WIN", {}).get("start_time", "10:00")
-        raw_end = self.risk.dynamic_params.get("WIN", {}).get("end_time", "17:15")
+        # Sincroniza horários e RSI Dinâmico (v22_locked_params)
+        norm_key = "WIN$"
+        strategy = self.risk.dynamic_params.get(norm_key, {})
+        
+        raw_start = strategy.get("start_time", "10:00")
+        raw_end = strategy.get("end_time", "17:15")
         self.start_time = datetime.strptime(raw_start, "%H:%M").time() if isinstance(raw_start, str) else time(10,0)
         self.end_time = datetime.strptime(raw_end, "%H:%M").time() if isinstance(raw_end, str) else time(17,15)
+        
+        # Parâmetros de Agulhada (v22.5.2)
+        self.rsi_dynamic_buy = float(strategy.get("rsi_dynamic_buy", 30))
+        self.rsi_dynamic_sell = float(strategy.get("rsi_dynamic_sell", 70))
+        self.rsi_dynamic_activation_atr = float(strategy.get("rsi_dynamic_activation_atr", 100.0))
+
+        # [SOTA v22.5.3] Sincronização Macro H1
+        self.ai.use_h1_trend_bias = bool(strategy.get("use_h1_trend_bias", True))
+        self.ai.h1_ma_period = int(strategy.get("h1_ma_period", 20))
+        # [SOTA v22.5.4] Confidence Relax Factor e Gatilho ATR (Adaptativo por ATR + H1)
+        self.ai.confidence_relax_factor = float(strategy.get("confidence_relax_factor", 0.80))
+        self.ai.atr_confidence_relax_trigger = float(strategy.get("atr_confidence_relax_trigger", 100.0))
+
 
         logger.info(f"🛡️ [SOTA V22.5.1] Sincronização de Setup: OBI={self.flux_threshold}, RSI={self.rsi_period}, Vol={self.vol_spike_mult}, Janela={self.start_time}-{self.end_time}")
         
@@ -342,11 +359,22 @@ class SniperBotWIN:
 
         self.symbol = self.bridge.get_current_symbol("WIN")
         
-        # Carregar Params SOTA
-        if self.symbol in self.risk.dynamic_params:
-            d = self.risk.dynamic_params[self.symbol]
+        # [v52.6] Recarga parâmetros para o símbolo real (Garante sincronia WINJ26 <-> WIN$)
+        self.risk.load_optimized_params(self.symbol, "backend/v22_locked_params.json")
+        
+        # Atualiza parâmetros locais com o que foi carregado para o símbolo resolvido
+        d = self.risk.dynamic_params.get(self.risk._normalize_symbol(self.symbol), {})
+        if d:
             if d.get("rsi_period"): self.rsi_period = int(d["rsi_period"])
             if d.get("vol_spike_mult"): self.vol_spike_mult = float(d["vol_spike_mult"])
+            if d.get("flux_imbalance_threshold"): self.flux_threshold = float(d["flux_imbalance_threshold"])
+        
+        # [v52.2] Log de Sincronização Detalhado no Início da Execução
+        logger.info("🛡️ [SOTA V22.5.1] Sincronização de Execução (LIVE):")
+        logger.info(f"   >>> Símbolo: {self.symbol} | OBI Threshold: {self.flux_threshold}")
+        logger.info(f"   >>> RSI: {self.rsi_period} | Vol Mult: {self.vol_spike_mult}")
+        logger.info(f"   >>> Janela: {self.start_time} - {self.end_time}")
+        logger.info(f"   >>> Status: {'VIRTUAL (Dry Run)' if self.risk.dry_run else 'REAL (Live)'}")
         
         self.running = True
         while self.running:
@@ -396,9 +424,9 @@ class SniperBotWIN:
                     break
 
                 if not (self.start_time <= now.time() <= self.end_time) or not self.risk.is_time_allowed():
-                    if now.second == 0 and now.minute % 15 == 0: # Log periódico
-                        self._log_to_dashboard("🕒 Fora da janela operacional principal ou tempo bloqueado.", "info")
-                    await asyncio.sleep(30)
+                    if now.second % 30 == 0: # Log a cada 30s se estiver fora
+                        logger.info(f"🕒 Stand-by: Fora da janela operacional ou bloqueio de tempo ({now.strftime('%H:%M:%S')}).")
+                    await asyncio.sleep(1)
                     continue
 
                 # Cooldown
@@ -419,6 +447,17 @@ class SniperBotWIN:
                 book = self.bridge.get_order_book(self.symbol)
                 ticks_df = self.bridge.get_time_and_sales(self.symbol, n_ticks=100)
                 
+                # [SOTA v4] Atualiza Bias de Tendência H1 (Gráfico Horário)
+                try:
+                    h1_data = self.bridge.get_market_data(self.symbol, n_candles=50, timeframe="H1")
+                    if h1_data is not None and not h1_data.empty:
+                        self.ai.update_h1_trend(h1_data)
+                        if now.minute % 15 == 0 and now.second < 2:
+                            bias_desc = "ALTA" if self.ai.h1_trend > 0 else "BAIXA" if self.ai.h1_trend < 0 else "NEUTRO"
+                            logger.info(f"📊 [TREND BIAS H1] Viés atual: {bias_desc}")
+                except Exception as e_h1:
+                    logger.warning(f"⚠️ Falha ao atualizar Bias H1: {sanitize_log(e_h1)}")
+
                 # Sincroniza o analisador para habilitar o Veto de Divergência de CVD
                 self.ai.micro_analyzer.analyze(book, ticks_df)
                 weighted_ofi = self.ai.micro_analyzer.calculate_wen_ofi(book)
@@ -460,10 +499,29 @@ class SniperBotWIN:
                     self.dia_pausado_vol = False
                     logger.info(f"✅ [PAUSA VOLATILIDADE] ATR={atr:.1f}pts normalizou abaixo de 100. Retomando operações.")
                 
+                # [SOTA V22.5.2] Níveis de RSI Adaptativos por Volatilidade
+                rsi_buy_level = 30.0
+                rsi_sell_level = 70.0
+                
+                if atr >= self.rsi_dynamic_activation_atr:
+                    rsi_buy_level = self.rsi_dynamic_buy
+                    rsi_sell_level = self.rsi_dynamic_sell
+                    if now.second % 60 == 0:
+                        logger.info(f"⚡ [RSI ADAPTATIVO] Níveis relaxados para agulhada: Buy={rsi_buy_level}/Sell={rsi_sell_level} (ATR={atr:.1f})")
+
+                # [SOTA v22.5.4] MODE SELL-ONLY: Proteção em dias de queda estrutural (H1 baixista)
+                # Quando o tempo superior está em baixa confirmada, TODA compra é bloqueada.
+                # O bot continua operando — apenas no lado vendedor.
+                if self.ai.use_h1_trend_bias and self.ai.h1_trend == -1:
+                    if now.second % 60 == 0:
+                        logger.info("🛡️ [SELL-ONLY] Compras bloqueadas: H1 em baixa estrutural confirmada. Bot operando apenas no lado vendedor.")
+                    rsi_buy_level = 0.0  # Threshold impossível → compras nunca disparam (independe do RSI atual)
+
+
                 # [SOTA] Filtro de Fluxo Adaptativo
                 flux_mult = self.vol_spike_mult if atr < 200 else 1.05
-                comprar_cond = last['rsi'] < 30 and last['tick_volume'] > (last['vol_sma'] * flux_mult)
-                vender_cond = last['rsi'] > 70 and last['tick_volume'] > (last['vol_sma'] * flux_mult)
+                comprar_cond = last['rsi'] < rsi_buy_level and last['tick_volume'] > (last['vol_sma'] * flux_mult)
+                vender_cond = last['rsi'] > rsi_sell_level and last['tick_volume'] > (last['vol_sma'] * flux_mult)
                 
                 # [ANTIVIBE-CODING] Carregamento de Contexto Macro para Veto
                 market_ctx = self._load_market_context()
@@ -531,7 +589,7 @@ class SniperBotWIN:
                                     self.last_trade_time = now
                     else:
                         side_pt = "COMPRA" if side == "buy" else "VENDA"
-                        block_msg = f"🛡️ Fluxo insuficiente para {side_pt} (Pressão: {pressure:.2f})"
+                        block_msg = f"🛡️ [FILTRO FLUXO] {side_pt} ignorada: Pressão {pressure:.2f} não atingiu threshold {self.flux_threshold if side == 'buy' else -self.flux_threshold}"
                         self._log_to_dashboard(block_msg, "info")
                         logger.info(block_msg)
 

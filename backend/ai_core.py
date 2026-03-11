@@ -93,6 +93,13 @@ class AICore:
         # [SOTA v4] NOVAS CONFIGURAÇÕES DE ASSERTIVIDADE
 
         self.h1_trend = 0 # -1 (Baixa), 0 (Neutro), 1 (Alta)
+        
+        self.use_h1_trend_bias = True # Master Toggle (v22_locked_params)
+        
+        self.h1_ma_period = 20        # Período da MA em H1
+
+        self.confidence_relax_factor = 0.80         # [SOTA v22.5.4] Fator de relaxamento por ATR+H1
+        self.atr_confidence_relax_trigger = 100.0   # [SOTA v22.5.4] Gatilho ATR para Confidence Relax H1
 
         self.prob_lot_tiers = {
 
@@ -619,22 +626,17 @@ class AICore:
 
         
 
-        # Heurística simples: Preço acima/abaixo da média de 20 períodos em H1
+        # Heurística: Preço acima/abaixo da MA dinâmica configurada em H1
+        ma_p = getattr(self, "h1_ma_period", 20)
+        ma_h1 = h1_data['close'].rolling(ma_p).mean().iloc[-1] if len(h1_data) >= ma_p else last_close
 
-        ma20 = h1_data['close'].rolling(20).mean().iloc[-1] if len(h1_data) >= 20 else last_close
+        if last_close > ma_h1 * 1.002: # 0.2% acima da média → Alta
+            self.h1_trend = 1
 
-        
-
-        if last_close > ma20 * 1.002: # 0.2% acima da média
-
-            self.h1_trend = 1 # Alta
-
-        elif last_close < ma20 * 0.998: # 0.2% abaixo da média
-
-            self.h1_trend = -1 # Baixa
+        elif last_close < ma_h1 * 0.998: # 0.2% abaixo da média → Baixa
+            self.h1_trend = -1
 
         else:
-
             self.h1_trend = 0 # Neutro
 
 
@@ -920,29 +922,31 @@ class AICore:
         # [SOTA v4 → v52.2] Filtro Direcional H1 (Regime Maestro)
         # [AUTORIZADO 03/03/2026] Veto relaxado: permite operações contra H1 com confirmação institucional
         # CVD bearish + OBI negativo = fluxo institucional real de venda, mesmo com H1 em alta
-
-        if veto_reason is None:
+        # [v22.5.3] Master Switch: use_h1_trend_bias
+        
+        if veto_reason is None and self.use_h1_trend_bias:
 
             ai_dir = np.sign(norm_patchtst)
 
             if self.h1_trend == 1 and ai_dir < 0: # Venda contra tendência de alta H1
                 # Bypass do veto se CVD institucional bearish confirmado (fluxo real de venda)
-                # OU score extremo de venda do PatchTST (alta convicção bearish)
                 cvd_bearish_confirmed = (divergence == -1) and (obi < -0.3)
-                extreme_sell_signal = (norm_patchtst < -0.70)
+                extreme_sell_signal = (norm_patchtst < -0.75) # Aumentado rigor para bypass
                 if cvd_bearish_confirmed or extreme_sell_signal:
                     logging.info(f"⚡ [H1 BYPASS VENDA] CVD_bearish={cvd_bearish_confirmed}, Extreme={extreme_sell_signal}. Venda autorizada contra H1.")
                 else:
                     veto_reason = "VETO_TENDENCIA_ALTA_H1"
 
-            elif self.h1_trend == -1 and ai_dir > 0: # Compra contra tendência de baixa H1
+            elif self.h1_trend == -1 and ai_dir > 0: # Compra contra tendência de baixa H1 (Caso 10/03)
                 # Bypass do veto se CVD institucional bullish confirmado (fluxo real de compra)
                 cvd_bullish_confirmed = (divergence == 1) and (obi > 0.3)
-                extreme_buy_signal = (norm_patchtst > 0.70)
+                extreme_buy_signal = (norm_patchtst > 0.75) # Aumentado rigor para bypass
                 if cvd_bullish_confirmed or extreme_buy_signal:
                     logging.info(f"⚡ [H1 BYPASS COMPRA] CVD_bullish={cvd_bullish_confirmed}, Extreme={extreme_buy_signal}. Compra autorizada contra H1.")
                 else:
                     veto_reason = "VETO_TENDENCIA_BAIXA_H1"
+                    logging.warning(f"🛡️ [ANTI-QUEDA] Compra bloqueada por viés baixista H1 (Score: {norm_patchtst * 100:.1f}%)")
+
 
 
 
@@ -996,13 +1000,31 @@ class AICore:
             veto_reason = f"VETO_DE_SPREAD_ALTO ({spread:.1f} > {self.spread_veto_threshold})"
             logging.warning(f"⚠️ VETO DE SPREAD: {spread:.1f} pts > {self.spread_veto_threshold}")
 
-        # [v50.1] GATILHO LONG SQUEEZE (Caça aos Stops)
+        # [v52.5] GATILHO SHORT SQUEEZE (Caça aos Stops de Vendidos)
+        # Se o preço está rompendo topo histórico/local e há urgência de compra
+        if veto_reason is None and self.h1_trend > 0:
+            short_squeeze = self._detect_short_squeeze(current_price, atr)
+            if short_squeeze:
+                logging.warning(f"🚀 [SHORT SQUEEZE] Caça aos Stops de vendidos detectada em {current_price:.1f}. Forçando Compra.")
+                direction = "BUY"
+                final_score = 95.0 # Score de compra alta
+                lot_multiplier = 2.0 # Dobra o lote para o estouro
+                return {
+                    "score": float(final_score),
+                    "direction": direction,
+                    "lot_multiplier": float(lot_multiplier),
+                    "tp_multiplier": 2.5, # Alvo longo para o squeeze
+                    "veto": None,
+                    "reason": "SHORT_SQUEEZE_INSTITUCIONAL"
+                }
+
+        # [v50.1] GATILHO LONG SQUEEZE (Caça aos Stops de Comprados)
         # Se o preço está perdendo fundo histórico e há urgência de venda
         if veto_reason is None and self.h1_trend < 0:
             long_squeeze = self._detect_long_squeeze(current_price, atr)
             if long_squeeze:
                 # Dispara venda agressiva mesmo se o score da IA não for extremo
-                logging.warning(f"💥 [LONG SQUEEZE] Caça aos Stops detectada em {current_price:.1f}. Forçando Venda.")
+                logging.warning(f"💥 [LONG SQUEEZE] Caça aos Stops de comprados detectada em {current_price:.1f}. Forçando Venda.")
                 direction = "SELL"
                 final_score = 5.0 # Score de venda alta
                 lot_multiplier = 2.0 # Dobra o lote para o estouro
@@ -1099,13 +1121,51 @@ class AICore:
 
 
 
-        # Direção - [SOTA v25.6] IMPULSO PONTO DOCE (70%+)
-        # [v50.1] RELAXAMENTO PARA HYPER-OPT: 88% em vez de 93%
-        # [v52.1] Agora usa atributos dinâmicos (self.buy_threshold / self.sell_threshold)
-        direction = "NEUTRAL"
+        # [SOTA v52.6] SCORE ADAPTATIVO POR VOLATILIDADE (REVISADO 11/03)
+        # Relaxa o threshold de pontuação se a volatilidade (ATR) for explosiva (> 100 pts)
+        # Isso permite disparos mais rápidos em pernas de tendência forte.
+        atr_activation = getattr(self, "rsi_dynamic_activation_atr", 100.0)
+        
+        # Thresholds base SOTA
+        current_buy_threshold = 60.0
+        current_sell_threshold = 40.0
+        
+        if atr >= atr_activation:
+            # RELAXAMENTO BASE (ATR alto):
+            # Compra: 60→58 | Venda: 40→42
+            current_buy_threshold = 58.0
+            current_sell_threshold = 42.0
+            if self.regime_counter % 200 == 0:
+                logging.info(f"⚡ [ADAPTATIVE SCORE] Volatilidade alta ({atr:.1f}pts). Thresholds relaxados: 58/42.")
 
-        if final_score >= self.buy_threshold: direction = "COMPRA"
-        elif final_score <= self.sell_threshold: direction = "VENDA"
+        # [SOTA v22.5.4] CONFIDENCE RELAX H1: Relaxamento adicional quando H1 confirma direção
+        # Gatilho independente: usa atr_confidence_relax_trigger (configurável no JSON, default 100.0)
+        # Segurança: só relaxa se a direção PROVÁVEL (score) está ALINHADA com H1
+        # Nunca relaxa para operar contra a tendência do tempo superior.
+        confidence_relax_trigger = getattr(self, "atr_confidence_relax_trigger", 100.0)
+        if atr >= confidence_relax_trigger:
+            relax_factor = getattr(self, "confidence_relax_factor", 0.80)
+            score_direction = 1 if final_score >= 50 else -1
+            h1_aligned = (self.h1_trend == 1 and score_direction > 0) or \
+                         (self.h1_trend == -1 and score_direction < 0)
+
+            if self.use_h1_trend_bias and h1_aligned and self.h1_trend != 0:
+                extra_relax = (current_buy_threshold - 50) * (1 - relax_factor)
+                current_buy_threshold -= extra_relax   # ex: 58→~57.6
+                current_sell_threshold += extra_relax  # ex: 42→~42.4
+                if self.regime_counter % 200 == 0:
+                    logging.info(
+                        f"⚡ [CONFIDENCE RELAX H1] H1 alinhado com sinal (fator={relax_factor:.2f}). "
+                        f"Thresholds finais: Buy={current_buy_threshold:.1f} / Sell={current_sell_threshold:.1f}"
+                    )
+
+        
+        if veto_reason:
+            direction = "WAIT"
+        else:
+            direction = "NEUTRAL"
+            if final_score >= current_buy_threshold: direction = "COMPRA"
+            elif final_score <= current_sell_threshold: direction = "VENDA"
 
         
 
@@ -1180,18 +1240,37 @@ class AICore:
 
     def _detect_long_squeeze(self, current_price, atr):
         """
-        [v50.1] Identifica se o preço está em zona de acionamento de Stops do varejo.
+        [v50.1] Identifica se o preço está em zona de acionamento de Stops de comprados.
         """
-        if not hasattr(self, 'price_history') or len(self.micro_analyzer.price_history) < 20:
+        if not hasattr(self.micro_analyzer, 'price_history') or len(self.micro_analyzer.price_history) < 20:
             return False
             
-        # Pega a mínima dos últimos 20 períodos
-        history = self.micro_analyzer.price_history
+        # Pega a mínima dos últimos 20 períodos (excluindo o atual se já estiver no histórico)
+        history = self.micro_analyzer.price_history[:-1] if len(self.micro_analyzer.price_history) > 20 else self.micro_analyzer.price_history
+        if not history: return False
         local_low = min(history)
         
         # Se o preço está a menos de 50 pontos do fundo ou rompeu levemente (5 pontos)
         # E o ATR está em expansão (urgência)
         if (local_low - 5) <= current_price <= (local_low + 50):
+            return True
+        return False
+
+    def _detect_short_squeeze(self, current_price, atr):
+        """
+        [v52.5] Identifica se o preço está em zona de acionamento de Stops de vendidos (Short Squeeze).
+        """
+        if not hasattr(self.micro_analyzer, 'price_history') or len(self.micro_analyzer.price_history) < 20:
+            return False
+            
+        # Pega a máxima dos últimos 20 períodos (excluindo o atual se já estiver no histórico)
+        history = self.micro_analyzer.price_history[:-1] if len(self.micro_analyzer.price_history) > 20 else self.micro_analyzer.price_history
+        if not history: return False
+        local_high = max(history)
+        
+        # Se o preço está a menos de 50 pontos do topo ou rompeu levemente (5 pontos)
+        # E o ATR está em expansão (urgência)
+        if (local_high - 50) <= current_price <= (local_high + 5):
             return True
         return False
 

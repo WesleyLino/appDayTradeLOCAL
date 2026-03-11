@@ -622,6 +622,7 @@ class MT5Bridge:
                         logging.warning(f"ROLLOVER DETECTADO: Migrando {current_symbol} -> {next_symbol} (Vol: {vol_next} vs {vol_curr})")
                         return next_symbol
             
+            logging.info(f"🔍 [BRIDGE] Símbolo resolvido para operar {base}: {current_symbol}")
             return current_symbol
 
         except Exception as e:

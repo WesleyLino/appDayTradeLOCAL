@@ -56,15 +56,19 @@ class MarketDataWorker:
             # 3. Calendário de Volatilidade
             vol_expected, vol_reason = self.calendar.is_volatility_expected()
             
-            # 4. Preço de Ajuste (WIN$)
-            settlement_price = await asyncio.to_thread(self.bridge.get_settlement_price, "WIN$")
+            # [SOTA v52.7] Detecção Dinâmica de Contratos Ativos
+            symbol_win = await asyncio.to_thread(self.bridge.get_current_symbol, "WIN") or "WIN$"
+            symbol_wdo = await asyncio.to_thread(self.bridge.get_current_symbol, "WDO") or "WDO$"
 
-            # [MT5-INTEG] Coleta Paralela dos Novos Dados de Alta Fidelidade
+            # 4. Preço de Ajuste (Símbolo Normalizado para Ajuste)
+            settlement_price = await asyncio.to_thread(self.bridge.get_settlement_price, symbol_win)
+
+            # [MT5-INTEG] Coleta Paralela dos Novos Dados de Alta Fidelidade usando Contratos Vigentes
             (htf_bias, real_cvd, liquidity_data, wdo_cvd, commission_today) = await asyncio.gather(
-                asyncio.to_thread(self.bridge.get_htf_bias, "WIN$"),           # #3: Viés H1
-                asyncio.to_thread(self.bridge.get_real_cvd_ticks, "WIN$"),     # #2: CVD Real Tick
-                asyncio.to_thread(self.bridge.get_daily_volume_and_liquidity, "WIN$"),  # #6: Liquidez D1
-                asyncio.to_thread(self.bridge.get_real_cvd_ticks, "WDO$"),     # #4: CVD WDO para correlação
+                asyncio.to_thread(self.bridge.get_htf_bias, symbol_win),           # #3: Viés H1
+                asyncio.to_thread(self.bridge.get_real_cvd_ticks, symbol_win),     # #2: CVD Real Tick
+                asyncio.to_thread(self.bridge.get_daily_volume_and_liquidity, symbol_win),  # #6: Liquidez D1
+                asyncio.to_thread(self.bridge.get_real_cvd_ticks, symbol_wdo),     # #4: CVD WDO para correlação
                 asyncio.to_thread(self.bridge.get_real_commission_today),       # #7: Comissão real
             )
 

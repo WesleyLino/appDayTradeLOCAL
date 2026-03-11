@@ -44,7 +44,7 @@ async def run_audit():
     total_rigor_vetos = 0
     total_inercia_vetos = 0
     
-    print(f"🚀 Auditoria Estratégica Sniper V22.5 - 13 Dias")
+    print("🚀 Auditoria Estratégica Sniper V22.5 - 13 Dias")
     
     for date_str in dates:
         df_day = await get_data_for_day("WIN$", date_str)

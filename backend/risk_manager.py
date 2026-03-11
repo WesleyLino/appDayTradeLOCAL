@@ -37,6 +37,7 @@ class RiskManager:
         self.atr_volatility_trigger = 120.0
         self.bollinger_squeeze_threshold = 1.2
         self.min_atr_threshold = 50.0  # [v22.5.1] Inércia Institucional: Ignora mercado "parado" (pts)
+        self.flux_imbalance_threshold = 0.95 # [ANTIVIBE-CODING] SOTA V22.5.1
         
         # [v52.0] Scaling Out (Saída Parcial HFT)
         self.base_volume = 2.0       # 2 contratos para permitir parcial
@@ -56,8 +57,9 @@ class RiskManager:
         # [v50.1] TIME-DECAYING TP
         self.tp_decay_per_min = 0.05            # Decaimento de 5% por minuto
         
-        # [v50.1] TRAILING ESTRANGULADOR (VENDA)
-        self.sell_trailing_step_atr = 0.3        # Passo de 0.3 ATR para vendas (Paranoia Institucional)
+        # [v52.5] TRAILING ESTRANGULADOR SIMÉTRICO (SOTA V22.5.1)
+        self.trailing_step_atr = 0.3           # Passo de 0.3 ATR para Compra e Venda (Paranoia Institucional)
+        self.sell_trailing_step_atr = 0.3        # Mantido para retrocompatibilidade
 
         # [SOTA V22.5.1] Filtro de Fluxo (OBJ/Book L2) - Sincronizado com JSON
         self.flux_imbalance_threshold = 0.95
@@ -73,6 +75,14 @@ class RiskManager:
         
         # [FASE 28] DYNAMIC PARAMS CACHE
         self.dynamic_params = {} # Carregado via load_optimized_params
+
+    def _normalize_symbol(self, symbol):
+        """[HFT ELITE] Normaliza o símbolo para chaves de parâmetros genéricas."""
+        if not symbol: return "WIN$"
+        s = symbol.upper()
+        if "WIN" in s or "IND" in s: return "WIN$"
+        if "WDO" in s or "DOL" in s: return "WDO$"
+        return s
 
         # [MÉTRICAS DE PERFORMANCE]
         self.total_trades = 0
@@ -368,7 +378,8 @@ class RiskManager:
         Suporta injeção de parâmetros dinâmicos via self.dynamic_params.
         """
         # Fallback para parâmetros dinâmicos se disponíveis
-        d_params = self.dynamic_params.get(symbol, {}) if symbol else {}
+        norm_symbol = self._normalize_symbol(symbol) if symbol else None
+        d_params = self.dynamic_params.get(norm_symbol, {}) if norm_symbol else {}
         
         trigger = profit_threshold if profit_threshold is not None else d_params.get("pyramid_profit_threshold", self.be_trigger)
         sig_threshold = signal_threshold if signal_threshold is not None else d_params.get("pyramid_signal_threshold", 1.2)
@@ -408,24 +419,19 @@ class RiskManager:
 
     def get_dynamic_trailing_params(self, current_atr, side="buy"):
         """
-        [v50.1] Trailing Stop Dinâmico Assimétrico.
-        - Compra: Segue a EMA 9 (Aprox 1 ATR).
-        - Venda: Estrangulador Paranoico (Passo Curto baseado em ATR).
+        [v52.6] Trailing Stop Dinâmico Simétrico (SOTA V22.5.2).
+        Otimizado em 11/03 para travar lucro mais agressivamente.
         """
         if not current_atr or current_atr <= 0:
             return self.trailing_trigger, self.trailing_lock, self.trailing_step
             
-        if side == "sell":
-            # [v50.1] Lógica de Venda: Estrangulamento Rápido
-            trigger = current_atr * 0.7  # Ativa mais cedo (0.7 ATR)
-            lock = current_atr * 0.3     # Trava 0.3 ATR
-            step = current_atr * self.sell_trailing_step_atr # Passo curto (0.3 ATR)
-            return float(trigger), float(lock), float(step)
-            
-        # Padrão Institucional para Compra: 1.5x ATR
-        trigger = current_atr * 1.5
-        lock = current_atr * 0.8
-        step = current_atr * 0.4
+        # [v52.6] SUCESSO: Trava 50% da perna de lucro após bater a Parcial
+        # O trigger é reduzido para 0.5 ATR (mais rápido) para impedir devolução de lucro
+        trigger = current_atr * 0.5  # Ativa com metade da volatilidade (Sniping)
+        lock = current_atr * 0.4     # Trava 40% (Preserva o ganho)
+        
+        # Passo de 0.2 ATR (Micro-Trailing) para "colar" no preço
+        step = current_atr * 0.2
         
         return float(trigger), float(lock), float(step)
 
@@ -672,7 +678,13 @@ class RiskManager:
             try:
                 with open(json_path, 'r') as f:
                     raw_data = json.load(f)
+                    # [ANTIVIBE-CODING] Busca hierárquica por parâmetros
                     params = raw_data.get("params", raw_data.get("strategy_params", raw_data))
+                    
+                    if not isinstance(params, dict):
+                        logging.warning(f"⚠️ RISK: Parâmetros em {json_path} não são um dicionário válido.")
+                        return False
+
                     mapped_params = {
                         "sl": params.get("sl_dist", params.get("sl")),
                         "tp": params.get("tp_dist", params.get("tp")),
@@ -689,9 +701,15 @@ class RiskManager:
                         "flux_imbalance_threshold": params.get("flux_imbalance_threshold", params.get("flux_threshold", 0.95)),
                         "start_time": params.get("start_time"),
                         "end_time": params.get("end_time"),
-                        "confidence_threshold": params.get("confidence_threshold")
+                        "confidence_threshold": params.get("confidence_threshold"),
+                        "trailing_step_atr": params.get("trailing_step_atr", 0.3),
+                        "sell_trailing_step_atr": params.get("sell_trailing_step_atr", 0.3)
                     }
-                    self.dynamic_params[symbol] = mapped_params
+                    norm_symbol = self._normalize_symbol(symbol)
+                    self.dynamic_params[norm_symbol] = mapped_params
+                    # Salva também na chave original para garantir compatibilidade caso algum script use literal
+                    if norm_symbol != symbol:
+                        self.dynamic_params[symbol] = mapped_params
                     
                     # [v50.1] Injeção direta nos atributos se for o símbolo principal
                     if "WIN" in symbol:
@@ -702,11 +720,13 @@ class RiskManager:
                         self.atr_volatility_trigger = params.get("atr_volatility_trigger", self.atr_volatility_trigger)
                         self.bollinger_squeeze_threshold = mapped_params.get("bollinger_squeeze_threshold", self.bollinger_squeeze_threshold)
                         self.daily_trade_limit = params.get("daily_trade_limit", self.daily_trade_limit)
+                        self.min_atr_threshold = mapped_params.get("min_atr_threshold", self.min_atr_threshold)
                         self.flux_imbalance_threshold = mapped_params.get("flux_imbalance_threshold", self.flux_imbalance_threshold)
-                    logging.info(f"✅ RISCO: Parâmetros para {symbol} mapeados: {mapped_params}")
+                    
+                    logging.info(f"✅ RISCO: Parâmetros para {symbol} sincronizados: flux={self.flux_imbalance_threshold}, squeeze={self.bollinger_squeeze_threshold}")
                     return True
             except Exception as e:
-                logging.error(f"❌ RISK: Erro ao carregar parâmetros de {json_path}: {e}")
+                logging.error(f"❌ RISK: Erro crítico ao carregar parâmetros de {json_path}: {e}")
         return False
 
     def get_order_params(self, symbol, type, price, volume, current_atr=None, regime=None, tp_multiplier=1.0):
@@ -723,8 +743,8 @@ class RiskManager:
             elif regime == 0: tp_mult = 0.8
             sl_points = float(current_atr * sl_mult)
             tp_points = float(current_atr * tp_mult)
-        elif symbol in self.dynamic_params:
-            d_params = self.dynamic_params[symbol]
+        elif self._normalize_symbol(symbol) in self.dynamic_params:
+            d_params = self.dynamic_params[self._normalize_symbol(symbol)]
             sl_points = float(d_params.get("sl", 130.0))
             tp_points = float(d_params.get("tp", 100.0))
         elif "WDO" in symbol or "DOL" in symbol:

@@ -40,7 +40,7 @@ async def run_audit_09mar():
     target_date = datetime(2026, 3, 9).date()
     trades = [t for t in report['trades'] if pd.to_datetime(t['exit_time']).date() == target_date]
     
-    print(f"📊 RESULTADO FINANCEIRO (09/03):")
+    print("📊 RESULTADO FINANCEIRO (09/03):")
     if not trades:
         print(" > Resultado: R$ 0,00 (Nenhum trade executado)")
     else:
