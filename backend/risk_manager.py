@@ -29,11 +29,11 @@ class RiskManager:
         
         # [v52.1] Breakeven Ultra-Rápido - Sincronizado com JSON
         self.be_trigger = 60.0       
-        self.be_lock = 5.0          
+        self.be_lock = 0.0          
         
         # [v22.3] Filtro Anti-Lateralidade (Anti-Sideways)
-        self.adx_min_threshold = 20.0
-        self.adx_volatility_threshold = 18.0
+        self.adx_min_threshold = 18.0
+        self.adx_volatility_threshold = 15.0
         self.atr_volatility_trigger = 120.0
         self.bollinger_squeeze_threshold = 1.2
         self.min_atr_threshold = 50.0  # [v22.5.1] Inércia Institucional: Ignora mercado "parado" (pts)
@@ -476,7 +476,7 @@ class RiskManager:
         Segue a mínima/máxima do candle M1 anterior (Escala Fracionada).
         Garante que o robô não seja 'violinado' por ruídos curtos.
         """
-        if not prev_extremes:
+        if prev_extremes is None:
             return None
             
         if side.lower() == "buy" or side == 1: # 1 = BUY no MT5

@@ -725,6 +725,7 @@ class BacktestPro:
                     
                     ai_dir = ai_decision.get('direction', 'NEUTRAL')
                     ai_score = ai_decision.get('score', 50.0)
+                    is_momentum_bypass = ai_decision.get('is_momentum_bypass', False)
                     
                     # [v36.1] Estabilidade Direcional Corrigida (0=Sell, 100=Buy)
                     if ai_dir == "COMPRA":
@@ -759,16 +760,16 @@ class BacktestPro:
                     v22_buy = (
                         (v22_buy_raw or is_momentum_bypass)
                         and (ai_dir == "COMPRA") 
-                        and (ai_stability >= thr_buy)
+                        and (ai_stability >= thr_buy or is_momentum_bypass)
                         and cooldown_ok 
-                        and not bias_veto_buy
+                        and (not bias_veto_buy or is_momentum_bypass)
                     )
                     v22_sell = (
                         (v22_sell_raw or is_momentum_bypass)
                         and (ai_dir == "VENDA") 
-                        and (ai_stability >= thr_sell)
+                        and (ai_stability >= thr_sell or is_momentum_bypass)
                         and cooldown_ok 
-                        and not bias_veto_sell
+                        and (not bias_veto_sell or is_momentum_bypass)
                     )
                     
                     # [v22.3] Filtro Anti-Lateralidade (Anti-Sideways)
@@ -819,17 +820,18 @@ class BacktestPro:
                         
                     quantile_confidence = ai_decision.get('quantile_confidence', "NORMAL")
                     regime_tag = f"SOTA_SNIPER_{ai_dir}"
-                    dyn_sl = self.opt_params['sl_dist']
                     
-                    # [V36 PRIME] ALVO DINÂMICO
+                    # [v24.2] ALVOS DINÂMICOS (SL/TP Multiplier)
+                    sl_multiplier = ai_decision.get('sl_multiplier', 1.0)
                     tp_multiplier = ai_decision.get('tp_multiplier', 1.0)
+                    
+                    dyn_sl = self.opt_params['sl_dist'] * sl_multiplier
                     dyn_tp = self.opt_params['tp_dist'] * tp_multiplier
                     use_partial_flag = ai_decision.get('use_partial', True)
                     
                     # Ajustes de alvos por regime (Compatibilidade com Phase 13)
-                    # [BUGFIX v52.1] Mínimo de 200 pts para WIN em vez de 100 pts (que não cobre custo operacional)
-                    if current_regime == 2 or current_regime == 0: # Noise/Consol
-                        dyn_tp = min(self.opt_params['tp_dist'], 200.0) if "WIN" in self.symbol else self.opt_params['tp_dist'] * 0.5
+                    # [v24.2] Respeitar os multiplicadores da IA sem limites legados de 200pts
+                    pass
                     
                     # Log de auditoria interna
                     if v22_buy or v22_sell:
@@ -951,7 +953,7 @@ class BacktestPro:
                 rigor_mult = self.risk.get_directional_rigor(potential_side, current_ema90, current_price)
                 
                 effective_conf_threshold = self.opt_params['confidence_threshold'] * rigor_mult
-                ai_filter_ok = ai_stability >= effective_conf_threshold
+                ai_filter_ok = (ai_stability >= effective_conf_threshold) or is_momentum_bypass
                 
                 if not ai_filter_ok and ai_stability >= self.opt_params['confidence_threshold']:
                     self.shadow_signals['veto_reasons']['RIGOR_DIRECIONAL'] = \

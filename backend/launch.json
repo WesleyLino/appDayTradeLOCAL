@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "🤖 Debug: Sniper Bot (WIN)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/bot_sniper_win.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "🛡️ Debug: Diagnóstico (Test Real)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/test_real_execution.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ]
+}
