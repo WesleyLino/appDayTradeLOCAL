@@ -5,8 +5,8 @@ Available Providers: ['DmlExecutionProvider', 'CPUExecutionProvider']
 Loading Model: backend/patchtst_weights_sota_optimized.onnx
 Active Providers: ['DmlExecutionProvider', 'CPUExecutionProvider']
 SUCCESS: AMD GPU (DirectML) is ACTIVE.
-Running 100 iterations (Batch=1, Seq=60, Ch=5)...
-Average Latency: 0.56ms
-Total Time: 0.0563s
+Running 100 iterations (Batch=1, Seq=60, Ch=8)...
+Average Latency: 0.79ms
+Total Time: 0.0794s
 TERMINATED SUCCESSFULLY
 ==================================================

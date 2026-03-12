@@ -1,0 +1,147 @@
+{
+    "consolidado": {
+        "pnl_total": 49.07857142857975,
+        "total_compra": 0.0,
+        "total_venda": 127.07857142857975,
+        "total_prejuizo": -78.0,
+        "oportunidades_perdidas": 0,
+        "vetos_totais": 120109
+    },
+    "detalhes": [
+        {
+            "data": "2026-02-19",
+            "pnl": 18.2,
+            "lucro_compra": 0,
+            "lucro_venda": 18.2,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 5102
+        },
+        {
+            "data": "2026-02-20",
+            "pnl": -23.971428571426078,
+            "lucro_compra": 0,
+            "lucro_venda": 6.028571428573923,
+            "prejuizo": -30.0,
+            "oportunidades_perdidas": 0,
+            "vetos": 5435
+        },
+        {
+            "data": "2026-02-23",
+            "pnl": 15.471428571426078,
+            "lucro_compra": 0,
+            "lucro_venda": 15.471428571426078,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 5850
+        },
+        {
+            "data": "2026-02-24",
+            "pnl": 2.1785714285739246,
+            "lucro_compra": 0,
+            "lucro_venda": 15.178571428573925,
+            "prejuizo": -13.0,
+            "oportunidades_perdidas": 0,
+            "vetos": 6199
+        },
+        {
+            "data": "2026-02-25",
+            "pnl": 20.1,
+            "lucro_compra": 0,
+            "lucro_venda": 25.1,
+            "prejuizo": -5.0,
+            "oportunidades_perdidas": 0,
+            "vetos": 6511
+        },
+        {
+            "data": "2026-02-26",
+            "pnl": 41.300000000005824,
+            "lucro_compra": 0,
+            "lucro_venda": 41.300000000005824,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 6887
+        },
+        {
+            "data": "2026-02-27",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 7323
+        },
+        {
+            "data": "2026-03-02",
+            "pnl": -30.0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": -30.0,
+            "oportunidades_perdidas": 0,
+            "vetos": 7763
+        },
+        {
+            "data": "2026-03-03",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 8325
+        },
+        {
+            "data": "2026-03-04",
+            "pnl": 5.800000000000001,
+            "lucro_compra": 0,
+            "lucro_venda": 5.800000000000001,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 8749
+        },
+        {
+            "data": "2026-03-05",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 9308
+        },
+        {
+            "data": "2026-03-06",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 9867
+        },
+        {
+            "data": "2026-03-09",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 10425
+        },
+        {
+            "data": "2026-03-10",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 10933
+        },
+        {
+            "data": "2026-03-11",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 11432
+        }
+    ]
+}

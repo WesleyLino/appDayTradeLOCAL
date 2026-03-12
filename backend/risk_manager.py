@@ -7,7 +7,7 @@ import os
 
 # [ANTIVIBE-CODING] - Classe Crítica de Risco
 class RiskManager:
-    def __init__(self, max_daily_loss=100.00, daily_trade_limit=999, max_daily_loss_pct=0.20, initial_balance=500.0):
+    def __init__(self, max_daily_loss=100.00, daily_trade_limit=999, max_daily_loss_pct=0.20, initial_balance=3000.0):
         self.max_daily_loss = max_daily_loss
         self.max_daily_loss_pct = max_daily_loss_pct
         self.daily_trade_limit = daily_trade_limit # v52.1 - MODO ILIMITADO
@@ -17,7 +17,7 @@ class RiskManager:
         self.dry_run = False # [REAL-EXECUTION-ACTIVE] - Ativação de ordens reais no MT5
         # [ANTIVIBE-CODING] - Limites de Perda Agressivos
         self.forbidden_hours = [
-            (time(8, 55), time(9, 10)),  # Abertura (Aguarda formação das 10 primeiras velas de M1 para cálculo de volatilidade)
+            # (time(8, 55), time(9, 10)),  # [v23] Liberado para abertura flexível com lote 0.5x
             (time(12, 0), time(13, 0)),  # Almoço/Baixa liquidez
             (time(17, 15), time(18, 0))  # Fechamento (Sincronizado com v22_locked_params)
         ]
@@ -28,8 +28,8 @@ class RiskManager:
         self.trailing_step = 5.0    # [SOTA V22.5.7] Trailing ultra-curto para capturar lucro bi-direcional
         
         # [v52.1] Breakeven Ultra-Rápido - Sincronizado com JSON
-        self.be_trigger = 70.0       
-        self.be_lock = 15.0          
+        self.be_trigger = 60.0       
+        self.be_lock = 5.0          
         
         # [v22.3] Filtro Anti-Lateralidade (Anti-Sideways)
         self.adx_min_threshold = 20.0
@@ -42,7 +42,7 @@ class RiskManager:
         # [v52.0] Scaling Out (Saída Parcial HFT)
         self.base_volume = 2.0       # 2 contratos para permitir parcial
         self.partial_volume = 1.0    # Zera 1 contrato na parcial
-        self.partial_profit_points = 80.0 # [v36 PRIME] Lucro travado mais tarde para maior rentabilidade
+        self.partial_profit_points = 70.0 # [v22 GOLDEN] Saída parcial mais agressiva para proteger capital
         
         # [FASE 2] Velocity Limit (Drawdown Acelerado no Tempo)
         self.velocity_time_limit_sec = 20.0     # Segundos máximos engatado negativamente
@@ -63,7 +63,7 @@ class RiskManager:
                 "label": "Trending",
                 "trailing_trigger": 120.0, "trailing_lock": 90.0,
                 "rsi_buy": 38.0, "rsi_sell": 62.0,
-                "take_profit": 550.0, "use_partial": False,
+                "take_profit": 550.0, "use_partial": True, "partial_tp": 50.0,
                 "lot_multiplier": 1.0, "stop_loss": 250.0
             },
             0: { # LATERAL (Sniper Scalper)
@@ -96,6 +96,11 @@ class RiskManager:
         # [FASE 2] Quarter-Kelly (Ajuste de Expectativa)
         self.kelly_fraction = 0.25              # Quarter-Kelly (Segurança HFT)
 
+        # [v24] Parâmetros de Lote e Alvos Fixos (Defaults de Segurança)
+        self.force_lots = None
+        self.sl_dist = 150.0
+        self.tp_dist = 500.0
+        
         # [NOVO] Switches de Controle Manual do Frontend
         self.enable_news_filter = False
         # [ANTIVIBE-CODING] - Filtros de Proteção Institucional
@@ -104,14 +109,7 @@ class RiskManager:
         
         # [FASE 28] DYNAMIC PARAMS CACHE
         self.dynamic_params = {} # Carregado via load_optimized_params
-
-    def _normalize_symbol(self, symbol):
-        """[HFT ELITE] Normaliza o símbolo para chaves de parâmetros genéricas."""
-        if not symbol: return "WIN$"
-        s = symbol.upper()
-        if "WIN" in s or "IND" in s: return "WIN$"
-        if "WDO" in s or "DOL" in s: return "WDO$"
-        return s
+        self.opening_lot_multiplier = 0.5 # [v23] Lote reduzido para abertura volátil (09:00-09:10)
 
         # [MÉTRICAS DE PERFORMANCE]
         self.total_trades = 0
@@ -128,6 +126,14 @@ class RiskManager:
         self.post_event_momentum = False        # True durante os 10 min após fim de um veto
         self.post_event_momentum_until = None   # datetime de expiração do modo momentum
         self.post_event_name = ""               # Nome do evento que originou o momentum
+
+    def _normalize_symbol(self, symbol):
+        """[HFT ELITE] Normaliza o símbolo para chaves de parâmetros genéricas."""
+        if not symbol: return "WIN$"
+        s = symbol.upper()
+        if "WIN" in s or "IND" in s: return "WIN$"
+        if "WDO" in s or "DOL" in s: return "WDO$"
+        return s
 
     def _load_economic_calendar(self):
         """Carrega dados de calendário econômico (impacto >= 3) para Veto de Liquidez."""
@@ -173,49 +179,25 @@ class RiskManager:
             regime_idx = regime_idx.get('id', 0)
         return self.regime_settings.get(regime_idx, self.regime_settings[0])
 
-    def get_dynamic_trailing_params(self, current_atr, regime_params=None):
-        """[SOTA] Calcula gatilho e trava de trailing com base na volatilidade e regime."""
+    def get_dynamic_trailing_params(self, current_atr, regime_params=None, side="neutral"):
+        """[SOTA v24] Calcula gatilho e trava de trailing com base na volatilidade, regime e DIREÇÃO."""
         base_trigger = regime_params['trailing_trigger'] if regime_params else self.trailing_trigger
         base_lock = regime_params['trailing_lock'] if regime_params else self.trailing_lock
         
+        # [v24] Passo Assimétrico
+        # BUY (Largo): 50 pts
+        # SELL (Estrangulador): 20 pts
+        step = 50.0 if side == "buy" else 20.0 if side == "sell" else self.trailing_step
+
         if current_atr > 150:
             trigger = base_trigger + (current_atr * 0.2)
             lock = base_lock + (current_atr * 0.1)
         else:
             trigger = base_trigger
             lock = base_lock
-        return trigger, lock, self.trailing_step
+        return trigger, lock, step
 
-    def get_order_params(self, symbol, order_type, price, lots, current_atr=0, regime=None, tp_multiplier=1.0):
-        """
-        [V36 EXPERT] Retorna parâmetros completos de SL, TP e Trailing Stop.
-        Sincroniza a Matriz de Regimes com os multiplicadores dinâmicos da IA.
-        """
-        regime_id = regime if regime is not None else getattr(self, "current_regime", 0)
-        regime_params = self.regime_settings.get(regime_id, self.regime_settings[0])
-        
-        # Alvos Base da Matriz
-        base_tp = regime_params.get("take_profit", 400.0) * tp_multiplier
-        base_sl = regime_params.get("stop_loss", 250.0)
-        
-        # Ajuste por Tipo de Ordem
-        if order_type in [self.mt5.ORDER_TYPE_BUY, self.mt5.ORDER_TYPE_BUY_LIMIT]:
-            sl = price - base_sl
-            tp = price + base_tp
-        else:
-            sl = price + base_sl
-            tp = price - base_tp
-            
-        return {
-            "type": order_type,
-            "price": price,
-            "lots": lots,
-            "sl": float(sl),
-            "tp": float(tp),
-            "regime_id": regime_id,
-            "trailing_trigger": regime_params.get("trailing_trigger", self.trailing_trigger),
-            "trailing_lock": regime_params.get("trailing_lock", self.trailing_lock)
-        }
+    # [v23] Removido get_order_params duplicado/obsoleto.
 
     def check_gap_safety(self, opening_price, prev_close):
         """
@@ -445,39 +427,88 @@ class RiskManager:
              logging.debug(f"⏳ [DECAIMENTO TEMPORAL] Alvo reduzido: {original_tp_dist:.1f} -> {new_tp:.1f} (Decay: {decay_factor:.2%})")
         return float(new_tp)
 
-    def check_scaling_out(self, symbol, ticket, current_profit_points, current_volume):
+    def calculate_dynamic_tp(self, base_tp, atr_current):
         """
-        [v50 - MASTER] Saída Parcial (Scaling Out) / Take Profit Fracionado.
-        Se atingiu o primeiro alvo e tem mais de 1 lote, encerra a parcial para garantir lucro.
+        [v22.2] Ajusta o TP dinamicamente com base na volatilidade.
+        Evita alvos impossíveis em baixa volatilidade.
         """
-        if current_profit_points >= self.partial_profit_points and current_volume > self.partial_volume:
-            logging.info(f"🎯 [PARCIAL MASTER] Gatilho atingido: {current_profit_points:.1f} pts. Reduzindo {self.partial_volume} lotes.")
-            return True, self.partial_volume
+        if not atr_current or atr_current <= 0:
+            return base_tp
+        
+        # Se a volatilidade está 50% abaixo da média operacional (120 pts)
+        if atr_current < 60.0:
+            return min(base_tp, atr_current * 1.5)
+        return base_tp
+
+    def check_scaling_out(self, symbol, ticket, current_profit_points, current_volume, regime=None, **kwargs):
+        """
+        [v24] Saída Parcial (Scaling Out) / Mão Fracionada.
+        Garante o profit do primeiro contrato e ativa o breakeven para o 'Caçador'.
+        """
+        target_partial = self.partial_profit_points
+        
+        # [MODO MOMENTUM / v24] Saída relâmpago para proteger capital de 3k
+        if regime == "MOMENTUM" or kwargs.get('comment') == 'MOMENTUM_BYPASS' or kwargs.get('version') == 'v24':
+            target_partial = 60.0 # [v24 GOLDEN SCALP]
+            
+        if current_profit_points >= target_partial and current_volume >= 2.0:
+            logging.info(f"🎯 [v24 PARCIAL] Alvo {target_partial} pts atingido. Realizando 1 contrato. Restante vira 'Caçador'.")
+            return True, 1.0
         return False, 0.0
+
+    def check_breakeven(self, current_profit_points, entry_price, side="buy"):
+        """
+        [v22 GOLDEN] Verifica se a operação atingiu o gatilho de Breakeven.
+        Gatilho: 60 pts. Trava: +5 pts a favor.
+        """
+        if current_profit_points >= self.be_trigger:
+            if side.lower() == "buy":
+                new_sl = entry_price + self.be_lock
+            else:
+                new_sl = entry_price - self.be_lock
+            
+            return True, float(new_sl)
+        return False, None
+
+    def get_structural_stop(self, side, prev_extremes):
+        """
+        [v24.1] Trailing Stop Estrutural.
+        Segue a mínima/máxima do candle M1 anterior (Escala Fracionada).
+        Garante que o robô não seja 'violinado' por ruídos curtos.
+        """
+        if not prev_extremes:
+            return None
+            
+        if side.lower() == "buy" or side == 1: # 1 = BUY no MT5
+            # Protege 5 pts abaixo da mínima do candle anterior
+            return float(prev_extremes['low'] - 5.0)
+        else:
+            # Protege 5 pts acima da máxima do candle anterior
+            return float(prev_extremes['high'] + 5.0)
 
     def get_dynamic_trailing_params(self, current_atr, side="buy", regime_params=None):
         """
-        [v52.6] Trailing Stop Dinâmico Simétrico (SOTA V22.5.2).
-        Otimizado em 11/03 para travar lucro mais agressivamente.
-        [V36 REGIME EXPERT] Sobrescreve com parâmetros específicos do regime se fornecidos.
+        [v24] Trailing Stop Dinâmico Assimétrico.
+        Compra: Trend Following (Largo).
+        Venda: Panic/Short Squeeze (Estrangulador).
         """
         if regime_params and "trailing_trigger" in regime_params:
-            logging.info(f"🧬 [TRAILING EXPERT] Usando parâmetros do Regime: {regime_params.get('label')}")
             return (float(regime_params["trailing_trigger"]), 
                     float(regime_params["trailing_lock"]), 
                     float(regime_params["trailing_step"]))
 
-        if not current_atr or current_atr <= 0:
-            return self.trailing_trigger, self.trailing_lock, self.trailing_step
-            
-        # [v52.6] SUCESSO: Trava 50% da perna de lucro após bater a Parcial
-        # O trigger é reduzido para 0.5 ATR (mais rápido) para impedir devolução de lucro
-        trigger = current_atr * 0.5  # Ativa com metade da volatilidade (Sniping)
-        lock = current_atr * 0.4     # Trava 40% (Preserva o ganho)
-        
-        # Passo de 0.2 ATR (Micro-Trailing) para "colar" no preço
-        step = current_atr * 0.2
-        
+        # [v24] Lógica Assimétrica Baseada em Auditoria HFT
+        if side.lower() == "sell":
+            # Venda e pânico: Estrangular
+            trigger = 120.0
+            lock = 80.0
+            step = 20.0 # Estrangulamento de 20 em 20 pts
+        else:
+            # Compra: Deixar respirar
+            trigger = 150.0
+            lock = 100.0
+            step = 50.0 # Passo largo de 50 pts
+
         return float(trigger), float(lock), float(step)
 
     def calculate_quarter_kelly(self, balance, win_rate_pct, profit_factor, risk_per_trade_points=150.0, point_value=0.20):
@@ -731,22 +762,22 @@ class RiskManager:
                         return False
 
                     mapped_params = {
-                        "sl": params.get("sl_dist", params.get("sl")),
-                        "tp": params.get("tp_dist", params.get("tp")),
-                        "rsi_period": params.get("rsi_period"),
-                        "vol_spike_mult": params.get("vol_spike_mult"),
-                        "pyramid_profit_threshold": params.get("pyramid_profit_threshold"),
-                        "pyramid_signal_threshold": params.get("pyramid_signal_threshold"),
-                        "pyramid_max_volume": params.get("pyramid_max_volume"),
-                        "be_trigger": params.get("be_trigger"),
-                        "be_lock": params.get("be_lock"),
+                        "sl": params.get("sl_dist") or params.get("sl") or 150.0,
+                        "tp": params.get("tp_dist") or params.get("tp") or 300.0,
+                        "rsi_period": params.get("rsi_period") or 9,
+                        "vol_spike_mult": params.get("vol_spike_mult") or 1.0,
+                        "pyramid_profit_threshold": params.get("pyramid_profit_threshold") or 100.0,
+                        "pyramid_signal_threshold": params.get("pyramid_signal_threshold") or 0.6,
+                        "pyramid_max_volume": params.get("pyramid_max_volume") or 1,
+                        "be_trigger": params.get("be_trigger") or 60.0,
+                        "be_lock": params.get("be_lock") or 5.0,
                         "adx_min_threshold": params.get("adx_min_threshold", 20.0),
                         "bollinger_squeeze_threshold": params.get("bollinger_squeeze_threshold", 1.2),
                         "min_atr_threshold": params.get("min_atr_threshold", 50.0),
-                        "flux_imbalance_threshold": params.get("flux_imbalance_threshold", params.get("flux_threshold", 0.95)),
-                        "start_time": params.get("start_time"),
-                        "end_time": params.get("end_time"),
-                        "confidence_threshold": params.get("confidence_threshold"),
+                        "flux_imbalance_threshold": params.get("flux_imbalance_threshold") or params.get("flux_threshold") or 1.5,
+                        "start_time": params.get("start_time") or "09:00",
+                        "end_time": params.get("end_time") or "17:15",
+                        "confidence_threshold": params.get("confidence_threshold") or 0.52,
                         "trailing_step_atr": params.get("trailing_step_atr", 0.3),
                         "sell_trailing_step_atr": params.get("sell_trailing_step_atr", 0.3)
                     }
@@ -767,14 +798,17 @@ class RiskManager:
                         self.daily_trade_limit = params.get("daily_trade_limit", self.daily_trade_limit)
                         self.min_atr_threshold = mapped_params.get("min_atr_threshold", self.min_atr_threshold)
                         self.flux_imbalance_threshold = mapped_params.get("flux_imbalance_threshold", self.flux_imbalance_threshold)
+                        self.force_lots = params.get("force_lots") 
+                        self.sl_dist = mapped_params.get("sl", 130.0) # [v24] Expondo para o bot
+                        self.tp_dist = mapped_params.get("tp", 100.0) # [v24] Expondo para o bot
                     
-                    logging.info(f"✅ RISCO: Parâmetros para {symbol} sincronizados: flux={self.flux_imbalance_threshold}, squeeze={self.bollinger_squeeze_threshold}")
+                    logging.info(f"✅ RISCO: Parâmetros para {symbol} sincronizados: flux={self.flux_imbalance_threshold}, tp={getattr(self, 'tp_dist', 'Auto')}, lots={getattr(self, 'force_lots', 'Auto')}")
                     return True
             except Exception as e:
                 logging.error(f"❌ RISK: Erro crítico ao carregar parâmetros de {json_path}: {e}")
         return False
 
-    def get_order_params(self, symbol, type, price, volume, current_atr=None, regime=None, tp_multiplier=1.0):
+    def get_order_params(self, symbol, type, price, volume, current_atr=None, regime=None, tp_multiplier=1.0, current_time=None, **kwargs):
         """
         Retorna parâmetros calculados para envio de ordem OCO.
         [SOTA v5] Suporta tp_multiplier e alvos baseados em ATR/Regime.
@@ -788,43 +822,86 @@ class RiskManager:
             elif regime == 0: tp_mult = 0.8
             sl_points = float(current_atr * sl_mult)
             tp_points = float(current_atr * tp_mult)
-        elif self._normalize_symbol(symbol) in self.dynamic_params:
-            d_params = self.dynamic_params[self._normalize_symbol(symbol)]
+        else:
+            norm_sym = self._normalize_symbol(symbol)
+            d_params = self.dynamic_params.get(norm_sym, {})
             sl_points = float(d_params.get("sl", 130.0))
             tp_points = float(d_params.get("tp", 100.0))
-        elif "WDO" in symbol or "DOL" in symbol:
-            sl_points = 5.0
-            tp_points = 10.0
-        elif "WIN" in symbol or "IND" in symbol:
-            sl_points = 130.0
-            tp_points = 100.0
-        else:
-            sl_points = 0.0
-            tp_points = 0.0
+
+        # [v24] Janela de Ouro (10:00 - 11:30)
+        if current_time:
+            # Sincronizado com v24_locked_params
+            if time(10, 0) <= current_time <= time(11, 30):
+                tp_points *= 1.5
+                logging.info(f"🚀 [v24 GOLDEN-WINDOW] TP expandido (+50%): {tp_points:.0f} pts")
+
+        # [v23] Valores Default por Símbolo (Se não houver ATR)
+        if not (current_atr and current_atr > 0):
+            if "WDO" in symbol or "DOL" in symbol:
+                sl_points = 5.0
+                tp_points = 10.0
+            elif "WIN" in symbol or "IND" in symbol:
+                sl_points = 130.0
+                tp_points = 100.0
+            else:
+                sl_points = 150.0
+                tp_points = 150.0
+
+        # [v23] Lógica de Momentum e Abertura consolidada
+        if tp_multiplier > 1.1:
+            tp_points *= tp_multiplier
+            sl_points *= 1.2
+            
+        # [v23] Aplicar multiplicador de lote por Regime
+        r_params = self.get_regime_specific_params(regime)
+        volume *= r_params.get("lot_multiplier", 1.0)
+            
+        now_time = current_time if current_time else datetime.now().time()
+        if time(9, 0) <= now_time <= time(9, 10):
+            volume *= self.opening_lot_multiplier
+            volume = max(1.0, round(volume))
+            sl_points *= 2.0
+            logging.info(f"⚡ [RISCO v23] Abertura ({now_time}). Lote: {volume}, Stop: {sl_points}")
 
         if tp_multiplier != 1.0 and tp_points > 0:
             tp_points *= tp_multiplier
 
-        # Limites de segurança
-        if "WIN" in symbol:
-            sl_points = max(100.0, min(300.0, sl_points))
-            tp_points = max(100.0, min(400.0, tp_points))
-        elif "WDO" in symbol or "DOL" in symbol:
-            sl_points = max(3.0, min(15.0, sl_points))
-            tp_points = max(5.0, min(30.0, tp_points))
+        if type in (mt5.ORDER_TYPE_BUY, mt5.ORDER_TYPE_BUY_LIMIT, mt5.ORDER_TYPE_BUY_STOP):
+            side = "buy"
+        elif type in (mt5.ORDER_TYPE_SELL, mt5.ORDER_TYPE_SELL_LIMIT, mt5.ORDER_TYPE_SELL_STOP):
+            side = "sell"
+        else:
+            side = "neutral"
 
-        sl, tp = 0.0, 0.0
-        if sl_points > 0:
-            if type in (mt5.ORDER_TYPE_BUY, mt5.ORDER_TYPE_BUY_LIMIT, mt5.ORDER_TYPE_BUY_STOP):
-                side = "buy"
-                sl = price - sl_points
-                tp = price + tp_points
-            elif type in (mt5.ORDER_TYPE_SELL, mt5.ORDER_TYPE_SELL_LIMIT, mt5.ORDER_TYPE_SELL_STOP):
-                side = "sell"
-                sl = price + sl_points
-                tp = price - tp_points
+        # [v23.1] SL Dinâmico (Extremos do Candle Anterior)
+        prev_extremes = kwargs.get('prev_extremes')
+        sl_from_extremes = False
+        
+        if prev_extremes and type in [mt5.ORDER_TYPE_BUY, mt5.ORDER_TYPE_BUY_LIMIT, mt5.ORDER_TYPE_SELL, mt5.ORDER_TYPE_SELL_LIMIT]:
+            if type in [mt5.ORDER_TYPE_BUY, mt5.ORDER_TYPE_BUY_LIMIT]:
+                sl = prev_extremes['low'] - 5 # 1 tick respiro (WIN = 5 pts)
             else:
-                side = "neutral"
+                sl = prev_extremes['high'] + 5
+            
+            # Limite de segurança (Max 250 pts para WIN)
+            if "WIN" in symbol and abs(price - sl) > 250:
+                sl = price - 250 if type in [mt5.ORDER_TYPE_BUY, mt5.ORDER_TYPE_BUY_LIMIT] else price + 250
+            sl_from_extremes = True
+
+        if not sl_from_extremes:
+            sl, tp = 0.0, 0.0
+            if sl_points > 0:
+                if side == "buy":
+                    sl = price - sl_points
+                    tp = price + tp_points
+                elif side == "sell":
+                    sl = price + sl_points
+                    tp = price - tp_points
+                else:
+                    side = "neutral"
+        else:
+            # Se veio dos extremos, apenas calcula o TP
+            tp = price + tp_points if type in [mt5.ORDER_TYPE_BUY, mt5.ORDER_TYPE_BUY_LIMIT] else price - tp_points
 
             sl = self._quantize_price(symbol, sl)
             tp = self._quantize_price(symbol, tp)

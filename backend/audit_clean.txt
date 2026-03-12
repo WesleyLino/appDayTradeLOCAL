@@ -1,0 +1,571 @@
+2026-03-12 15:50:07,968 - INFO - \U0001f680 Iniciando Auditoria SOTA v23 - Data: 11/03/2026
+2026-03-12 15:50:07,968 - INFO - \U0001f4b0 Capital Inicial: R$ 3.000,00
+2026-03-12 15:50:07,977 - INFO - Conectado com sucesso!
+2026-03-12 15:50:07,977 - INFO - Servidor: GenialInvestimentos-PRD
+2026-03-12 15:50:07,978 - INFO - Corretora: Genial Investimentos Corretora de Valores Mobiliários S.A.
+2026-03-12 15:50:07,978 - INFO - Conta: 4635067
+2026-03-12 15:50:07,978 - INFO - Saldo: R$ 491.00
+2026-03-12 15:50:07,978 - INFO - [OK] Servidor Genial Verificado: GenialInvestimentos-PRD
+2026-03-12 15:50:07,979 - INFO - [OK] AlgoTrading: ATIVADO (Negociacao Permitida)
+2026-03-12 15:50:07,979 - INFO - \U0001f4e5 Coletando dados históricos para WIN$...
+2026-03-12 15:50:07,981 - INFO - \U0001f4ca 565 candles coletados (incluindo lookback).
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\backend\ai_core.py:42: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  state_dict = torch.load(self.model_path, map_location='cpu')
+2026-03-12 15:50:07,990 - INFO - --- [v22.5.7] PyTorch Engine Ativo (CPU Fallback)
+2026-03-12 15:50:07,997 - ERROR - Erro ao carregar InferenceEngine: Error(s) in loading state_dict for PatchTST:
+	Missing key(s) in state_dict: "pos_embed", "revin.gamma", "revin.beta", "layers.0.attn.qkv.weight", "layers.0.attn.qkv.bias", "layers.0.attn.out.weight", "layers.0.attn.out.bias", "layers.0.norm1.weight", "layers.0.norm1.bias", "layers.0.ff.0.weight", "layers.0.ff.0.bias", "layers.0.ff.2.weight", "layers.0.ff.2.bias", "layers.0.norm2.weight", "layers.0.norm2.bias", "layers.1.attn.qkv.weight", "layers.1.attn.qkv.bias", "layers.1.attn.out.weight", "layers.1.attn.out.bias", "layers.1.norm1.weight", "layers.1.norm1.bias", "layers.1.ff.0.weight", "layers.1.ff.0.bias", "layers.1.ff.2.weight", "layers.1.ff.2.bias", "layers.1.norm2.weight", "layers.1.norm2.bias", "layers.2.attn.qkv.weight", "layers.2.attn.qkv.bias", "layers.2.attn.out.weight", "layers.2.attn.out.bias", "layers.2.norm1.weight", "layers.2.norm1.bias", "layers.2.ff.0.weight", "layers.2.ff.0.bias", "layers.2.ff.2.weight", "layers.2.ff.2.bias", "layers.2.norm2.weight", "layers.2.norm2.bias". 
+	Unexpected key(s) in state_dict: "position_embedding", "encoder.0.attn.mha.in_proj_weight", "encoder.0.attn.mha.in_proj_bias", "encoder.0.attn.mha.out_proj.weight", "encoder.0.attn.mha.out_proj.bias", "encoder.0.norm1.weight", "encoder.0.norm1.bias", "encoder.0.ff.0.weight", "encoder.0.ff.0.bias", "encoder.0.ff.2.weight", "encoder.0.ff.2.bias", "encoder.0.norm2.weight", "encoder.0.norm2.bias", "encoder.1.attn.mha.in_proj_weight", "encoder.1.attn.mha.in_proj_bias", "encoder.1.attn.mha.out_proj.weight", "encoder.1.attn.mha.out_proj.bias", "encoder.1.norm1.weight", "encoder.1.norm1.bias", "encoder.1.ff.0.weight", "encoder.1.ff.0.bias", "encoder.1.ff.2.weight", "encoder.1.ff.2.bias", "encoder.1.norm2.weight", "encoder.1.norm2.bias", "encoder.2.attn.mha.in_proj_weight", "encoder.2.attn.mha.in_proj_bias", "encoder.2.attn.mha.out_proj.weight", "encoder.2.attn.mha.out_proj.bias", "encoder.2.norm1.weight", "encoder.2.norm1.bias", "encoder.2.ff.0.weight", "encoder.2.ff.0.bias", "encoder.2.ff.2.weight", "encoder.2.ff.2.bias", "encoder.2.norm2.weight", "encoder.2.norm2.bias", "revin.affine_weight", "revin.affine_bias". 
+2026-03-12 15:50:07,997 - INFO - --- Motor de Inferência SOTA carregado.
+2026-03-12 15:50:07,997 - INFO - [SEC] Golden Params V22 carregados com sucesso.
+2026-03-12 15:50:07,997 - WARNING - [INIT] [INIT-STATE] use_ai_core_param=True
+2026-03-12 15:50:07,997 - INFO - [SYNC] [v22.5.1] RiskManager sincronizado: limite=999 | OBI=1.5 | Squeeze=1.2
+2026-03-12 15:50:07,998 - INFO - [DATA] [v22.5.3/4/5] H1 + Hysteresis: use_h1=True | MA=20 | Hyst=400.0 | Relax=1.0
+2026-03-12 15:50:07,998 - INFO - \u2699\ufe0f Executando simulação SOTA v23...
+2026-03-12 15:50:07,998 - INFO - \U0001f680 Iniciando Simulação High Fidelity com 565 velas...
+2026-03-12 15:50:08,007 - INFO - \U0001f52c Calculando Microestrutura em Vetor (CVD/OFI/Ratio)...
+2026-03-12 15:50:08,013 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 200.4 > 120.0). Threshold: 18.0
+2026-03-12 15:50:08,015 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 200.0 > 120.0). Threshold: 18.0
+2026-03-12 15:50:08,016 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 203.2 > 120.0). Threshold: 18.0
+2026-03-12 15:50:08,018 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 206.4 > 120.0). Threshold: 18.0
+2026-03-12 15:50:08,021 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,024 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,026 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,029 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,031 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,034 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,035 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,037 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,040 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,042 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,045 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,047 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,050 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,052 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,054 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,056 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,059 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,061 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,063 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,065 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,067 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,069 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,074 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,077 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,079 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,082 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,084 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,086 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,089 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,092 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,094 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,096 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,099 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,102 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,104 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,107 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,110 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,112 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,115 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,116 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,119 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,121 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,124 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,127 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,129 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,132 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,134 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,137 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,139 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,141 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,143 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,146 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,149 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,152 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,154 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,156 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,161 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,164 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,166 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,168 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,171 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,173 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,176 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,179 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,181 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,184 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,186 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,189 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,191 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,193 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,196 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,199 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,201 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,203 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,206 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,208 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,210 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,213 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,214 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,216 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,219 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,222 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,224 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,226 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,228 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,231 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,233 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,235 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,237 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,241 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,243 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,245 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,247 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,250 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,252 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,254 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,257 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,260 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,262 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,264 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,266 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,269 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,271 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,274 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,276 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,279 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,281 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,283 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,285 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,288 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,290 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,293 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,296 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,298 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,300 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,302 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,306 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,309 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,311 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,313 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,315 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,318 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,320 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,323 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,325 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,327 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,329 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,332 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,334 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,337 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,339 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,341 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,343 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,346 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,348 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,350 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,352 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,355 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,357 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,359 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,361 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,364 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,366 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,369 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,371 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,374 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,376 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,379 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,381 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,384 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,386 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,389 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,391 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,393 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,395 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,398 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,400 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,403 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,405 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,407 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,411 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,414 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,416 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,419 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,422 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,424 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,426 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,429 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,432 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,434 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,437 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,439 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,441 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,444 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,447 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,449 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,454 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,456 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,459 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,461 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,464 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,466 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,470 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,472 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,474 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,477 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,480 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,482 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,484 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,487 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,489 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,492 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,494 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,497 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,500 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,502 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,505 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,507 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,510 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,512 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,514 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,517 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,520 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,522 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,524 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,527 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,530 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,532 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,534 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,537 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,539 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,542 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,544 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,547 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,550 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,553 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,555 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,557 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,560 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,562 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,565 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,567 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,569 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,572 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,575 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,577 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,580 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,583 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,584 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,587 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,590 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,593 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,594 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,597 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,600 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,603 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,607 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,609 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,612 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,614 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,616 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,619 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,621 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,624 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,625 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,628 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,631 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,633 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,634 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,638 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,639 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,642 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,645 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,647 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,649 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,652 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,654 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,656 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,659 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,661 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,664 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,665 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,668 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,670 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,673 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,674 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,677 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,680 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,682 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,684 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,686 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,690 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,692 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,695 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,697 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,699 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,702 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,704 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,707 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,710 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,712 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,714 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,716 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,718 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,721 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,723 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,726 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,728 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,730 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,733 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,734 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,736 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,740 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,741 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,744 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,746 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,750 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,753 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,756 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,758 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,760 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,763 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,765 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,767 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,770 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,773 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,774 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,777 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,780 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,782 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,784 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,786 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,789 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,791 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,794 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,796 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,798 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,801 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,803 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,805 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,808 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,809 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,812 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,814 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,816 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,820 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,822 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,824 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,826 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,829 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,831 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,833 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,835 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,838 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,840 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,843 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,845 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,847 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,849 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,851 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,853 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,857 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,858 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,859 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,864 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,866 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,869 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,871 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,873 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,875 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,878 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,879 - INFO - \U0001f4c9 [GATE TÉCNICO] VENDA @ 185840.0 | RSI=81.9 | Score_IA=50.0 | TP=250.0pts | SL=150pts (ATR=100)
+2026-03-12 15:50:08,881 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,883 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,884 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,886 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,891 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,894 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,896 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,899 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,901 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,903 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,906 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,908 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,911 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,913 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,915 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,918 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,920 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,923 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,981 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,984 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,984 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,989 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,991 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,993 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,996 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:08,998 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,001 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,003 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,005 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,008 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,009 - INFO - \U0001f4c9 [GATE TÉCNICO] VENDA @ 185885.0 | RSI=84.7 | Score_IA=50.0 | TP=250.0pts | SL=150pts (ATR=99)
+2026-03-12 15:50:09,011 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,013 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,014 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,017 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,020 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,022 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,024 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,026 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,029 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,031 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,033 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,035 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,039 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,041 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,043 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,045 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,048 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,050 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,052 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,054 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,057 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,058 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,061 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,063 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,066 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,068 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,070 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,073 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,075 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,077 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,080 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,082 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,084 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,089 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,091 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,094 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,096 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,099 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,101 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,103 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,106 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,108 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,110 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,113 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,115 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,118 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,120 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,122 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,124 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,127 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,129 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,132 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,134 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,136 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,138 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,140 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,143 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,146 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,148 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,149 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,152 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,155 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,157 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,159 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,161 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,164 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,167 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,169 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,172 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,174 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,176 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,178 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,180 - INFO - \U0001f4c9 [GATE TÉCNICO] VENDA @ 186215.0 | RSI=87.5 | Score_IA=50.0 | TP=400.0pts | SL=150pts (ATR=54)
+2026-03-12 15:50:09,181 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,183 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,186 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,188 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,190 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,193 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,195 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,197 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,199 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,201 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,204 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,206 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,209 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,211 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,213 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,215 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,218 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,220 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,223 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,226 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,229 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,232 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,234 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,236 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,239 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,241 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,243 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,246 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,248 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,250 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,253 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,255 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,258 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,261 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,263 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,265 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,268 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,271 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,273 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,275 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,277 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,280 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,282 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,285 - ERROR - Erro na inferência: shape '[1, 5, 128, 128]' is invalid for input of size 8960
+2026-03-12 15:50:09,285 - INFO - \U0001f3c1 Simulação concluída.
+2026-03-12 15:50:09,444 - INFO - Conexão MT5 encerrada.
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 3032.02
+Lucro Líquido: R$ 32.02
+Total Trades:  3
+Win Rate:      66.7%
+Profit Factor: 33.02
+Max Drawdown:  0.03%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
+
+================================================================================
+                 RELATÓRIO DE PERFORMANCE SOTA v23 - 11/03/2026                 
+================================================================================
+Saldo Inicial:   R$ 3.000,00
+Saldo Final:     R$ 3032.02
+Lucro/Prejuízo:  R$ 32.02
+Trades do Dia:   3
+Taxa de Acerto:  66.7%
+Drawdown Máx:    0.03%
+--------------------------------------------------------------------------------
+Operações COMPRA:  0   | PnL Somado: R$ 0.00
+Operações VENDA:   3   | PnL Somado: R$ 32.02
+--------------------------------------------------------------------------------
+INDICADORES DE OPORTUNIDADE (Shadow Signals):
+- Sinais Candidatos (V22): 548
+- Vetos por Insegurança IA: 42
+- Vetos por Fluxo (OBI):    0
+- Principais Motivos de Veto: {'LOW_CONFIDENCE': 76}
+
+================================================================================
+MELHORIAS SUGERIDAS:
+1. Relaxar threshold de confiança em 10% para regimes de tendência comprovada.
+2. Calibrar Trailing Stop para travar 30% mais rápido em scalpings laterais.
+================================================================================
+

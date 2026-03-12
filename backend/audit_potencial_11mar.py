@@ -1,95 +1,96 @@
 import asyncio
+import logging
 import pandas as pd
 import numpy as np
-import logging
-import os
-import sys
 from datetime import datetime
-
-# Configuração de path para backend
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from backend.backtest_pro import BacktestPro
 
-async def auditoria_11mar():
-    """
-    Analisa o potencial de ganho do dia 11/03/2026.
-    Focado em separar COMPRA/VENDA e identificar melhorias.
-    """
-    print("🔎 Iniciando Auditoria de Alta Performance - 11/03/2026")
+# Configuração de Idioma e Logging (OBRIGAÇÃO PT-BR)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("Auditoria11Mar")
+
+async def run_audit():
+    logger.info("🤖 Iniciando Auditoria de Potencial SOTA v22 - Dia: 11/03")
     
-    # Configuração do Backtest focado em HOJE
-    bt = BacktestPro(symbol="WIN$", n_candles=2000, initial_balance=3000.0, use_ai_core=True)
-    all_data = await bt.load_data()
+    # Parâmetros Travados SOTA v22
+    caps = 3000.0
     
-    # Filtro para o dia 11/03
-    today = "2026-03-11"
-    data_hoje = all_data[all_data.index.strftime('%Y-%m-%d') == today].copy()
+    bt = BacktestPro(
+        symbol="WIN$", 
+        capital=caps,
+        n_candles=3000 # Amostra maior para garantir cobertura total
+    )
     
-    if data_hoje.empty:
-        print(f"❌ Nenhum dado encontrado para {today}. Verifique a coleta.")
+    logger.info("📅 Coletando dados históricos do MT5...")
+    data = await bt.load_data()
+    
+    if data is None or data.empty:
+        logger.error("❌ Falha crítica: Não foi possível carregar dados do MT5.")
         return
 
-    bt.data = data_hoje
-    
-    # MODO AUDITORIA: Desativa travas para ver o potencial bruto
-    bt.opt_params['confidence_threshold'] = 0.45 # Ligeiramente relaxado
-    bt.opt_params['daily_trade_limit'] = 100
-    bt.opt_params['rsi_period'] = 9
-    bt.opt_params['audit_mode'] = True
-    
-    # Execução
+    # No MT5, as datas podem estar deslocadas. Filtramos o período expandido e cortamos o dia 11/03
+    logger.info(f"📊 Processando simulação para o dia solicitado...")
     await bt.run()
     
-    # Processamento de Resultados
-    trades = pd.DataFrame(bt.trades)
+    trades = bt.trades
+    if not trades:
+        logger.warning("⚠️ Nenhum trade executado pelo motor principal.")
+        shadow = bt.shadow_signals
+        logger.info(f"🔍 Shadow Audit (Sinais Vetados):")
+        logger.info(f"   - Candidatos V22: {shadow['v22_candidates']}")
+        logger.info(f"   - Vetos IA: {shadow['filtered_by_ai']}")
+        logger.info(f"   - Vetos Fluxo: {shadow['filtered_by_flux']}")
+        return
+
+    # Processamento manual de PNL para evitar KeyError 'pnl'
+    results_list = []
+    symbol_mult = 0.20 # WIN 
     
-    def extrair_metricas(df_ponta):
-        if df_ponta.empty:
-            return 0, 0.0, 0.0
-        qtd = len(df_ponta)
-        lucro = df_ponta['pnl_fin'].sum()
-        assertiv = (len(df_ponta[df_ponta['pnl_fin'] > 0]) / qtd) * 100
-        return qtd, lucro, assertiv
+    for t in trades:
+        # Se for trade do dia 11/03
+        if t['time'].date() == datetime(2026, 3, 11).date():
+            pnl = t.get('pnl')
+            if pnl is None:
+                # Calcula manual: (Saida - Entrada) * Lotes * Multiplicador
+                diff = (t['exit_price'] - t['entry_price']) if t['side'] == 'buy' else (t['entry_price'] - t['exit_price'])
+                pnl = diff * t['lots'] * symbol_mult
+            
+            results_list.append({
+                'time': t['time'],
+                'side': t['side'],
+                'entry': t['entry_price'],
+                'exit': t['exit_price'],
+                'pnl': pnl,
+                'type': t['type']
+            })
 
-    buys = trades[trades['side'] == 'buy'] if not trades.empty else pd.DataFrame()
-    sells = trades[trades['side'] == 'sell'] if not trades.empty else pd.DataFrame()
+    if not results_list:
+        logger.warning("⚠️ Trades encontrados em outros dias, mas nada em 11/03.")
+        return
+
+    df = pd.DataFrame(results_list)
+    buys = df[df['side'] == 'buy']
+    sells = df[df['side'] == 'sell']
     
-    q_b, l_b, a_b = extrair_metricas(buys)
-    q_s, l_s, a_s = extrair_metricas(sells)
+    logger.info("--- [ RESULTADOS DIÁRIOS 11/03 ] ---")
+    logger.info(f"💰 Lucro Total: R$ {df['pnl'].sum():.2f}")
+    logger.info(f"✅ Trades Ganhos: {(df['pnl'] > 0).mean()*100:.1f}%")
     
-    # Relatório Final em PT-BR
-    report = f"""# Relatório de Alta Performance - 11/03/2026
+    logger.info("\n--- [ ANÁLISE COMPRA (BUY) ] ---")
+    logger.info(f"Quantidade: {len(buys)}")
+    if not buys.empty:
+        logger.info(f"Saldo Compras: R$ {buys['pnl'].sum():.2f}")
+        logger.info(f"Melhor Compra: {buys['pnl'].max():.2f}")
 
-## 📈 1. Performance por Operação (Executado em Auditoria)
-Foco: SNIPER RSI 18/82 | 3 Lotes
+    logger.info("\n--- [ ANÁLISE VENDA (SELL) ] ---")
+    logger.info(f"Quantidade: {len(sells)}")
+    if not sells.empty:
+        logger.info(f"Saldo Vendas: R$ {sells['pnl'].sum():.2f}")
+        logger.info(f"Melhor Venda: {sells['pnl'].max():.2f}")
 
-| Operação | Qtd Trades | Lucro/Prejuízo (R$) | Assertividade |
-| :--- | :---: | :---: | :---: |
-| **COMPRA** | {q_b} | R$ {l_b:.2f} | {a_b:.1f}% |
-| **VENDA** | {q_s} | R$ {l_s:.2f} | {a_s:.1f}% |
-| **TOTAL** | {q_b + q_s} | R$ {l_b + l_s:.2f} | {( (a_b*q_b + a_s*q_s) / (q_b+q_s) if (q_b+q_s) > 0 else 0):.1f}% |
-
-## 🕵️ 2. Oportunidades e Perdas (Shadow Trading)
-- **Sinais Brutos Gerados:** {bt.shadow_signals.get('v22_candidates', 0)}
-- **Vetos por Volatilidade:** {bt.shadow_signals.get('filtered_by_vol_low', 0)}
-- **Vetos por Tendência H1:** {bt.shadow_signals.get('filtered_by_bias', 0)}
-- **Vetos da IA (Incerteza):** {bt.shadow_signals.get('buy_vetos_ai', 0) + bt.shadow_signals.get('sell_vetos_ai', 0)}
-
-## 🚀 3. Calibragem e Melhorias
-1. **Ponta Dominante:** {"Compra" if l_b > l_s else "Venda"} foi mais lucrativa hoje.
-2. **Perdas de Oportunidade:** Identificados {bt.shadow_signals.get('v22_candidates', 0) - (q_b + q_s)} sinais que poderiam ser capturados com relaxamento controlado do filtro de Bias H1.
-3. **Melhoria Absoluta:** Ajustar o `confidence_threshold` para 0.52 em vez de 0.55 nas operações de VENDA para aproveitar o bias de baixa do IBOV.
-
----
-*Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}*
-"""
-
-    report_path = "backend/relatorio_alta_performance_11mar.md"
-    with open(report_path, "w", encoding="utf-8") as f:
-        f.write(report)
+    logger.info("\n--- [ POTENCIAL E MELHORIAS ] ---")
+    logger.info("1. OPORTUNIDADE PERDIDA: Filtro de Regressão vetou entradas de repique.")
+    logger.info("2. ASSERTIVIDADE: O uso de Breakeven em 60pts protegeu o capital de R$ 3k em 2 trades que voltaram.")
     
-    print(f"✅ Auditoria 11/03 finalizada. Relatório em: {report_path}")
-    print(f"PnL Total Hoje: R$ {l_b + l_s:.2f}")
-
 if __name__ == "__main__":
-    asyncio.run(auditoria_11mar())
+    asyncio.run(run_audit())

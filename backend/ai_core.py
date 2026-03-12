@@ -1,2226 +1,312 @@
-from backend.microstructure_analyzer import MicrostructureAnalyzer # HFT v2.0
-
-from backend.meta_learner import MetaLearner # Meta-aprendizado HFT v2.0
-from sklearn.cluster import KMeans # Mantém KMeans para o modelo de regime
-
-from dotenv import load_dotenv
-
-import torch # Import necessário para InferenceEngine
-
-import time
-
-import gc
-
-from datetime import datetime
-
-
-
-import google.generativeai as genai
-
 import os
-
 import logging
-
 import numpy as np
-
 import asyncio
-
-import json
-
-import pandas as pd
-
-
-
-load_dotenv()
-
-
-
-# AICore agora consome dados do NewsSentimentWorker via data/news_sentiment.json
-
-
-
-class AICore:
-
-    def __init__(self):
-        self._latest_sentiment_score = 0.0 # [SOTA v5] Valor real (atrás do decorador)
-        self.obi_ema = 0.5 # Valor inicial neutro
-        self.ema_alpha = 0.2 # Fator de suavização
-        
-        # [v52.1] Thresholds Dinâmicos para Alta Performance (MODO ILIMITADO)
-        self.buy_threshold = 60.0
-        self.sell_threshold = 40.0
-
-        self.regime_model = KMeans(n_clusters=3, n_init=10)
-
-        self.regime_history = []
-
-        self.regime_counter = 0
-
-        self.prev_book = None
-        self.toxic_flow_score = 0.0
-        self.last_news_update = 0
-        
-        # [V36 REGIME EXPERT] Estado do Regime
-        self.current_regime = 0 # 0: Lateral, 1: Tendência, 2: Volatilidade, 3: Reversão
-        self.regime_params = {} # Cache de parâmetros do regime atual
-
-        self.micro_analyzer = MicrostructureAnalyzer()
-
-        self.meta_learner = MetaLearner() 
-
-        self.inference_engine = None # Injetado pelo main.py
-
-
-
-        # [NOVOS PARÂMETROS CONFIGURÁVEIS - PESQUISA DE ALTO GANHO]
-
-        self.uncertainty_threshold_base = 0.40 # [MODO AGRESSIVO SOTA] Relaxado para maior volume operacional
-
-        self.lot_multiplier_partial = 0.25     # [ANTIVIBE-CODING] Padrão Seguro
-
-        self.uncertainty_high_conviction_cap = 4.0 # 400%
-
-        
-
-        # [REFINAMENTO 26/02] Controle de Cooldown e Estabilidade
-
-        self.consecutive_losses = 0
-
-        self.ia_cooldown_until = 0 # Timestamp
-
-        self.atr_history = [] # Para calculo de inercia de volatilidade
-
-        
-
-        # [SOTA v4] NOVAS CONFIGURAÇÕES DE ASSERTIVIDADE
-
-        self.h1_trend = 0 # -1 (Baixa), 0 (Neutro), 1 (Alta)
-        
-        self.use_h1_trend_bias = True # Master Toggle (v22_locked_params)
-        
-        self.h1_ma_period = 20        # Período da MA em H1
-
-        self.confidence_relax_factor = 0.80         # [SOTA v22.5.4] Fator de relaxamento por ATR+H1
-        self.atr_confidence_relax_trigger = 100.0   # [SOTA v22.5.4] Gatilho ATR para Confidence Relax H1
-
-        self.prob_lot_tiers = {
-
-            "baixa": 0.25,      # Confiança 70-75%
-
-            "media": 0.75,     # Confiança 75-85%
-
-            "alta": 1.0        # Confiança > 85%
-
-        }
-
-        
-
-        # [SOTA v25] SENTIMENTO MACRO (EMA 60m)
-
-        self.sentiment_ema = 0.0
-
-        self.sentiment_alpha = 0.033 # ~60 períodos para estabilização (1-min)
-
-        self.macro_bull_lock = False
-
-        self.macro_bear_lock = False
-
-
-
-        self.sentiment_anchor_price = 0.0
-
-        self.sentiment_anchor_time = 0
-
-        self.max_sentiment_drift = 300.0 # [RELAXADO] 300 pts para evitar neutralizar sinal em tendências fortes
-
-        self.opening_window_rigor = 1.5   # Multiplicador de rigor 09:00-09:30
-
-        self.spread_veto_threshold = 15.1 # [CORRIGIDO] 15.1 permite até 3 ticks no WIN$ (Filtro Anti-Gargalo)
-        self.vwap_dist_threshold = 450.0  # [SINCRONIZADO] 450 pts alinhado com v22_locked_params e RiskManager
-        
-        # [Otimização de Logs] Throttle para evitar spam no terminal
-        self._last_log_times = {}
-
-
-
-    def fetch_latest_news(self):
-
-        """
-
-        Coleta notícias de 'backend/news_feed.txt' para análise de sentimento.
-
-        Permite que o usuário insira notícias em tempo real salvando no arquivo.
-
-        """
-
-        news_file = os.path.join(os.path.dirname(__file__), "news_feed.txt")
-
-        if os.path.exists(news_file):
-
-            try:
-
-                with open(news_file, "r", encoding="utf-8") as f:
-
-                    content = f.read().strip()
-
-                    if content:
-
-                        return content
-
-            except Exception as e:
-
-                logging.error(f"Erro ao ler news_feed.txt: {e}")
-
-        
-
-        # Fallback se arquivo vazio ou inexistente
-
-        return "Mercado aguardando novos dados. Sem notícias relevantes no momento."
-
-
-
-    # [Fase 27] Lógica evaluate_opportunity removida. 
-
-    # O Bot agora decide usando calculate_decision diretamente para maior controle de parâmetros.
-
-
-
-    # [SOTA v5] Property para Sincronização Automática de Âncora
-
-    @property
-
-    def latest_sentiment_score(self):
-
-        return self._latest_sentiment_score
-
-
-
-    @latest_sentiment_score.setter
-
-    def latest_sentiment_score(self, value):
-
-        # [SOTA v25] CÁLCULO DE EMA MACRO (Suavização de 1h) - Funciona em Live e Backtest
-
-        self.sentiment_ema = (value * self.sentiment_alpha) + (self.sentiment_ema * (1 - self.sentiment_alpha))
-
-        
-
-        # Atualização das Travas Macro
-
-        self.macro_bull_lock = self.sentiment_ema > 0.15
-
-        self.macro_bear_lock = self.sentiment_ema < -0.15
-
-
-
-        # Reset de Âncora se o novo score for significativamente diferente (> 0.3)
-
-        # Isso centraliza a lógica para Live, Sniper e Backtest.
-
-        if hasattr(self, '_latest_sentiment_score') and abs(value - self._latest_sentiment_score) > 0.3:
-
-            self.sentiment_anchor_price = 0.0
-
-            logging.debug(f"⚓ SOTA v5: Reinicialização da Âncora de Sentimento (Delta > 0.3). Novo Score: {value:.2f}")
-
-        self._latest_sentiment_score = value
-
-
-
-    async def update_sentiment(self):
-
-        """
-
-        Lê o score de sentimento do arquivo gerado pelo NewsSentimentWorker.
-
-        Remove latência e custo de chamadas repetitivas à API no loop principal.
-
-        """
-
-        sentiment_file = os.path.join("data", "news_sentiment.json")
-
-        if not os.path.exists(sentiment_file):
-
-            # Fallback legacy: news_feed.txt
-
-            legacy_news = self.fetch_latest_news()
-
-            if "Sem notícias relevantes" not in legacy_news:
-
-                logging.debug("⚠️ Usando news_feed.txt como fallback (Worker Inativo)")
-
-            return self.latest_sentiment_score
-
-
-
-        try:
-
-            if os.path.getsize(sentiment_file) == 0:
-
-                logging.warning("⚠️ news_sentiment.json vazio.")
-
-                return self.latest_sentiment_score
-
-
-
-            with open(sentiment_file, "r", encoding="utf-8") as f:
-
-                data = json.load(f)
-
-                
-
-            score = float(data.get("score", 0.0))
-
-            timestamp = data.get("timestamp", 0)
-
-            reliability = data.get("reliability", "low")
-
-            risk_level = data.get("risk_classification", "LOW")
-
-            
-
-            # [FASE 28] TTL DINÂMICO POR NÍVEL DE RISCO
-
-            # Eventos sistêmicos têm vida longa; ruído expira rápido.
-
-            ttl_map = {
-
-                "EXTREME": 8 * 3600,  # 8h  – eventos geopolíticos/sistêmicos persistem
-
-                "HIGH":    2 * 3600,  # 2h  – macro surpresa, normaliza no pregão
-
-                "MEDIUM":  30 * 60,   # 30min – notícia corporativa, absorção rápida
-
-                "LOW":     10 * 60,   # 10min – ruído, descartável
-
-            }
-
-            ttl = ttl_map.get(risk_level, 15 * 60)  # Fallback: 15min
-
-            age_seconds = time.time() - timestamp
-
-            
-
-            if age_seconds > ttl:
-
-                logging.warning(
-
-                    f"⏰ Sentimento expirado [{risk_level}]: {age_seconds/60:.0f}min > TTL {ttl/60:.0f}min. Neutralizando."
-
-                )
-
-                self.latest_sentiment_score = 0.0
-
-            else:
-
-                if reliability == "low": score *= 0.5
-
-                
-
-                # O reset de âncora e EMA agora são feitos automaticamente pelo setter de latest_sentiment_score
-
-                self.latest_sentiment_score = max(-1.0, min(1.0, score))
-
-                
-
-            return self.latest_sentiment_score
-
-        except (json.JSONDecodeError, ValueError) as je:
-
-            logging.error(f"❌ Corrupção de dados no JSON de sentimento: {je}")
-
-            return self.latest_sentiment_score
-
-        except Exception as e:
-
-            logging.error(f"Erro ao ler news_sentiment.json: {e}")
-
-            return self.latest_sentiment_score
-
-
-
-    def detect_spoofing(self, order_book, time_sales):
-
-        """
-
-        Detecta spoofing comparando volume do book com histórico recente.
-
-        Implementa a regra de 'Toxic Flow': sumiço de ordens grandes sem trade.
-
-        """
-
-        if not order_book or (not order_book.get('bids') and not order_book.get('asks')):
-
-            return 0.5
-
-            
-
-        # 1. OBI (Order Book Imbalance) com Decaimento Exponencial (Depth-Weighted)
-
-        # Sugerido: Nível 1: 1.0, Nível 2: 0.6, Nível 3: 0.3, Nível 4: 0.1
-
-        weights = [1.0, 0.6, 0.3, 0.1]
-
-        
-
-        def get_weighted_volume(items):
-
-            total = 0
-
-            for i, item in enumerate(items):
-
-                weight = weights[i] if i < len(weights) else 0.05 # Longe do book: quase zero
-
-                total += item['volume'] * weight
-
-            return total
-
-
-
-        total_bid_weighted = get_weighted_volume(order_book.get('bids', []))
-
-        total_ask_weighted = get_weighted_volume(order_book.get('asks', []))
-
-        
-
-        total_bid_raw = sum(item['volume'] for item in order_book.get('bids', []))
-
-        total_ask_raw = sum(item['volume'] for item in order_book.get('asks', []))
-
-        
-
-        current_obi = 0.5
-
-        if total_bid_weighted + total_ask_weighted > 0:
-
-            current_obi = (total_bid_weighted - total_ask_weighted) / (total_bid_weighted + total_ask_weighted + 1)
-
-        
-
-        # Suavização EMA
-
-        self.obi_ema = (current_obi * self.ema_alpha) + (self.obi_ema * (1 - self.ema_alpha))
-
-        
-
-        # 2. Detecção de Toxic Flow (Remoção Súbita vs Execução Real)
-
-        if self.prev_book is not None:
-
-            # Usamos o RAW aqui, para comparar com a agressão real de mercado e medir lotes físicos cancelados
-
-            prev_bid_raw = sum(item['volume'] for item in self.prev_book.get('bids', []))
-
-            prev_ask_raw = sum(item['volume'] for item in self.prev_book.get('asks', []))
-
-            
-
-            # Cálculo exato de agressão (Volume Executado por Lado)
-
-            # time_sales deve ser filtrado se possível, ou usar heurística
-
-            # Assumindo que DataCollector entrega 'real_volume' e 'flags'
-
-            # Se não tiver flags, usamos volume total como proxy conservador
-
-            
-
-            sell_aggression_vol = 0 # Agressão de Venda (consome Bid)
-
-            buy_aggression_vol = 0 # Agressão de Compra (consome Ask)
-
-            
-
-            if time_sales is not None and hasattr(time_sales, 'empty') and not time_sales.empty:
-
-                # Na B3, TICK_FLAG_BUY (agressão compra) e TICK_FLAG_SELL (agressão venda)
-
-                # 0x100: BUY, 0x200: SELL (Flags MT5)
-
-                buy_aggression_vol = time_sales[time_sales['flags'] & 0x100]['volume'].sum() if 'flags' in time_sales.columns else 0
-
-                sell_aggression_vol = time_sales[time_sales['flags'] & 0x200]['volume'].sum() if 'flags' in time_sales.columns else 0
-
-                real_volume = buy_aggression_vol + sell_aggression_vol
-
-            else:
-
-                real_volume = 0
-
-            
-
-            # --- LÓGICA ALPHA-X: CANCELLATION RATE ---
-
-            # Comparamos quanto do volume sumiu (delta) vs quanto foi de fato executado (aggression)
-
-            delta_bid = max(0, prev_bid_raw - total_bid_raw)
-
-            delta_ask = max(0, prev_ask_raw - total_ask_raw)
-
-            
-
-            # Cancellation Rate: Proporção do volume removido que NíO foi trade
-
-            # Se sumiu 1000 e trade foi 100, 900 foram cancelados -> CR = 0.9
-
-            cr_bid = (delta_bid - sell_aggression_vol) / delta_bid if delta_bid > 0 else 0
-
-            cr_ask = (delta_ask - buy_aggression_vol) / delta_ask if delta_ask > 0 else 0
-
-
-
-            # Thresholds Dinâmicos (HFT v2.1)
-
-            threshold_bid = max(20, total_bid_raw * 0.1)
-
-            threshold_ask = max(20, total_ask_raw * 0.1)
-
-            
-
-            # [SPOOFING DE COMPRA]: Lotes sumindo no Bid sem agressão correspondente
-
-            if delta_bid > threshold_bid and cr_bid > 0.8:
-
-                self.toxic_flow_score = -0.9
-
-                logging.debug(f"🔥 ALPHA-X SPOOFING: Compra sumiu por cancelamento (CR: {cr_bid:.2f})") # Reduzido para DEBUG
-
-
-
-            # [SPOOFING DE VENDA]: Lotes sumindo no Ask sem agressão correspondente
-
-            elif delta_ask > threshold_ask and cr_ask > 0.8:
-
-                self.toxic_flow_score = 0.9
-
-                logging.debug(f"🔥 ALPHA-X SPOOFING: Venda sumiu por cancelamento (CR: {cr_ask:.2f})") # Reduzido para DEBUG
-
-                
-
-            else:
-
-                self.toxic_flow_score *= 0.8 # Decaimento
-
-                
-
-        self.prev_book = order_book
-
-        # Ajusta o OBI final com base no fluxo tóxico
-        final_signal = self.obi_ema + self.toxic_flow_score
-
-        # [Otimização de Logs] Log de Pressão OBI Ponderada movido para DEBUG para evitar saturação
-        if abs(final_signal) > 0.4:
-            logging.debug(f"🛡️ [OBI-SOTA] Pressão (Ponderada): {final_signal:.2f} | Fluxo Tóxico: {self.toxic_flow_score:.2f}")
-
-        return max(-1.0, min(1.0, final_signal))
-
-
-
-    def identify_market_regime(self, adx, atr, h1_trend, price, vwap, spread):
-        """
-        [V36 REGIME EXPERT] Identifica o "DNA" do mercado e retorna o mapa de parâmetros.
-        """
-        regime = 0 # Default: Lateral (Modo Sniper)
-        
-        # 1. Detecção de Volatilidade Explosiva (Prioridade Máxima)
-        if atr > 100 or spread > 5:
-            regime = 2 # Volatilidade (Modo Segurança)
-        
-        # 2. Detecção de Tendência Forte
-        elif adx > 25 and h1_trend != 0:
-            regime = 1 # Tendência (Modo Trend Rider)
-            
-        # 3. Detecção de Reversão em Clímax (Mean Reversion)
-        # Se estiver muito longe da VWAP e ADX começando a cair
-        elif abs(price - vwap) > 400 and adx < 30:
-            regime = 3 # Reversão
-            
-        # 4. Caso contrário: Lateralidade
-        else:
-            regime = 0 # Lateral (Modo Sniper)
-            
-        self.current_regime = regime
-        
-        # Mapeamento de Parâmetros Estáticos por Regime (Baseado no territory real)
-        if regime == 1: # TENDÊNCIA
-            self.regime_params = {
-                "rsi_buy": 38.0, "rsi_sell": 62.0,
-                "take_profit": 550, "use_partial": False,
-                "partial_at": 0, "lot_multiplier": 1.0,
-                "label": "TENDÊNCIA (Trend Rider)"
-            }
-        elif regime == 0: # LATERAL
-            self.regime_params = {
-                "rsi_buy": 20.0, "rsi_sell": 80.0,
-                "take_profit": 180, "use_partial": True,
-                "partial_at": 40, "lot_multiplier": 1.0,
-                "label": "LATERAL (Sniper Scalp)"
-            }
-        elif regime == 2: # VOLATILIDADE
-            self.regime_params = {
-                "rsi_buy": 15.0, "rsi_sell": 85.0,
-                "take_profit": 200, "use_partial": True,
-                "partial_at": 30, "lot_multiplier": 0.33, # 1 contrato
-                "label": "VOLATILIDADE (Safety Mode)"
-            }
-        elif regime == 3: # REVERSÃO
-            self.regime_params = {
-                "rsi_buy": 15.0, "rsi_sell": 85.0,
-                "take_profit": 350, "use_partial": True,
-                "partial_at": 100, "lot_multiplier": 1.0,
-                "label": "REVERSÃO (Mean Reversion)"
-            }
-            
-        return self.regime_params
-
-    def identify_market_regime(self, df, h1_trend=0):
-        """
-        [V36 EXPERT] Identifica o regime de mercado usando indicadores técnicos reais.
-        0: Lateral, 1: Tendência, 2: Volatilidade, 3: Reversão
-        """
-        if df is None or len(df) < 30:
-            return self.current_regime
-
-        try:
-            # 1. Cálculos de Base
-            close = df['close']
-            high = df['high']
-            low = df['low']
-            
-            # ATR (Simplificado)
-            tr = pd.concat([high - low, abs(high - close.shift(1)), abs(low - close.shift(1))], axis=1).max(axis=1)
-            atr = tr.rolling(14).mean().iloc[-1]
-            
-            # RSI
-            delta = close.diff()
-            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-            rs = gain / loss.replace(0, 0.000001)
-            rsi = 100 - (100 / (1 + rs.iloc[-1]))
-            
-            # ADX (Simplificado - Direcionalidade)
-            plus_dm = (high.diff().where((high.diff() > low.diff().abs()) & (high.diff() > 0), 0)).rolling(14).mean()
-            minus_dm = (low.diff().abs().where((low.diff().abs() > high.diff()) & (low.diff().abs() > 0), 0)).rolling(14).mean()
-            dx = (abs(plus_dm - minus_dm) / (plus_dm + minus_dm).replace(0, 1)) * 100
-            adx = dx.rolling(14).mean().iloc[-1]
-            
-            # Bollinger Bands (Desvio de clímax)
-            std = close.rolling(20).std().iloc[-1]
-            sma = close.rolling(20).mean().iloc[-1]
-            bb_upper = sma + (2 * std)
-            bb_lower = sma - (2 * std)
-            current_price = close.iloc[-1]
-            
-            # 2. Lógica de Decisão de Regime (Cascata)
-            
-            # 🔴 REGIME 2: Volatilidade Explosiva (Prioridade 1 - Segurança)
-            if atr > 100 or abs(self.toxic_flow_score) > 0.9:
-                regime = 2
-            
-            # 🔵 REGIME 3: Reversão em Clímax
-            elif (rsi > 85 or rsi < 15) and (current_price > bb_upper or current_price < bb_lower):
-                regime = 3
-                
-            # 🟢 REGIME 1: Tendência Direcional
-            elif adx > 25 and h1_trend != 0:
-                regime = 1
-                
-            # 🟡 REGIME 0: Lateralidade (Default)
-            else:
-                regime = 0
-                
-            self.current_regime = regime
-            self.regime_counter += 1
-            if self.regime_counter % 200 == 0:
-                logging.info(f"🧬 [DNA DO MERCADO] Regime: {regime} | ADX: {adx:.1f} | ATR: {atr:.1f} | RSI: {rsi:.1f}")
-                
-            return regime
-
-        except Exception as e:
-            logging.error(f"Erro em identify_market_regime: {e}")
-            return self.current_regime
-
-    def detect_regime(self, volatility, obi):
-        """Wrapper de compatibilidade para o bot_sniper legacy."""
-        return self.current_regime
-
-
-
-    def calculate_probabilistic_lot(self, score, quantile_confidence):
-
-        """
-
-        [SOTA v4] Calcula o multiplicador de lote baseado na convicção da IA.
-
-        """
-
-        # Se quantile_confidence for NORMAL, o rigor é maior
-
-        if quantile_confidence == "NORMAL":
-
-            if score >= 90 or score <= 10: return self.prob_lot_tiers["alta"]
-
-            if score >= 85 or score <= 15: return self.prob_lot_tiers["media"]
-
-            return self.prob_lot_tiers["baixa"]
-
-        
-
-        # Se for HIGH/VERY_HIGH, autoriza mais exposição
-
-        if score >= 85 or score <= 15: return self.prob_lot_tiers["alta"]
-
-        return self.prob_lot_tiers["media"]
-
-
-
-    def update_h1_trend(self, h1_data):
-
-        """
-
-        [SOTA v4] Atualiza o viés de tendência do tempo superior (H1).
-
-        H1 Data: DataFrame com dados M15/H1.
-
-        """
-
-        if h1_data is None or len(h1_data) < 2:
-
-            self.h1_trend = 0
-
-            return
-
-            
-
-        last_close = h1_data['close'].iloc[-1]
-
-        prev_close = h1_data['close'].iloc[-2]
-
-        
-
-        # Heurística: Preço acima/abaixo da MA dinâmica configurada em H1
-        ma_p = getattr(self, "h1_ma_period", 20)
-        ma_h1 = h1_data['close'].rolling(ma_p).mean().iloc[-1] if len(h1_data) >= ma_p else last_close
-        
-        # [v22.5.6-CIRCUIT] Salva a Média H1 base para bloqueio intra-H1 M1
-        self._last_ma_h1 = ma_h1
-
-        # [SOTA v22.5.5-REV] Lógica de Hysteresis Pura (Schmitt Trigger)
-        # Mais teimosa e protetiva: Remove a zona neutra para evitar indecisão em quedas.
-        # [v22.5.5-REV] Schmitt Trigger Real para Proteção Institucional
-        # 50 pontos era apenas o ruído de um único tick (WDO) e irrelevante no WIN (130 mil pontos).
-        # Para histerese real contra "whipsaws" do M1 num MA de 20 horas, precisamos filtrar retrocessos curtos.
-        hysteresis = getattr(self, "h1_hysteresis_pts", 800.0)  # [v22.5.6-B] Aumentado 400→800pts: evita freeze pós-correção
-        h_factor = hysteresis / ma_h1 if ma_h1 > 0 else 0.003
-
-        upper_limit = ma_h1 * (1.0 + h_factor)
-        lower_limit = ma_h1 * (1.0 - h_factor)
-
-        if last_close > upper_limit:
-            self.h1_trend = 1
-        elif last_close < lower_limit:
-            self.h1_trend = -1
-        else:
-            # Mantém a tendência anterior se estiver dentro da histerese para evitar oscilação
-            if not hasattr(self, 'h1_trend'):
-                self.h1_trend = 0
-                
-        # [v22.5.5-DEBUG] Imprimir os estados esporadicamente
-        if not hasattr(self, '_h1_debug_print_cnt'):
-            self._h1_debug_print_cnt = 0
-        self._h1_debug_print_cnt += 1
-
-        # Isso evita "flickering" na média e mantém o viés de proteção.
-
-
-
-    def update_sentiment_anchor(self, price):
-
-        """
-
-        [SOTA v5] Define o preço âncora para o decaimento de sentimento.
-
-        Chamado pelo loop principal (TradingBridge ou BacktestPro).
-
-        """
-
-        if self.sentiment_anchor_price == 0 and abs(self.latest_sentiment_score) > 0.1:
-
-            self.sentiment_anchor_price = price
-
-            logging.debug(f"⚓ ÂNCORA DE SENTIMENTO DEFINIDA: {price:.1f} (Score: {self.latest_sentiment_score:.2f})")
-
-
-
-    def identify_market_regime(self, df, **kwargs):
-        """
-        [V36 EXPERT] Identificação determinística de regime de mercado.
-        Avalia ADX, ATR, H1 e Bandas de Bollinger para classificar o cenário.
-        """
-        # 0: Lateral, 1: Tendência, 2: Volatilidade, 3: Reversão
-        regime = 0 
-        
-        atr = kwargs.get('atr', 0)
-        adx = kwargs.get('adx', 0)
-        h1_trend = kwargs.get('h1_trend', self.h1_trend)
-        
-        # Bollinger Data
-        bb_up = kwargs.get('bb_up')
-        bb_down = kwargs.get('bb_down')
-        bb_mid = kwargs.get('bb_mid')
-        current_price = df['close'].iloc[-1]
-        
-        # 1. VOLATILIDADE EXTREMA (Safety First)
-        if atr > 100 or abs(self.toxic_flow_score) > 0.8:
-            regime = 2
-        # 2. REVERSÃO (Mean Reversion / BB Exit)
-        elif (bb_up and current_price > bb_up * 1.001) or (bb_down and current_price < bb_down * 0.999):
-            regime = 3
-        # 3. TENDÊNCIA FORTE (Trend Rider)
-        elif adx > 25 or (h1_trend != 0 and abs(current_price - bb_mid) > (bb_up - bb_mid) * 0.8 if bb_up and bb_mid else False):
-            regime = 1
-        # 4. LATERAL / SQUEEZE (Sniper)
-        else:
-            regime = 0
-            
-        self.current_regime = regime
-        return regime
-
-    def calculate_decision(self, obi, sentiment, patchtst_score, regime=None, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0, sma_20=0.0, wdo_aggression=0.0, bluechip_score=0.0):
-        # [v50.1] DEBUG GLOBAL
-        import sys
-        
-        # --- 0. [SOTA V22.5.6] CIRCUIT BREAKER INTRA-H1 ---
-        cb_pts = getattr(self, "h1_circuit_breaker_pts", 800.0)
-        last_ma_h1 = getattr(self, "_last_ma_h1", current_price)
-        cur_trend = getattr(self, "h1_trend", 0)
-        if last_ma_h1 > 0:
-            if cur_trend == 1 and current_price < (last_ma_h1 - cb_pts):
-                logging.warning(f"🛑 [CIRCUIT BREAKER] Preço M1 {current_price} caiu {cb_pts} pts abaixo da Média H1 Institucional ({last_ma_h1:.1f}). Facas caindo! Veto total M1.")
-                return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "H1_CIRCUIT_BREAKER_BUY_LOCK"}
-            elif cur_trend == -1 and current_price > (last_ma_h1 + cb_pts):
-                if getattr(self, "use_anti_trap", True):
-                    logging.warning(f"🛑 [CIRCUIT BREAKER] Preço M1 {current_price} disparou {cb_pts} pts acima da Média H1 Institucional ({last_ma_h1:.1f}). Foguete! Veto total M1.")
-                    return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "H1_CIRCUIT_BREAKER_SELL_LOCK"}
-                else:
-                    logging.info("🔓 [EXPERT MODE] Bypass de H1_CIRCUIT_BREAKER_SELL (Anti-Trap OFF)")
-                
-        # sys.stderr.write(f"DEBUG: AICore calculating for price {current_price}\n")
-        # --- 0.1 [v30] VWAP MEAN REVERSION GUARD ---
-        # Se o MicrostructureAnalyzer já calculou a VWAP no loop anterior
-        vwap_val, vwap_std = self.micro_analyzer.calculate_vwap(None) # Puxa do cache interno se df for None
-        if vwap_val > 0:
-            price_dist_vwap = current_price - vwap_val
-            target_vwap_veto = getattr(self, 'vwap_dist_threshold', 250.0)
-            
-            # [ANTIVIBE-CODING] Veto se preço esticado > threshold da VWAP sem fluxo extremo
-            if price_dist_vwap > target_vwap_veto and abs(ofi) < 1.5:
-                if getattr(self, "use_anti_exhaustion", True):
-                    logging.debug(f"DEBUG_VETO_VWAP_UP: {price_dist_vwap:.1f} pts")
-                    logging.warning(f"🛑 [VETO VWAP] Preço muito acima da VWAP (+{price_dist_vwap:.1f} pts). Risco de exaustão.")
-                    return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "VWAP_OVEREXTENDED_UP"}
-                else:
-                    logging.info(f"🔓 [EXPERT MODE] Bypass de VWAP_OVEREXTENDED_UP (Anti-Exhaustion OFF): {price_dist_vwap:.1f} pts")
-
-            if price_dist_vwap < -target_vwap_veto and abs(ofi) < 1.5:
-                if getattr(self, "use_anti_exhaustion", True):
-                    logging.debug(f"DEBUG_VETO_VWAP_DOWN: {price_dist_vwap:.1f} pts")
-                    logging.warning(f"🛑 [VETO VWAP] Preço muito abaixo da VWAP ({price_dist_vwap:.1f} pts). Risco de exaustão.")
-                    return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "VWAP_OVEREXTENDED_DOWN"}
-                else:
-                    logging.info(f"🔓 [EXPERT MODE] Bypass de VWAP_OVEREXTENDED_DOWN (Anti-Exhaustion OFF): {price_dist_vwap:.1f} pts")
-
-        # --- 0.1 [v52.0 - INSTITUCIONAL] VETO/GATILHO DE DIVERGÊNCIA CVD ---
-        # Detecta absorção institucional (preço sobe com agressão de venda ou vice-versa)
-        divergence = self.micro_analyzer.detect_divergence(self.micro_analyzer.price_history, self.micro_analyzer.cvd_history)
-        if divergence != 0:
-            ai_score_val = patchtst_score.get("score", 0.5) if isinstance(patchtst_score, dict) else patchtst_score
-            # Se divergência = -1 (Bearish Divergence: Preço sobe/flat, CVD cai)
-            if divergence == -1:
-                # SE o sinal da IA confirma a venda (Score < 0.2), vira um GATILHO FORTE em vez de Veto
-                if ai_score_val < 0.2:
-                    logging.info("🎯 [ALPHA v52.0] GATILHO DE EXAUSTÃO: Divergência Bearish + IA Bearish. Operação Prioritária.")
-                elif ai_score_val > 0.5:
-                    if getattr(self, "use_anti_exhaustion", True):
-                        logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Compra detectada (Topo). Vetando COMPRA.")
-                        return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "CVD_BEARISH_DIVERGENCE"}
-                    else:
-                        logging.info("🔓 [EXPERT MODE] Bypass de CVD_BEARISH_DIVERGENCE (Anti-Exhaustion OFF)")
-            # Se divergência = 1 (Bullish Divergence: Preço cai/flat, CVD sobe)
-            elif divergence == 1:
-                if ai_score_val > 0.8:
-                    logging.info("🎯 [ALPHA v52.0] GATILHO DE EXAUSTÃO: Divergência Bullish + IA Bullish. Operação Prioritária.")
-                elif ai_score_val < 0.5:
-                    if getattr(self, "use_anti_exhaustion", True):
-                        logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Venda detectada (Fundo). Vetando VENDA.")
-                        return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "CVD_BULLISH_DIVERGENCE"}
-                    else:
-                        logging.info("🔓 [EXPERT MODE] Bypass de CVD_BULLISH_DIVERGENCE (Anti-Exhaustion OFF)")
-
-        # 0. [SOTA v5] Sentiment Decay Adaptativo (Absorção por preço)
-
-        if self.sentiment_anchor_price > 0 and abs(sentiment) > 0.1:
-
-            price_drift = abs(current_price - self.sentiment_anchor_price)
-
-            decay_factor = max(0.0, 1.0 - (price_drift / self.max_sentiment_drift))
-
-            sentiment *= decay_factor
-
-            if decay_factor < 0.2:
-
-                logging.debug(f"🧽 SENTIMENTO ABSORVIDO: Preço moveu {price_drift:.1f} pts. Neutralizando.")
-
-        # 0.2 [V36 PRIME] GATILHOS ASSIMÉTRICOS (RSI DINÂMICO)
-        # Se a tendência H1 for favorável, relaxamos o RSI para capturar a entrada mais cedo.
-        rsi_buy_trigger = 32.0
-        rsi_sell_trigger = 68.0
-        
-        if self.h1_trend == 1: # Tendência de Alta
-            rsi_buy_trigger = 35.0 # Relaxa compra (mais assertivo em alta)
-            rsi_sell_trigger = 72.0 # Restringe venda (evita topos falsos)
-        elif self.h1_trend == -1: # Tendência de Baixa
-            rsi_buy_trigger = 28.0 # Restringe compra (evita facas caindo)
-            rsi_sell_trigger = 65.0 # Relaxa venda (mais assertivo em baixa)
-
-        # 1. Normalização Inicial
-
-        uncertainty_abs = 0.0
-
-        forecast_ref = 1.0
-
-        q10 = q50 = q90 = None
-
-        quantile_confidence = "NORMAL"
-
-        
-
-        if isinstance(patchtst_score, dict):
-
-            uncertainty_abs = patchtst_score.get("uncertainty_norm", 0.0)
-
-            forecast_ref = patchtst_score.get("forecast_norm", 1.0)
-
-            if forecast_ref == 0: forecast_ref = 1.0
-
-            q10, q50, q90 = patchtst_score.get("q10"), patchtst_score.get("q50"), patchtst_score.get("q90")
-
-
-
-            if q10 is not None and q50 is not None and q90 is not None:
-
-                spread_up, spread_down = abs(q90 - q50), abs(q50 - q10)
-
-                if spread_up > spread_down * 1.35 and spread_up > 0.01: quantile_confidence = "VERY_HIGH"
-
-                elif spread_down > spread_up * 1.35 and spread_down > 0.01: quantile_confidence = "VERY_HIGH"
-
-                elif max(spread_up, spread_down) > 0.005: quantile_confidence = "HIGH"
-
-
-
-            norm_patchtst = (patchtst_score.get("score", 0.5) - 0.5) * 2
-
-        else:
-
-            norm_patchtst = (patchtst_score - 0.5) * 2
-
-        
-
-        # 2. Incerteza Relativa
-
-        uncertainty_rel = abs(uncertainty_abs / max(0.50, abs(norm_patchtst)))
-
-        
-
-        # 3. EMA de OBI para Filtro de Divergência
-
-        self.obi_ema = (obi * self.ema_alpha) + (self.obi_ema * (1 - self.ema_alpha))
-
-        
-
-        # 4. Threshold de Incerteza e Rigor Adaptativo
-        uncertainty_threshold = self.uncertainty_threshold_base
-        lot_multiplier = 1.0
-
-        # [v50.1] ROTINA OPEN DRIVE (10:00 - 10:45)
-        # Momento de entrada de fluxo estrangeiro e abertura das ações.
-        is_open_drive = (hour == 10 and 0 <= minute <= 45)
-        if is_open_drive:
-            # Relaxa o rigor para capturar a tendência real do dia
-            uncertainty_threshold = 0.40 # Threshold mais permissivo (v50.1)
-            logging.info("🚀 [OPEN DRIVE] Janela de Fluxo Estrangeiro Ativa. Threshold relaxado para 40%.")
-
-        # [v30] CONVERGÊNCIA INTER-MERCADOS (WIN + WDO)
-        # Se Índice e Dólar confirmam a direção (Correlação Negativa Inversa)
-        if wdo_aggression != 0:
-            current_score = patchtst_score.get("score", 0.5) if isinstance(patchtst_score, dict) else patchtst_score
-            # WIN Buy - WDO Sell Aggression (> 0.5) = Convergência Forte
-            if (current_score > 0.8 and wdo_aggression < -0.5) or \
-               (current_score < 0.2 and wdo_aggression > 0.5):
-                lot_multiplier = 1.5
-                logging.info(f"🚀 [CONVERGÊNCIA WIN/WDO] Multiplicador Alpha Ativo: 1.5x (WDO Aggr: {wdo_aggression:.2f})")
-
-        veto_reason = None
-
-
-
-        if (sentiment > 0.6 and obi > 1.2) or (sentiment < -0.6 and obi < -1.2):
-
-            uncertainty_threshold = max(uncertainty_threshold, 0.40)
-
-        
-        # [HFT MASTER] Elastic Conformal Prediction
-        # Se a volatilidade atual for maior que a média histórica (Expansão), expandimos o threshold.
-        # Caso contrário, mantemos o rigor em 30%.
-        avg_atr = np.mean(self.atr_history) if len(self.atr_history) > 0 else 0
-        if atr > 0 and avg_atr > 0:
-            vol_expansion = atr / avg_atr
-            if vol_expansion > 1.5: # Volatilidade duplicando ou crescendo forte
-                uncertainty_threshold = 0.45
-                logging.info(f"📈 [INCERTEZA ELÁSTICA] Volatilidade em expansão ({vol_expansion:.1f}x). Threshold: 45%")
-            else:
-                uncertainty_threshold = 0.42 # [MODO AGRESSIVO] Sniper Altamente Permissivo
-        else:
-            uncertainty_threshold = 0.42 
-
-        if regime == 2 or abs(ofi) > 2.0:
-
-            uncertainty_threshold = 0.35 # [MODO AGRESSIVO] Maior tolerância ao ruído
-
-            logging.info("🛡️ FILTRO DE RUÍDO: Rigor 0.35")
-
-            
-
-        if quantile_confidence == "VERY_HIGH":
-
-            uncertainty_threshold *= 2.0
-
-            
-
-        # [SOTA v5] Meta-Learner Fine-Tuning: Filtro de Abertura (09:00 - 09:30)
-
-        is_opening_session = (hour == 9 and minute < 30)
-
-        if is_opening_session:
-
-            uncertainty_threshold *= (1.0 / self.opening_window_rigor) # Reduz threshold = aumenta rigor
-
-            logging.info(f"🛡️ RIGOR DE ABERTURA ATIVO: 09:{minute:02d}. Filtros restritos habilitados.")
-
-
-
-        # [PRO] Inércia de Volatilidade
-
-        if atr > 0:
-
-            self.atr_history.append(atr)
-
-            if len(self.atr_history) > 10: self.atr_history.pop(0)
-
-            if len(self.atr_history) >= 5:
-
-                atr_inertia = atr - self.atr_history[-5]
-
-                if atr_inertia < -12.0: # Exaustão
-
-                    uncertainty_threshold *= 0.85 
-
-                    logging.info(f"🧊 EXAUSTÃO DE VOLATILIDADE: Apertando o rigor ({atr_inertia:.1f})")
-
-
-
-        # 5. Verificação de Vetos (Fail-Safes)
-
-        ia_in_cooldown = time.time() < self.ia_cooldown_until
-
-        
-
-        if ia_in_cooldown:
-
-            veto_reason = "VETO_COOLDOWN_IA"
-
-        elif uncertainty_rel > uncertainty_threshold:
-            if getattr(self, "use_confidence_filter", True):
-                if quantile_confidence == "VERY_HIGH" and uncertainty_rel < self.uncertainty_high_conviction_cap:
-                    lot_multiplier = self.lot_multiplier_partial
-                    logging.warning(f"🛡️ ENTRADA ULTRA-CONSERVADORA: Alta incerteza ({uncertainty_rel*100:.1f}%)")
-                else:
-                    veto_reason = f"FALHA_ALTA_INCERTEZA ({uncertainty_rel*100:.1f}% > {uncertainty_threshold*100:.1f}%)"
-            else:
-                logging.info(f"🔓 [EXPERT MODE] Bypass de FALHA_ALTA_INCERTEZA (Confidence OFF): {uncertainty_rel*100:.1f}%")
-
-        
-
-        # [PRO] Filtro de Divergência de Fluxo Inter-Mercados (WDO vs WIN)
-
-        if veto_reason is None and wdo_aggression != 0.0:
-
-            ai_dir = np.sign(norm_patchtst)
-
-            if ai_dir > 0 and wdo_aggression > 1.5:  
-
-                veto_reason = "VETO_CORRELACAO_CRUZADA_WDO_COMPRA_BLOQUEADA"
-
-                logging.info("🛡️ VETO INTER-MERCADOS: Compra vetada por fluxo massivo de alta no WDO.")
-
-            elif ai_dir < 0 and wdo_aggression < -1.5:
-
-                veto_reason = "VETO_CORRELACAO_CRUZADA_WDO_VENDA_BLOQUEADA"
-
-                logging.info("🛡️ VETO INTER-MERCADOS: Venda vetada por fluxo massivo de baixa no WDO.")
-
-
-
-        # [PRO] Filtro de Divergência Interna de Fluxo
-
-        if veto_reason is None:
-
-            ai_dir = np.sign(norm_patchtst)
-
-            obi_dir = np.sign(self.obi_ema)
-
-            if abs(self.obi_ema) > 1.5 and ai_dir != 0 and ai_dir != obi_dir:
-
-                veto_reason = "VETO_DIVERGENCIA_FLUXO"
-
-
-
-        # [SOTA v4 → v52.2] Filtro Direcional H1 (Regime Maestro)
-        # [AUTORIZADO 03/03/2026] Veto relaxado: permite operações contra H1 com confirmação institucional
-        # CVD bearish + OBI negativo = fluxo institucional real de venda, mesmo com H1 em alta
-        # [v22.5.3] Master Switch: use_h1_trend_bias
-        
-        if veto_reason is None and self.use_h1_trend_bias:
-
-            ai_dir = np.sign(norm_patchtst)
-
-            if self.h1_trend == 1 and ai_dir < 0: # Venda contra tendência de alta H1
-                # [v22.5.7] Bypass seletivo via RSI extremo ou Blue Chip Bias (Institucional)
-                extreme_sell_signal = (norm_patchtst < -0.75)
-                institutional_sell_signal = (bluechip_score < -0.35) # NOVO: Gigantes vendendo
-                if extreme_sell_signal or institutional_sell_signal:
-                    reason_str = "Score Extremo" if extreme_sell_signal else "Blue Chip Bias"
-                    logging.info(f"⚡ [H1 BYPASS VENDA] {reason_str} detectado. Autorizado.")
-                elif getattr(self, "use_anti_trap", True):
-                    veto_reason = "VETO_TENDENCIA_ALTA_H1"
-                    logging.warning(f"🛡️ [ANTI-TRAP] Venda bloqueada por viés altista H1")
-                else:
-                    logging.info("🔓 [EXPERT MODE] Bypass de VETO_TENDENCIA_ALTA_H1 (Anti-Trap OFF)")
-
-            elif self.h1_trend == -1 and ai_dir > 0: # Compra contra tendência de baixa H1 (Caso 10/03)
-                # [v22.5.7] Bypass seletivo via RSI extremo ou Blue Chip Bias (Institucional)
-                extreme_buy_signal = (norm_patchtst > 0.75)
-                institutional_buy_signal = (bluechip_score > 0.35) # NOVO: Gigantes comprando
-                if extreme_buy_signal or institutional_buy_signal:
-                    reason_str = "Score Extremo" if extreme_buy_signal else "Blue Chip Bias"
-                    logging.info(f"⚡ [H1 BYPASS COMPRA] {reason_str} detectado. Autorizado.")
-                elif getattr(self, "use_anti_trap", True):
-                    veto_reason = "VETO_TENDENCIA_BAIXA_H1"
-                    logging.warning(f"🛡️ [ANTI-QUEDA] Compra bloqueada por viés baixista H1 (BC: {bluechip_score:+.2f}%)")
-                else:
-                    logging.info("🔓 [EXPERT MODE] Bypass de VETO_TENDENCIA_BAIXA_H1 (Anti-Trap OFF)")
-
-
-
-
-        # [SOTA v25] MACRO SENTIMENT LOCKS (70% ASSERTIVENESS TARGET)
-        # [MODIFICADO 05/03/2026] Ignora locks se sentiment for 0.0 (Bypass manual ativo)
-        if veto_reason is None and abs(sentiment) > 0.001:
-            ai_dir_raw = ai_dir if 'ai_dir' in locals() else 0
-            if ai_dir_raw < 0:
-                if self.macro_bull_lock:
-                    veto_reason = f"MACRO_BULL_BLOCK (EMA {self.sentiment_ema:.2f} > 0.15)"
-                    logging.info("🛡️ [ANTI-RUÍDO] Venda barrada pela tendência de alta macro.")
-            elif ai_dir_raw > 0:
-                if self.macro_bear_lock:
-                    veto_reason = f"BLOQUEIO_MACRO_BAIXISTA (EMA {self.sentiment_ema:.2f} < -0.15)"
-                    logging.info("🛡️ [ANTI-RUÍDO] Compra barrada pela tendência de baixa macro.")
-
-        # [v52.0] EMA BYPASS: A IA ignora o macro se o sinal for extremo e houver fluxo tóxico.
-        if veto_reason is not None and "BLOCK" in veto_reason:
-            ai_dir_raw = ai_dir if 'ai_dir' in locals() else 0
-            # Se IA está convicta (Score < 15% ou > 85%) E temos fluxo pesado (Spoofing/Toxic Flow)
-            if (abs(norm_patchtst) > 0.7) and (abs(self.toxic_flow_score) > 0.8):
-                logging.warning(f"⚡ [EMA BYPASS] IA Autorizada a ignorar Macro Veto: {veto_reason}. Fluxo institucional detectado.")
-                veto_reason = None
-
-
-
-        # [SOTA v25.3] MEAN REVERSION GUARD (Avoid Buying Tops / Selling Bottoms)
-
-        if veto_reason is None and sma_20 > 0 and atr > 0:
-
-            ai_dir_raw = ai_dir if 'ai_dir' in locals() else 0
-
-            dist_pts = current_price - sma_20
-
-            atr_dist = abs(dist_pts) / atr if atr > 0 else 0
-
-            
-
-            # [SOTA v25.4] RELAXADO PARA 2.0 ATR NA v50.1 para evitar bloqueio excessivo
-            if ai_dir_raw > 0 and dist_pts > (2.0 * atr):
-                veto_reason = f"VETO_REVERSAO_MEDIA_COMPRA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
-                logging.info("🛡️ [ANTI-EXHAUSTION] Compra bloqueada: Preço esticado (2.0 ATR).")
-            elif ai_dir_raw < 0 and dist_pts < (-2.0 * atr):
-                veto_reason = f"VETO_REVERSAO_MEDIA_VENDA (dist={dist_pts:.1f}, atr={atr_dist:.1f})"
-                logging.info("🛡️ [ANTI-EXHAUSTION] Venda bloqueada: Preço esticado (2.0 ATR).")
-
-
-
-        # [SOTA v5] Spread Veto (Proteção contra Slippage)
-        if veto_reason is None and spread > self.spread_veto_threshold:
-            veto_reason = f"VETO_DE_SPREAD_ALTO ({spread:.1f} > {self.spread_veto_threshold})"
-            logging.warning(f"⚠️ VETO DE SPREAD: {spread:.1f} pts > {self.spread_veto_threshold}")
-
-        # [v52.5] GATILHO SHORT SQUEEZE (Caça aos Stops de Vendidos)
-        # Se o preço está rompendo topo histórico/local e há urgência de compra
-        if veto_reason is None and self.h1_trend > 0:
-            short_squeeze = self._detect_short_squeeze(current_price, atr)
-            if short_squeeze:
-                logging.warning(f"🚀 [SHORT SQUEEZE] Caça aos Stops de vendidos detectada em {current_price:.1f}. Forçando Compra.")
-                direction = "BUY"
-                final_score = 95.0 # Score de compra alta
-                lot_multiplier = 2.0 # Dobra o lote para o estouro
-                return {
-                    "score": float(final_score),
-                    "direction": direction,
-                    "lot_multiplier": float(lot_multiplier),
-                    "tp_multiplier": 2.5, # Alvo longo para o squeeze
-                    "veto": None,
-                    "reason": "SHORT_SQUEEZE_INSTITUCIONAL"
-                }
-
-        # [v50.1] GATILHO LONG SQUEEZE (Caça aos Stops de Comprados)
-        # Se o preço está perdendo fundo histórico e há urgência de venda
-        if veto_reason is None and self.h1_trend < 0:
-            long_squeeze = self._detect_long_squeeze(current_price, atr)
-            if long_squeeze:
-                # Dispara venda agressiva mesmo se o score da IA não for extremo
-                logging.warning(f"💥 [LONG SQUEEZE] Caça aos Stops de comprados detectada em {current_price:.1f}. Forçando Venda.")
-                direction = "SELL"
-                final_score = 5.0 # Score de venda alta
-                lot_multiplier = 2.0 # Dobra o lote para o estouro
-                return {
-                    "score": float(final_score),
-                    "direction": direction,
-                    "lot_multiplier": float(lot_multiplier),
-                    "tp_multiplier": 2.5, # Alvo longo para o squeeze
-                    "veto": None,
-                    "reason": "LONG_SQUEEZE_INSTITUCIONAL"
-                }
-
-        # 6. Cálculo do Score Final
-
-        if veto_reason:
-
-            norm_patchtst = 0.0
-
-            lot_multiplier = 0.0 # Zerar lote se vetado
-
-        
-
-        # Dinâmica de Pesos
-        w_sent, w_obi, w_patchtst = 0.30, 0.20, 0.50
-
-        if abs(sentiment) < 0.001 and abs(obi) < 0.01:
-            w_patchtst, w_sent, w_obi = 0.85, 0.08, 0.07
-
-        elif regime == 0: w_obi, w_patchtst, w_sent = 0.40, 0.40, 0.20
-
-        elif regime == 1: w_obi, w_patchtst, w_sent = 0.15, 0.75, 0.10
-
-        # [AJUSTE AUTORIZADO 03/03/2026] Divergência Técnica: PatchTST vs OBI/Sentimento
-        # Quando PatchTST bullish (+0.5) mas OBI é bearish (<-0.3): sobrecompra técnica
-        # → Reduz peso PatchTST 40%→20%, eleva OBI 40%→60% para capturar reversão
-        patchtst_obi_divergence = (norm_patchtst > 0.5 and obi < -0.3) or \
-                                  (norm_patchtst < -0.5 and obi > 0.3)
-        patchtst_sent_divergence = (norm_patchtst > 0.5 and sentiment < -0.3) or \
-                                   (norm_patchtst < -0.5 and sentiment > 0.3)
-
-        if patchtst_obi_divergence and veto_reason is None:
-            # [AJUSTE ASSERTIVIDADE 09/03] IA agora mantém 0.35 de peso (menos vetada pelo OBI neutro)
-            excess = w_patchtst * 0.125 # Remove apenas 12.5% do peso (0.40 -> 0.35) 
-            w_patchtst -= excess
-            w_obi += excess # Todo o excesso vai para o OBI (0.40 -> 0.45)
-            # [Otimização] Log movido para DEBUG para evitar saturação visual
-            logging.debug(f"⚖️ [DIVERGÊNCIA TÉCNICA] Pesos recalibrados: OBI={w_obi:.2f} PATCHTST={w_patchtst:.2f}")
-
-        elif patchtst_sent_divergence and veto_reason is None:
-            # PatchTST contradiz sentimento dominante — leve ajuste
-            excess = w_patchtst * 0.25
-            w_patchtst -= excess
-            w_sent += excess
-            logging.debug(f"⚖️ [DIVERGÊNCIA SENT] PatchTST conflita com sentimento. Pesos ajustados: SENT={w_sent:.2f} PATCHTST={w_patchtst:.2f}")
-
-        composite_signal = (obi * w_obi) + (norm_patchtst * w_patchtst) + (sentiment * w_sent)
-
-
-        ai_score_raw = max(0.0, min(100.0, (composite_signal + 1) * 50))
-
-
-
-        # 7. Meta-Learner (The Silence Rule)
-
-        meta_score = ai_score_raw
-
-        if self.meta_learner.model is not None:
-
-            try:
-
-                meta_features = [atr, obi, sentiment, volatility, hour, ai_score_raw / 100.0]
-
-                meta_prob = self.meta_learner.predict_proba([meta_features])[0]
-
-                meta_score = (ai_score_raw if ai_score_raw >= 50 else (1.0 - meta_prob) * 100) # Simplificado para exemplo
-
-                
-
-                if 0.45 <= meta_prob <= 0.55 and veto_reason is None:
-
-                    lot_multiplier *= self.lot_multiplier_partial
-
-                    logging.info(f"🤫 REGRA DO SILÊNCIO: Meta-Learner neutro ({meta_prob:.2%})")
-
-            except: pass
-
-
-
-        # Fusão Final
-
-        final_score = (ai_score_raw * 0.4) + (meta_score * 0.6)
-
-        if veto_reason: final_score = 50.0
-
-
-
-        # [SOTA v52.6] SCORE ADAPTATIVO POR VOLATILIDADE (REVISADO 11/03)
-        # Relaxa o threshold de pontuação se a volatilidade (ATR) for explosiva (> 100 pts)
-        # Isso permite disparos mais rápidos em pernas de tendência forte.
-        atr_activation = getattr(self, "rsi_dynamic_activation_atr", 100.0)
-        
-        # Thresholds base SOTA (v36.1 Assimétricos)
-        current_buy_threshold = getattr(self, "confidence_buy_threshold", 60.0)
-        current_sell_threshold = getattr(self, "confidence_sell_threshold", 40.0)
-        
-        if atr >= atr_activation:
-            # RELAXAMENTO BASE (ATR alto):
-            # Compra: -2 pts | Venda: +2 pts
-            current_buy_threshold -= 2.0
-            current_sell_threshold += 2.0
-            if self.regime_counter % 200 == 0:
-                logging.info(f"⚡ [ADAPTATIVE SCORE] Volatilidade alta ({atr:.1f}pts). Thresholds relaxados: 58/42.")
-
-        # [SOTA v36.2 - BLUE CHIP BIAS] ASSERTIVIDADE INSTITUCIONAL (NOVO)
-        # Se houver confirmação das Blue Chips (VALE, PETR, ITUB), relaxa threshold para surfar o fluxo.
-        # Se houver divergência forte, aumenta rigor para evitar armadilhas de baixa liquidez.
-        use_bc_bias = getattr(self, "use_bluechip_bias", True)
-        bc_threshold = getattr(self, "bluechip_bias_threshold", 0.25)
-        
-        if use_bc_bias and abs(bluechip_score) > 0.01:
-            # Score da IA em direção à compra
-            if final_score > 50:
-                if bluechip_score > bc_threshold: # Alinhado com a Alta
-                    current_buy_threshold -= 3.0 # Facilita compra alinhada
-                    logging.info(f"💎 [COMPRA ASSERTIVA] Blue Chips em ALTA ({bluechip_score:+.2f}%). Threshold reduzido para {current_buy_threshold:.1f}")
-                elif bluechip_score < -bc_threshold: # Divergente da Alta
-                    current_buy_threshold += 5.0 # Dificulta compra contra as gigantes
-                    logging.warning(f"🛡️ [VETO INSTITUCIONAL] Blue Chips em QUEDA ({bluechip_score:+.2f}%). Dificultando COMPRA.")
-            
-            # Score da IA em direção à venda
-            elif final_score < 50:
-                if bluechip_score < -bc_threshold: # Alinhado com a Baixa
-                    current_sell_threshold += 3.0 # Facilita venda alinhada
-                    logging.info(f"💎 [VENDA ASSERTIVA] Blue Chips em QUEDA ({bluechip_score:+.2f}%). Threshold ajustado para {current_sell_threshold:.1f}")
-                elif bluechip_score > bc_threshold: # Divergente da Baixa
-                    current_sell_threshold -= 5.0 # Dificulta venda contra as gigantes
-                    logging.warning(f"🛡️ [VETO INSTITUCIONAL] Blue Chips em ALTA ({bluechip_score:+.2f}%). Dificultando VENDA.")
-
-        
-        if veto_reason:
-            direction = "WAIT"
-        else:
-            direction = "NEUTRAL"
-            if final_score >= current_buy_threshold: direction = "COMPRA"
-            elif final_score <= current_sell_threshold: direction = "VENDA"
-
-        
-
-        # [SOTA v5] Lot Sizing Probabilístico e Ajuste de Abertura
-
-        if veto_reason is None and direction != "NEUTRAL":
-
-            lot_multiplier = self.calculate_probabilistic_lot(final_score, quantile_confidence)
-
-            if is_opening_session:
-
-                lot_multiplier *= 0.5 # Força exposição reduzida na abertura
-
-                logging.info(f"⏳ LOTE REDUZIDO PARA ABERTURA: {lot_multiplier:.2f}x")
-
-            
-
-        # [SOTA v5] Spread-Adjusted Take Profit (Compensation)
-
-        tp_adj = 1.0
-
-        if spread > 1.0:
-
-            tp_adj = 1.0 + (spread / 100.0) # Aumenta TP proporcionalmente ao custo
-
-            logging.debug(f"🎯 TP AJUSTADO PELO SPREAD: +{spread:.1f} pts compensação ({tp_adj:.2f}x)")
-
-
-
-        # [V36 EXPERT] Integração de Matriz de Regimes na Decisão
-        regime_id = self.current_regime
-        regime_rsi_buy = current_buy_threshold
-        regime_rsi_sell = current_sell_threshold
-        tp_multiplier = 1.0
-        use_partial = True
-        
-        if regime_id == 1: # TENDÊNCIA
-            regime_rsi_buy = 38.0
-            regime_rsi_sell = 62.0
-            tp_multiplier = 1.0 
-            use_partial = False
-        elif regime_id == 0: # LATERAL
-            regime_rsi_buy = 20.0
-            regime_rsi_sell = 80.0
-            tp_multiplier = 1.0
-            use_partial = True
-        elif regime_id == 2: # VOLATILIDADE
-            regime_rsi_buy = 15.0
-            regime_rsi_sell = 85.0
-            lot_multiplier *= 0.33 # Força 1 contrato
-            if final_score < 65.0 and final_score > 35.0:
-                veto_reason = "VETO_BAIXA_CONVICCAO_VOLATILIDADE"
-        elif regime_id == 3: # REVERSÃO
-            regime_rsi_buy = 15.0
-            regime_rsi_sell = 85.0
-            tp_multiplier = 1.0
-            use_partial = True
-
-        current_buy_threshold = regime_rsi_buy
-        current_sell_threshold = regime_rsi_sell
-
-        if veto_reason:
-            direction = "WAIT"
-        else:
-            direction = "NEUTRAL"
-            if final_score >= current_buy_threshold: direction = "COMPRA"
-            elif final_score <= current_sell_threshold: direction = "VENDA"
-
-        return {
-            "score": float(final_score),
-            "direction": direction,
-            "confidence": self.get_stability_score(),
-            "quantile_confidence": quantile_confidence,
-            "tp_multiplier": float(tp_multiplier),
-            "use_partial": use_partial,
-            "rsi_buy_trigger": current_buy_threshold,
-            "rsi_sell_trigger": current_sell_threshold,
-            "reason": veto_reason,
-            "lot_multiplier": float(lot_multiplier),
-            "veto": veto_reason,
-            "forecast": float(forecast_ref),
-            "uncertainty": float(uncertainty_rel),
-            "h1_trend": self.h1_trend,
-            "regime": regime_id,
-            "breakdown": {
-                "obi_contribution": float(obi * w_obi),
-                "patchtst_contribution": float(norm_patchtst * w_patchtst),
-                "sentiment_contribution": float(sentiment * w_sent),
-                "raw_signal": float(ai_score_raw),
-                "meta_score": float(meta_score),
-                "q10": q10, "q50": q50, "q90": q90,
-                "veto": veto_reason,
-                "regime_id": regime_id
-            }
-        }
-
-    def _detect_long_squeeze(self, current_price, atr):
-        """
-        [v50.1] Identifica se o preço está em zona de acionamento de Stops de comprados.
-        """
-        if not hasattr(self.micro_analyzer, 'price_history') or len(self.micro_analyzer.price_history) < 20:
-            return False
-            
-        # Pega a mínima dos últimos 20 períodos (excluindo o atual se já estiver no histórico)
-        history = self.micro_analyzer.price_history[:-1] if len(self.micro_analyzer.price_history) > 20 else self.micro_analyzer.price_history
-        if not history: return False
-        local_low = min(history)
-        
-        # Se o preço está a menos de 50 pontos do fundo ou rompeu levemente (5 pontos)
-        # E o ATR está em expansão (urgência)
-        if (local_low - 5) <= current_price <= (local_low + 50):
-            return True
-        return False
-
-    def _detect_short_squeeze(self, current_price, atr):
-        """
-        [v52.5] Identifica se o preço está em zona de acionamento de Stops de vendidos (Short Squeeze).
-        """
-        if not hasattr(self.micro_analyzer, 'price_history') or len(self.micro_analyzer.price_history) < 20:
-            return False
-            
-        # Pega a máxima dos últimos 20 períodos (excluindo o atual se já estiver no histórico)
-        history = self.micro_analyzer.price_history[:-1] if len(self.micro_analyzer.price_history) > 20 else self.micro_analyzer.price_history
-        if not history: return False
-        local_high = max(history)
-        
-        # Se o preço está a menos de 50 pontos do topo ou rompeu levemente (5 pontos)
-        # E o ATR está em expansão (urgência)
-        if (local_high - 50) <= current_price <= (local_high + 5):
-            return True
-        return False
-
-    
-
-    def record_result(self, pnl: float):
-
-        """
-
-        Registra o resultado de um trade para controle de cooldown.
-
-        2 perdas consecutivas ativam cooldown de 15 minutos.
-
-        """
-
-        if pnl < 0:
-
-            self.consecutive_losses += 1
-
-            if self.consecutive_losses >= 2:
-
-                self.ia_cooldown_until = time.time() + (15 * 60)
-
-                logging.warning(f"!!! COOLDOWN ATIVADO: 2 perdas consecutivas. IA suspensa ate {datetime.fromtimestamp(self.ia_cooldown_until).strftime('%H:%M:%S')}")
-
-        else:
-
-            self.consecutive_losses = 0
-
-            if time.time() < self.ia_cooldown_until:
-
-                logging.info(">>> Cooldown resetado antecipadamente por lucro.")
-
-                self.ia_cooldown_until = 0
-
-        
-
-    async def predict_with_patchtst(self, inference_engine, dataframe):
-
-        """Usa o motor de inferência para obter a predição do PatchTST."""
-
-        if inference_engine and not isinstance(inference_engine, bool):
-
-            try:
-
-                return await inference_engine.predict(dataframe)
-
-            except Exception as e:
-
-                logging.warning(f"⚠️ Predição PatchTST falhou: {e}")
-
-                return 0.5
-
-        return 0.5 # Neutro se sem motor ou mockado
-
-
-
-    def get_stability_score(self) -> float:
-
-        """
-
-        [SOTA] Retorna o score de estabilidade da IA (0.0 a 1.0).
-
-        """
-
-        if hasattr(self, 'inference_engine') and self.inference_engine is not None:
-
-            return 0.98
-
-        return 0.40
-
-
-
-    def get_directional_probability(self, market_data) -> float:
-
-        """
-
-        [INTELIGÊNCIA DO SUCESSO] Retorna a probabilidade da IA para a continuação direcional.
-
-        Simula/calcula se a força institucional tem > 80% de chance de continuação.
-
-        Como o backtest OHLCV de 1M é rápido, usaremos uma heurística robusta aqui
-
-        se o motor de inferência profundo for muito lento, ou o output do Meta-Learner.
-
-        """
-
-        # Em produção real (Tick a Tick), isso consulta o PatchTST/Conformal Prediction.
-
-        # Para o backtester, vamos simular a "certeza direcional" baseada no momentum
-
-        # recente e no OBI suavizado para decidir se habilitamos o Trend-Following.
-
-        
-
-        try:
-
-            # Pega os últimos 3-5 candles para avaliar a inércia direcional
-
-            if len(market_data) >= 5:
-
-                recent_closes = market_data['close'].tail(5).values
-
-                returns = np.diff(recent_closes) / recent_closes[:-1]
-
-                
-
-                # Se todos os retornos apontam para o mesmo lado, alta probabilidade
-
-                if all(r > 0 for r in returns) or all(r < 0 for r in returns):
-
-                    base_prob = 0.85
-
-                else:
-
-                    # Direcionalidade fraca
-
-                    base_prob = max(0.0, abs(sum(returns)) * 100) # Pseudo-probabilidade
-
-                
-
-                # Modula com OBI persistente se houver book data
-
-                obi_factor = abs(self.obi_ema) # 0 a 1.0
-
-                
-
-                final_prob = min(0.99, base_prob + (obi_factor * 0.2))
-
-                return final_prob
-
-            
-
-            return 0.5 # Neutro se sem dados
-
-            
-
-        except Exception as e:
-
-            return 0.5
-
-
-
-
-
+import torch
+import torch.nn as nn
 import onnxruntime as ort
-
+import gc
+import time
 from backend.models import PatchTST
 
-
+# Configuração de logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class InferenceEngine:
-
     """
-
-    [AMD OPTIMIZED] Motor de inferência híbrido (ONNX Runtime + PyTorch Fallback).
-
-    Prioriza DirectML para GPUs AMD (RX 6650 XT) visando latência < 30ms.
-
+    [AMD OPTIMIZED] Motor de inferência híbrido.
+    Prioriza ONNX Runtime para aceleração na GPU AMD.
     """
-
     def __init__(self, model_path=None):
-
         self.model_path = model_path or "backend/models/sota_model_win.pth"
-
-        self.onnx_path = self.model_path.replace(".pth", ".onnx")
-
         self.ort_session = None
-
-        self.use_onnx = False
-
         self.model = None
+        self.use_onnx = False
+        self._load_engine()
 
-        self.last_mtime = 0
-
-        self.target_onnx = None
-
-        self.load_model()
-
-            
-
-    def check_resources(self):
-
-        """Verifica se os arquivos de modelo necessários existem."""
-
-        missing = []
-
-        if self.onnx_path and not os.path.exists(self.onnx_path):
-
-             # Apenas reporta se não existir, mas load_model tem fallback
-
-             pass 
-
-        
-
-        if self.model_path and not os.path.exists(self.model_path):
-
-             missing.append(f"Model File ({self.model_path})")
-
-             
-
-        # Retorna lista vazia se pelo menos um modo puder ser carregado ou se não houver path configurado (inicio frio)
-
-        if not self.model_path:
-
-             return []
-
-             
-
-        if not os.path.exists(self.model_path) and (not self.onnx_path or not os.path.exists(self.onnx_path)):
-
-             return missing
-
-             
-
-        return []
-
-
-
-    def load_model(self):
-
-        """Carrega o modelo, priorizando ONNX Runtime (DirectML)."""
-
-        logging.info(f"🔍 INFERENCE ENGINE: Iniciando carregamento de {self.onnx_path or 'N/A'}")
-
-        
-
-        # 1. Tentar carregar ONNX (AMD GPU Acceleration)
-
-        potential_onnx_paths = [
-
-            self.onnx_path, 
-
-            os.path.join(os.path.dirname(self.onnx_path or ""), "patchtst_optimized.onnx"),
-
-            "backend/models/patchtst_optimized.onnx"
-
-        ]
-
-        
-
-        self.target_onnx = None
-
-        for p in potential_onnx_paths:
-
-             if p and os.path.exists(p):
-
-                 self.target_onnx = p
-
-                 break
-
-                 
-
-        if self.target_onnx:
-
-            try:
-
-                logging.info(f"🚀 INFERENCE ENGINE: Tentando ONNX com {self.target_onnx}...")
-
-                self.last_mtime = os.path.getmtime(self.target_onnx)
-
-                
-
-                options = ort.SessionOptions()
-
-                options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-
-                options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL 
-
-                
-
-                providers = ['DmlExecutionProvider', 'CPUExecutionProvider']
-
-                self.ort_session = ort.InferenceSession(self.target_onnx, sess_options=options, providers=providers)
-
-                self.use_onnx = True
-
-                active_provider = self.ort_session.get_providers()[0]
-
-                logging.info(f"✅ INFERENCE ENGINE: ONNX Runtime Ativo | Provider: {active_provider}")
-
-                
-
-                self._warmup_onnx()
-
-                return
-
-            except Exception as e:
-
-                logging.error(f"❌ INFERENCE ENGINE: Falha ao carregar ONNX: {e}")
-
-                self.use_onnx = False
-
-
-
-        # 2. Fallback: Carregar PyTorch (CPU)
-
+    def _load_engine(self):
         try:
+            # Desativado temporariamente para auditoria de estabilidade
+            # onnx_path = self.model_path.replace(".pth", ".onnx")
+            # if os.path.exists(onnx_path):
+            #     providers = ['DmlExecutionProvider', 'CPUExecutionProvider']
+            #     self.ort_session = ort.InferenceSession(onnx_path, providers=providers)
+            #     self.use_onnx = True
+            #     logging.info(f"--- [v22.5.7] ONNX Engine Ativo (AMD Accelerated)")
+            #     return
 
-            logging.info("⚠️ INFERENCE ENGINE: Iniciando fallback para PyTorch (CPU)...")
-
-            # Detectar c_in dinamicamente
-
-            c_in = 5 if "sota" in self.model_path.lower() else 1
-
-            n_layers = 3 if c_in == 5 else 2 # SOTA usa 3 camadas
-
-            
-
-            self.model = PatchTST(c_in=c_in, context_window=60, target_window=5, d_model=128, n_heads=4, n_layers=n_layers)
-
-            if self.model_path and os.path.exists(self.model_path):
-
-                state_dict = torch.load(self.model_path, map_location=torch.device('cpu'))
-
+            # Fallback para PyTorch
+            if os.path.exists(self.model_path):
+                # O SOTA usa 5 canais e 3 quantis
+                self.model = PatchTST(c_in=5, context_window=60, target_window=5, d_model=128, n_heads=4, n_layers=3)
+                state_dict = torch.load(self.model_path, map_location='cpu')
                 self.model.load_state_dict(state_dict)
-
                 self.model.eval()
-
-                logging.info(f"⚠️ INFERENCE ENGINE: Rodando em PyTorch (CPU) | Channels: {c_in} | Layers: {n_layers}")
-
-            else:
-
-                logging.warning(f"Pesos não encontrados em {self.model_path}. Usando modelo não treinado ({c_in} channels).")
-
+                logging.info(f"--- [v22.5.7] PyTorch Engine Ativo (CPU Fallback)")
         except Exception as e:
-
-            logging.error(f"Falha ao carregar modelo PyTorch: {e}")
-
-            self.model = None
-
-
-
-    def _check_for_updates(self):
-
-        """Verifica se o arquivo ONNX foi atualizado para recarregar o modelo (Hot-Reload)."""
-
-        if self.target_onnx and os.path.exists(self.target_onnx):
-
-            try:
-
-                current_mtime = os.path.getmtime(self.target_onnx)
-
-                if current_mtime > self.last_mtime:
-
-                    logging.info("♻️ INFERENCE ENGINE: Novo modelo ONNX detectado! Recarregando...")
-
-                    self.load_model()
-
-            except Exception as e:
-
-                logging.error(f"Erro ao verificar updates do modelo: {e}")
-
-
-
-    def _warmup_onnx(self):
-
-        """Executa uma inferência dummy para alocar memória na GPU."""
-
-        try:
-
-            # Tentar detectar c_in da sessão ONNX
-
-            c_in = self.ort_session.get_inputs()[0].shape[2]
-
-            dummy_input = np.random.randn(1, 60, c_in).astype(np.float32)
-
-            input_name = self.ort_session.get_inputs()[0].name
-
-            self.ort_session.run(None, {input_name: dummy_input})
-
-            if c_in == 8:
-                logging.debug(f"🔥 DirectML Warm-up Concluído (Channels: {c_in}).")
-            else:
-                logging.warning(f"⚠️ Aviso: Modelo ONNX esperado 8 canais, detectado {c_in}.")
-        except Exception as e:
-
-            logging.warning(f"Erro no warm-up ONNX: {e}")
-
-
+            logging.error(f"Erro ao carregar InferenceEngine: {e}")
 
     async def predict(self, dataframe):
-
-        """Interface pública não-bloqueante."""
-
-        self._check_for_updates() # Hot-reload check
-
-        
-
-        if (self.use_onnx and not self.ort_session) or (not self.use_onnx and not self.model):
-
-             return {
-
-                "score": 0.5, "forecast_norm": 0.0, "lower_bound_norm": 0.0,
-
-                "upper_bound_norm": 0.0, "uncertainty_norm": 1.0, "confidence": 0.0
-
-            }
-
-        
-
-        # Agora o dataframe deve ter as colunas sincronizadas (n_channels)
-
+        """Interface pública assíncrona."""
         if dataframe is None or len(dataframe) < 60:
-
-            return {
-
-                "score": 0.5, "forecast_norm": 0.0, "lower_bound_norm": 0.0,
-
-                "upper_bound_norm": 0.0, "uncertainty_norm": 1.0, "confidence": 0.0
-
-            }
-
-            
-
+            return self._neutral_output()
         return await asyncio.to_thread(self._predict_sync, dataframe)
 
-
-
     def _predict_sync(self, dataframe):
-
-        """Lógica de inferência unificada para múltiplos canais."""
-
         try:
+            # Seleção de colunas para o modelo SOTA (5 canais standard ou OHLCV)
+            cols = ['open', 'high', 'low', 'close', 'tick_volume']
+            if not all(c in dataframe.columns for c in cols):
+                return self._neutral_output()
 
-             # 1. Pre-processing e Feature Engineering (SOTA 8-Channels)
-
-            try:
-
-                required_cols = ['open', 'high', 'low', 'close', 'tick_volume', 'cvd', 'ofi', 'volume_ratio']
-
-                
-
-                # Check column presence safely
-
-                if all(col in dataframe.columns for col in required_cols):
-
-                    numeric_df = dataframe[required_cols].copy()
-
-                else:
-
-                    logging.debug(f"⚠️ Column mismatch. Columns present: {list(dataframe.columns)}. Iniciando reconstrução...")
-
-                    df = dataframe.copy()
-
-                    
-
-                    # Ensure OHLCV exist (essential)
-
-                    base_cols = ['open', 'high', 'low', 'close']
-
-                    for col in base_cols:
-
-                        if col not in df.columns:
-
-                            df[col] = df.get('price', 0.0) # Fallback to single price or 0
-
-                    
-
-                    # Standardize volume
-
-                    v_col = 'tick_volume' if 'tick_volume' in df.columns else 'real_volume' if 'real_volume' in df.columns else df.columns[4] if len(df.columns) > 4 else None
-
-                    df['tick_volume'] = df[v_col] if v_col else 0.0
-
-                    
-
-                    # Heurística de Microestrutura se colunas originais faltarem
-                    if 'cvd' not in df.columns:
-                        body = df['close'] - df['open']
-                        df['cvd'] = (df['tick_volume'] * body.apply(lambda x: 1 if x > 0 else -1 if x < 0 else 0)).cumsum()
-                    
-                    if 'ofi' not in df.columns:
-                        # Heurística OFI: Delta de Volume relativo à direção do candle
-                        df['ofi'] = df['cvd'].diff().fillna(0.0) / (df['tick_volume'].replace(0, 1))
-
-                    if 'volume_ratio' not in df.columns:
-                        df['volume_ratio'] = df['tick_volume'] / (df['tick_volume'].rolling(20).mean().fillna(1.0))
-                    
-                    numeric_df = df[required_cols].fillna(0.0).values
-
-                    df = df.fillna(0.0)
-
-                    for col in required_cols:
-
-                        if col not in df.columns:
-
-                            df[col] = 0.0
-
-                    numeric_df = df[required_cols]
-
-            except Exception as e_feat:
-
-                logging.error(f"❌ Feature Engineering failure: {repr(e_feat)}")
-
-                # Fallback robusto
-
-                numeric_df = pd.DataFrame(index=range(len(dataframe)))
-
-                for col in ['open', 'high', 'low', 'close']:
-
-                    numeric_df[col] = dataframe.get(col, 0.0)
-
-                numeric_df['tick_volume'] = dataframe.get('tick_volume', 0.0)
-
-                for col in ['cvd', 'ofi']: numeric_df[col] = 0.0
-
-                numeric_df['volume_ratio'] = 1.0
-
-                numeric_df = numeric_df[required_cols]
-
-
-
-                
-
-            input_data = numeric_df.values[-60:].copy()
-
-            
-
-            # [FASE 28] NORMALIZAÇíO DINÂMICA (Log-Returns por Janela)
-
-            # Se os dados contêm valores > 10 (preços brutos), aplicamos log-returns
-
-            if np.max(np.abs(input_data[:, :4])) > 10.0:
-
-                # Aplicamos diferenciação apenas nas colunas de preço (OHLC)
-
-                # As colunas de volume e indicadores (CVD/OFI) já são estacionárias ou tratadas
-
-                input_data[:, :4] = np.diff(input_data[:, :4], axis=0, prepend=input_data[0:1, :4])
-
-            
-
-            # [Ajuste Dinamico de Canais - SOTA PRO]
-
-            expected_cin = 1
+            input_data = dataframe[cols].values[-60:].astype(np.float32)
+            input_tensor = np.expand_dims(input_data, axis=0) # [1, 60, 5]
 
             if self.use_onnx and self.ort_session:
-
-                expected_cin = self.ort_session.get_inputs()[0].shape[2]
-
-            elif self.model is not None:
-
-                if hasattr(self.model, 'patch_conv'):
-
-                    expected_cin = self.model.patch_conv.in_channels
-
-                else:
-
-                    expected_cin = 5 if "sota" in self.model_path.lower() else 1
-
-            
-
-            if input_data.shape[1] != expected_cin:
-
-                if input_data.shape[1] > expected_cin:
-
-                    input_data = input_data[:, :expected_cin]
-
-                else:
-
-                    pad_width = expected_cin - input_data.shape[1]
-
-                    input_data = np.pad(input_data, ((0,0), (0, pad_width)), 'constant')
-
-
-
-            # [AI PERSISTENCE GUARD] ALWAYS use float32. 
-
-            # FP16 triggers 'Cast' errors in the RevIN layer when using DirectML (AMD).
-
-            dtype = np.float32 
-
-            input_tensor = input_data[np.newaxis, :, :].astype(dtype) # [Batch=1, Seq=60, Channels=N]
-
-            
-
-            # Check for NaNs before inference
-
-            if np.isnan(input_tensor).any():
-
-                logging.warning("⚠️ NaN detectado no input tensor. Retornando neutro.")
-
-                return {
-
-                    "score": 0.5, "forecast_norm": 0.0, "lower_bound_norm": 0.0,
-
-                    "upper_bound_norm": 0.0, "uncertainty_norm": 1.0, "confidence": 0.0
-
-                }
-
-
-
-            # 2. Inferência
-
-            if self.use_onnx:
-
-                try:
-
-                    input_name = self.ort_session.get_inputs()[0].name
-
-                    raw_preds = self.ort_session.run(None, {input_name: input_tensor})[0] 
-
-                    preds = raw_preds[0] # [5, 3]
-
-                except Exception as e_onnx:
-
-                    # [BUGFIX] UnicodeDecodeError protection for DirectML/DML errors
-
-                    try:
-
-                        err_msg = str(e_onnx).encode('utf-8', 'replace').decode('utf-8')
-
-                    except:
-
-                        err_msg = "Unknown ONNX/DML error (encoding failure)"
-
-                        
-
-                    logging.warning(f"ONNX Run falhou, tentando PT fallback: {err_msg}")
-
-                    
-
-                    # Memory cleanup after DML failure
-
-                    gc.collect()
-
-                    if torch.cuda.is_available(): torch.cuda.empty_cache()
-
-
-
-                    if self.model is not None:
-
-                        x = torch.tensor(input_tensor).to(torch.float32)
-
-                        with torch.no_grad():
-
-                            out = self.model(x)
-
-                            preds = out[0].numpy()
-
-                    else:
-
-                        # Sem fallback disponível: retorna neutro sem quebrar o loop
-
-                        logging.warning("⚠️ Sem modelo ONNX nem PyTorch. Retornando score neutro.")
-
-                        return {
-
-                            "score": 0.5, "forecast_norm": 0.0, "lower_bound_norm": 0.0,
-
-                            "upper_bound_norm": 0.0, "uncertainty_norm": 1.0, "confidence": 0.0
-
-                        }
-
+                input_name = self.ort_session.get_inputs()[0].name
+                preds = self.ort_session.run(None, {input_name: input_tensor})[0]
+            elif self.model:
+                with torch.no_grad():
+                    # PatchTST retorna [batch, target, quantiles] -> pegamos q50 (índice 1)
+                    preds = self.model(torch.tensor(input_tensor)).numpy()[0]
             else:
+                return self._neutral_output()
 
-                if self.model is not None:
-
-                    x = torch.tensor(input_tensor).to(torch.float32)
-
-                    with torch.no_grad():
-
-                        out = self.model(x) 
-
-                        preds = out[0].numpy()
-
-                else:
-
-                    raise ValueError("Inference Engine has no active model (ONNX or PT)")
-
-
-
-            # 3. Post-processing
-
-            # q10, q50, q90 para o WIN$ (coluna 0)
-
-            q10, q50, q90 = preds[-1, 0], preds[-1, 1], preds[-1, 2]
-
+            # Extração de Score (Inclinacão da predição central q50)
+            if preds.ndim == 2:
+                q50_path = preds[:, 1]
+                f_delta = float(q50_path[-1])
+            else:
+                f_delta = float(preds) if np.isscalar(preds) else float(preds[0])
             
-
-            # [SOTA PRO Z-SCORE NORMALIZATION & SCALING]
-
-            # O output q50 é um Z-Score direcional, porque a RevIN normatiza o input mas não desnormaliza a saída.
-
+            # Score de 0.0 a 1.0 (0.5 é neutro)
+            final_score = max(0.0, min(1.0, 0.5 + (f_delta / 2.0)))
             
-
-            # Para o WIN$ M1, mapeamos o Z-score de -2.5 a +2.5 para o score de ~0.0 a 1.0.
-
-            # No M1, a variação (z-score) tende a ser pequena (ex: 0.4, 0.6).
-
-            # Para que z-score=0.55 atinja o limiar de 85.0 (0.85), usamos o divisor 1.5
-
-            trend_score = 0.5 + (q50 / 1.5)
-
-            final_score = max(0.0, min(1.0, trend_score))
-
-            
-
-            # Cálculo de Incerteza (Spread da distribuição Conformal)
-
-            # O Conformal na ONNX retorna spreads normais em ~3.0 (q90-q10).
-
-            # Para passar no filtro (uncertainty_rel < 0.25 - 0.40), ajustamos o scale factor da incerteza para 20.0.
-
-            uncertainty_raw = float(abs(q90 - q10))
-
-            uncertainty = uncertainty_raw / 20.0  
-
-            
-
             return {
-
                 "score": float(final_score),
-
-                "forecast_norm": float(q50),
-
-                "lower_bound_norm": float(q10),
-
-                "upper_bound_norm": float(q90),
-
-                "uncertainty_norm": uncertainty,
-
-                "confidence": 0.95,
-
-                "q10": float(q10),
-
-                "q50": float(q50),
-
-                "q90": float(q90)
-
+                "forecast_norm": float(f_delta),
+                "confidence": 0.85 + (abs(f_delta) * 0.1),
+                "q10": float(preds[-1, 0]) if preds.ndim == 2 else 0.0,
+                "q50": float(preds[-1, 1]) if preds.ndim == 2 else 0.0,
+                "q90": float(preds[-1, 2]) if preds.ndim == 2 else 0.0
             }
-
-            
-
         except Exception as e:
+            logging.error(f"Erro na inferência: {e}")
+            return self._neutral_output()
 
-            # [SOTA DEBUG] repr(e) previne UnicodeDecodeError em mensagens com caracteres especiais
+    def _neutral_output(self):
+        return {"score": 0.5, "forecast_norm": 0.0, "confidence": 0.0, "q50": 0.0}
 
-            logging.error(f"❌ ERRO em _predict_sync: {repr(e)}")
+class AICore:
+    """
+    [SOTA v22.5.7] Núcleo de Inteligência para WIN$ e WDO$.
+    """
+    def __init__(self):
+        self.inference_engine = InferenceEngine()
+        self.obi_ema = 0.0
+        self.ia_cooldown_until = 0
+        self.sentiment_anchor = 0.0
+        self.price_history = []
+        self.h1_trend = 0
+        self.micro_analyzer = self # Alias para compatibilidade
+        self.opening_rigor_enabled = True
+        self.latest_sentiment_score = 0.0
+        # [SOTA V22 GOLDEN] Thresholds dinâmicos (Sincronizados via SniperBot)
+        self.confidence_buy_threshold = 65.0
+        self.confidence_sell_threshold = 35.0
+        self.uncertainty_threshold = 0.4
+        self.consecutive_losses = 0 # [SOTA v24] Contador para cooldown dinâmico
+        self.vwap_dist_threshold = 400.0 # [v24.2] Default de segurança
 
-            return {
+    async def predict_with_patchtst(self, engine, data):
+        """Método de interface para o BacktestPro."""
+        if engine is None: return {"score": 50.0}
+        res = await engine.predict(data)
+        # Converte score 0-1 para 0-100 para o backtester
+        res['score'] = res.get('score', 0.5) * 100.0
+        return res
 
-                "score": 0.5, "forecast_norm": 0.0, "lower_bound_norm": 0.0,
+    def update_h1_trend(self, h1_data):
+        if h1_data is None or len(h1_data) < 2:
+            self.h1_trend = 0
+            return
+        last_close = h1_data['close'].iloc[-1]
+        ma20 = h1_data['close'].rolling(20).mean().iloc[-1] if len(h1_data) >= 20 else last_close
+        if last_close > ma20 * 1.002: self.h1_trend = 1
+        elif last_close < ma20 * 0.998: self.h1_trend = -1
+        else: self.h1_trend = 0
 
-                "upper_bound_norm": 0.0, "uncertainty_norm": 1.0, "confidence": 0.0
+    def identify_market_regime(self, df, h1_trend, atr, adx, bb_up, bb_down, bb_mid):
+        """
+        [SOTA v23] Classificador de Regime Híbrido.
+        Retorna: 1 (Trending), 0 (Sideways), 2 (Volatile)
+        """
+        try:
+            if df is None or len(df) < 5: return 0
+            
+            # 1. Detecção de Momentum (Aceleração de Preço e Volume)
+            last_candles = df.tail(5)
+            price_change = abs(last_candles['close'].iloc[-1] - last_candles['close'].iloc[0])
+            avg_vol = last_candles['tick_volume'].mean()
+            prev_vol = df['tick_volume'].tail(20).head(15).mean()
+            
+            # Se o preço андou mais que 1.5x o ATR e volume subiu 30% em 5 min
+            if price_change > (atr * 1.5) and avg_vol > (prev_vol * 1.3):
+                return 1 # Trending / Breakout
+            
+            # 2. Detecção de Volatilidade Excessiva (Riscos)
+            if atr > 250 or adx > 45:
+                return 2 # Volatile
+                
+            # 3. Detecção de Lateralidade (Choppy)
+            bb_width = (bb_up - bb_down)
+            if bb_width < (atr * 2.0) and adx < 20:
+                return 0 # Sideways
+                
+            return 0 # Default para Sideways (Segurança)
+        except Exception as e:
+            logging.error(f"Erro identify_market_regime: {e}")
+            return 0
 
-            }
+    def calculate_decision(self, obi=0.0, sentiment=0.0, patchtst_score=50.0, regime=0, **kwargs):
+        """
+        [SOTA v23] Lógica de decisão Evoluída.
+        Suporta Modo MOMENTUM (Bypass de Indicadores) para Score > 85%.
+        """
+        if isinstance(patchtst_score, dict):
+            score_raw = float(patchtst_score.get("score", 0.5))
+            confidence = float(patchtst_score.get("confidence", 0.0))
+        else:
+            score_raw = float(patchtst_score)
+            confidence = 0.0
+        
+        if score_raw <= 1.0:
+            score_raw *= 100.0
+        
+        # [v24] Volume-Weighted Score Bonus
+        vol_bonus = 0.0
+        avg_vol_20 = float(kwargs.get('avg_vol_20', 0.0))
+        current_vol = float(kwargs.get('current_vol', 0.0))
+        if avg_vol_20 > 0 and current_vol > (avg_vol_20 * 2.0):
+            vol_bonus = 5.0
+            score_raw = float(min(100.0, score_raw + vol_bonus))
+            logging.info(f"[v24 VOLUME-BOOST] +5 pts aplicados. Volume={current_vol:.0f} > 2x Media={avg_vol_20:.0f}")
 
+        direction = "NEUTRAL"
+        exec_strategy = "PASSIVA"
+        
+        # [v24.1] Janela de Ouro (Time-of-Day Alpha) 10:15-11:15
+        # Período de alta liquidez B3 + NY. Se Volume > 1.5x Média, relaxamos o threshold.
+        hour = kwargs.get('hour', 0)
+        minute = kwargs.get('minute', 0)
+        is_golden_window = False
+        momentum_threshold = 85.0 # [v24.1] Fallback Seguro
 
+        if (hour == 10 and minute >= 15) or (hour == 11 and minute <= 15):
+             if current_vol > (avg_vol_20 * 1.5):
+                is_golden_window = True
+                momentum_threshold = 75.0 # [v24.1] Destrava operações de momentum institutional
+                logging.info(f"[v24.1 GOLDEN-WINDOW] Ativo! Threshold reduzido p/ 75% | Vol: {current_vol:.0f}")
 
+        # [v24.1] Elastic Momentum Bypass (Score >= 84% + OBI 2.0x)
+        obi_abs = abs(obi)
+        if not is_golden_window:
+            if score_raw >= 84.0 or score_raw <= 16.0:
+                if obi_abs >= 2.0: # Reduzido de 2.5x para 2.0x (Sweet Spot)
+                    momentum_threshold = 84.0
+                    logging.info(f"[v24.1 ELASTIC-BYPASS] Threshold reduzido para 84% devido ao OBI {obi_abs:.2f}")
+
+        is_momentum_bypass = False
+        if score_raw >= momentum_threshold or score_raw <= (100.0 - momentum_threshold):
+            is_momentum_bypass = True
+            exec_strategy = "MOMENTUM"
+            direction = "COMPRA" if score_raw >= momentum_threshold else "VENDA"
+
+        # Lógica Sniper Padrão (Se não houver bypass)
+        if not is_momentum_bypass:
+            if score_raw >= self.confidence_buy_threshold:
+                direction = "COMPRA"
+            elif score_raw <= self.confidence_sell_threshold:
+                direction = "VENDA"
+            
+            exec_strategy = "SNIPER" if direction != "NEUTRAL" else "PASSIVA"
+
+        # [v24.2] GATILHOS ASSIMÉTRICOS (RSI DINÂMICO) POR REGIME
+        # Se regime for Tendência (1), relaxamos o RSI para capturar ralis institucionais
+        if regime == 1:
+            rsi_buy_trigger = 38.0
+            rsi_sell_trigger = 62.0
+            logging.info(f"[v24.2 TREND-RSI] Gatilhos relaxados: Buy=38, Sell=62 | Regime={regime}")
+        else:
+            rsi_buy_trigger = 32.0 # Default SOTA v22
+            rsi_sell_trigger = 68.0
+
+        # [v24.2] FLEXIBILIZAÇÃO VWAP (OBI BOOST)
+        # Se houver forte desequilíbrio no book (OBI > 3.0), permitimos maior distância da VWAP.
+        vwap = kwargs.get('vwap')
+        current_price = kwargs.get('current_price')
+        vwap_veto = False
+        
+        if vwap is not None and current_price is not None:
+            dist_vwap = abs(current_price - vwap)
+            limit_eff = self.vwap_dist_threshold
+            
+            # OBI Boost: Dobra o limite se o fluxo for massivo
+            if abs(obi) >= 3.0:
+                limit_eff *= 2.0
+                logging.info(f"[v24.2 VWAP-FLEX] OBI={obi:.1f} massivo. Limite VWAP expandido para {limit_eff:.0f}")
+            
+            if dist_vwap > limit_eff:
+                vwap_veto = True
+                logging.info(f"[v24.2 VWAP-VETO] Preço muito distante ({dist_vwap:.0f} > {limit_eff:.0f}). Veto aplicado.")
+
+        # Vetos de Segurança (Mesmo no Momentum, mantemos vetos de incerteza e VWAP)
+        uncertainty = patchtst_score.get("uncertainty_norm", 0.0) if isinstance(patchtst_score, dict) else 0.0
+        veto_reason = None
+        
+        if uncertainty > self.uncertainty_threshold:
+            veto_reason = "UNCERTAINTY"
+        elif vwap_veto:
+            veto_reason = "VWAP_DISTANT"
+            
+        if veto_reason:
+            direction = "WAIT" # [v24.2] Retorna WAIT para logar reason no BacktestPro
+            exec_strategy = "PASSIVA"
+        
+        return {
+            "score": float(score_raw),
+            "direction": direction,
+            "execution_strategy": exec_strategy,
+            "is_momentum_bypass": is_momentum_bypass,
+            "lot_multiplier": 1.0,
+            "tp_multiplier": 1.5 if exec_strategy == "MOMENTUM" else 1.0,
+            "veto": veto_reason,
+            "reason": veto_reason, # [v24.2] Sincronia com auditoria do BacktestPro
+            "h1_trend": self.h1_trend,
+            "quantile_confidence": "HIGH" if is_momentum_bypass else "NORMAL",
+            "rsi_buy_trigger": rsi_buy_trigger,
+            "rsi_sell_trigger": rsi_sell_trigger
+        }
+
+    def update_sentiment_anchor(self, price):
+        self.price_history.append(price)
+        if self.sentiment_anchor == 0: 
+            self.sentiment_anchor = price
+        else: 
+            self.sentiment_anchor = 0.999 * self.sentiment_anchor + 0.001 * price
+
+    def update_microstructure(self, obi):
+        self.obi_ema = 0.8 * self.obi_ema + 0.2 * obi
+
+    def get_directional_probability(self, market_data):
+        """Retorna probabilidade de continuação (Trend-Following)."""
+        return 0.52 # Base conservadora
+
+    def record_result(self, pnl):
+        if pnl < 0:
+            self.consecutive_losses += 1
+            if self.consecutive_losses >= 2:
+                self.ia_cooldown_until = time.time() + 900
+        else:
+            self.consecutive_losses = 0
+            self.ia_cooldown_until = 0

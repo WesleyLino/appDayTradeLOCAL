@@ -61,12 +61,13 @@ class SniperBotWIN:
         self.dia_pausado_vol = False
         self.hl_abertura_cache = None
         self.dia_abertura_cache = None
+        self.current_regime = 0 # [v23.1] Cache de regime para monitoramento de posição
         
-        # Sincronização inicial
-        self.risk.load_optimized_params("WIN$", "backend/v22_locked_params.json")
+        # Sincronização inicial v24
+        self.risk.load_optimized_params("WIN$", "backend/v24_locked_params.json")
         self._load_params_from_risk("WIN$")
         
-        logger.info(f"🛡️ [SOTA V22.5.1] Sincronização de Setup: OBI={self.flux_threshold}, RSI={self.rsi_period}, Vol={self.vol_spike_mult}, Janela={self.start_time}-{self.end_time}")
+        logger.info(f"🛡️ [SOTA v24.0] Sniper v24 Ativado: OBI={self.flux_threshold}, RSI={self.rsi_period}, Vol={self.vol_spike_mult}, Janela={self.start_time}-{self.end_time}")
         
         self._load_state()
 
@@ -75,26 +76,27 @@ class SniperBotWIN:
         strategy = self.risk.dynamic_params.get(symbol_key, {})
         if not strategy: return
         
-        self.flux_threshold = float(strategy.get("flux_imbalance_threshold", 0.95))
-        self.rsi_period = int(strategy.get("rsi_period", 14))
-        self.vol_spike_mult = float(strategy.get("vol_spike_mult", 1.0))
+        self.flux_threshold = float(strategy.get("flux_imbalance_threshold") or 0.95)
+        self.rsi_period = int(strategy.get("rsi_period") or 14)
+        self.vol_spike_mult = float(strategy.get("vol_spike_mult") or 1.0)
         
         raw_start = strategy.get("start_time", "10:00")
         raw_end = strategy.get("end_time", "17:15")
         self.start_time = datetime.strptime(raw_start, "%H:%M").time() if isinstance(raw_start, str) else time(10,0)
         self.end_time = datetime.strptime(raw_end, "%H:%M").time() if isinstance(raw_end, str) else time(17,15)
         
-        self.rsi_dynamic_buy = float(strategy.get("rsi_dynamic_buy", 30))
-        self.rsi_dynamic_sell = float(strategy.get("rsi_dynamic_sell", 70))
-        self.rsi_dynamic_activation_atr = float(strategy.get("rsi_dynamic_activation_atr", 100.0))
+        self.rsi_dynamic_buy = float(strategy.get("rsi_dynamic_buy") or 30)
+        self.rsi_dynamic_sell = float(strategy.get("rsi_dynamic_sell") or 70)
+        self.rsi_dynamic_activation_atr = float(strategy.get("rsi_dynamic_activation_atr") or 100.0)
 
         self.ai.use_h1_trend_bias = bool(strategy.get("use_h1_trend_bias", True))
         self.ai.h1_ma_period = int(strategy.get("h1_ma_period", 20))
         self.ai.confidence_relax_factor = float(strategy.get("confidence_relax_factor", 0.80))
         self.ai.atr_confidence_relax_trigger = float(strategy.get("atr_confidence_relax_trigger", 100.0))
         
-        self.ai.confidence_buy_threshold = float(strategy.get("confidence_buy_threshold", 0.55)) * 100.0
-        self.ai.confidence_sell_threshold = (1.0 - float(strategy.get("confidence_sell_threshold", 0.55))) * 100.0
+        self.ai.confidence_buy_threshold = float(strategy.get("confidence_buy_threshold") or 0.65) * 100.0
+        self.ai.confidence_sell_threshold = float(strategy.get("confidence_sell_threshold") or 0.35) * 100.0
+        self.ai.uncertainty_threshold = float(strategy.get("uncertainty_threshold") or 0.4)
 
     def _log_to_dashboard(self, msg, log_type="info"):
         if self.log_callback:
@@ -159,11 +161,29 @@ class SniperBotWIN:
         kelly_volume = self.risk.calculate_quarter_kelly(balance, wr, pf, current_atr or 150.0)
         
         scaling = min(2, self.consecutive_wins)
-        if is_scaling_in: lots = 1.0
+        # [v24] Lote Fixo de 2 contratos para conta de 3k (ou conforme v24_locked_params)
+        force_lots = getattr(self.risk, 'force_lots', None)
+        if force_lots is not None:
+            lots = int(force_lots)
         else:
             lots = round(kelly_volume) + scaling
             if quantile_confidence == "HIGH": lots += 1
             elif quantile_confidence == "VERY_HIGH": lots += 2
+            
+            # [v23] Aplicar multiplicador do Regime (SOTA v23)
+            r_params = self.risk.get_regime_specific_params(regime)
+            lot_mult = r_params.get("lot_multiplier", 1.0)
+            lots *= lot_mult
+            
+            # [v23] Redução de lote se a abertura foi excessivamente volátil
+            if getattr(self, 'dia_pausado_vol', False):
+                lots *= 0.5
+                logger.info(f"⚠️ [VOL REDUC] Lote reduzido em 50% devido à volatilidade da abertura.")
+            
+            if lot_mult != 1.0:
+                logger.info(f"🧬 [REGIME MULT] Lote ajustado em {lot_mult}x pelo regime {r_params.get('label')}")
+                
+            lots = max(1, round(lots))
         lots = min(10, lots)
         
         if self.risk.dry_run:
@@ -172,8 +192,29 @@ class SniperBotWIN:
             self._log_to_dashboard(f"🧪 [SIMULAÇÃO] Sniper {side} @ {limit_price} ({lots} l)", "info")
             return True
 
-        params = self.risk.get_order_params(self.symbol, self.bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else self.bridge.mt5.ORDER_TYPE_SELL_LIMIT, limit_price, lots, current_atr=current_atr, regime=regime, tp_multiplier=tp_multiplier)
-        result = self.bridge.place_smart_order(self.symbol, params['type'], limit_price, lots, sl=params['sl'], tp=params['tp'], score=ai_decision.get("confidence_score", 0.0), uncertainty=ai_decision.get("uncertainty", 0.0), comment="SNIPER_SOTA_EXPERT")
+        # [v23.1] Captura de Extremos para SL Dinâmico
+        prev_cand = self.bridge.get_previous_candle_extremes(self.symbol)
+        
+        params = self.risk.get_order_params(
+            self.symbol, 
+            self.bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else self.bridge.mt5.ORDER_TYPE_SELL_LIMIT, 
+            limit_price, lots, 
+            current_atr=current_atr, 
+            regime=regime, 
+            tp_multiplier=tp_multiplier,
+            prev_extremes=prev_cand,
+            current_time=datetime.now().time(), # [v24] Essencial para Janela de Ouro
+            comment="MOMENTUM_BYPASS" if (ai_decision and ai_decision.get("is_momentum_bypass")) else "SNIPER_SOTA"
+        )
+        result = self.bridge.place_smart_order(
+            self.symbol, params['type'], limit_price, params['volume'], 
+            sl=params['sl'], tp=params['tp'], 
+            score=ai_decision.get("score", 0.0), 
+            uncertainty=ai_decision.get("uncertainty", 0.0), 
+            buy_threshold=self.ai.confidence_buy_threshold,
+            sell_threshold=self.ai.confidence_sell_threshold,
+            comment=params.get('comment', "SNIPER_SOTA_EXPERT")
+        )
         
         if result and result.retcode == self.bridge.mt5.TRADE_RETCODE_DONE:
             self.trade_count += 1
@@ -209,17 +250,25 @@ class SniperBotWIN:
                 if not self.risk.dry_run: self.bridge.close_position(pos.ticket)
                 continue
 
-            should_partial, p_vol = self.risk.check_scaling_out(self.symbol, pos.ticket, current_profit, pos.volume)
+            should_partial, p_vol = self.risk.check_scaling_out(
+                self.symbol, pos.ticket, current_profit, pos.volume, 
+                regime=getattr(self, 'current_regime', 0),
+                comment=pos.comment
+            )
             if should_partial and not self.risk.dry_run:
                 self.bridge.close_partial_position(pos.ticket, p_vol)
                 continue
 
-            if current_profit >= self.risk.be_trigger:
-                new_sl = self.risk._quantize_price(self.symbol, pos.price_open + (self.risk.be_lock if pos.type == self.bridge.mt5.POSITION_TYPE_BUY else -self.risk.be_lock))
+            # [SOTA V22 GOLDEN] - Breakeven via RiskManager
+            should_be, new_sl = self.risk.check_breakeven(current_profit, pos.price_open, side="buy" if pos.type == self.bridge.mt5.POSITION_TYPE_BUY else "sell")
+            if should_be and new_sl:
+                new_sl = self.risk._quantize_price(self.symbol, new_sl)
                 if (pos.type == self.bridge.mt5.POSITION_TYPE_BUY and new_sl > pos.sl) or (pos.type == self.bridge.mt5.POSITION_TYPE_SELL and new_sl < pos.sl):
                     if not self.risk.dry_run: self.bridge.update_sltp(pos.ticket, new_sl, pos.tp)
 
-            t_trigger, t_lock, t_step = self.risk.get_dynamic_trailing_params(current_atr)
+            # [v24] Trailing Assimétrico (Necessita do parâmetro side)
+            pos_side = "buy" if pos.type == self.bridge.mt5.POSITION_TYPE_BUY else "sell"
+            t_trigger, t_lock, t_step = self.risk.get_dynamic_trailing_params(current_atr, side=pos_side)
             if current_profit >= t_trigger:
                 potential_sl = self.risk._quantize_price(self.symbol, pos.price_current + (-(t_trigger-t_lock) if pos.type == self.bridge.mt5.POSITION_TYPE_BUY else (t_trigger-t_lock)))
                 if (pos.type == self.bridge.mt5.POSITION_TYPE_BUY and potential_sl > pos.sl + t_step) or (pos.type == self.bridge.mt5.POSITION_TYPE_SELL and potential_sl < pos.sl - t_step):
@@ -229,7 +278,7 @@ class SniperBotWIN:
         logger.info("🚀 Sniper Bot WIN v2.0 Live")
         if not self.bridge.connected and not self.bridge.connect(): return
         self.symbol = self.bridge.get_current_symbol("WIN")
-        self.risk.load_optimized_params(self.symbol, "backend/v22_locked_params.json")
+        self.risk.load_optimized_params(self.symbol, "backend/v24_locked_params.json")
         self._load_params_from_risk(self.bridge._normalize_symbol(self.symbol))
         
         self.running = True
@@ -289,39 +338,77 @@ class SniperBotWIN:
                         self.hl_abertura_cache = float(hl.mean())
                         if self.hl_abertura_cache > 250.0: self.dia_pausado_vol = True
                 
+                # [v23] CÁLCULO DE IA - ANTECIPADO (Prioridade de Autoridade)
+                patchtst_score = await self.ai.predict_with_patchtst(self.ai.inference_engine, df)
+                sentiment = await self.ai.update_sentiment() if getattr(self.risk, 'enable_news_filter', True) else 0.0
+                self.current_regime = self.ai.identify_market_regime(df, self.ai.h1_trend, atr, adx_val, last['bb_up'], last['bb_down'], last['bb_mid'])
+                regime = self.current_regime
+                m_ctx = self._load_market_context()
+                bc_score = m_ctx.get("synthetic_index", 0.0)
+                
+                decision = self.ai.calculate_decision(
+                    obi=pressure, sentiment=sentiment, patchtst_score=patchtst_score, 
+                    regime=regime, atr=atr, volatility=0.1, hour=now.hour, minute=now.minute, 
+                    ofi=weighted_ofi, current_price=last['close'], 
+                    spread=self.bridge.get_latency_and_spread(self.symbol)[1], 
+                    sma_20=last['bb_mid'], bluechip_score=bc_score,
+                    # [v24] Injeção de Volume para Score Elasticidade
+                    current_vol=last['tick_volume'],
+                    avg_vol_20=last['vol_sma']
+                )
+
+                # [v23] Lógica de Gatilhos: Sniper (Indicadores) vs Momentum (Bypass IA)
                 rsi_buy = self.rsi_dynamic_buy if atr >= self.rsi_dynamic_activation_atr else 30.0
                 rsi_sell = self.rsi_dynamic_sell if atr >= self.rsi_dynamic_activation_atr else 70.0
-                if self.ai.use_h1_trend_bias and self.ai.h1_trend == -1: rsi_buy = 0.0
+                
+                # Ajuste RSI Assimétrico para Tendência (Regime 1)
+                if regime == 1:
+                    rsi_buy = 45.0 if self.ai.h1_trend >= 0 else 25.0
+                    rsi_sell = 55.0 if self.ai.h1_trend <= 0 else 75.0
 
                 flux_mult = self.vol_spike_mult if atr < 200 else 1.05
-                c_buy = last['rsi'] < rsi_buy and last['tick_volume'] > (last['vol_sma'] * flux_mult)
-                c_sell = last['rsi'] > rsi_sell and last['tick_volume'] > (last['vol_sma'] * flux_mult)
+                c_buy_sniper = last['rsi'] < rsi_buy and last['tick_volume'] > (last['vol_sma'] * flux_mult)
+                c_sell_sniper = last['rsi'] > rsi_sell and last['tick_volume'] > (last['vol_sma'] * flux_mult)
                 
-                if c_buy or c_sell:
-                    side = "buy" if c_buy else "sell"
-                    if (side == "buy" and pressure > self.flux_threshold) or (side == "sell" and pressure < -self.flux_threshold):
-                        patchtst_score = await self.ai.predict_with_patchtst(self.ai.inference_engine, df)
-                        sentiment = await self.ai.update_sentiment() if getattr(self.risk, 'enable_news_filter', True) else 0.0
-                        regime = self.ai.identify_market_regime(df, self.ai.h1_trend, atr, adx_val, last['bb_up'], last['bb_down'], last['bb_mid'])
-                        m_ctx = self._load_market_context()
-                        bc_score = m_ctx.get("synthetic_index", 0.0)
-                        
-                        decision = self.ai.calculate_decision(obi=pressure, sentiment=sentiment, patchtst_score=patchtst_score, regime=regime, atr=atr, volatility=0.1, hour=now.hour, minute=now.minute, ofi=weighted_ofi, current_price=last['close'], spread=self.bridge.get_latency_and_spread(self.symbol)[1], sma_20=last['bb_mid'], bluechip_score=bc_score)
-                        
-                        if not self.risk.is_macro_allowed("BUY" if side == "buy" else "SELL", bc_score): decision["direction"] = "WAIT"
-                        if self.dia_pausado_vol: decision["direction"] = "WAIT"
+                is_trade_allowed = False
+                side = "NEUTRAL"
 
-                        if decision["direction"] in ["COMPRA", "VENDA"]:
-                            positions = self.bridge.mt5.positions_get(symbol=self.symbol)
-                            can_trade = True
-                            if positions:
-                                p = positions[0]; prof = (p.price_current - p.price_open) if p.type == 0 else (p.price_open - p.price_current)
-                                if not self.risk.allow_pyramiding(prof, pressure, sum(pos.volume for pos in positions), symbol=self.symbol): can_trade = False
-                            
-                            if can_trade:
-                                if await self.execute_trade(side, ai_decision=decision, quantile_confidence=decision["quantile_confidence"], tp_multiplier=decision.get("tp_multiplier", 1.0), current_atr=atr, is_scaling_in=len(positions)>0):
-                                    self.persistence.save_state("last_quantile_confidence", decision["quantile_confidence"])
-                                    self.last_trade_time = now
+                if decision["is_momentum_bypass"]:
+                    # [v23.1] BYPASS INSTITUCIONAL: IA tem autoridade total (Threshold 88%)
+                    if decision["direction"] == "COMPRA" and pressure > 1.1:
+                        is_trade_allowed = True; side = "buy"
+                        logger.info(f"🚀 [MOMENTUM BYPASS] IA Score {decision['score']:.1f}% > 88% | Fluxo: {pressure:.2f}")
+                    elif decision["direction"] == "VENDA" and pressure < -1.1:
+                        is_trade_allowed = True; side = "sell"
+                        logger.info(f"🚀 [MOMENTUM BYPASS] IA Score {decision['score']:.1f}% < 12% | Fluxo: {pressure:.2f}")
+                else:
+                    # SNIPER TRADICIONAL: Depende dos indicadores (RSI/Volume) + IA Neutra/Sniper
+                    if c_buy_sniper and decision["direction"] == "COMPRA" and pressure > self.flux_threshold:
+                        is_trade_allowed = True; side = "buy"
+                    elif c_sell_sniper and decision["direction"] == "VENDA" and pressure < -self.flux_threshold:
+                        is_trade_allowed = True; side = "sell"
+
+                # [v23] Removido Veto Hard de Volatilidade Sniper. 
+                # Agora a redução é aplicada no lote dentro do execute_trade.
+                if self.dia_pausado_vol and not decision["is_momentum_bypass"]:
+                    if side != "NEUTRAL":
+                        logger.info(f"ℹ️ [INFO VOL] Sniper operando com lote reduzido (Abertura > 250)")
+
+                # Veto de Macro/Segurança (Mantemos mesmo no Momentum)
+                if is_trade_allowed and not self.risk.is_macro_allowed("BUY" if side == "buy" else "SELL", bc_score):
+                    is_trade_allowed = False
+
+                if is_trade_allowed:
+                    positions = self.bridge.mt5.positions_get(symbol=self.symbol)
+                    can_trade = True
+                    if positions:
+                        p = positions[0]; prof = (p.price_current - p.price_open) if p.type == 0 else (p.price_open - p.price_current)
+                        if not self.risk.allow_pyramiding(prof, pressure, sum(pos.volume for pos in positions), symbol=self.symbol): can_trade = False
+                    
+                    if can_trade:
+                        if await self.execute_trade(side, ai_decision=decision, quantile_confidence=decision["quantile_confidence"], tp_multiplier=decision.get("tp_multiplier", 1.0), current_atr=atr, regime=regime, is_scaling_in=len(positions)>0):
+                            self.persistence.save_state("last_quantile_confidence", decision["quantile_confidence"])
+                            self.last_trade_time = now
                 await asyncio.sleep(0.1)
             except Exception as e:
                 logger.error(f"Erro Sniper: {sanitize_log(e)}"); await asyncio.sleep(2)

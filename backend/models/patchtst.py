@@ -70,8 +70,8 @@ class PatchTST(nn.Module):
         self.d_model = d_model
         
         self.revin = SimpleRevIN(c_in)
-        # Patching via Conv1d (mais estável para ONNX do que unfold)
-        self.patch_conv = nn.Conv1d(c_in, c_in * d_model, kernel_size=patch_len, stride=stride, groups=c_in)
+        # Patching via Linear (Mapeado de pesos v22.5.7)
+        self.patch_embedding = nn.Linear(patch_len, d_model)
         
         self.pos_embed = nn.Parameter(torch.randn(1, self.n_patches, d_model))
         self.layers = nn.ModuleList([ManualTransformerBlock(d_model, n_heads) for _ in range(n_layers)])
@@ -82,12 +82,15 @@ class PatchTST(nn.Module):
         B, L, C = x.shape
         # Normalização
         x = self.revin(x, 'norm')
-        # Patching via Conv1d
-        x = x.permute(0, 2, 1) # [B, C, L]
-        x = self.patch_conv(x) # [B, C * d_model, N]
+        # Patching via Linear
+        # B, L, C -> B, C, N, patch_len
+        x = x.unfold(1, self.patch_len, self.stride) # [B, N, C, patch_len]
+        x = x.transpose(1, 2) # [B, C, N, patch_len]
+        x = self.patch_embedding(x) # [B, C, N, d_model]
         
-        N = x.shape[-1]
-        x = x.reshape(B, C, self.d_model, N).permute(0, 1, 3, 2).reshape(-1, N, self.d_model)
+        # [CORREÇÃO SOTA v23] Reshape dinâmico para evitar erro de dimensão 8960
+        # O modelo espera [Batch * Canal, n_patches, d_model]
+        x = x.reshape(B, C, self.n_patches, self.d_model).permute(0, 1, 2, 3).reshape(-1, self.n_patches, self.d_model)
         
         # Embedding + Pos
         x = x + self.pos_embed

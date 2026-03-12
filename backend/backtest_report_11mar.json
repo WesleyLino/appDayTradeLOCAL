@@ -1,0 +1,31 @@
+{
+    "status": "Finalizado",
+    "date": "2026-03-11",
+    "pnl_total": 33.02142857142644,
+    "total_trades": 2,
+    "buy_pnl": 0.0,
+    "sell_pnl": 33.02142857142608,
+    "vetos": {
+        "total_missed": 4,
+        "filtered_by_ai": 43,
+        "filtered_by_flux": 0,
+        "filtered_by_bias": 0,
+        "veto_reasons": {
+            "LOW_CONFIDENCE": 78
+        },
+        "v22_candidates": 551,
+        "component_fail": {
+            "rsi": 0,
+            "bb": 0,
+            "volume": 0,
+            "ai_veto_total": 40
+        },
+        "tiers": {
+            "70-75": 0,
+            "75-80": 0,
+            "80-85": 0
+        },
+        "sell_vetos_ai": 20,
+        "buy_vetos_ai": 19
+    }
+}

@@ -284,7 +284,7 @@ class MT5Bridge:
         
         return result
 
-    def place_smart_order(self, symbol, order_type, price, volume, sl=0.0, tp=0.0, score=0.0, uncertainty=0.0, comment="SOTA Inteligente"):
+    def place_smart_order(self, symbol, order_type, price, volume, sl=0.0, tp=0.0, score=0.0, uncertainty=0.0, comment="SOTA Inteligente", **kwargs):
         """
         [HFT ELITE - SMART ROUTING]
         Decide entre ordem LIMITADA ou MERCADO com base na força do sinal (Score) e incerteza.
@@ -296,10 +296,13 @@ class MT5Bridge:
         # Lógica de Decisão de Roteamento
         use_market = False
         
-        # [ANTIVIBE-CODING] - Gatilhos Institucionais Congelados
-        if score >= 90.0:
+        # [SOTA V22 GOLDEN] - Execução a mercado sincronizada com thresholds dinâmicos
+        buy_trigger = kwargs.get("buy_threshold", 65.0)
+        sell_trigger = kwargs.get("sell_threshold", 35.0)
+        
+        if score >= buy_trigger or (score <= sell_trigger and score > 0): 
             use_market = True
-            comment += " (Aggressive-Score)"
+            comment += f" (Aggressive-SOTA-v22-{score:.0f})"
         elif 0 < uncertainty <= 0.15: # Baixa Incerteza = Confiança HFT
             use_market = True
             comment += " (Aggressive-Uncertainty)"
@@ -701,6 +704,14 @@ class MT5Bridge:
         df['time_dt'] = pd.to_datetime(df['time'], unit='s') - timedelta(hours=3)
         df['time_str'] = df['time_dt'].dt.strftime('%H:%M:%S')
         return df
+
+    def get_previous_candle_extremes(self, symbol, timeframe=None):
+        """Retorna High e Low do candle M1 anterior para SL dinâmico."""
+        tf = timeframe or self.mt5.TIMEFRAME_M1
+        rates = self.mt5.copy_rates_from_pos(symbol, tf, 1, 1)
+        if rates is not None and len(rates) > 0:
+            return {"high": float(rates[0].high), "low": float(rates[0].low)}
+        return None
 
     def get_order_book(self, symbol):
         """Retorna o book de ofertas atualizado (Snapshot L2)."""

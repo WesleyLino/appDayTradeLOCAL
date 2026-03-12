@@ -31,11 +31,11 @@ class BacktestPro:
         try:
             self.inference = InferenceEngine(model_path="backend/patchtst_weights_sota.pth")
             self.ai.inference_engine = self.inference
-            logging.info("🧠 Motor de Inferência SOTA carregado.")
+            logging.info("--- Motor de Inferência SOTA carregado.")
         except Exception as e_engine:
             self.inference = None 
             self.ai.inference_engine = None
-            logging.warning(f"⚠️ Pesos SOTA não carregados ({e_engine}). Usando modo degenerado (Sentiment/OBI).")
+            logging.warning(f"[AVISO] Pesos SOTA não carregados ({e_engine}). Usando modo degenerado (Sentiment/OBI).")
             
         self.risk = RiskManager()
         self.expert = RegimeExpert() # [v36 Expert] Injeta o Expert de Regimes
@@ -46,14 +46,23 @@ class BacktestPro:
         locked_params = {}
         try:
             import json
-            params_path = os.path.join(os.path.dirname(__file__), "v22_locked_params.json")
+            # [v24] Sincronizado com a versão mais recente de Lucro Assimétrico
+            params_path = os.path.join(os.path.dirname(__file__), "v24_locked_params.json")
             if os.path.exists(params_path):
                 with open(params_path, "r") as f:
                     config = json.load(f)
-                    locked_params = config.get("strategy_params", {})
-                    logging.info("🛡️ Golden Params V22 carregados com sucesso.")
+                locked_params = config.get("strategy_params", config)
+                logging.info("[SEC] Golden Params V24 carregados com sucesso no BacktestPro.")
+            else:
+                # Fallback para v22 se v24 não existir (segurança)
+                params_path_v22 = os.path.join(os.path.dirname(__file__), "v22_locked_params.json")
+                if os.path.exists(params_path_v22):
+                    with open(params_path_v22, "r") as f:
+                        config = json.load(f)
+                    locked_params = config.get("strategy_params", config)
+                    logging.info("[SEC] Fallback: Golden Params V22 carregados.")
         except Exception as e:
-            logging.warning(f"⚠️ Falha ao carregar Golden Params ({e}). Usando defaults hardcoded.")
+            logging.warning(f"[AVISO] Falha ao carregar Golden Params ({e}). Usando defaults hardcoded.")
 
         self.opt_params = {
             'rsi_period': kwargs.get('rsi_period', locked_params.get('rsi_period', 9)),
@@ -61,7 +70,7 @@ class BacktestPro:
             'vol_spike_mult': kwargs.get('vol_spike_mult', locked_params.get('vol_spike_mult', 1.0)),
             'trailing_trigger': kwargs.get('trailing_trigger', locked_params.get('trailing_trigger', 70.0)),
             'trailing_lock': kwargs.get('trailing_lock', locked_params.get('trailing_lock', 50.0)),
-            'trailing_step': kwargs.get('trailing_step', locked_params.get('trailing_step', 20.0)),
+            'trailing_step': kwargs.get('trailing_step', locked_params.get('trailing_step', 5.0)),
             'sl_dist': kwargs.get('sl_dist', locked_params.get('sl_dist', 150.0)),
             'tp_dist': kwargs.get('tp_dist', locked_params.get('tp_dist', 400.0)),
             'confidence_threshold': kwargs.get('confidence_threshold', locked_params.get('confidence_threshold', 0.60)), 
@@ -75,9 +84,9 @@ class BacktestPro:
             'flux_imbalance_threshold': kwargs.get('flux_imbalance_threshold', locked_params.get('flux_imbalance_threshold', 0.95)),
             'bollinger_squeeze_threshold': kwargs.get('bollinger_squeeze_threshold', locked_params.get('bollinger_squeeze_threshold', 1.2)),
             'min_atr_threshold': kwargs.get('min_atr_threshold', locked_params.get('min_atr_threshold', 50.0)),
-            'be_trigger': kwargs.get('be_trigger', locked_params.get('be_trigger', 40.0)),
-            'be_lock': kwargs.get('be_lock', locked_params.get('be_lock', 0.0)),
-            'partial_profit_points': kwargs.get('partial_profit_points', locked_params.get('partial_profit_points', 45.0)),
+            'be_trigger': kwargs.get('be_trigger', locked_params.get('be_trigger', 60.0)),
+            'be_lock': kwargs.get('be_lock', locked_params.get('be_lock', 5.0)),
+            'partial_profit_points': kwargs.get('partial_profit_points', locked_params.get('partial_profit_points', 70.0)),
             'base_lot': kwargs.get('base_lot', locked_params.get('base_lot', 1)),
             'use_ai_core': kwargs.get('use_ai_core', locked_params.get('use_ai_core', True)),
             'vwap_dist_threshold': kwargs.get('vwap_dist_threshold', locked_params.get('vwap_dist_threshold', 400.0)),
@@ -94,7 +103,7 @@ class BacktestPro:
             'use_anti_trap': kwargs.get('use_anti_trap', locked_params.get('use_anti_trap', True))
         }
         
-        logging.warning(f"⚠️ [INIT-STATE] use_ai_core_param={self.opt_params['use_ai_core']}")
+        logging.warning(f"[INIT] [INIT-STATE] use_ai_core_param={self.opt_params['use_ai_core']}")
 
         # [v52.1] SINCRONIZAÇÃO DE PARÂMETROS: Injeta opt_params no RiskManager
         # Garante que os valores do JSON (golden params) sejam usados em execução
@@ -102,11 +111,15 @@ class BacktestPro:
         self.risk.be_trigger = self.opt_params['be_trigger']
         self.risk.be_lock = self.opt_params['be_lock']
         self.risk.partial_profit_points = self.opt_params['partial_profit_points']
-        self.risk.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 450.0)
+        self.risk.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 400.0)
         self.risk.min_atr_threshold = self.opt_params.get('min_atr_threshold', 50.0)
         self.risk.bollinger_squeeze_threshold = self.opt_params.get('bollinger_squeeze_threshold', 1.2)
-        self.risk.flux_imbalance_threshold = self.opt_params.get('flux_imbalance_threshold', 0.95)
-        # Sincroniza threshold de confiança com o AICore
+        self.risk.flux_imbalance_threshold = self.opt_params.get('flux_imbalance_threshold', 1.5)
+        # Sincroniza threshold de confiança com o AICore (Convertendo 0.65 -> 65.0)
+        self.ai.confidence_buy_threshold = float(self.opt_params.get('confidence_buy_threshold') or 0.65) * 100.0
+        self.ai.confidence_sell_threshold = float(self.opt_params.get('confidence_sell_threshold') or 0.35) * 100.0
+        self.ai.uncertainty_threshold = float(self.opt_params.get('uncertainty_threshold') or 0.4)
+        
         if hasattr(self.ai, 'vwap_dist_threshold'):
             self.ai.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 450.0)
         # [SOTA v22.5.3] Sincroniza Bias H1 (paridade com bot live)
@@ -116,8 +129,8 @@ class BacktestPro:
         # [SOTA v22.5.4] Confidence Relax (paridade com bot live)
         self.ai.confidence_relax_factor = float(locked_params.get('confidence_relax_factor', 0.80))
         self.ai.atr_confidence_relax_trigger = float(locked_params.get('atr_confidence_relax_trigger', 100.0))
-        logging.info(f"🔧 [v22.5.1] RiskManager sincronizado: limite={self.risk.daily_trade_limit} | OBI={self.risk.flux_imbalance_threshold} | Squeeze={self.risk.bollinger_squeeze_threshold}")
-        logging.info(f"📊 [v22.5.3/4/5] H1 + Hysteresis: use_h1={self.ai.use_h1_trend_bias} | MA={self.ai.h1_ma_period} | Hyst={self.ai.h1_hysteresis_pts} | Relax={self.ai.confidence_relax_factor}")
+        logging.info(f"[SYNC] [v22.5.1] RiskManager sincronizado: limite={self.risk.daily_trade_limit} | OBI={self.risk.flux_imbalance_threshold} | Squeeze={self.risk.bollinger_squeeze_threshold}")
+        logging.info(f"[DATA] [v22.5.3/4/5] H1 + Hysteresis: use_h1={self.ai.use_h1_trend_bias} | MA={self.ai.h1_ma_period} | Hyst={self.ai.h1_hysteresis_pts} | Relax={self.ai.confidence_relax_factor}")
         
         # [v36.2] Injeta toggles de Expert Mode no AICore
         self.ai.use_confidence_filter = self.opt_params['use_confidence_filter']
@@ -167,11 +180,12 @@ class BacktestPro:
 
     async def load_data(self):
         if self.data_file is not None and os.path.exists(self.data_file):
-            logging.info(f"📥 Lendo DataFrame Estático em O(1) do filepath: {self.data_file} (Amostra: {self.n_candles} velas)")
+            logging.info(f"[LOAD] Lendo DataFrame Estático em O(1) do filepath: {self.data_file} (Amostra: {self.n_candles} velas)")
             df = pd.read_csv(self.data_file, nrows=self.n_candles)
             df['time'] = pd.to_datetime(df['time'])
             df.set_index('time', inplace=True)
-            return df
+            self.data = df
+            return self.data
 
         logging.info(f"📥 Coletando {self.n_candles} candles de {self.symbol}...")
         if not self.bridge.connect():
@@ -191,11 +205,12 @@ class BacktestPro:
         df['time'] = pd.to_datetime(df['time'], unit='s')
         df.set_index('time', inplace=True)
         logging.info(f"✅ {len(df)} candles carregados.")
-        return df
+        self.data = df
+        return self.data
 
-    def simulate_oco(self, row, position):
+    def simulate_oco(self, row, position, prev_row=None):
         """
-        Simula execução OCO e Trailing Stop SOTA (Alpha V22 Pro).
+        Simula execução OCO e Trailing Stop SOTA (v24.1 Pro).
         """
         side = position['side']
         sl = position['sl']
@@ -204,6 +219,13 @@ class BacktestPro:
         use_trailing = self.opt_params.get('use_trailing_stop', False)
         
         if side == 'buy':
+            # [v24.1] Trailing Stop Estrutural (Mínima M1 Anterior)
+            if prev_row is not None:
+                struct_sl = self.risk.get_structural_stop('buy', prev_row)
+                if struct_sl and struct_sl > position['sl']:
+                    position['sl'] = struct_sl
+                    logging.debug(f"🧱 [v24.1 TRAILING-ESTRUTURAL] SL movido p/ {struct_sl} (Mínima Ant)")
+
             # 1. Lógica de Trailing Stop - COMPRA (USA PARÂMETROS PADRÃO)
             trigger_pts = self.opt_params.get('trailing_trigger', 70.0)
             lock_pts = self.opt_params.get('trailing_lock', 50.0)
@@ -216,6 +238,7 @@ class BacktestPro:
             
             if profit_pts_be >= be_trigger and position['sl'] < entry:
                 position['sl'] = entry + be_lock
+                logging.info(f"🛡️ [v24.1 BREAKEVEN] SL movido p/ {position['sl']} (+{be_lock})")
 
             # 1.2 Lógica de Trailing Stop SOTA
             if row['low'] <= sl:
@@ -240,6 +263,13 @@ class BacktestPro:
                 return 'TP_DECAY', (entry + decayed_tp_dist)
                 
         else: # sell
+            # [v24.1] Trailing Stop Estrutural (Máxima M1 Anterior)
+            if prev_row is not None:
+                struct_sl = self.risk.get_structural_stop('sell', prev_row)
+                if struct_sl and (position['sl'] == 0 or struct_sl < position['sl']):
+                    position['sl'] = struct_sl
+                    logging.debug(f"🧱 [v24.1 TRAILING-ESTRUTURAL] SL movido p/ {struct_sl} (Máxima Ant)")
+
             # 1. Lógica de Trailing Stop - VENDA (USA ASSIMETRIA v50.1)
             atr_now = row.get('atr_current', 100.0)
             trigger_pts, lock_pts, step_pts = self.risk.get_dynamic_trailing_params(atr_now, side="sell")
@@ -251,6 +281,7 @@ class BacktestPro:
 
             if profit_pts_be >= be_trigger and position['sl'] > entry:
                 position['sl'] = entry - be_lock
+                logging.info(f"🛡️ [v24.1 BREAKEVEN] SL movido p/ {position['sl']} (-{be_lock})")
 
             # 2.2 Lógica de Trailing Stop SOTA
             if row['high'] >= sl:
@@ -294,13 +325,14 @@ class BacktestPro:
         return None, None
 
     async def run(self):
+        # [v22.2] Garante que os dados existam antes do processamento
         if self.data is None:
-            self.data = await self.load_data()
-            
+            data_loaded = await self.load_data()
+            if data_loaded is None or data_loaded.empty:
+                logging.error("❌ Erro no BacktestPro: falha crítica ao carregar dados.")
+                return
+        
         data = self.data
-        if data is None: 
-            logging.error("❌ Erro no BacktestPro: load_data retornou None")
-            return
             
         logging.info(f"🚀 Iniciando Simulação High Fidelity com {len(data)} velas...")
         
@@ -428,7 +460,7 @@ class BacktestPro:
 
             # 1. Verificar saída de posição aberta (Simulação OCO)
             if self.position:
-                exit_type, exit_price = self.simulate_oco(row, self.position)
+                exit_type, exit_price = self.simulate_oco(row, self.position, prev_row=data.iloc[i-1] if i > 0 else None)
                 if exit_type:
                     self._close_trade(exit_price, exit_type, row.name)
                     self.last_trade_time = row.name # Inicia cooldown após fechar
@@ -473,15 +505,18 @@ class BacktestPro:
                 except Exception as e_h1_bt:
                     logging.debug(f"Bias H1 backtest: {e_h1_bt}")
 
+            # [v22.5.7] Reset de Sinais e Cálculo de Indicadores (Obrigatório em todas as velas)
+            v22_buy = v22_sell = False
+            v22_buy_raw = v22_sell_raw = False
+            rsi = row['rsi']
+            upper_bb = row['upper_bb']
+            lower_bb = row['lower_bb']
+            mid_bb = row['sma_20']
+            atr_current = row['atr_current']
+            vol_sma = row['vol_sma']
+
             # 2. Lógica de Entrada (Se estiver zerado)
             if not self.position:
-                # --- INDICADORES ALPHA V21 (Pré-calculados) ---
-                rsi = row['rsi']
-                upper_bb = row['upper_bb']
-                lower_bb = row['lower_bb']
-                mid_bb = row['sma_20']
-                atr_current = row['atr_current']
-                vol_sma = row['vol_sma']
 
                 # 4. Price Action: Rejeição (Pavio)
                 body = abs(row['open'] - row['close'])
@@ -497,8 +532,7 @@ class BacktestPro:
                 # Nesse caso, BUY fica vetado para evitar counter-trend losses.
                 current_hour = row.name.hour
                 current_minute = row.name.minute
-                is_opening_window = (current_hour == 9 and current_minute <= 44) or (
-                    current_hour < 9)
+                is_opening_window = (current_hour == 9 and current_minute <= 10)  # [v23] Sincronizado com RiskManager
                 current_ema30 = row['ema30']
                 current_ema90 = row['ema90']
                 if current_date != getattr(self, '_bias_day', None):
@@ -537,11 +571,13 @@ class BacktestPro:
                             f"Retomando operações às {row.name.strftime('%H:%M')}."
                         )
 
-                # Bloqueia entradas enquanto dia estiver pausado por volatilidade extrema
-                if self._dia_pausado_atr:
+                # [v23] Bypass de Volatilidade para Momentum Direcional
+                is_momentum_bypass = ai_decision.get('is_momentum_bypass', False) if 'ai_decision' in locals() else False
+                
+                if self._dia_pausado_atr and not is_momentum_bypass:
                     self.shadow_signals['veto_reasons']['ATR_DIA_PAUSADO'] = \
                         self.shadow_signals['veto_reasons'].get('ATR_DIA_PAUSADO', 0) + 1
-                    continue  # Próxima vela — sem entradas
+                    continue  # Próxima vela — sem entradas (salvo se for Momentum Bypass)
                 if is_opening_window:
                     if current_ema30 < current_ema90 * 0.9998:  # Margem de 0.02% para evitar falsos alertas
                         self._bias_diario = 'baixa'
@@ -628,7 +664,7 @@ class BacktestPro:
                     sim_ofi = (sentiment_score * 0.5) if sentiment_score != 0 else 0.0
                     
                     # Atualizar vwap_dist_threshold no AICore se disponível
-                    self.ai.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 250.0)
+                    self.ai.vwap_dist_threshold = self.opt_params.get('vwap_dist_threshold', 400.0)
                     
                     # [v22.5.5-SYNC] Sincronização de Tendência H1 (Alta Frequência - 1 min)
                     if True: 
@@ -648,7 +684,7 @@ class BacktestPro:
                         self.ai.micro_analyzer.price_history.pop(0)
                     
                     if row.name.day == 10 and row.name.month == 3 and getattr(self, '_debug_printed', 0) < 3:
-                        logging.warning(f"⚠️ [v22.5.5-STATE] use_ai_core={self.opt_params['use_ai_core']}")
+                        logging.warning(f"[v22.5.5-STATE] use_ai_core={self.opt_params['use_ai_core']}")
                         self._debug_printed = getattr(self, '_debug_printed', 0) + 1
                     
                     ai_decision = self.ai.calculate_decision(
@@ -659,13 +695,16 @@ class BacktestPro:
                         atr=atr_current,
                         volatility=vol_val,
                         hour=row.name.hour,
-                        minute=row.name.minute, # [SOTA v5] Sincronia de minuto
+                        minute=row.name.minute, # [SOTA v24.1] Sincronia de minuto para Janela de Ouro
+                        current_vol=row['tick_volume'], # [v24.1] Volume Real
+                        avg_vol_20=vol_sma,  # [v24.1] Média de Volume 20m
                         ofi=sim_ofi,
-                        current_price=row['close'], # [SOTA v5] Sincronia de preco
-                        spread=current_spread, # [SOTA v5] Sincronia de spread
+                        current_price=row['close'],
+                        vwap=row['vwap'],
+                        spread=current_spread,
                         sma_20=mid_bb,
-                        wdo_aggression=0.0, # Placeholder para backtest WIN
-                        bluechip_score=0.0   # Neutro no backtest (sem dados históricos de ações)
+                        wdo_aggression=0.0,
+                        bluechip_score=0.0
                     )
                     
                     # [v36 PRIME] GATILHOS ASSIMÉTRICOS (RSI DINÂMICO) PROVINIENTES DA IA
@@ -718,14 +757,14 @@ class BacktestPro:
                     thr_sell = self.opt_params.get('confidence_sell_threshold') or self.opt_params['confidence_threshold']
 
                     v22_buy = (
-                        v22_buy_raw 
+                        (v22_buy_raw or is_momentum_bypass)
                         and (ai_dir == "COMPRA") 
                         and (ai_stability >= thr_buy)
                         and cooldown_ok 
                         and not bias_veto_buy
                     )
                     v22_sell = (
-                        v22_sell_raw 
+                        (v22_sell_raw or is_momentum_bypass)
                         and (ai_dir == "VENDA") 
                         and (ai_stability >= thr_sell)
                         and cooldown_ok 
@@ -742,7 +781,7 @@ class BacktestPro:
                             atr=atr_current
                         )
                         if is_sideways:
-                            logging.info(f"🛑 [VETO LATERALIDADE] {row.name} | Motivo: {s_reason} | Sinal Abortado.")
+                            logging.info(f"[VETO LATERALIDADE] {row.name} | Motivo: {s_reason} | Sinal Abortado.")
                             self.shadow_signals['veto_reasons'][s_reason] = self.shadow_signals['veto_reasons'].get(s_reason, 0) + 1
                             v22_buy = False
                             v22_sell = False
@@ -865,9 +904,13 @@ class BacktestPro:
                 t_end = datetime.strptime(self.opt_params['end_time'], "%H:%M").time()
                 time_ok = t_start <= row.name.time() <= t_end
                 
-                # [PAUSA PARCIAL] Sincronia de Produção: Bloqueio compulsório das primeiras 9 velas (Aguarda amostragem H-L)
-                if row.name.hour == 9 and row.name.minute < 10:
-                    time_ok = False
+                # [v23] Sincronia de Produção: Abertura Flexível (09:00-09:10 liberado se for Momentum ou via Expert)
+                is_opening_flex = (row.name.hour == 9 and row.name.minute < 10)
+                if is_opening_flex and not is_momentum_bypass:
+                    # Se não for momentum bypass, mantemos o bloqueio legacy ou habilitamos via flag
+                    time_ok = self.opt_params.get('allow_flex_opening', True) 
+                else:
+                    time_ok = t_start <= row.name.time() <= t_end
                 
                 # [AGRESSIVO] Limite de 60% de perda diária
                 limit_loss = self.initial_balance * 0.60
@@ -947,79 +990,44 @@ class BacktestPro:
                         self.shadow_signals['total_missed'] += 1
                         # self.shadow_signals['filtered_by_sentiment'] = ...
 
-                if (v22_buy or v22_sell) and time_ok and risk_ok and limit_ok and vol_stable and cooldown_ok and ai_filter_ok and sentiment_ok and flux_ok:
-                    side = "buy" if v22_buy else "sell"
+                # 3. Executar Entrada se todos os filtros conferem
+                if (v22_buy or v22_sell or v22_sell_technical) and time_ok and risk_ok and ai_filter_ok and sentiment_ok and flux_ok:
+                    side = "buy" if v22_buy else ("sell" if v22_sell else "sell") # Default to sell if v22_sell_technical is true
 
-                    
                     # [MELHORIA H - V28] Veto de direção por tendência diária
                     if side == 'buy' and bias_veto_buy:
                         self.shadow_signals['total_missed'] = self.shadow_signals.get('total_missed', 0) + 1
                         self.shadow_signals['filtered_by_bias'] = self.shadow_signals.get('filtered_by_bias', 0) + 1
-                        logging.debug(f"🚫 [H] BUY vetado por tendência diária de BAIXA em {row.name}")
+                        logging.debug(f"[VETO] [H] BUY vetado por tendência diária de BAIXA em {row.name}")
                         continue
                     if side == 'sell' and bias_veto_sell:
                         self.shadow_signals['total_missed'] = self.shadow_signals.get('total_missed', 0) + 1
                         self.shadow_signals['filtered_by_bias'] = self.shadow_signals.get('filtered_by_bias', 0) + 1
-                        logging.debug(f"🚫 [H] SELL vetado por tendência diária de ALTA em {row.name}")
+                        logging.debug(f"[VETO] [H] SELL vetado por tendência diária de ALTA em {row.name}")
                         continue
 
-                    # [V22.2] CÁLCULO DE ALVO DINÂMICO (TP)
-                    dyn_tp = self.risk.calculate_dynamic_tp(dyn_tp, atr_current)
-
-                    # [V36 Expert] Sincronização Absoluta de Regimes
-                    regime_settings = self.expert.get_regime_settings(current_regime)
-                    
-                    sl_fixed = self.opt_params.get('sl_dist', 150.0)
-                    tp_fixed = self.opt_params.get('tp_dist', 550.0)
-                    
-                    # Aplica multiplicadores do Expert V36
-                    raw_sl = sl_fixed * regime_settings['sl_mult']
-                    raw_tp = tp_fixed * regime_settings['tp_mult']
-
-                    if "WDO" in self.symbol or "DOL" in self.symbol:
-                        dyn_tp_pts = max(5.0, min(30.0, raw_tp))
-                        dyn_sl_pts = max(3.0, min(15.0, raw_sl))
-                    else: # Padrão WIN
-                        dyn_tp_pts = max(100.0, min(600.0, raw_tp))
-                        dyn_sl_pts = max(100.0, min(300.0, raw_sl))
-
-                    # [SOTA v5] Aplicação do Multiplicador de Precisão (Spread-Adjusted)
-                    tp_multiplier = ai_decision.get('tp_multiplier', 1.0) if use_ai_core else 1.0
-                    if tp_multiplier != 1.0:
-                        dyn_tp_pts *= tp_multiplier
-                    
-                    sl = row['close'] - dyn_sl_pts if side == "buy" else row['close'] + dyn_sl_pts
-                    tp = row['close'] + dyn_tp_pts if side == "buy" else row['close'] - dyn_tp_pts
-                    
-                    # Lote Dinâmico (SOTA High-Gain)
-                    if self.opt_params.get('force_lots'):
-                        target_lot = self.opt_params['force_lots']
-                    elif self.opt_params.get('dynamic_lot', False):
-                        # Escala a partir do lote base + vitórias consecutivas
-                        base = self.opt_params.get('base_lot', 1)
-                        target_lot = min(10, base + self.consecutive_wins)
-                    else:
-                        target_lot = self.opt_params.get('base_lot', 1)
-                    
-                    # [SOTA v5] Aplicar multiplicador de assertividade da IA (Rigor)
-                    ai_multiplier = ai_decision.get('lot_multiplier', 1.0) if use_ai_core else 1.0
-                    target_lot = max(1, round(target_lot * ai_multiplier))
-
-                    # [SOTA High-Gain] Multiplicador Agressivo de Lote para Convicção Extrema
-                    # Ativa escala de 2.0x apenas quando a IA tem certeza superior a 85%
-                    if ai_stability >= 0.85 and self.opt_params.get('use_ai_core', False):
-                        target_lot *= 2
+                    # [v23] Solicita parâmetros ao RiskManager (já ajustados para abertura/momentum)
+                    import MetaTrader5 as mt5
+                    params = self.risk.get_order_params(
+                        self.symbol, 
+                        (mt5.ORDER_TYPE_BUY if side == "buy" else mt5.ORDER_TYPE_SELL), 
+                        row['close'], 
+                        self.opt_params['base_lot'], 
+                        current_atr=atr_current, 
+                        regime=current_regime,
+                        tp_multiplier=tp_multiplier,
+                        current_time=row.name.time()
+                    )
                     
                     self.position = {
                         'side': side,
                         'entry_price': row['close'],
-                        'sl': sl,
-                        'tp': tp,
-                        'lots': target_lot,
+                        'sl': params['sl'],
+                        'tp': params['tp'],
+                        'lots': params['volume'],
                         'index': i,
                         'time': row.name,
-                        'tp_multiplier': tp_multiplier, # Injetado
-                        'use_partial': use_partial_flag, # Injetado
+                        'tp_multiplier': tp_multiplier,
                         'quantile_confidence': quantile_confidence if 'quantile_confidence' in locals() else "NORMAL",
                         'execution_mode': ai_decision.get('execution_mode', 'LIMIT') if 'ai_decision' in locals() else 'LIMIT'
                     }
@@ -1029,7 +1037,9 @@ class BacktestPro:
                         self._last_buy_time = row.name
                     else:
                         self._last_sell_time = row.name
-                    logging.info(f"🎯 GATILHO V22 [{regime_tag}]: {side} @ {row['close']} | Lotes: {target_lot}")
+                    self.last_trade_time = row.name
+                    logging.info(f"GATILHO V22 [{regime_tag}]: {side} @ {row['close']} | Lotes: {params['volume']}")
+                    continue
 
                 
                 # [AUTORIZADO 03/03/2026] GATE TÉCNICO DE VENDA CONSERVADOR
@@ -1077,7 +1087,7 @@ class BacktestPro:
             self.equity_curve.append(self.balance)
             self.timestamps.append(row.name)
 
-        logging.info("🏁 Simulação concluída.")
+        logging.info("Simulacao concluida.")
         if self.position:
             # Força o fechamento da última posição para fins de relatório final no backtest
             self._close_trade(row['close'], 'END_OF_SIM', row.name)
@@ -1127,7 +1137,15 @@ class BacktestPro:
         df_trades = pd.DataFrame(self.trades)
         if df_trades.empty:
             logging.warning("Nenhum trade realizado no período.")
-            return
+            return {
+                'final_balance': self.balance,
+                'total_pnl': 0.0,
+                'trades': [],
+                'win_rate': 0.0,
+                'profit_factor': 0.0,
+                'max_drawdown': self.max_drawdown * 100,
+                'shadow_signals': self.shadow_signals
+            }
 
         # Métricas
         win_rate = (len(df_trades[df_trades['pnl_fin'] > 0]) / len(df_trades)) * 100

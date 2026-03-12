@@ -1,0 +1,271 @@
+2026-03-12 15:56:17,493 - INFO - \U0001f680 Iniciando Auditoria Detalhada SOTA v23 - 11/03/2026
+2026-03-12 15:56:17,503 - INFO - Conectado com sucesso!
+2026-03-12 15:56:17,503 - INFO - Servidor: GenialInvestimentos-PRD
+2026-03-12 15:56:17,503 - INFO - Corretora: Genial Investimentos Corretora de Valores Mobiliários S.A.
+2026-03-12 15:56:17,503 - INFO - Conta: 4635067
+2026-03-12 15:56:17,503 - INFO - Saldo: R$ 491.00
+2026-03-12 15:56:17,503 - INFO - [OK] Servidor Genial Verificado: GenialInvestimentos-PRD
+2026-03-12 15:56:17,504 - INFO - [OK] AlgoTrading: ATIVADO (Negociacao Permitida)
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\backend\ai_core.py:42: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  state_dict = torch.load(self.model_path, map_location='cpu')
+2026-03-12 15:56:17,514 - INFO - --- [v22.5.7] PyTorch Engine Ativo (CPU Fallback)
+2026-03-12 15:56:17,520 - ERROR - Erro ao carregar InferenceEngine: Error(s) in loading state_dict for PatchTST:
+	Missing key(s) in state_dict: "pos_embed", "revin.gamma", "revin.beta", "layers.0.attn.qkv.weight", "layers.0.attn.qkv.bias", "layers.0.attn.out.weight", "layers.0.attn.out.bias", "layers.0.norm1.weight", "layers.0.norm1.bias", "layers.0.ff.0.weight", "layers.0.ff.0.bias", "layers.0.ff.2.weight", "layers.0.ff.2.bias", "layers.0.norm2.weight", "layers.0.norm2.bias", "layers.1.attn.qkv.weight", "layers.1.attn.qkv.bias", "layers.1.attn.out.weight", "layers.1.attn.out.bias", "layers.1.norm1.weight", "layers.1.norm1.bias", "layers.1.ff.0.weight", "layers.1.ff.0.bias", "layers.1.ff.2.weight", "layers.1.ff.2.bias", "layers.1.norm2.weight", "layers.1.norm2.bias", "layers.2.attn.qkv.weight", "layers.2.attn.qkv.bias", "layers.2.attn.out.weight", "layers.2.attn.out.bias", "layers.2.norm1.weight", "layers.2.norm1.bias", "layers.2.ff.0.weight", "layers.2.ff.0.bias", "layers.2.ff.2.weight", "layers.2.ff.2.bias", "layers.2.norm2.weight", "layers.2.norm2.bias". 
+	Unexpected key(s) in state_dict: "position_embedding", "encoder.0.attn.mha.in_proj_weight", "encoder.0.attn.mha.in_proj_bias", "encoder.0.attn.mha.out_proj.weight", "encoder.0.attn.mha.out_proj.bias", "encoder.0.norm1.weight", "encoder.0.norm1.bias", "encoder.0.ff.0.weight", "encoder.0.ff.0.bias", "encoder.0.ff.2.weight", "encoder.0.ff.2.bias", "encoder.0.norm2.weight", "encoder.0.norm2.bias", "encoder.1.attn.mha.in_proj_weight", "encoder.1.attn.mha.in_proj_bias", "encoder.1.attn.mha.out_proj.weight", "encoder.1.attn.mha.out_proj.bias", "encoder.1.norm1.weight", "encoder.1.norm1.bias", "encoder.1.ff.0.weight", "encoder.1.ff.0.bias", "encoder.1.ff.2.weight", "encoder.1.ff.2.bias", "encoder.1.norm2.weight", "encoder.1.norm2.bias", "encoder.2.attn.mha.in_proj_weight", "encoder.2.attn.mha.in_proj_bias", "encoder.2.attn.mha.out_proj.weight", "encoder.2.attn.mha.out_proj.bias", "encoder.2.norm1.weight", "encoder.2.norm1.bias", "encoder.2.ff.0.weight", "encoder.2.ff.0.bias", "encoder.2.ff.2.weight", "encoder.2.ff.2.bias", "encoder.2.norm2.weight", "encoder.2.norm2.bias", "revin.affine_weight", "revin.affine_bias". 
+2026-03-12 15:56:17,520 - INFO - --- Motor de Inferência SOTA carregado.
+2026-03-12 15:56:17,520 - INFO - [SEC] Golden Params V22 carregados com sucesso.
+2026-03-12 15:56:17,521 - WARNING - [INIT] [INIT-STATE] use_ai_core_param=True
+2026-03-12 15:56:17,521 - INFO - [SYNC] [v22.5.1] RiskManager sincronizado: limite=999 | OBI=1.5 | Squeeze=1.2
+2026-03-12 15:56:17,521 - INFO - [DATA] [v22.5.3/4/5] H1 + Hysteresis: use_h1=True | MA=20 | Hyst=400.0 | Relax=1.0
+2026-03-12 15:56:17,521 - INFO - \U0001f680 Iniciando Simulação High Fidelity com 565 velas...
+2026-03-12 15:56:17,530 - INFO - \U0001f52c Calculando Microestrutura em Vetor (CVD/OFI/Ratio)...
+2026-03-12 15:56:17,536 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 200.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,537 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 200.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,538 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 203.2 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,539 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 206.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,547 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 203.2 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,551 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 203.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,554 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 210.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,559 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 210.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,562 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 217.5 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,565 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 215.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,569 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 210.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,574 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 217.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,577 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 227.5 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,577 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,581 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 226.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,581 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,586 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 222.5 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,586 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,589 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 226.8 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,589 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,592 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 227.5 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,592 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,596 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 226.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,596 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,600 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 231.8 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,600 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,611 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 235.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,611 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,615 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 233.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,615 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,618 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 234.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,618 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,622 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 245.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,622 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,626 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 233.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,626 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,681 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 275.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,681 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,753 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 257.5 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,753 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,756 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 277.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,757 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,944 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 193.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,944 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,952 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 190.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,952 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,957 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 183.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,957 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,961 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 194.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,961 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,964 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 200.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,968 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 199.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,972 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 214.3 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,972 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,976 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 219.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,980 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 204.3 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,983 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 198.2 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,986 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 186.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,990 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 184.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,994 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 192.5 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,994 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:17,997 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 188.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:17,997 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,001 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 200.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,004 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 195.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,008 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 197.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,008 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 16.4 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,008 - INFO - [VETO LATERALIDADE] 2026-03-11 09:14:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,011 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 191.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,015 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 178.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,018 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 183.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,022 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 172.5 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,026 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 167.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,029 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 172.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,033 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 180.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,036 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 187.5 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,039 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 198.2 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,044 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 188.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,047 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 184.3 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,051 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 176.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,054 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 178.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,084 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 177.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,087 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 170.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,090 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 178.2 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,094 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 181.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,097 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 181.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,101 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 186.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,104 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 189.3 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,125 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 165.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,128 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 164.3 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,132 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 156.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,135 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 156.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,139 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 156.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,142 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 150.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,146 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 148.2 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,149 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 145.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,153 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 143.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,156 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 140.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,159 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 143.2 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,163 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 140.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,169 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 137.5 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,172 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 140.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,176 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 139.3 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,179 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 136.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,182 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 135.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,185 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 130.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,189 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 124.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,192 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 126.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,196 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 125.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,207 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 133.2 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,210 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 130.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,214 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 132.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,217 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 128.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,222 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 130.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,226 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 128.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,229 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 129.3 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,233 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 134.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,236 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 143.2 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,240 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 139.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,244 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 141.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,247 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 141.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,251 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 145.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,254 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 143.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,254 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 17.6 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,254 - INFO - [VETO LATERALIDADE] 2026-03-11 10:24:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,258 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 132.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,258 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 17.5 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,258 - INFO - [VETO LATERALIDADE] 2026-03-11 10:25:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,261 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 132.5 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,261 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 15.8 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,261 - INFO - [VETO LATERALIDADE] 2026-03-11 10:26:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,264 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 136.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,264 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 16.8 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,264 - INFO - [VETO LATERALIDADE] 2026-03-11 10:27:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,268 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 139.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,268 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 16.8 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,268 - INFO - [VETO LATERALIDADE] 2026-03-11 10:28:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,272 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 135.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,272 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 15.3 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,272 - INFO - [VETO LATERALIDADE] 2026-03-11 10:29:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,276 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 144.3 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,276 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 16.9 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,276 - INFO - [VETO LATERALIDADE] 2026-03-11 10:30:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,279 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 147.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,282 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 141.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,284 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 135.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,290 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 142.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,294 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 141.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,298 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 139.3 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,302 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 138.2 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,302 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,305 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 152.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,308 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 150.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,312 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 146.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,316 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 144.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,319 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 139.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,322 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 141.8 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,326 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 133.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,330 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 137.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,334 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 141.4 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,337 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 138.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,340 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 137.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,343 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 135.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,344 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 17.1 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,344 - INFO - [VETO LATERALIDADE] 2026-03-11 10:49:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,346 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 139.3 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,346 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 16.9 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,346 - INFO - [VETO LATERALIDADE] 2026-03-11 10:50:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,351 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 140.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,351 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,360 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 122.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,360 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,513 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 157.5 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,560 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 160.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,564 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 157.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,568 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 159.3 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,572 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 158.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,582 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 151.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,584 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 151.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,594 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 146.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,594 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 15.8 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,595 - INFO - [VETO LATERALIDADE] 2026-03-11 12:01:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,598 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 150.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,598 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 16.7 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,598 - INFO - [VETO LATERALIDADE] 2026-03-11 12:02:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,602 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 142.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,602 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 17.4 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,602 - INFO - [VETO LATERALIDADE] 2026-03-11 12:03:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,606 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 137.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,606 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 15.3 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,606 - INFO - [VETO LATERALIDADE] 2026-03-11 12:04:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,609 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 133.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,609 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 13.5 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,609 - INFO - [VETO LATERALIDADE] 2026-03-11 12:05:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,618 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 131.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,618 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 12.1 < 18.0 (Tendência Fraca)
+2026-03-12 15:56:18,618 - INFO - [VETO LATERALIDADE] 2026-03-11 12:08:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:18,629 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 132.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,632 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 130.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,636 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 137.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,639 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 145.7 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,643 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 150.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,643 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,647 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 151.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,647 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,650 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 152.5 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,650 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,654 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 151.8 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,654 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,657 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 151.1 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,657 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,688 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 133.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,688 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,691 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 128.2 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,691 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,695 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 125.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,695 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,699 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 122.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:18,699 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,720 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,777 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:18,884 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:19,185 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:19,189 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-12 15:56:19,292 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 127.5 > 120.0). Threshold: 18.0
+2026-03-12 15:56:19,296 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 130.0 > 120.0). Threshold: 18.0
+2026-03-12 15:56:19,300 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 133.9 > 120.0). Threshold: 18.0
+2026-03-12 15:56:19,304 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 134.6 > 120.0). Threshold: 18.0
+2026-03-12 15:56:19,342 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 17.6 < 20.0 (Tendência Fraca)
+2026-03-12 15:56:19,342 - INFO - [VETO LATERALIDADE] 2026-03-11 15:23:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:19,345 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 18.9 < 20.0 (Tendência Fraca)
+2026-03-12 15:56:19,345 - INFO - [VETO LATERALIDADE] 2026-03-11 15:24:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-12 15:56:19,345 - INFO - \U0001f3c1 Simulação concluída.
+2026-03-12 15:56:19,345 - WARNING - Nenhum trade realizado no período.
+2026-03-12 15:56:19,345 - ERROR - \u274c Erro: 'charmap' codec can't encode characters in position 0-1: character maps to <undefined>
+Traceback (most recent call last):
+  File "C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\backend\audit_11mar_final.py", line 86, in run_audit
+    print("\U0001f575\ufe0f ANÁLISE DE OPORTUNIDADES (Shadow Signals):")
+  File "C:\Users\Wesley Lino\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-1: character maps to <undefined>
+2026-03-12 15:56:19,346 - INFO - Conexão MT5 encerrada.
+
+================================================================================
+                   RELATÓRIO DE POTENCIAL DE GANHO - SOTA v23                   
+                    DATA: 11/03/2026 | CAPITAL: R$ 3.000,00                     
+================================================================================
+Nenhum trade executado sob as condições atuais (Filtros Conservadores).
+--------------------------------------------------------------------------------

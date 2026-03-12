@@ -1,0 +1,14 @@
+﻿
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 3000.00
+Saldo Final:   R$ 3001.00
+Lucro LÝquido: R$ 1.00
+Total Trades:  1
+Win Rate:      100.0%
+Profit Factor: inf
+Max Drawdown:  0.00%
+
+Relat¾rio Visual salvo em: backend/backtest_report.html
+==================================================
