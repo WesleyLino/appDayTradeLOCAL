@@ -57,10 +57,12 @@ class AICore:
         self.regime_counter = 0
 
         self.prev_book = None
-
         self.toxic_flow_score = 0.0
-
         self.last_news_update = 0
+        
+        # [V36 REGIME EXPERT] Estado do Regime
+        self.current_regime = 0 # 0: Lateral, 1: Tendência, 2: Volatilidade, 3: Reversão
+        self.regime_params = {} # Cache de parâmetros do regime atual
 
         self.micro_analyzer = MicrostructureAnalyzer()
 
@@ -514,63 +516,133 @@ class AICore:
 
 
 
-    def detect_regime(self, volatility, obi):
-
-        """Usa Clustering para identificar o regime de mercado atual."""
-
-        self.regime_history.append([volatility, obi])
-
-        if len(self.regime_history) < 20: 
-
-            return 0 # Default: Consolidação
-
+    def identify_market_regime(self, adx, atr, h1_trend, price, vwap, spread):
+        """
+        [V36 REGIME EXPERT] Identifica o "DNA" do mercado e retorna o mapa de parâmetros.
+        """
+        regime = 0 # Default: Lateral (Modo Sniper)
+        
+        # 1. Detecção de Volatilidade Explosiva (Prioridade Máxima)
+        if atr > 100 or spread > 5:
+            regime = 2 # Volatilidade (Modo Segurança)
+        
+        # 2. Detecção de Tendência Forte
+        elif adx > 25 and h1_trend != 0:
+            regime = 1 # Tendência (Modo Trend Rider)
             
-
-        if len(self.regime_history) > 100:
-
-            self.regime_history.pop(0)
-
+        # 3. Detecção de Reversão em Clímax (Mean Reversion)
+        # Se estiver muito longe da VWAP e ADX começando a cair
+        elif abs(price - vwap) > 400 and adx < 30:
+            regime = 3 # Reversão
             
-
-        # Fit periódico para não sobrecarregar o loop (ex: a cada 100 amostras)
-
-        self.regime_counter += 1
-
-        if self.regime_counter % 100 == 0:
-
-            data = np.array(self.regime_history)
-
-            self.regime_model.fit(data)
-
+        # 4. Caso contrário: Lateralidade
+        else:
+            regime = 0 # Lateral (Modo Sniper)
             
+        self.current_regime = regime
+        
+        # Mapeamento de Parâmetros Estáticos por Regime (Baseado no territory real)
+        if regime == 1: # TENDÊNCIA
+            self.regime_params = {
+                "rsi_buy": 38.0, "rsi_sell": 62.0,
+                "take_profit": 550, "use_partial": False,
+                "partial_at": 0, "lot_multiplier": 1.0,
+                "label": "TENDÊNCIA (Trend Rider)"
+            }
+        elif regime == 0: # LATERAL
+            self.regime_params = {
+                "rsi_buy": 20.0, "rsi_sell": 80.0,
+                "take_profit": 180, "use_partial": True,
+                "partial_at": 40, "lot_multiplier": 1.0,
+                "label": "LATERAL (Sniper Scalp)"
+            }
+        elif regime == 2: # VOLATILIDADE
+            self.regime_params = {
+                "rsi_buy": 15.0, "rsi_sell": 85.0,
+                "take_profit": 200, "use_partial": True,
+                "partial_at": 30, "lot_multiplier": 0.33, # 1 contrato
+                "label": "VOLATILIDADE (Safety Mode)"
+            }
+        elif regime == 3: # REVERSÃO
+            self.regime_params = {
+                "rsi_buy": 15.0, "rsi_sell": 85.0,
+                "take_profit": 350, "use_partial": True,
+                "partial_at": 100, "lot_multiplier": 1.0,
+                "label": "REVERSÃO (Mean Reversion)"
+            }
+            
+        return self.regime_params
 
-        current_state = np.array([[volatility, obi]])
+    def identify_market_regime(self, df, h1_trend=0):
+        """
+        [V36 EXPERT] Identifica o regime de mercado usando indicadores técnicos reais.
+        0: Lateral, 1: Tendência, 2: Volatilidade, 3: Reversão
+        """
+        if df is None or len(df) < 30:
+            return self.current_regime
 
         try:
-
-            # Predict returns the original cluster label
-
-            raw_label = int(self.regime_model.predict(current_state)[0])
-
+            # 1. Cálculos de Base
+            close = df['close']
+            high = df['high']
+            low = df['low']
             
-
-            # Sort cluster centers by volatility (index 0) to consistently map:
-
-            # 0: Baixa Vol (Consolidação), 1: Média Vol (Tendência), 2: Alta Vol (Ruído)
-
-            centers = self.regime_model.cluster_centers_
-
-            sorted_indices = np.argsort(centers[:, 0])
-
-            mapped_label = int(np.where(sorted_indices == raw_label)[0][0])
-
+            # ATR (Simplificado)
+            tr = pd.concat([high - low, abs(high - close.shift(1)), abs(low - close.shift(1))], axis=1).max(axis=1)
+            atr = tr.rolling(14).mean().iloc[-1]
             
-
-            return mapped_label
+            # RSI
+            delta = close.diff()
+            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+            rs = gain / loss.replace(0, 0.000001)
+            rsi = 100 - (100 / (1 + rs.iloc[-1]))
+            
+            # ADX (Simplificado - Direcionalidade)
+            plus_dm = (high.diff().where((high.diff() > low.diff().abs()) & (high.diff() > 0), 0)).rolling(14).mean()
+            minus_dm = (low.diff().abs().where((low.diff().abs() > high.diff()) & (low.diff().abs() > 0), 0)).rolling(14).mean()
+            dx = (abs(plus_dm - minus_dm) / (plus_dm + minus_dm).replace(0, 1)) * 100
+            adx = dx.rolling(14).mean().iloc[-1]
+            
+            # Bollinger Bands (Desvio de clímax)
+            std = close.rolling(20).std().iloc[-1]
+            sma = close.rolling(20).mean().iloc[-1]
+            bb_upper = sma + (2 * std)
+            bb_lower = sma - (2 * std)
+            current_price = close.iloc[-1]
+            
+            # 2. Lógica de Decisão de Regime (Cascata)
+            
+            # 🔴 REGIME 2: Volatilidade Explosiva (Prioridade 1 - Segurança)
+            if atr > 100 or abs(self.toxic_flow_score) > 0.9:
+                regime = 2
+            
+            # 🔵 REGIME 3: Reversão em Clímax
+            elif (rsi > 85 or rsi < 15) and (current_price > bb_upper or current_price < bb_lower):
+                regime = 3
+                
+            # 🟢 REGIME 1: Tendência Direcional
+            elif adx > 25 and h1_trend != 0:
+                regime = 1
+                
+            # 🟡 REGIME 0: Lateralidade (Default)
+            else:
+                regime = 0
+                
+            self.current_regime = regime
+            self.regime_counter += 1
+            if self.regime_counter % 200 == 0:
+                logging.info(f"🧬 [DNA DO MERCADO] Regime: {regime} | ADX: {adx:.1f} | ATR: {atr:.1f} | RSI: {rsi:.1f}")
+                
+            return regime
 
         except Exception as e:
+            logging.error(f"Erro em identify_market_regime: {e}")
+            return self.current_regime
 
-            return 0
+    def detect_regime(self, volatility, obi):
+        """Wrapper de compatibilidade para o bot_sniper legacy."""
+        return self.current_regime
 
 
 
@@ -648,10 +720,8 @@ class AICore:
             self.h1_trend = 1
         elif last_close < lower_limit:
             self.h1_trend = -1
-
-
         else:
-            # Se for a primeira vez e cairmos aqui, precisamos inicializar 
+            # Mantém a tendência anterior se estiver dentro da histerese para evitar oscilação
             if not hasattr(self, 'h1_trend'):
                 self.h1_trend = 0
                 
@@ -682,7 +752,41 @@ class AICore:
 
 
 
-    def calculate_decision(self, obi, sentiment, patchtst_score, regime=0, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0, sma_20=0.0, wdo_aggression=0.0):
+    def identify_market_regime(self, df, **kwargs):
+        """
+        [V36 EXPERT] Identificação determinística de regime de mercado.
+        Avalia ADX, ATR, H1 e Bandas de Bollinger para classificar o cenário.
+        """
+        # 0: Lateral, 1: Tendência, 2: Volatilidade, 3: Reversão
+        regime = 0 
+        
+        atr = kwargs.get('atr', 0)
+        adx = kwargs.get('adx', 0)
+        h1_trend = kwargs.get('h1_trend', self.h1_trend)
+        
+        # Bollinger Data
+        bb_up = kwargs.get('bb_up')
+        bb_down = kwargs.get('bb_down')
+        bb_mid = kwargs.get('bb_mid')
+        current_price = df['close'].iloc[-1]
+        
+        # 1. VOLATILIDADE EXTREMA (Safety First)
+        if atr > 100 or abs(self.toxic_flow_score) > 0.8:
+            regime = 2
+        # 2. REVERSÃO (Mean Reversion / BB Exit)
+        elif (bb_up and current_price > bb_up * 1.001) or (bb_down and current_price < bb_down * 0.999):
+            regime = 3
+        # 3. TENDÊNCIA FORTE (Trend Rider)
+        elif adx > 25 or (h1_trend != 0 and abs(current_price - bb_mid) > (bb_up - bb_mid) * 0.8 if bb_up and bb_mid else False):
+            regime = 1
+        # 4. LATERAL / SQUEEZE (Sniper)
+        else:
+            regime = 0
+            
+        self.current_regime = regime
+        return regime
+
+    def calculate_decision(self, obi, sentiment, patchtst_score, regime=None, atr=0.0, volatility=0.0, hour=0, minute=0, ofi=0.0, current_price=0.0, spread=0.0, sma_20=0.0, wdo_aggression=0.0, bluechip_score=0.0):
         # [v50.1] DEBUG GLOBAL
         import sys
         
@@ -695,8 +799,11 @@ class AICore:
                 logging.warning(f"🛑 [CIRCUIT BREAKER] Preço M1 {current_price} caiu {cb_pts} pts abaixo da Média H1 Institucional ({last_ma_h1:.1f}). Facas caindo! Veto total M1.")
                 return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "H1_CIRCUIT_BREAKER_BUY_LOCK"}
             elif cur_trend == -1 and current_price > (last_ma_h1 + cb_pts):
-                logging.warning(f"🛑 [CIRCUIT BREAKER] Preço M1 {current_price} disparou {cb_pts} pts acima da Média H1 Institucional ({last_ma_h1:.1f}). Foguete! Veto total M1.")
-                return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "H1_CIRCUIT_BREAKER_SELL_LOCK"}
+                if getattr(self, "use_anti_trap", True):
+                    logging.warning(f"🛑 [CIRCUIT BREAKER] Preço M1 {current_price} disparou {cb_pts} pts acima da Média H1 Institucional ({last_ma_h1:.1f}). Foguete! Veto total M1.")
+                    return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "H1_CIRCUIT_BREAKER_SELL_LOCK"}
+                else:
+                    logging.info("🔓 [EXPERT MODE] Bypass de H1_CIRCUIT_BREAKER_SELL (Anti-Trap OFF)")
                 
         # sys.stderr.write(f"DEBUG: AICore calculating for price {current_price}\n")
         # --- 0.1 [v30] VWAP MEAN REVERSION GUARD ---
@@ -708,13 +815,21 @@ class AICore:
             
             # [ANTIVIBE-CODING] Veto se preço esticado > threshold da VWAP sem fluxo extremo
             if price_dist_vwap > target_vwap_veto and abs(ofi) < 1.5:
-                logging.debug(f"DEBUG_VETO_VWAP_UP: {price_dist_vwap:.1f} pts")
-                logging.warning(f"🛑 [VETO VWAP] Preço muito acima da VWAP (+{price_dist_vwap:.1f} pts). Risco de exaustão.")
-                return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "VWAP_OVEREXTENDED_UP"}
+                if getattr(self, "use_anti_exhaustion", True):
+                    logging.debug(f"DEBUG_VETO_VWAP_UP: {price_dist_vwap:.1f} pts")
+                    logging.warning(f"🛑 [VETO VWAP] Preço muito acima da VWAP (+{price_dist_vwap:.1f} pts). Risco de exaustão.")
+                    return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "VWAP_OVEREXTENDED_UP"}
+                else:
+                    logging.info(f"🔓 [EXPERT MODE] Bypass de VWAP_OVEREXTENDED_UP (Anti-Exhaustion OFF): {price_dist_vwap:.1f} pts")
+
             if price_dist_vwap < -target_vwap_veto and abs(ofi) < 1.5:
-                logging.debug(f"DEBUG_VETO_VWAP_DOWN: {price_dist_vwap:.1f} pts")
-                logging.warning(f"🛑 [VETO VWAP] Preço muito abaixo da VWAP ({price_dist_vwap:.1f} pts). Risco de exaustão.")
-                return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "VWAP_OVEREXTENDED_DOWN"}
+                if getattr(self, "use_anti_exhaustion", True):
+                    logging.debug(f"DEBUG_VETO_VWAP_DOWN: {price_dist_vwap:.1f} pts")
+                    logging.warning(f"🛑 [VETO VWAP] Preço muito abaixo da VWAP ({price_dist_vwap:.1f} pts). Risco de exaustão.")
+                    return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "VWAP_OVEREXTENDED_DOWN"}
+                else:
+                    logging.info(f"🔓 [EXPERT MODE] Bypass de VWAP_OVEREXTENDED_DOWN (Anti-Exhaustion OFF): {price_dist_vwap:.1f} pts")
+
         # --- 0.1 [v52.0 - INSTITUCIONAL] VETO/GATILHO DE DIVERGÊNCIA CVD ---
         # Detecta absorção institucional (preço sobe com agressão de venda ou vice-versa)
         divergence = self.micro_analyzer.detect_divergence(self.micro_analyzer.price_history, self.micro_analyzer.cvd_history)
@@ -726,15 +841,21 @@ class AICore:
                 if ai_score_val < 0.2:
                     logging.info("🎯 [ALPHA v52.0] GATILHO DE EXAUSTÃO: Divergência Bearish + IA Bearish. Operação Prioritária.")
                 elif ai_score_val > 0.5:
-                    logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Compra detectada (Topo). Vetando COMPRA.")
-                    return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "CVD_BEARISH_DIVERGENCE"}
+                    if getattr(self, "use_anti_exhaustion", True):
+                        logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Compra detectada (Topo). Vetando COMPRA.")
+                        return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "CVD_BEARISH_DIVERGENCE"}
+                    else:
+                        logging.info("🔓 [EXPERT MODE] Bypass de CVD_BEARISH_DIVERGENCE (Anti-Exhaustion OFF)")
             # Se divergência = 1 (Bullish Divergence: Preço cai/flat, CVD sobe)
             elif divergence == 1:
                 if ai_score_val > 0.8:
                     logging.info("🎯 [ALPHA v52.0] GATILHO DE EXAUSTÃO: Divergência Bullish + IA Bullish. Operação Prioritária.")
                 elif ai_score_val < 0.5:
-                    logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Venda detectada (Fundo). Vetando VENDA.")
-                    return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "CVD_BULLISH_DIVERGENCE"}
+                    if getattr(self, "use_anti_exhaustion", True):
+                        logging.warning("⚠️ [VETO DIVERGÊNCIA] Absorção de Venda detectada (Fundo). Vetando VENDA.")
+                        return {"score": 50.0, "direction": "WAIT", "confidence": 0, "veto": "CVD_BULLISH_DIVERGENCE"}
+                    else:
+                        logging.info("🔓 [EXPERT MODE] Bypass de CVD_BULLISH_DIVERGENCE (Anti-Exhaustion OFF)")
 
         # 0. [SOTA v5] Sentiment Decay Adaptativo (Absorção por preço)
 
@@ -749,6 +870,18 @@ class AICore:
             if decay_factor < 0.2:
 
                 logging.debug(f"🧽 SENTIMENTO ABSORVIDO: Preço moveu {price_drift:.1f} pts. Neutralizando.")
+
+        # 0.2 [V36 PRIME] GATILHOS ASSIMÉTRICOS (RSI DINÂMICO)
+        # Se a tendência H1 for favorável, relaxamos o RSI para capturar a entrada mais cedo.
+        rsi_buy_trigger = 32.0
+        rsi_sell_trigger = 68.0
+        
+        if self.h1_trend == 1: # Tendência de Alta
+            rsi_buy_trigger = 35.0 # Relaxa compra (mais assertivo em alta)
+            rsi_sell_trigger = 72.0 # Restringe venda (evita topos falsos)
+        elif self.h1_trend == -1: # Tendência de Baixa
+            rsi_buy_trigger = 28.0 # Restringe compra (evita facas caindo)
+            rsi_sell_trigger = 65.0 # Relaxa venda (mais assertivo em baixa)
 
         # 1. Normalização Inicial
 
@@ -908,16 +1041,14 @@ class AICore:
             veto_reason = "VETO_COOLDOWN_IA"
 
         elif uncertainty_rel > uncertainty_threshold:
-
-            if quantile_confidence == "VERY_HIGH" and uncertainty_rel < self.uncertainty_high_conviction_cap:
-
-                lot_multiplier = self.lot_multiplier_partial
-
-                logging.warning(f"🛡️ ENTRADA ULTRA-CONSERVADORA: Alta incerteza ({uncertainty_rel*100:.1f}%)")
-
+            if getattr(self, "use_confidence_filter", True):
+                if quantile_confidence == "VERY_HIGH" and uncertainty_rel < self.uncertainty_high_conviction_cap:
+                    lot_multiplier = self.lot_multiplier_partial
+                    logging.warning(f"🛡️ ENTRADA ULTRA-CONSERVADORA: Alta incerteza ({uncertainty_rel*100:.1f}%)")
+                else:
+                    veto_reason = f"FALHA_ALTA_INCERTEZA ({uncertainty_rel*100:.1f}% > {uncertainty_threshold*100:.1f}%)"
             else:
-
-                veto_reason = f"FALHA_ALTA_INCERTEZA ({uncertainty_rel*100:.1f}% > {uncertainty_threshold*100:.1f}%)"
+                logging.info(f"🔓 [EXPERT MODE] Bypass de FALHA_ALTA_INCERTEZA (Confidence OFF): {uncertainty_rel*100:.1f}%")
 
         
 
@@ -965,22 +1096,30 @@ class AICore:
             ai_dir = np.sign(norm_patchtst)
 
             if self.h1_trend == 1 and ai_dir < 0: # Venda contra tendência de alta H1
-                # [v22.5.6-B] Bypass seletivo via RSI extremo (sem dependência de CVD/OBI do backtest)
+                # [v22.5.7] Bypass seletivo via RSI extremo ou Blue Chip Bias (Institucional)
                 extreme_sell_signal = (norm_patchtst < -0.75)
-                if extreme_sell_signal:
-                    logging.info(f"⚡ [H1 BYPASS VENDA] Score extremo ({norm_patchtst*100:.1f}%). Autorizado.")
-                else:
+                institutional_sell_signal = (bluechip_score < -0.35) # NOVO: Gigantes vendendo
+                if extreme_sell_signal or institutional_sell_signal:
+                    reason_str = "Score Extremo" if extreme_sell_signal else "Blue Chip Bias"
+                    logging.info(f"⚡ [H1 BYPASS VENDA] {reason_str} detectado. Autorizado.")
+                elif getattr(self, "use_anti_trap", True):
                     veto_reason = "VETO_TENDENCIA_ALTA_H1"
                     logging.warning(f"🛡️ [ANTI-TRAP] Venda bloqueada por viés altista H1")
+                else:
+                    logging.info("🔓 [EXPERT MODE] Bypass de VETO_TENDENCIA_ALTA_H1 (Anti-Trap OFF)")
 
             elif self.h1_trend == -1 and ai_dir > 0: # Compra contra tendência de baixa H1 (Caso 10/03)
-                # [v22.5.6-B] Bypass APENAS para sinais de reversão extremos (RSI < 22, score > 75%)
+                # [v22.5.7] Bypass seletivo via RSI extremo ou Blue Chip Bias (Institucional)
                 extreme_buy_signal = (norm_patchtst > 0.75)
-                if extreme_buy_signal:
-                    logging.info(f"⚡ [H1 BYPASS COMPRA] Score extremo ({norm_patchtst*100:.1f}%). Autorizado.")
-                else:
+                institutional_buy_signal = (bluechip_score > 0.35) # NOVO: Gigantes comprando
+                if extreme_buy_signal or institutional_buy_signal:
+                    reason_str = "Score Extremo" if extreme_buy_signal else "Blue Chip Bias"
+                    logging.info(f"⚡ [H1 BYPASS COMPRA] {reason_str} detectado. Autorizado.")
+                elif getattr(self, "use_anti_trap", True):
                     veto_reason = "VETO_TENDENCIA_BAIXA_H1"
-                    logging.warning(f"🛡️ [ANTI-QUEDA] Compra bloqueada por viés baixista H1 (Score: {norm_patchtst * 100:.1f}%)")
+                    logging.warning(f"🛡️ [ANTI-QUEDA] Compra bloqueada por viés baixista H1 (BC: {bluechip_score:+.2f}%)")
+                else:
+                    logging.info("🔓 [EXPERT MODE] Bypass de VETO_TENDENCIA_BAIXA_H1 (Anti-Trap OFF)")
 
 
 
@@ -1173,12 +1312,30 @@ class AICore:
             if self.regime_counter % 200 == 0:
                 logging.info(f"⚡ [ADAPTATIVE SCORE] Volatilidade alta ({atr:.1f}pts). Thresholds relaxados: 58/42.")
 
-        # [SOTA v22.5.4] CONFIDENCE RELAX H1: Relaxamento adicional quando H1 confirma direção
-        # Gatilho independente: usa atr_confidence_relax_trigger (configurável no JSON, default 100.0)
-        # Segurança: só relaxa se a direção PROVÁVEL (score) está ALINHADA com H1
-        # Nunca relaxa para operar contra a tendência do tempo superior.
-        # [v22.5.6-B] Confidence Relaxation REMOVIDO para priorizar assertividade extrema
-        pass
+        # [SOTA v36.2 - BLUE CHIP BIAS] ASSERTIVIDADE INSTITUCIONAL (NOVO)
+        # Se houver confirmação das Blue Chips (VALE, PETR, ITUB), relaxa threshold para surfar o fluxo.
+        # Se houver divergência forte, aumenta rigor para evitar armadilhas de baixa liquidez.
+        use_bc_bias = getattr(self, "use_bluechip_bias", True)
+        bc_threshold = getattr(self, "bluechip_bias_threshold", 0.25)
+        
+        if use_bc_bias and abs(bluechip_score) > 0.01:
+            # Score da IA em direção à compra
+            if final_score > 50:
+                if bluechip_score > bc_threshold: # Alinhado com a Alta
+                    current_buy_threshold -= 3.0 # Facilita compra alinhada
+                    logging.info(f"💎 [COMPRA ASSERTIVA] Blue Chips em ALTA ({bluechip_score:+.2f}%). Threshold reduzido para {current_buy_threshold:.1f}")
+                elif bluechip_score < -bc_threshold: # Divergente da Alta
+                    current_buy_threshold += 5.0 # Dificulta compra contra as gigantes
+                    logging.warning(f"🛡️ [VETO INSTITUCIONAL] Blue Chips em QUEDA ({bluechip_score:+.2f}%). Dificultando COMPRA.")
+            
+            # Score da IA em direção à venda
+            elif final_score < 50:
+                if bluechip_score < -bc_threshold: # Alinhado com a Baixa
+                    current_sell_threshold += 3.0 # Facilita venda alinhada
+                    logging.info(f"💎 [VENDA ASSERTIVA] Blue Chips em QUEDA ({bluechip_score:+.2f}%). Threshold ajustado para {current_sell_threshold:.1f}")
+                elif bluechip_score > bc_threshold: # Divergente da Baixa
+                    current_sell_threshold -= 5.0 # Dificulta venda contra as gigantes
+                    logging.warning(f"🛡️ [VETO INSTITUCIONAL] Blue Chips em ALTA ({bluechip_score:+.2f}%). Dificultando VENDA.")
 
         
         if veto_reason:
@@ -1216,46 +1373,70 @@ class AICore:
 
 
 
+        # [V36 EXPERT] Integração de Matriz de Regimes na Decisão
+        regime_id = self.current_regime
+        regime_rsi_buy = current_buy_threshold
+        regime_rsi_sell = current_sell_threshold
+        tp_multiplier = 1.0
+        use_partial = True
+        
+        if regime_id == 1: # TENDÊNCIA
+            regime_rsi_buy = 38.0
+            regime_rsi_sell = 62.0
+            tp_multiplier = 1.0 
+            use_partial = False
+        elif regime_id == 0: # LATERAL
+            regime_rsi_buy = 20.0
+            regime_rsi_sell = 80.0
+            tp_multiplier = 1.0
+            use_partial = True
+        elif regime_id == 2: # VOLATILIDADE
+            regime_rsi_buy = 15.0
+            regime_rsi_sell = 85.0
+            lot_multiplier *= 0.33 # Força 1 contrato
+            if final_score < 65.0 and final_score > 35.0:
+                veto_reason = "VETO_BAIXA_CONVICCAO_VOLATILIDADE"
+        elif regime_id == 3: # REVERSÃO
+            regime_rsi_buy = 15.0
+            regime_rsi_sell = 85.0
+            tp_multiplier = 1.0
+            use_partial = True
+
+        current_buy_threshold = regime_rsi_buy
+        current_sell_threshold = regime_rsi_sell
+
+        if veto_reason:
+            direction = "WAIT"
+        else:
+            direction = "NEUTRAL"
+            if final_score >= current_buy_threshold: direction = "COMPRA"
+            elif final_score <= current_sell_threshold: direction = "VENDA"
+
         return {
-
             "score": float(final_score),
-
             "direction": direction,
-
-            "lot_multiplier": float(lot_multiplier),
-
-            "tp_multiplier": float(tp_adj),
-
-            "veto": veto_reason,
-
-            "forecast": float(forecast_ref),
-
-            "uncertainty": float(uncertainty_rel),
-
+            "confidence": self.get_stability_score(),
             "quantile_confidence": quantile_confidence,
-
+            "tp_multiplier": float(tp_multiplier),
+            "use_partial": use_partial,
+            "rsi_buy_trigger": current_buy_threshold,
+            "rsi_sell_trigger": current_sell_threshold,
+            "reason": veto_reason,
+            "lot_multiplier": float(lot_multiplier),
+            "veto": veto_reason,
+            "forecast": float(forecast_ref),
+            "uncertainty": float(uncertainty_rel),
             "h1_trend": self.h1_trend,
-
+            "regime": regime_id,
             "breakdown": {
-
                 "obi_contribution": float(obi * w_obi),
-
                 "patchtst_contribution": float(norm_patchtst * w_patchtst),
-
                 "sentiment_contribution": float(sentiment * w_sent),
-
                 "raw_signal": float(ai_score_raw),
-
                 "meta_score": float(meta_score),
-
-                "q10": q10,
-
-                "q50": q50,
-
-                "q90": q90,
-
+                "q10": q10, "q50": q50, "q90": q90,
                 "veto": veto_reason,
-
+                "regime_id": regime_id
             }
         }
 

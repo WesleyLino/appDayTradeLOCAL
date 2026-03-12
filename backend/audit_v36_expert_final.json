@@ -1,0 +1,101 @@
+{
+    "totais": {
+        "pnl": 10.52857142857393,
+        "compra": 0.0,
+        "venda": 10.52857142857393,
+        "trades": 9,
+        "drawdown_max": 0.0
+    },
+    "detalhes": [
+        {
+            "data": "2026-02-19",
+            "pnl": 12.114285714284051,
+            "trades": 1,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-02-20",
+            "pnl": -23.285714285715947,
+            "trades": 2,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-02-23",
+            "pnl": 0,
+            "trades": 0,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-02-24",
+            "pnl": 12.178571428573925,
+            "trades": 1,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-02-25",
+            "pnl": 11.578571428573923,
+            "trades": 1,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-02-26",
+            "pnl": 22.142857142857977,
+            "trades": 2,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-02-27",
+            "pnl": 0,
+            "trades": 0,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-03-02",
+            "pnl": -30.0,
+            "trades": 1,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-03-03",
+            "pnl": 0,
+            "trades": 0,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-03-04",
+            "pnl": 5.800000000000001,
+            "trades": 1,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-03-05",
+            "pnl": 0,
+            "trades": 0,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-03-06",
+            "pnl": 0,
+            "trades": 0,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-03-09",
+            "pnl": 0,
+            "trades": 0,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-03-10",
+            "pnl": 0,
+            "trades": 0,
+            "regime": "LATERAL"
+        },
+        {
+            "data": "2026-03-11",
+            "pnl": 0,
+            "trades": 0,
+            "regime": "LATERAL"
+        }
+    ]
+}

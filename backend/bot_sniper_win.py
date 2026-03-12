@@ -56,567 +56,286 @@ class SniperBotWIN:
         self.vol_spike_mult = 1.0 
         self.consecutive_wins = 0 # Alpha Scaling tracker
         self.last_trade_time = None
-        # [PAUSA PARCIAL] Controle de Volatilidade de Abertura (H-L Extremo)
+        
+        # [PAUSA PARCIAL] Controle de Volatilidade de Abertura
         self.dia_pausado_vol = False
         self.hl_abertura_cache = None
         self.dia_abertura_cache = None
         
-        # [FASE 28] Sincronização de Parâmetros Calibrados (Grid Search)
-        # BUGFIX: Apontando para o arquivo de parâmetros bloqueado (v22_locked_params.json)
-        # Usamos a chave genérica "WIN$" para garantir carregamento inicial
+        # Sincronização inicial
         self.risk.load_optimized_params("WIN$", "backend/v22_locked_params.json")
+        self._load_params_from_risk("WIN$")
         
-        # Sincroniza parâmetros operacionais com o arquivo JSON (Garantia de Ajuste)
-        norm_key = "WIN$"
-        self.flux_threshold = getattr(self.risk, 'flux_imbalance_threshold', 0.95)
-        self.rsi_period = int(self.risk.dynamic_params.get(norm_key, {}).get("rsi_period", self.rsi_period))
-        self.vol_spike_mult = float(self.risk.dynamic_params.get(norm_key, {}).get("vol_spike_mult", self.vol_spike_mult))
+        logger.info(f"🛡️ [SOTA V22.5.1] Sincronização de Setup: OBI={self.flux_threshold}, RSI={self.rsi_period}, Vol={self.vol_spike_mult}, Janela={self.start_time}-{self.end_time}")
         
-        # Sincroniza horários e RSI Dinâmico (v22_locked_params)
-        norm_key = "WIN$"
-        strategy = self.risk.dynamic_params.get(norm_key, {})
+        self._load_state()
+
+    def _load_params_from_risk(self, symbol_key):
+        """Helper para carregar parâmetros do risk manager."""
+        strategy = self.risk.dynamic_params.get(symbol_key, {})
+        if not strategy: return
+        
+        self.flux_threshold = float(strategy.get("flux_imbalance_threshold", 0.95))
+        self.rsi_period = int(strategy.get("rsi_period", 14))
+        self.vol_spike_mult = float(strategy.get("vol_spike_mult", 1.0))
         
         raw_start = strategy.get("start_time", "10:00")
         raw_end = strategy.get("end_time", "17:15")
         self.start_time = datetime.strptime(raw_start, "%H:%M").time() if isinstance(raw_start, str) else time(10,0)
         self.end_time = datetime.strptime(raw_end, "%H:%M").time() if isinstance(raw_end, str) else time(17,15)
         
-        # Parâmetros de Agulhada (v22.5.2)
         self.rsi_dynamic_buy = float(strategy.get("rsi_dynamic_buy", 30))
         self.rsi_dynamic_sell = float(strategy.get("rsi_dynamic_sell", 70))
         self.rsi_dynamic_activation_atr = float(strategy.get("rsi_dynamic_activation_atr", 100.0))
 
-        # [SOTA v22.5.3] Sincronização Macro H1
         self.ai.use_h1_trend_bias = bool(strategy.get("use_h1_trend_bias", True))
         self.ai.h1_ma_period = int(strategy.get("h1_ma_period", 20))
-        # [SOTA v22.5.4] Confidence Relax Factor e Gatilho ATR (Adaptativo por ATR + H1)
         self.ai.confidence_relax_factor = float(strategy.get("confidence_relax_factor", 0.80))
         self.ai.atr_confidence_relax_trigger = float(strategy.get("atr_confidence_relax_trigger", 100.0))
         
-        # [v36.1] Sincronização de Thresholds de Confiança Assimétricos (PatchTST)
         self.ai.confidence_buy_threshold = float(strategy.get("confidence_buy_threshold", 0.55)) * 100.0
         self.ai.confidence_sell_threshold = (1.0 - float(strategy.get("confidence_sell_threshold", 0.55))) * 100.0
 
-
-        logger.info(f"🛡️ [SOTA V22.5.1] Sincronização de Setup: OBI={self.flux_threshold}, RSI={self.rsi_period}, Vol={self.vol_spike_mult}, Janela={self.start_time}-{self.end_time}")
-        
-        self._load_state()
-
     def _log_to_dashboard(self, msg, log_type="info"):
-        """Envia mensagem para o Dashboard se o callback estiver configurado."""
         if self.log_callback:
             self.log_callback(msg, log_type)
         
     async def get_flux_pressure(self):
-        """Calcula a pressão de compra/venda baseada no Book L2."""
         book = self.bridge.get_order_book(self.symbol)
         if not book or not book['bids'] or not book['asks']:
             return 1.0
-        
-        # Filtro de Volume Bruto Top 5
         bid_vol = sum(item['volume'] for item in book['bids'][:5])
         ask_vol = sum(item['volume'] for item in book['asks'][:5])
-        
-        # Formula Institucional (Ratio): Bid/Ask para compatibilidade com gatilhos > 1.0
         if bid_vol >= ask_vol:
             return float(bid_vol / max(1, ask_vol))
         else:
             return -float(ask_vol / max(1, bid_vol))
 
     def _load_state(self):
-        """Carrega estado persistido do bot."""
         tc = self.persistence.get_state("sniper_trade_count")
         ld = self.persistence.get_state("sniper_last_date")
-        cw = self.persistence.get_state("sniper_consecutive_wins")
-        
         if tc: self.trade_count = int(tc)
         if ld: self.last_date = datetime.strptime(ld, "%Y-%m-%d").date()
-        if cw: self.consecutive_wins = int(cw)
-        
-        # Reset diário
         today = date.today()
         if self.last_date != today:
-            logger.info(f"📅 Novo dia detectado. Resetando trades: {self.last_date} -> {today}")
             self.trade_count = 0
             self.last_date = today
             self._save_state()
 
     def _save_state(self):
-        """Salva estado atual do bot."""
         self.persistence.save_state("sniper_trade_count", str(self.trade_count))
         self.persistence.save_state("sniper_last_date", str(self.last_date))
-        self.persistence.save_state("sniper_consecutive_wins", str(self.consecutive_wins))
 
     def calculate_rsi(self, series, period=14):
-        """Cálculo robusto de RSI para evitar divisão por zero."""
         delta = series.diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-        
-        # Proteção contra divisão por zero
         rs = gain / loss.replace(0, 0.000001)
         return 100 - (100 / (1 + rs))
 
+    def calculate_adx(self, df, period=14):
+        plus_dm = df['high'].diff(); minus_dm = df['low'].diff()
+        plus_dm[plus_dm < 0] = 0; minus_dm[minus_dm > 0] = 0
+        tr = pd.concat([df['high'] - df['low'], abs(df['high'] - df['close'].shift(1)), abs(df['low'] - df['close'].shift(1))], axis=1).max(axis=1)
+        atr = tr.rolling(period).mean()
+        plus_di = 100 * (plus_dm.rolling(period).mean() / atr)
+        minus_di = 100 * (abs(minus_dm).rolling(period).mean() / atr)
+        dx = (abs(plus_di - minus_di) / abs(plus_di + minus_di).replace(0, 1e-6)) * 100
+        return dx.rolling(period).mean()
+
+    def calculate_bollinger(self, series, period=20, std=2.0):
+        sma = series.rolling(window=period).mean()
+        std_dev = series.rolling(window=period).std()
+        return sma + (std_dev * std), sma, sma - (std_dev * std)
+
     async def execute_trade(self, side, ai_decision=None, quantile_confidence="NORMAL", tp_multiplier=1.0, current_atr=None, regime=None, is_scaling_in=False):
-        """Coordena o envio de ORDEM LIMITADA com dimensionamento de IA."""
         tick = self.bridge.mt5.symbol_info_tick(self.symbol)
         if not tick: return False
-        
         limit_price = tick.ask if side == "buy" else tick.bid
         
-        # [HFT ELITE] Quarter-Kelly Scaling (Fase 2)
-        # Puxa métricas reais de performance para dimensionar o lote
         perf = self.risk.get_performance_metrics()
-        wr = perf.get("win_rate", 55.0) 
-        pf = perf.get("profit_factor", 1.2)
-        
-        # Saldo base para Kelly - [ANTIVIBE-CODING]
+        wr = perf.get("win_rate", 55.0); pf = perf.get("profit_factor", 1.2)
         balance = getattr(self.risk, 'initial_balance', 500.0)
         kelly_volume = self.risk.calculate_quarter_kelly(balance, wr, pf, current_atr or 150.0)
         
-        # Escalonamento Alpha (Vitórias consecutivas)
         scaling = min(2, self.consecutive_wins)
-        
-        # Volume Base (Kelly) + Scaling
-        if is_scaling_in:
-            lots = 1.0 # [INSTITUCIONAL] Lote reduzido para piramidação (mão pequena)
-            logger.info(f"💎 [PIRAMIDAÇÃO] Executando Scaling In: +{lots} lote.")
+        if is_scaling_in: lots = 1.0
         else:
             lots = round(kelly_volume) + scaling
-            
-            # Boost por Confiança da IA (Fase 22)
             if quantile_confidence == "HIGH": lots += 1
             elif quantile_confidence == "VERY_HIGH": lots += 2
-        
-        # Limite Master (Capped)
         lots = min(10, lots)
         
-        if not is_scaling_in:
-            logger.info(f"[QUARTER-KELLY] WR={wr}% PF={pf} -> VolKelly={kelly_volume:.2f} | Alpha={scaling} Confiança={quantile_confidence} -> Total={lots}")
-        
         if self.risk.dry_run:
-            side_pt = "COMPRA" if side == "buy" else "VENDA"
-            msg = f"🧪 [SIMULAÇÃO] Sniper {side_pt} (LIMITE) disparado @ {limit_price} com {lots} lotes"
-            logger.info(msg)
-            self._log_to_dashboard(msg, "info")
+            self.trade_count += 1
+            self._save_state()
+            self._log_to_dashboard(f"🧪 [SIMULAÇÃO] Sniper {side} @ {limit_price} ({lots} l)", "info")
+            return True
+
+        params = self.risk.get_order_params(self.symbol, self.bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else self.bridge.mt5.ORDER_TYPE_SELL_LIMIT, limit_price, lots, current_atr=current_atr, regime=regime, tp_multiplier=tp_multiplier)
+        result = self.bridge.place_smart_order(self.symbol, params['type'], limit_price, lots, sl=params['sl'], tp=params['tp'], score=ai_decision.get("confidence_score", 0.0), uncertainty=ai_decision.get("uncertainty", 0.0), comment="SNIPER_SOTA_EXPERT")
+        
+        if result and result.retcode == self.bridge.mt5.TRADE_RETCODE_DONE:
             self.trade_count += 1
             self._save_state()
             return True
-
-        params = self.risk.get_order_params(
-            self.symbol, 
-            self.bridge.mt5.ORDER_TYPE_BUY_LIMIT if side == "buy" else self.bridge.mt5.ORDER_TYPE_SELL_LIMIT,
-            limit_price, 
-            lots, 
-            current_atr=current_atr,
-            regime=regime,
-            tp_multiplier=tp_multiplier
-        )
-
-        # [v30 - SMART ROUTING]
-        # Decide entre LIMIT ou MARKET com base no Score da IA e Incerteza
-        score = ai_decision.get("confidence_score", 0.0) if ai_decision else 0.0
-        uncertainty = ai_decision.get("uncertainty", 0.0) if ai_decision else 0.0
-
-        result = self.bridge.place_smart_order(
-            self.symbol, params['type'], limit_price, lots, 
-            sl=params['sl'], tp=params['tp'],
-            score=score, uncertainty=uncertainty,
-            comment="SNIPER_SOTA_PYRAMID" if is_scaling_in else "SNIPER_SOTA_SMART"
-        )
-        
-        if result and result.retcode == self.bridge.mt5.TRADE_RETCODE_DONE:
-            order_ticket = result.order
-            timeout_sec = self.risk.alpha_fade_timeout
-            iterations = int(timeout_sec / 0.5)
-            
-            logger.info(f"⏳ [ORDEM ABERTA] {order_ticket} @ {limit_price}. Lotes: {lots}. TTL: {timeout_sec}s...")
-            
-            for _ in range(iterations):
-                await asyncio.sleep(0.5)
-                status = self.bridge.check_order_status(order_ticket)
-                if status == "FILLED":
-                    self.trade_count += 1
-                    self._save_state()
-                    side_pt = "COMPRA" if side == "buy" else "VENDA"
-                    msg = f"🎯 [EXECUÇÃO] {side_pt} {lots} @ {limit_price}"
-                    logger.info(msg)
-                    self._log_to_dashboard(msg, "success")
-                    return True
-                elif status == "CANCELED":
-                    return False
-            
-            if self.bridge.cancel_order(order_ticket):
-                logger.info(f"🛡️ [CANCELADA/TTL] Ordem {order_ticket} (Momento passou).")
-            else:
-                if self.bridge.check_order_status(order_ticket) == "FILLED":
-                    self.trade_count += 1
-                    self._save_state()
-                    return True
-            return False
-        else:
-            msg = result.comment if result else "Nenhum"
-            logger.error(f"❌ [REJEITADA] Falha: {msg}")
-            return False
+        return False
 
     async def _check_trade_results(self):
-        """Monitora o histórico para atualizar vitórias consecutivas (Alpha Scaling)."""
         stats = self.bridge.get_trading_performance()
         if stats['total_trades'] > self.last_total_trades:
             deals = self.bridge.mt5.history_deals_get(datetime.combine(date.today(), time(0,0)), datetime.now())
             if deals:
                 out_deals = [d for d in deals if d.entry in [self.bridge.mt5.DEAL_ENTRY_OUT, self.bridge.mt5.DEAL_ENTRY_INOUT]]
                 if out_deals:
-                    last_deal = out_deals[-1]
-                    profit = last_deal.profit + last_deal.swap + last_deal.commission
-                    if profit > 0:
-                        self.consecutive_wins += 1
-                        logger.info(f"✨ [LUCRO] Vitória! +{profit:.2f} | Alpha: {self.consecutive_wins}")
-                    else:
-                        self.consecutive_wins = 0
-                        logger.info("📉 [PREJUÍZO] Resetando Alpha Scaling.")
+                    profit = out_deals[-1].profit + out_deals[-1].swap + out_deals[-1].commission
+                    if profit > 0: self.consecutive_wins += 1
+                    else: self.consecutive_wins = 0
                     self._save_state()
             self.last_total_trades = stats['total_trades']
 
     async def manage_trailing_stop(self):
-        """Monitora posições e aplica Trailing Stop, Breakeven e Time-Stop (HFT Master)."""
         positions = self.bridge.mt5.positions_get(symbol=self.symbol)
-        if not positions:
-            return
-
-        # Busca ATR atual para cálculos dinâmicos
+        if not positions: return
         df = self.bridge.get_market_data(self.symbol, n_candles=20)
         current_atr = float((df['high'] - df['low']).rolling(14).mean().iloc[-1]) if not df.empty else 150.0
-
+        
         for pos in positions:
             if pos.sl == 0: continue
-
-            now_ts = datetime.utcnow().timestamp()
-            elapsed = now_ts - pos.time
+            elapsed = datetime.utcnow().timestamp() - pos.time
+            current_profit = (pos.price_current - pos.price_open) if pos.type == self.bridge.mt5.POSITION_TYPE_BUY else (pos.price_open - pos.price_current)
             
-            if pos.type == self.bridge.mt5.POSITION_TYPE_BUY:
-                current_profit = pos.price_current - pos.price_open
-            else:
-                current_profit = pos.price_open - pos.price_current
-            
-            # 0. Velocity Limit (Drawdown Acelerado)
-            v_ok, v_msg = self.risk.check_velocity_limit(current_profit, elapsed)
-            if v_ok:
-                logger.warning(f"🛡️ [VELOCITY] {v_msg}: {pos.ticket}")
-                if not self.risk.dry_run: self.bridge.close_position(pos.ticket)
-                continue
-
-            # 0.1 [v50 - MASTER] Time-Based Stop Elástico (3-5 min)
             if self.risk.check_time_stop(elapsed, current_profit, current_atr=current_atr):
-                logger.warning(f"⏰ [TIME-STOP MASTER] Posição {pos.ticket} estagnada ({elapsed/60:.1f} min).")
                 if not self.risk.dry_run: self.bridge.close_position(pos.ticket)
                 continue
 
-            # 0.2 [v30 - INSTITUCIONAL] Scaling Out (Parcial)
             should_partial, p_vol = self.risk.check_scaling_out(self.symbol, pos.ticket, current_profit, pos.volume)
-            if should_partial:
-                if not self.risk.dry_run:
-                    self.bridge.close_partial_position(pos.ticket, p_vol)
-                else:
-                    logger.info(f"🧪 [SIMULAÇÃO] Executando PARCIAL de {p_vol} lotes no ticket {pos.ticket}")
+            if should_partial and not self.risk.dry_run:
+                self.bridge.close_partial_position(pos.ticket, p_vol)
                 continue
 
-            # 1. Breakeven
-            if pos.type == self.bridge.mt5.POSITION_TYPE_BUY:
-                if current_profit >= self.risk.be_trigger and pos.sl < pos.price_open:
-                    new_sl = self.risk._quantize_price(self.symbol, pos.price_open + self.risk.be_lock)
-                    if not self.risk.dry_run:
-                        self.bridge.update_sltp(pos.ticket, new_sl, pos.tp)
-                        logger.info(f"⚡ [BREAKEVEN] COMPRA protegida: {new_sl}")
-                
-                # 2. Trailing Stop Dinâmico (Master ATR-Based)
-                t_trigger, t_lock, t_step = self.risk.get_dynamic_trailing_params(current_atr)
-                if current_profit >= t_trigger:
-                    potential_sl = self.risk._quantize_price(self.symbol, pos.price_current - (t_trigger - t_lock))
-                    if potential_sl > pos.sl + t_step:
-                        if not self.risk.dry_run:
-                            self.bridge.update_sltp(pos.ticket, potential_sl, pos.tp)
-                            logger.info(f"⚡ [TRAILING MASTER] COMPRA movida: {potential_sl} (ATR: {current_atr:.1f})")
+            if current_profit >= self.risk.be_trigger:
+                new_sl = self.risk._quantize_price(self.symbol, pos.price_open + (self.risk.be_lock if pos.type == self.bridge.mt5.POSITION_TYPE_BUY else -self.risk.be_lock))
+                if (pos.type == self.bridge.mt5.POSITION_TYPE_BUY and new_sl > pos.sl) or (pos.type == self.bridge.mt5.POSITION_TYPE_SELL and new_sl < pos.sl):
+                    if not self.risk.dry_run: self.bridge.update_sltp(pos.ticket, new_sl, pos.tp)
 
-            elif pos.type == self.bridge.mt5.POSITION_TYPE_SELL:
-                if current_profit >= self.risk.be_trigger and pos.sl > pos.price_open:
-                    new_sl = self.risk._quantize_price(self.symbol, pos.price_open - self.risk.be_lock)
-                    if not self.risk.dry_run:
-                        self.bridge.update_sltp(pos.ticket, new_sl, pos.tp)
-                        logger.info(f"⚡ [BREAKEVEN] VENDA protegida: {new_sl}")
-
-                # 2. Trailing Stop Dinâmico (Master ATR-Based)
-                t_trigger, t_lock, t_step = self.risk.get_dynamic_trailing_params(current_atr)
-                if current_profit >= t_trigger:
-                    potential_sl = self.risk._quantize_price(self.symbol, pos.price_current + (t_trigger - t_lock))
-                    if potential_sl < pos.sl - t_step:
-                        if not self.risk.dry_run:
-                            self.bridge.update_sltp(pos.ticket, potential_sl, pos.tp)
-                            logger.info(f"⚡ [TRAILING MASTER] VENDA movida: {potential_sl} (ATR: {current_atr:.1f})")
+            t_trigger, t_lock, t_step = self.risk.get_dynamic_trailing_params(current_atr)
+            if current_profit >= t_trigger:
+                potential_sl = self.risk._quantize_price(self.symbol, pos.price_current + (-(t_trigger-t_lock) if pos.type == self.bridge.mt5.POSITION_TYPE_BUY else (t_trigger-t_lock)))
+                if (pos.type == self.bridge.mt5.POSITION_TYPE_BUY and potential_sl > pos.sl + t_step) or (pos.type == self.bridge.mt5.POSITION_TYPE_SELL and potential_sl < pos.sl - t_step):
+                    if not self.risk.dry_run: self.bridge.update_sltp(pos.ticket, potential_sl, pos.tp)
 
     async def run(self):
-        msg_init = "🚀 Sniper Bot WIN v2.0 (Quarter-Kelly & Time-Stops)"
-        logger.info(msg_init)
-        self._log_to_dashboard(msg_init, "info")
-        if not self.bridge.connected and not self.bridge.connect():
-            return
-
+        logger.info("🚀 Sniper Bot WIN v2.0 Live")
+        if not self.bridge.connected and not self.bridge.connect(): return
         self.symbol = self.bridge.get_current_symbol("WIN")
-        
-        # [v52.6] Recarga parâmetros para o símbolo real (Garante sincronia WINJ26 <-> WIN$)
         self.risk.load_optimized_params(self.symbol, "backend/v22_locked_params.json")
-        
-        # Atualiza parâmetros locais com o que foi carregado para o símbolo resolvido
-        d = self.risk.dynamic_params.get(self.risk._normalize_symbol(self.symbol), {})
-        if d:
-            if d.get("rsi_period"): self.rsi_period = int(d["rsi_period"])
-            if d.get("vol_spike_mult"): self.vol_spike_mult = float(d["vol_spike_mult"])
-            if d.get("flux_imbalance_threshold"): self.flux_threshold = float(d["flux_imbalance_threshold"])
-        
-        # [v52.2] Log de Sincronização Detalhado no Início da Execução
-        logger.info("🛡️ [SOTA V22.5.1] Sincronização de Execução (LIVE):")
-        logger.info(f"   >>> Símbolo: {self.symbol} | OBI Threshold: {self.flux_threshold}")
-        logger.info(f"   >>> RSI: {self.rsi_period} | Vol Mult: {self.vol_spike_mult}")
-        logger.info(f"   >>> Janela: {self.start_time} - {self.end_time}")
-        logger.info(f"   >>> Status: {'VIRTUAL (Dry Run)' if self.risk.dry_run else 'REAL (Live)'}")
+        self._load_params_from_risk(self.bridge._normalize_symbol(self.symbol))
         
         self.running = True
         while self.running:
             try:
                 await self.manage_trailing_stop()
                 await self._check_trade_results()
-                self.bridge.cancel_stale_orders(symbol=self.symbol, timeout_seconds=self.risk.alpha_fade_timeout)
-
+                self.bridge.cancel_stale_orders(symbol=self.symbol, timeout_seconds=60)
+                
                 now = datetime.now()
-                if self.last_date != now.date():
-                    self.trade_count = 0
-                    self.last_date = now.date()
-                    self._save_state()
+                if not self.bridge.check_connection(): await asyncio.sleep(5); continue
 
-                if not self.bridge.check_connection():
-                    await asyncio.sleep(5)
-                    continue
-
-                # Risco Ambiental
-                ping, spread = self.bridge.get_latency_and_spread(self.symbol)
-                env_ok, env_msg = self.risk.validate_environmental_risk(ping, spread)
-                if not env_ok:
-                    await asyncio.sleep(1)
-                    continue
-                
-                # Kill Switch Equity & Daily Profit
                 acc = self.bridge.get_account_health()
-                
-                # [ANTIVIBE-CODING] - Calcula PnL Diário Realizado + Flutuante
-                daily_realized = self.bridge.get_daily_realized_profit()
-                total_pnl = daily_realized + acc.get('profit', 0)
-                
-                # 1. Trava de Perda Diária (Acumulada)
-                pnl_ok, pnl_msg = self.risk.check_daily_loss(total_pnl)
-                if not pnl_ok:
-                    logger.warning(pnl_msg)
-                    self.stop()
-                    break
-                
-                # 2. Kill Switch (Pânico por Drawdown Flutuante Extremo)
-                # Usa o Saldo (Balance) real como referência dinâmica
-                starting_balance = acc.get('balance', 0)
-                eq_ok, eq_msg = self.risk.check_equity_kill_switch(acc.get('equity', 0), starting_balance)
-                if not eq_ok:
-                    logger.warning(eq_msg)
-                    self.stop()
-                    break
+                total_pnl = self.bridge.get_daily_realized_profit() + acc.get('profit', 0)
+                if not self.risk.check_daily_loss(total_pnl)[0] or not self.risk.check_equity_kill_switch(acc.get('equity', 0), acc.get('balance', 0))[0]:
+                    self.stop(); break
 
                 if not (self.start_time <= now.time() <= self.end_time) or not self.risk.is_time_allowed():
-                    if now.second % 30 == 0: # Log a cada 30s se estiver fora
-                        logger.info(f"🕒 Stand-by: Fora da janela operacional ou bloqueio de tempo ({now.strftime('%H:%M:%S')}).")
-                    await asyncio.sleep(1)
-                    continue
+                    await asyncio.sleep(1); continue
 
-                # Cooldown
                 if self.last_trade_time:
-                    elapsed = (now - self.last_trade_time).total_seconds()
                     limit = 300 if self.persistence.get_state("last_quantile_confidence") == "VERY_HIGH" else 600
-                    if elapsed < limit:
-                        await asyncio.sleep(1)
-                        continue
+                    if (now - self.last_trade_time).total_seconds() < limit: await asyncio.sleep(1); continue
 
-                # Sinais
                 df = self.bridge.get_market_data(self.symbol, n_candles=50)
-                if df.empty or len(df) < 30:
-                    await asyncio.sleep(1)
-                    continue
+                if df.empty or len(df) < 30: await asyncio.sleep(1); continue
                 
-                # [HFT ELITE - V40] Microestrutura & Fluxo Sincronizado
                 book = self.bridge.get_order_book(self.symbol)
                 ticks_df = self.bridge.get_time_and_sales(self.symbol, n_ticks=100)
                 
-                # [SOTA v4] Atualiza Bias de Tendência H1 (Gráfico Horário)
                 try:
                     h1_data = self.bridge.get_market_data(self.symbol, n_candles=50, timeframe="H1")
-                    if h1_data is not None and not h1_data.empty:
-                        self.ai.update_h1_trend(h1_data)
-                        if now.minute % 15 == 0 and now.second < 2:
-                            bias_desc = "ALTA" if self.ai.h1_trend > 0 else "BAIXA" if self.ai.h1_trend < 0 else "NEUTRO"
-                            logger.info(f"📊 [TREND BIAS H1] Viés atual: {bias_desc}")
-                except Exception as e_h1:
-                    logger.warning(f"⚠️ Falha ao atualizar Bias H1: {sanitize_log(e_h1)}")
+                    if h1_data is not None: self.ai.update_h1_trend(h1_data)
+                except: pass
 
-                # Sincroniza o analisador para habilitar o Veto de Divergência de CVD
                 self.ai.micro_analyzer.analyze(book, ticks_df)
                 weighted_ofi = self.ai.micro_analyzer.calculate_wen_ofi(book)
                 
                 df['rsi'] = self.calculate_rsi(df['close'], self.rsi_period)
                 df['vol_sma'] = df['tick_volume'].rolling(20).mean()
+                df['adx'] = self.calculate_adx(df, 14)
+                df['bb_up'], df['bb_mid'], df['bb_down'] = self.calculate_bollinger(df['close'], 20, 2.0)
+                
                 last = df.iloc[-1]
-                
                 atr = float((df['high'] - df['low']).rolling(14).mean().iloc[-1])
-                pressure = await self.get_flux_pressure() # Agora retorna Ratio escala > 1.0
+                adx_val = float(last['adx']) if not np.isnan(last['adx']) else 0.0
+                pressure = await self.get_flux_pressure()
                 
-                # [PAUSA PARCIAL - 03/03/2026] VERIFICA VOLATILIDADE M1 NA ABERTURA (Live)
-                hoje = now.date()
-                if self.dia_abertura_cache != hoje:
-                    self.dia_pausado_vol = False
-                    self.hl_abertura_cache = None
-                    self.dia_abertura_cache = hoje
-
+                # Pausa Volatilidade
+                if self.dia_abertura_cache != now.date():
+                    self.dia_pausado_vol = False; self.hl_abertura_cache = None; self.dia_abertura_cache = now.date()
                 if self.hl_abertura_cache is None:
-                    inicio_dia = datetime(now.year, now.month, now.day, 9, 0, 0)
-                    try:
-                        rates_hoje = self.bridge.mt5.copy_rates_range(self.symbol, self.bridge.mt5.TIMEFRAME_M1, inicio_dia, now)
-                        if rates_hoje is not None and len(rates_hoje) >= 10:
-                            df_hoje = pd.DataFrame(rates_hoje)
-                            if 'high' in df_hoje.columns and 'low' in df_hoje.columns:
-                                hl_10 = df_hoje['high'].iloc[:10] - df_hoje['low'].iloc[:10]
-                                self.hl_abertura_cache = float(hl_10.mean())
-                                if self.hl_abertura_cache > 250.0:
-                                    self.dia_pausado_vol = True
-                                    msg_vol = f"⚠️ [PAUSA VOLATILIDADE] H-L abertura={self.hl_abertura_cache:.1f}pts (limiar=250.0). Operações PAUSADAS."
-                                    logger.warning(msg_vol)
-                                    self._log_to_dashboard(msg_vol, "warning")
-                            else:
-                                logger.debug("Início do dia aguardando colunas OHLC consistentes.")
-                    except Exception as e:
-                        logger.error(f"Erro ao calcular H-L abertura (Live): {e}")
-
-                if self.dia_pausado_vol and 0 < atr < 100.0:
-                    self.dia_pausado_vol = False
-                    logger.info(f"✅ [PAUSA VOLATILIDADE] ATR={atr:.1f}pts normalizou abaixo de 100. Retomando operações.")
+                    inicio = datetime(now.year, now.month, now.day, 9, 0, 0)
+                    r = self.bridge.mt5.copy_rates_range(self.symbol, self.bridge.mt5.TIMEFRAME_M1, inicio, now)
+                    if r is not None and len(r) >= 10:
+                        hl = pd.DataFrame(r)['high'].iloc[:10] - pd.DataFrame(r)['low'].iloc[:10]
+                        self.hl_abertura_cache = float(hl.mean())
+                        if self.hl_abertura_cache > 250.0: self.dia_pausado_vol = True
                 
-                # [SOTA V22.5.2] Níveis de RSI Adaptativos por Volatilidade
-                rsi_buy_level = 30.0
-                rsi_sell_level = 70.0
-                
-                if atr >= self.rsi_dynamic_activation_atr:
-                    rsi_buy_level = self.rsi_dynamic_buy
-                    rsi_sell_level = self.rsi_dynamic_sell
-                    if now.second % 60 == 0:
-                        logger.info(f"⚡ [RSI ADAPTATIVO] Níveis relaxados para agulhada: Buy={rsi_buy_level}/Sell={rsi_sell_level} (ATR={atr:.1f})")
+                rsi_buy = self.rsi_dynamic_buy if atr >= self.rsi_dynamic_activation_atr else 30.0
+                rsi_sell = self.rsi_dynamic_sell if atr >= self.rsi_dynamic_activation_atr else 70.0
+                if self.ai.use_h1_trend_bias and self.ai.h1_trend == -1: rsi_buy = 0.0
 
-                # [SOTA v22.5.4] MODE SELL-ONLY: Proteção em dias de queda estrutural (H1 baixista)
-                # Quando o tempo superior está em baixa confirmada, TODA compra é bloqueada.
-                # O bot continua operando — apenas no lado vendedor.
-                if self.ai.use_h1_trend_bias and self.ai.h1_trend == -1:
-                    if now.second % 60 == 0:
-                        logger.info("🛡️ [SELL-ONLY] Compras bloqueadas: H1 em baixa estrutural confirmada. Bot operando apenas no lado vendedor.")
-                    rsi_buy_level = 0.0  # Threshold impossível → compras nunca disparam (independe do RSI atual)
-
-
-                # [SOTA] Filtro de Fluxo Adaptativo
                 flux_mult = self.vol_spike_mult if atr < 200 else 1.05
-                comprar_cond = last['rsi'] < rsi_buy_level and last['tick_volume'] > (last['vol_sma'] * flux_mult)
-                vender_cond = last['rsi'] > rsi_sell_level and last['tick_volume'] > (last['vol_sma'] * flux_mult)
+                c_buy = last['rsi'] < rsi_buy and last['tick_volume'] > (last['vol_sma'] * flux_mult)
+                c_sell = last['rsi'] > rsi_sell and last['tick_volume'] > (last['vol_sma'] * flux_mult)
                 
-                # [ANTIVIBE-CODING] Carregamento de Contexto Macro para Veto
-                market_ctx = self._load_market_context()
-                synthetic_idx = market_ctx.get("synthetic_index", 0.0)
-                
-                if comprar_cond or vender_cond:
-                    side = "buy" if comprar_cond else "sell"
-                    side_pt = "COMPRA" if side == "buy" else "VENDA"
-                    self._log_to_dashboard(f"🔍 Setup detectado ({side_pt}). Analisando filtros de IA e Macro...", "info")
-                    
+                if c_buy or c_sell:
+                    side = "buy" if c_buy else "sell"
                     if (side == "buy" and pressure > self.flux_threshold) or (side == "sell" and pressure < -self.flux_threshold):
                         patchtst_score = await self.ai.predict_with_patchtst(self.ai.inference_engine, df)
-                        # [ANTIVIBE-CODING] Override de Controle Manual de Notícias
-                        effective_sentiment = await self.ai.update_sentiment() if (getattr(self.risk, 'enable_news_filter', True)) else 0.0
-
-                        ai_decision = self.ai.calculate_decision(
-                            obi=pressure, 
-                            sentiment=effective_sentiment, 
-                            patchtst_score=patchtst_score, 
-                            regime=self.ai.detect_regime(0.1, pressure),
-                            atr=atr, 
-                            volatility=0.1, 
-                            hour=now.hour, 
-                            minute=now.minute,
-                            ofi=weighted_ofi, # Passando OFI real para o Veto de VWAP
-                            current_price=last['close']
-                        )
+                        sentiment = await self.ai.update_sentiment() if getattr(self.risk, 'enable_news_filter', True) else 0.0
+                        regime = self.ai.identify_market_regime(df, self.ai.h1_trend, atr, adx_val, last['bb_up'], last['bb_down'], last['bb_mid'])
+                        m_ctx = self._load_market_context()
+                        bc_score = m_ctx.get("synthetic_index", 0.0)
                         
-                        # [ANTIVIBE-CODING] Veto Macro Sincronizado
-                        direction = "BUY" if side == "buy" else "SELL"
-                        if not self.risk.is_macro_allowed(direction, synthetic_idx):
-                            ai_decision["direction"] = "WAIT"
-                            ai_decision["reason"] = f"VETO_MACRO: Blue Chips {synthetic_idx:.2f}%"
+                        decision = self.ai.calculate_decision(obi=pressure, sentiment=sentiment, patchtst_score=patchtst_score, regime=regime, atr=atr, volatility=0.1, hour=now.hour, minute=now.minute, ofi=weighted_ofi, current_price=last['close'], spread=self.bridge.get_latency_and_spread(self.symbol)[1], sma_20=last['bb_mid'], bluechip_score=bc_score)
                         
-                        if self.dia_pausado_vol:
-                            ai_decision["direction"] = "WAIT"
-                            ai_decision["reason"] = "ATR_DIA_PAUSADO"
+                        if not self.risk.is_macro_allowed("BUY" if side == "buy" else "SELL", bc_score): decision["direction"] = "WAIT"
+                        if self.dia_pausado_vol: decision["direction"] = "WAIT"
 
-                        if ai_decision["direction"] == "WAIT":
-                            reason = ai_decision.get("reason", "Inconsistência técnica")
-                            side_pt = "COMPRA" if side == "buy" else "VENDA"
-                            self._log_to_dashboard(f"🛡️ Oportunidade de {side_pt} VETADA: {reason}", "warning")
-                            side_pt = "COMPRA" if side == "buy" else "VENDA"
-                            logger.info(f"[VETO] {side_pt} bloqueado: {reason}")
-                        elif (side == "buy" and ai_decision["direction"] == "COMPRA") or (side == "sell" and ai_decision["direction"] == "VENDA"):
-                            self._log_to_dashboard(f"🎯 Sinal de {ai_decision['direction']} VALIDADO. Score: {ai_decision['score']:.1f}", "success")
-                            
-                            # [v40 - PIRAMIDAÇÃO]
+                        if decision["direction"] in ["COMPRA", "VENDA"]:
                             positions = self.bridge.mt5.positions_get(symbol=self.symbol)
                             can_trade = True
                             if positions:
-                                pos = positions[0]
-                                profit_pts = pos.price_current - pos.price_open if pos.type == self.bridge.mt5.POSITION_TYPE_BUY else pos.price_open - pos.price_current
-                                total_vol = sum(p.volume for p in positions)
-                                if not self.risk.allow_pyramiding(profit_pts, pressure, total_vol, symbol=self.symbol):
-                                    can_trade = False
-                                    block_msg = f"⏳ [BLOQUEIO] Piramidação negada: Lucro {profit_pts:.1f} pts / Vol Total {total_vol}"
-                                    logger.info(block_msg)
-                                    self._log_to_dashboard(block_msg, "warning")
-
+                                p = positions[0]; prof = (p.price_current - p.price_open) if p.type == 0 else (p.price_open - p.price_current)
+                                if not self.risk.allow_pyramiding(prof, pressure, sum(pos.volume for pos in positions), symbol=self.symbol): can_trade = False
+                            
                             if can_trade:
-                                is_scaling_in = len(positions) > 0
-                                if await self.execute_trade(side, ai_decision=ai_decision, quantile_confidence=ai_decision["quantile_confidence"], tp_multiplier=ai_decision.get("tp_multiplier", 1.0), current_atr=atr, is_scaling_in=is_scaling_in):
-                                    self.persistence.save_state("last_quantile_confidence", ai_decision["quantile_confidence"])
+                                if await self.execute_trade(side, ai_decision=decision, quantile_confidence=decision["quantile_confidence"], tp_multiplier=decision.get("tp_multiplier", 1.0), current_atr=atr, is_scaling_in=len(positions)>0):
+                                    self.persistence.save_state("last_quantile_confidence", decision["quantile_confidence"])
                                     self.last_trade_time = now
-                    else:
-                        side_pt = "COMPRA" if side == "buy" else "VENDA"
-                        block_msg = f"🛡️ [FILTRO FLUXO] {side_pt} ignorada: Pressão {pressure:.2f} não atingiu threshold {self.flux_threshold if side == 'buy' else -self.flux_threshold}"
-                        self._log_to_dashboard(block_msg, "info")
-                        logger.info(block_msg)
-
                 await asyncio.sleep(0.1)
-                
             except Exception as e:
-                logger.error(f"Erro Sniper: {sanitize_log(e)}")
-                await asyncio.sleep(2)
+                logger.error(f"Erro Sniper: {sanitize_log(e)}"); await asyncio.sleep(2)
 
     def _load_market_context(self):
-        """[ANTIVIBE-CODING] Método auxiliar para carregar contexto global."""
         ctx_path = os.path.join("data", "market_context.json")
-        if os.path.exists(ctx_path):
-            try:
-                with open(ctx_path, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except: pass
+        try:
+            if os.path.exists(ctx_path):
+                with open(ctx_path, "r", encoding="utf-8") as f: return json.load(f)
+        except: pass
         return {}
 
     def stop(self):
-        self.running = False
-        self.bridge.disconnect()
+        self.running = False; self.bridge.disconnect()
 
 if __name__ == "__main__":
-    bot = SniperBotWIN(dry_run=True)
-    asyncio.run(bot.run())
+    bot = SniperBotWIN(dry_run=True); asyncio.run(bot.run())

@@ -25,7 +25,7 @@ class RiskManager:
         # [SOTA] Parâmetros de Trailing Stop (Campeão WIN Padrão)
         self.trailing_trigger = 70.0  # Ativa com 70 pontos (Otimizado)
         self.trailing_lock = 50.0    # Trava 50 pontos iniciais
-        self.trailing_step = 10.0    # [SOTA V22.2.1] Trailing mais curto para capturar momentum HFT
+        self.trailing_step = 5.0    # [SOTA V22.5.7] Trailing ultra-curto para capturar lucro bi-direcional
         
         # [v52.1] Breakeven Ultra-Rápido - Sincronizado com JSON
         self.be_trigger = 70.0       
@@ -42,7 +42,7 @@ class RiskManager:
         # [v52.0] Scaling Out (Saída Parcial HFT)
         self.base_volume = 2.0       # 2 contratos para permitir parcial
         self.partial_volume = 1.0    # Zera 1 contrato na parcial
-        self.partial_profit_points = 30.0 # [v52.1] Lucro travado cedo para maior assertividade
+        self.partial_profit_points = 80.0 # [v36 PRIME] Lucro travado mais tarde para maior rentabilidade
         
         # [FASE 2] Velocity Limit (Drawdown Acelerado no Tempo)
         self.velocity_time_limit_sec = 20.0     # Segundos máximos engatado negativamente
@@ -57,9 +57,38 @@ class RiskManager:
         # [v50.1] TIME-DECAYING TP
         self.tp_decay_per_min = 0.05            # Decaimento de 5% por minuto
         
-        # [v52.5] TRAILING ESTRANGULADOR SIMÉTRICO (SOTA V22.5.1)
-        self.trailing_step_atr = 0.3           # Passo de 0.3 ATR para Compra e Venda (Paranoia Institucional)
-        self.sell_trailing_step_atr = 0.3        # Mantido para retrocompatibilidade
+        # [v36 EXPERT] DNA do Mercado - Matriz de Regimes (Sincronizado com Plano Mestre)
+        self.regime_settings = {
+            1: { # TENDÊNCIA (Trend Rider)
+                "label": "Trending",
+                "trailing_trigger": 120.0, "trailing_lock": 90.0,
+                "rsi_buy": 38.0, "rsi_sell": 62.0,
+                "take_profit": 550.0, "use_partial": False,
+                "lot_multiplier": 1.0, "stop_loss": 250.0
+            },
+            0: { # LATERAL (Sniper Scalper)
+                "label": "Sideways",
+                "trailing_trigger": 60.0, "trailing_lock": 45.0, # Ativa mais cedo
+                "rsi_buy": 22.0, "rsi_sell": 78.0, # Mais assertivo (Sniper)
+                "take_profit": 150.0, "use_partial": True, "partial_tp": 30.0,
+                "lot_multiplier": 1.0, "stop_loss": 180.0
+            },
+            2: { # VOLATILIDADE (Safety First)
+                "label": "Volatile",
+                "trailing_trigger": 50.0, "trailing_lock": 30.0,
+                "rsi_buy": 15.0, "rsi_sell": 85.0,
+                "take_profit": 200.0, "use_partial": True, "partial_tp": 30.0,
+                "lot_multiplier": 0.33, "stop_loss": 300.0, # 0.33x lote (1 contrato se base=3) 
+                "min_confidence": 0.65, "cooldown": 30
+            },
+            3: { # REVERSÃO (Mean Reversion)
+                "label": "Reversion",
+                "trailing_trigger": 60.0, "trailing_lock": 40.0,
+                "rsi_buy": 22.0, "rsi_sell": 78.0, # NOVO: Assertividade bi-direcional em reversão
+                "take_profit": 300.0, "use_partial": True, "partial_tp": 80.0,
+                "lot_multiplier": 1.0, "stop_loss": 220.0
+            }
+        }
 
         # [SOTA V22.5.1] Filtro de Fluxo (OBJ/Book L2) - Sincronizado com JSON
         self.flux_imbalance_threshold = 0.95
@@ -101,15 +130,7 @@ class RiskManager:
         self.post_event_name = ""               # Nome do evento que originou o momentum
 
     def _load_economic_calendar(self):
-        """Carrega dados de calendário econômico (impacto >= 3) para Veto de Liquidez.
-
-        Campos suportados em economic_calendar.json:
-          - time         (obrigatório) HH:MM do evento
-          - impact       (obrigatório) 1-3, só eventos com 3 são carregados
-          - event        (obrigatório) nome do evento
-          - date         (opcional)  YYYY-MM-DD — se presente, o veto só é ativado nesta data
-          - window_minutes (opcional) minutos de veto antes/depois (padrão: 3)
-        """
+        """Carrega dados de calendário econômico (impacto >= 3) para Veto de Liquidez."""
         try:
             cal_path = os.path.join(os.getcwd(), "data", "economic_calendar.json")
             if not os.path.exists(cal_path):
@@ -121,63 +142,80 @@ class RiskManager:
             with open(cal_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            for item in data:
-                if item.get("impact", 0) < 3:
-                    continue
+                for item in data:
+                    if item.get("impact", 0) < 3:
+                        continue
 
-                # [MELHORIA-1] Suporte a datas específicas — ignora eventos de outros dias
-                event_date = item.get("date")
-                if event_date and event_date != today_str:
-                    logging.debug(f"📅 Evento '{item['event']}' ignorado (data: {event_date} ≠ hoje: {today_str})")
-                    continue
+                    # Suporte a datas específicas
+                    event_date = item.get("date")
+                    if event_date and event_date != today_str:
+                        continue
 
-                # [MELHORIA-4] Janela de veto configurável por evento (padrão: 3 min)
-                window = int(item.get("window_minutes", 3))
+                    window = int(item.get("window_minutes", 3))
+                    evt_time = datetime.strptime(item["time"], "%H:%M").time()
+                    evt_dt   = datetime.combine(datetime.today(), evt_time)
+                    
+                    self.calendar_events.append({
+                        "start":          (evt_dt - timedelta(minutes=window)).time(),
+                        "end":            (evt_dt + timedelta(minutes=window)).time(),
+                        "momentum_end":   (evt_dt + timedelta(minutes=window + 10)).time(),
+                        "event":          item["event"],
+                    })
+                    loaded += 1
 
-                evt_time = datetime.strptime(item["time"], "%H:%M").time()
-                evt_dt   = datetime.combine(datetime.today(), evt_time)
-                t_start  = (evt_dt - timedelta(minutes=window)).time()
-                t_end    = (evt_dt + timedelta(minutes=window)).time()
-
-                self.calendar_events.append({
-                    "start":          t_start,
-                    "end":            t_end,
-                    "momentum_end":   (evt_dt + timedelta(minutes=window + 10)).time(),  # [MELHORIA-2]
-                    "event":          item["event"],
-                })
-                loaded += 1
-
-            logging.info(f"📅 CALENDÁRIO ECONÔMICO: {loaded} alertas críticos carregados para Blindagem Ativa.")
-
-            # [ALERTA DE EXPIRAÇÃO] Avisa quando todos os eventos cadastrados já expiraram
-            if loaded == 0 and data:
-                all_dates = [
-                    item.get("date") for item in data
-                    if item.get("impact", 0) >= 3 and item.get("date")
-                ]
-                if all_dates:
-                    ultima = max(all_dates)
-                    logging.critical(
-                        f"🚨 [CALENDÁRIO EXPIRADO] Todos os {len(all_dates)} eventos cadastrados "
-                        f"já passaram! Último evento: {ultima}. "
-                        f"AÇÃO NECESSÁRIA: Acrescente novas datas em 'data/economic_calendar.json' "
-                        f"e reinicie o backend."
-                    )
-
+            logging.info(f"📅 CALENDÁRIO ECONÔMICO: {loaded} alertas críticos carregados.")
         except Exception as e:
             logging.error(f"Erro ao carregar economic_calendar.json: {e}")
 
-    def calculate_dynamic_tp(self, base_tp, current_atr):
+    def get_regime_specific_params(self, regime_idx):
+        """[v36 EXPERT] Retorna os parâmetros base para o regime detectado."""
+        if isinstance(regime_idx, dict):
+            regime_idx = regime_idx.get('id', 0)
+        return self.regime_settings.get(regime_idx, self.regime_settings[0])
+
+    def get_dynamic_trailing_params(self, current_atr, regime_params=None):
+        """[SOTA] Calcula gatilho e trava de trailing com base na volatilidade e regime."""
+        base_trigger = regime_params['trailing_trigger'] if regime_params else self.trailing_trigger
+        base_lock = regime_params['trailing_lock'] if regime_params else self.trailing_lock
+        
+        if current_atr > 150:
+            trigger = base_trigger + (current_atr * 0.2)
+            lock = base_lock + (current_atr * 0.1)
+        else:
+            trigger = base_trigger
+            lock = base_lock
+        return trigger, lock, self.trailing_step
+
+    def get_order_params(self, symbol, order_type, price, lots, current_atr=0, regime=None, tp_multiplier=1.0):
         """
-        [V22.2] ALVO DINÂMICO (TP) POR VOLATILIDADE.
-        Reduz o Take Profit em 15% se a volatilidade (ATR) estiver acima de 120.
-        Objetivo: Garantir o lucro no bolso em mercados rápidos antes da reversão.
+        [V36 EXPERT] Retorna parâmetros completos de SL, TP e Trailing Stop.
+        Sincroniza a Matriz de Regimes com os multiplicadores dinâmicos da IA.
         """
-        if current_atr > 120.0:
-            new_tp = base_tp * 0.85
-            logging.info(f"🎯 [ALVO DINÂMICO] ATR {current_atr:.1f} > 120. Ajustando TP: {base_tp} -> {new_tp:.1f} (-15%)")
-            return float(new_tp)
-        return float(base_tp)
+        regime_id = regime if regime is not None else getattr(self, "current_regime", 0)
+        regime_params = self.regime_settings.get(regime_id, self.regime_settings[0])
+        
+        # Alvos Base da Matriz
+        base_tp = regime_params.get("take_profit", 400.0) * tp_multiplier
+        base_sl = regime_params.get("stop_loss", 250.0)
+        
+        # Ajuste por Tipo de Ordem
+        if order_type in [self.mt5.ORDER_TYPE_BUY, self.mt5.ORDER_TYPE_BUY_LIMIT]:
+            sl = price - base_sl
+            tp = price + base_tp
+        else:
+            sl = price + base_sl
+            tp = price - base_tp
+            
+        return {
+            "type": order_type,
+            "price": price,
+            "lots": lots,
+            "sl": float(sl),
+            "tp": float(tp),
+            "regime_id": regime_id,
+            "trailing_trigger": regime_params.get("trailing_trigger", self.trailing_trigger),
+            "trailing_lock": regime_params.get("trailing_lock", self.trailing_lock)
+        }
 
     def check_gap_safety(self, opening_price, prev_close):
         """
@@ -417,11 +455,18 @@ class RiskManager:
             return True, self.partial_volume
         return False, 0.0
 
-    def get_dynamic_trailing_params(self, current_atr, side="buy"):
+    def get_dynamic_trailing_params(self, current_atr, side="buy", regime_params=None):
         """
         [v52.6] Trailing Stop Dinâmico Simétrico (SOTA V22.5.2).
         Otimizado em 11/03 para travar lucro mais agressivamente.
+        [V36 REGIME EXPERT] Sobrescreve com parâmetros específicos do regime se fornecidos.
         """
+        if regime_params and "trailing_trigger" in regime_params:
+            logging.info(f"🧬 [TRAILING EXPERT] Usando parâmetros do Regime: {regime_params.get('label')}")
+            return (float(regime_params["trailing_trigger"]), 
+                    float(regime_params["trailing_lock"]), 
+                    float(regime_params["trailing_step"]))
+
         if not current_atr or current_atr <= 0:
             return self.trailing_trigger, self.trailing_lock, self.trailing_step
             
@@ -820,3 +865,22 @@ class RiskManager:
                 return self._quantize_price(symbol, new_price)
             return price
         except: return price
+
+class RegimeExpert:
+    """
+    [V36 EXPERT] Especialista em Multiplicadores de Regime.
+    Centraliza a lógica de ajuste de alvos (TP/SL) para garantir paridade.
+    """
+    def __init__(self):
+        # Matriz de Multiplicadores SOTA V36
+        self.matrix = {
+            1: {"label": "Trending", "sl_mult": 1.1, "tp_mult": 1.4}, # Tendência: Alvos longos
+            0: {"label": "Sideways", "sl_mult": 0.8, "tp_mult": 0.7}, # Lateral: Proteção curta
+            2: {"label": "Volatile", "sl_mult": 1.3, "tp_mult": 0.8}, # Volátil: Stop largo, Alvo curto
+            3: {"label": "Reversion", "sl_mult": 1.0, "tp_mult": 1.1} # Reversão: Padrão
+        }
+
+    def get_regime_settings(self, regime_idx):
+        if isinstance(regime_idx, dict):
+            regime_idx = regime_idx.get('id', 0)
+        return self.matrix.get(regime_idx, self.matrix[0])

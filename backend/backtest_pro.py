@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from backend.ai_core import AICore, InferenceEngine
-from backend.risk_manager import RiskManager
+from backend.risk_manager import RiskManager, RegimeExpert
 from backend.data_collector import DataCollector
 from backend.mt5_bridge import MT5Bridge
 
@@ -38,6 +38,7 @@ class BacktestPro:
             logging.warning(f"⚠️ Pesos SOTA não carregados ({e_engine}). Usando modo degenerado (Sentiment/OBI).")
             
         self.risk = RiskManager()
+        self.expert = RegimeExpert() # [v36 Expert] Injeta o Expert de Regimes
         self.collector = DataCollector(symbol)
         
         # Parâmetros Editáveis no Grid Search - [ANTIVIBE-CODING]
@@ -87,7 +88,10 @@ class BacktestPro:
             'rsi_buy_level': kwargs.get('rsi_buy_level', locked_params.get('rsi_buy_level', 32)),
             'rsi_sell_level': kwargs.get('rsi_sell_level', locked_params.get('rsi_sell_level', 68)),
             'confidence_buy_threshold': kwargs.get('confidence_buy_threshold', None),
-            'confidence_sell_threshold': kwargs.get('confidence_sell_threshold', None)
+            'confidence_sell_threshold': kwargs.get('confidence_sell_threshold', None),
+            'use_confidence_filter': kwargs.get('use_confidence_filter', locked_params.get('use_confidence_filter', True)),
+            'use_anti_exhaustion': kwargs.get('use_anti_exhaustion', locked_params.get('use_anti_exhaustion', True)),
+            'use_anti_trap': kwargs.get('use_anti_trap', locked_params.get('use_anti_trap', True))
         }
         
         logging.warning(f"⚠️ [INIT-STATE] use_ai_core_param={self.opt_params['use_ai_core']}")
@@ -114,6 +118,11 @@ class BacktestPro:
         self.ai.atr_confidence_relax_trigger = float(locked_params.get('atr_confidence_relax_trigger', 100.0))
         logging.info(f"🔧 [v22.5.1] RiskManager sincronizado: limite={self.risk.daily_trade_limit} | OBI={self.risk.flux_imbalance_threshold} | Squeeze={self.risk.bollinger_squeeze_threshold}")
         logging.info(f"📊 [v22.5.3/4/5] H1 + Hysteresis: use_h1={self.ai.use_h1_trend_bias} | MA={self.ai.h1_ma_period} | Hyst={self.ai.h1_hysteresis_pts} | Relax={self.ai.confidence_relax_factor}")
+        
+        # [v36.2] Injeta toggles de Expert Mode no AICore
+        self.ai.use_confidence_filter = self.opt_params['use_confidence_filter']
+        self.ai.use_anti_exhaustion = self.opt_params['use_anti_exhaustion']
+        self.ai.use_anti_trap = self.opt_params['use_anti_trap']
 
 
         # Estado do Backtest
@@ -655,24 +664,18 @@ class BacktestPro:
                         current_price=row['close'], # [SOTA v5] Sincronia de preco
                         spread=current_spread, # [SOTA v5] Sincronia de spread
                         sma_20=mid_bb,
-                        wdo_aggression=0.0 # Placeholder para backtest WIN
+                        wdo_aggression=0.0, # Placeholder para backtest WIN
+                        bluechip_score=0.0   # Neutro no backtest (sem dados históricos de ações)
                     )
                     
-                    # [v50.1] Hyper-Opt de Gatilhos Técnicos
-                    rsi_buy_level = self.opt_params.get('rsi_buy_level', 32)  # [MELHORIA C - 03/03/2026] 30→32 para capturar compras antes do RSI extremo
-                    rsi_sell_level = self.opt_params.get('rsi_sell_level', 68)  # [MELHORIA C - 03/03/2026] 70→68 simétrico para vendas
+                    # [v36 PRIME] GATILHOS ASSIMÉTRICOS (RSI DINÂMICO) PROVINIENTES DA IA
+                    rsi_buy_level = ai_decision.get('rsi_buy_trigger', self.opt_params.get('rsi_buy_level', 32))
+                    rsi_sell_level = ai_decision.get('rsi_sell_trigger', self.opt_params.get('rsi_sell_level', 68))
                     v_spike_mult = self.opt_params.get('vol_spike_mult', 1.5)
 
-                    # [SOTA v22.5.4] MODE SELL-ONLY: Paridade com bot live
-                    # Quando H1 está em queda estrutural, bloqueia compras zerando o threshold de RSI.
-                    # [v22.5.5-PROTECT] Bloqueio Rigoroso de Compras se tendência não for ALTA
-                    if self.ai.use_h1_trend_bias and self.ai.h1_trend <= 0:
-                        rsi_buy_level = 0.0  # Lock total no Neutral e na Baixa
-                        if i % 60 == 0: # Log menos frequente para não poluir
-                            logging.debug(f"🛡️ [v22.5.5-PROTECT] Compras bloqueadas: H1 Trend={self.ai.h1_trend}")
-                        if row.name.minute % 30 == 0:
-                             logging.info(f"🛡️ [SELL-ONLY BACKTEST] Bloqueio de compras ativo para {row.name}")
-
+                    # [v22.5.5-PROTECT] Bloqueio Rigoroso de Compras Removido do Backtester
+                    # A decisão agora é delegada ao AICore que possui a lógica de Bypass Institucional (v22.5.7).
+                    
                     vol_spike_eff = row['tick_volume'] > (vol_sma * v_spike_mult)
 
                     # [MODO FUSÃO SOTA] Gatilhos Matemáticos (RSI/BB) + Filtro de Convicção IA
@@ -778,7 +781,11 @@ class BacktestPro:
                     quantile_confidence = ai_decision.get('quantile_confidence', "NORMAL")
                     regime_tag = f"SOTA_SNIPER_{ai_dir}"
                     dyn_sl = self.opt_params['sl_dist']
-                    dyn_tp = self.opt_params['tp_dist']
+                    
+                    # [V36 PRIME] ALVO DINÂMICO
+                    tp_multiplier = ai_decision.get('tp_multiplier', 1.0)
+                    dyn_tp = self.opt_params['tp_dist'] * tp_multiplier
+                    use_partial_flag = ai_decision.get('use_partial', True)
                     
                     # Ajustes de alvos por regime (Compatibilidade com Phase 13)
                     # [BUGFIX v52.1] Mínimo de 200 pts para WIN em vez de 100 pts (que não cobre custo operacional)
@@ -959,30 +966,20 @@ class BacktestPro:
                     # [V22.2] CÁLCULO DE ALVO DINÂMICO (TP)
                     dyn_tp = self.risk.calculate_dynamic_tp(dyn_tp, atr_current)
 
-                    # --- [DYNAMIC ATR TARGETS V3] ---
-                    # Replica a lógica do RiskManager ajustada por regime
-                    tp_mult = self.opt_params.get('tp_mult_regime', 1.0)
-                    sl_mult = self.opt_params.get('sl_mult_regime', 1.3)
-
-                    if current_regime == 1: # Trend
-                        tp_mult = 1.6 # Aumentado para 1.6x do ATR ou Alvo
-                        tp_mult *= 1.2 # +20% se Ultra Tendência
-                    elif current_regime == 0: # Lateral
-                        tp_mult = 0.9 # Proteção
+                    # [V36 Expert] Sincronização Absoluta de Regimes
+                    regime_settings = self.expert.get_regime_settings(current_regime)
                     
-                    # ATR atual já calculado no início do loop: row['atr_current']
-                    # Se não houver alvos fixos, usa ATR. Se houver, usa o fixo como base de escala.
-                    tp_fixed = self.opt_params.get('tp_dist', 550.0)
                     sl_fixed = self.opt_params.get('sl_dist', 150.0)
+                    tp_fixed = self.opt_params.get('tp_dist', 550.0)
                     
-                    raw_tp = tp_fixed * tp_mult if tp_fixed > 0 else atr_current * tp_mult
-                    raw_sl = sl_fixed if sl_fixed > 0 else atr_current * sl_mult
+                    # Aplica multiplicadores do Expert V36
+                    raw_sl = sl_fixed * regime_settings['sl_mult']
+                    raw_tp = tp_fixed * regime_settings['tp_mult']
 
                     if "WDO" in self.symbol or "DOL" in self.symbol:
                         dyn_tp_pts = max(5.0, min(30.0, raw_tp))
                         dyn_sl_pts = max(3.0, min(15.0, raw_sl))
                     else: # Padrão WIN
-                        # [ANTIVIBE-CODING] LIMITE EXPANDIDO PARA AUDITORIA DE POTENCIAL
                         dyn_tp_pts = max(100.0, min(600.0, raw_tp))
                         dyn_sl_pts = max(100.0, min(300.0, raw_sl))
 
@@ -1021,6 +1018,8 @@ class BacktestPro:
                         'lots': target_lot,
                         'index': i,
                         'time': row.name,
+                        'tp_multiplier': tp_multiplier, # Injetado
+                        'use_partial': use_partial_flag, # Injetado
                         'quantile_confidence': quantile_confidence if 'quantile_confidence' in locals() else "NORMAL",
                         'execution_mode': ai_decision.get('execution_mode', 'LIMIT') if 'ai_decision' in locals() else 'LIMIT'
                     }

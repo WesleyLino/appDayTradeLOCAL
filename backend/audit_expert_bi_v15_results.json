@@ -1,0 +1,147 @@
+{
+    "consolidado": {
+        "pnl_total": 10.52857142857393,
+        "total_compra": 0.0,
+        "total_venda": 70.52857142857393,
+        "total_prejuizo": -60.0,
+        "oportunidades_perdidas": 0,
+        "vetos_totais": 118857
+    },
+    "detalhes": [
+        {
+            "data": "2026-02-19",
+            "pnl": 12.114285714284051,
+            "lucro_compra": 0,
+            "lucro_venda": 12.114285714284051,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 5071
+        },
+        {
+            "data": "2026-02-20",
+            "pnl": -23.285714285715947,
+            "lucro_compra": 0,
+            "lucro_venda": 6.714285714284052,
+            "prejuizo": -30.0,
+            "oportunidades_perdidas": 0,
+            "vetos": 5395
+        },
+        {
+            "data": "2026-02-23",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 5802
+        },
+        {
+            "data": "2026-02-24",
+            "pnl": 12.178571428573925,
+            "lucro_compra": 0,
+            "lucro_venda": 12.178571428573925,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 6142
+        },
+        {
+            "data": "2026-02-25",
+            "pnl": 11.578571428573923,
+            "lucro_compra": 0,
+            "lucro_venda": 11.578571428573923,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 6444
+        },
+        {
+            "data": "2026-02-26",
+            "pnl": 22.142857142857977,
+            "lucro_compra": 0,
+            "lucro_venda": 22.142857142857977,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 6809
+        },
+        {
+            "data": "2026-02-27",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 7228
+        },
+        {
+            "data": "2026-03-02",
+            "pnl": -30.0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": -30.0,
+            "oportunidades_perdidas": 0,
+            "vetos": 7662
+        },
+        {
+            "data": "2026-03-03",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 8223
+        },
+        {
+            "data": "2026-03-04",
+            "pnl": 5.800000000000001,
+            "lucro_compra": 0,
+            "lucro_venda": 5.800000000000001,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 8650
+        },
+        {
+            "data": "2026-03-05",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 9206
+        },
+        {
+            "data": "2026-03-06",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 9764
+        },
+        {
+            "data": "2026-03-09",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 10321
+        },
+        {
+            "data": "2026-03-10",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 10823
+        },
+        {
+            "data": "2026-03-11",
+            "pnl": 0,
+            "lucro_compra": 0,
+            "lucro_venda": 0,
+            "prejuizo": 0,
+            "oportunidades_perdidas": 0,
+            "vetos": 11317
+        }
+    ]
+}
