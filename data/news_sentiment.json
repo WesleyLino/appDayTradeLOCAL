@@ -1,59 +1,59 @@
 {
-  "score": -0.65,
+  "score": -0.5,
   "reliability": "medium",
-  "risk_classification": "HIGH",
-  "fact_check": "O mercado enfrenta riscos elevados com o petr\u00f3leo atingindo US$ 100, elevando a defasagem do diesel da Petrobras para 72%, e a escalada do conflito no Ir\u00e3, impactando futuros globais. H\u00e1 tamb\u00e9m uma desacelera\u00e7\u00e3o nas vendas globais de ve\u00edculos el\u00e9tricos. No cen\u00e1rio corporativo, movimentos pontuais em Carvana e Magalu (positivos) e Adobe e Immutep (negativos) s\u00e3o observados.",
+  "risk_classification": "MEDIUM",
+  "fact_check": "O Ibovespa opera em queda, perdendo o patamar de 179 mil pontos, com VALE3 e PETR4 em baixa. H\u00e1 incerteza externa. O CEO da Petrobras afirmou que medidas sobre diesel n\u00e3o alteram a estrat\u00e9gia de pre\u00e7os. Hypera apresenta sinais de melhora no 4T e projeta crescimento futuro. Mercados europeus (Espanha, Su\u00e9cia) tamb\u00e9m fecharam em queda.",
   "news": [
     {
-      "headline": "A\u00e7\u00f5es da Carvana sobem ap\u00f3s aprova\u00e7\u00e3o de desdobramento de 5 para 1.",
-      "relevance": 0.4,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "A\u00e7\u00f5es da Adobe caem com sa\u00edda de presidente e incertezas sobre estrat\u00e9gia de IA.",
-      "relevance": 0.5,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Petr\u00f3leo a US$ 100 eleva defasagem do diesel da Petrobras para 72%, segundo Abicom.",
+      "headline": "Ibovespa recua e opera abaixo de 179 mil pontos com incerteza global.",
       "relevance": 0.9,
       "impact": "BEARISH"
     },
     {
-      "headline": "Governo brasileiro planeja intensificar fiscaliza\u00e7\u00e3o em postos de combust\u00edveis.",
-      "relevance": 0.3,
+      "headline": "Hypera avan\u00e7a com sinais de melhora no 4T e foco em semaglutida.",
+      "relevance": 0.6,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Hypera projeta acelera\u00e7\u00e3o de vendas e aposta em semaglutida para 2026.",
+      "relevance": 0.5,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "An\u00e1lise sobre potencial impacto duplo de taxa\u00e7\u00e3o em petroleiras.",
+      "relevance": 0.7,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "CEO da Petrobras afirma que medidas sobre diesel n\u00e3o alteram estrat\u00e9gia de pre\u00e7os.",
+      "relevance": 0.9,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "A\u00e7\u00f5es da Immutep despencam 80% ap\u00f3s interrup\u00e7\u00e3o de estudo sobre c\u00e2ncer de pulm\u00e3o.",
+      "headline": "A\u00e7\u00f5es da Hexcel caem ap\u00f3s nomea\u00e7\u00e3o de novo CFO.",
       "relevance": 0.2,
       "impact": "BEARISH"
     },
     {
-      "headline": "Um quinto dos adolescentes australianos ainda usa TikTok e Snapchat ap\u00f3s proibi\u00e7\u00e3o.",
-      "relevance": 0.0,
+      "headline": "BBI projeta rota\u00e7\u00e3o dom\u00e9stica e aposta no Brasil para 2T.",
+      "relevance": 0.1,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Magalu (MGLU3) salta 8% apesar de resultado fraco no 4T.",
-      "relevance": 0.7,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "A\u00e7\u00f5es como Vale, Vivo e Magalu em destaque para acompanhamento hoje.",
-      "relevance": 0.0,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Vendas globais de ve\u00edculos el\u00e9tricos caem novamente em fevereiro.",
-      "relevance": 0.6,
+      "headline": "Mercado espanhol fecha em queda, IBEX 35 recua 0,47%.",
+      "relevance": 0.4,
       "impact": "BEARISH"
     },
     {
-      "headline": "Futuros da TSX sobem em meio a conflito no Ir\u00e3 e pre\u00e7os elevados do petr\u00f3leo.",
-      "relevance": 0.9,
+      "headline": "Ibovespa recua, perde 179 mil pontos; VALE3 e PETR4 em queda.",
+      "relevance": 1.0,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Mercado sueco fecha em queda, OMX Stockholm 30 recua 1,45%.",
+      "relevance": 0.3,
       "impact": "BEARISH"
     }
   ],
-  "timestamp": 1773410413.962534
+  "timestamp": 1773426046.3896227
 }

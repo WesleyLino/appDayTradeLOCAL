@@ -174,12 +174,14 @@ class AICore:
 
     def detect_regime(self, volatility, obi):
         """
-        [v24.4 COMPAT] Identifica o regime de mercado para o main.py.
+        [v24.4.4] Identifica o regime de mercado para o main.py.
         0: Lateral, 1: Tendência, 2: Volátil
+        Sensibilidade aumentada para auditoria de UI.
         """
         try:
-            if abs(obi) > 1.2: return 1 # Fluxo direcional forte
-            if volatility > 150.0: return 2 # Volatilidade excessiva
+            # [ANTIVIBE-CODING] - Thresholds calibrados para o mercado atual (Mini Índice)
+            if abs(obi) > 0.85: return 1 # Fluxo direcional (era 1.2)
+            if volatility > 100.0: return 2 # Volatilidade (era 150.0)
             return 0 # Mercado em consolidação
         except:
             return 0
@@ -189,11 +191,11 @@ class AICore:
             if df is None or len(df) < 5: return 0
             last_candles = df.tail(5)
             price_change = abs(last_candles['close'].iloc[-1] - last_candles['close'].iloc[0])
-            # [v24.2] Detecção de Tendência Super Permissiva para Ralis de Auditoria
-            if (price_change > (atr * 0.9) or h1_trend != 0):
+            # [ANTIVIBE-CODING] Sincronizado com detect_regime (Ultra-sensível)
+            if (price_change > (atr * 0.7) or h1_trend != 0):
                 return 1 # Tendência (Trending)
-            if atr > 350: return 2 # Super Volátil / Ruído (Noise)
-            return 0 # Reversão à Média / Consolidação
+            if atr > 100.0: return 2 # Volatilidade/Ruído (era 350)
+            return 0 # Mercado em consolidação
         except:
             return 0
 
@@ -236,9 +238,6 @@ class AICore:
         if obi_abs < 0.1:
             # Sem OBI (Dias de Auditoria/Offline), confiamos mais na IA
             score_raw = (patchtst_score_val * 0.7) + (sent_score_norm * 0.3)
-        if obi_abs < 0.1:
-            # Sem OBI (Dias de Auditoria/Offline), confiamos mais na IA
-            score_raw = (patchtst_score_val * 0.7) + (sent_score_norm * 0.3)
         else:
             # [v24.3] Maior peso ao fluxo (OBI) para capturar ralis institucionais
             score_raw = (patchtst_score_val * 0.2) + (obi_score * 0.6) + (sent_score_norm * 0.2)
@@ -260,17 +259,18 @@ class AICore:
 
         obi_abs = abs(float(obi))
         
-        # [v24.4] MONITORAMENTO DINÂMICO DE RISCO (Córtex de Risco)
-        # Ajuste dinâmico de sensibilidade baseado na volatilidade real (ATR)
-        base_bypass = getattr(self, "momentum_bypass_threshold", 81.0)
-        risk_factor = atr / 75.0 # Normalização WIN
+        # [v24.4] Calibragem Fina de Risco - Sensibilidade Multi-Ativo
+        is_wdo = (current_price < 15000) # [AUDIT] Identifica se é WDO (Preço ~5k) vs WIN (Preço ~130k)
+        
+        atr_ref = 75.0 if not is_wdo else 4.0 # Base de normalização ATR: WIN=75, WDO=4
+        risk_factor = atr / atr_ref
         
         # [v24.4] Calibragem Fina de Risco
         vol_impact = risk_factor * 2.0  # Menos punitivo
         obi_relief = min(12.0, (obi_abs - 1.0) * 5.0) if obi_abs > 1.0 else 0.0
         
         # O thresh final sobe menos com a volatilidade e desce MAIS com o fluxo confirmado
-        dynamic_bypass_thresh = max(base_bypass - 3.0, min(89.0, base_bypass + vol_impact - obi_relief))
+        dynamic_bypass_thresh = max(self.momentum_bypass_threshold - 3.0, min(89.0, self.momentum_bypass_threshold + vol_impact - obi_relief))
         
         # Convicção Direcional (IA + Fluxo)
         is_high_conviction = (score_raw >= dynamic_bypass_thresh or score_raw <= (100.0 - dynamic_bypass_thresh))
@@ -313,7 +313,8 @@ class AICore:
             buy_thresh = self.confidence_buy_threshold
             sell_thresh = self.confidence_sell_threshold
             
-            if 0 < atr < 60:
+            atr_limit = 60.0 if not is_wdo else 3.5
+            if 0 < atr < atr_limit:
                 relax = float(getattr(self, 'confidence_relax_factor', 0.75))
                 buy_thresh = 50.0 + (buy_thresh - 50.0) * relax
                 sell_thresh = 50.0 - (50.0 - sell_thresh) * relax
@@ -328,10 +329,27 @@ class AICore:
         # 7. Avaliação de Vetos
         vwap_veto = False
         dist_vwap = abs(current_price - vwap)
-        limit_eff = self.vwap_dist_threshold
         
-        if is_momentum_bypass or is_golden_window or regime == 1 or float(score_raw) >= 60.0:
-            vwap_veto = False # Total Bypass para Convicção Institucional (>60)
+        # [v24.4] Sincronia de Precisão: Threshold de VWAP dinâmico (WIN: 2% do preço, WDO: 40 pts)
+        limit_eff = (current_price * 0.02) if not is_wdo else 40.0
+        
+        # [v24.4.3] Trava de Sanidade Reforçada Dinâmica: Aceita até 6% de distância em ralis 2026
+        max_valid_dist = (current_price * 0.06) if not is_wdo else 300.0
+        
+        # Log de Auditoria de Veto (Apenas se VWAP for válido para evitar alarmes falsos em warmup)
+        if vwap > 0 and (dist_vwap > (current_price * 0.01)):
+            logging.info(f"[AUDIT-VWAP] Price: {current_price:.1f} | VWAP: {vwap:.1f} | Dist: {dist_vwap:.1f} | MaxPermitida: {max_valid_dist:.1f}")
+
+        if vwap <= 0:
+            vwap_veto = False
+            # [ANTIVIBE-CODING] Em warmup, o VWAP pode ser 0. Forçamos vwap=price para neutralizar dist_vwap.
+            dist_vwap = 0.0
+            logging.debug("⚠️ VWAP não disponível (0.0). Neutralizando distância para evitar veto.")
+        elif dist_vwap > max_valid_dist:
+            vwap_veto = False
+            logging.warning(f"🛡️ [SANITY-TRAP] VWAP Anômalo Detectado ({dist_vwap:.1f}). Ignorando veto para evitar travamento institucional.")
+        elif is_momentum_bypass or is_golden_window or regime == 1 or float(score_raw) >= 60.0:
+            vwap_veto = False # Momentum e Convicção Alta ignoram VWAP
         else:
             if obi_abs >= 2.0: limit_eff *= 2.0
             if float(dist_vwap) > float(limit_eff): vwap_veto = True

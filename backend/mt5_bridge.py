@@ -31,9 +31,15 @@ logging.basicConfig(
 
 class MT5Bridge:
     def __init__(self):
-        self.mt5 = mt5 # Expor módulo para acesso externo (HFT)
+        self.mt5 = mt5 
         self.connected = False
-        self._macro_symbol_cache = None # [HFT v2.1] Cache para evitar busca repetitiva
+        self._macro_symbol_cache = None
+        self._cache = {} # [v24.2] Cache genérico para chamadas MT5
+        self._cache_ttl = {
+            "account_info": 1.0,  # 1 segundo de cache para info da conta
+            "symbol_info": 30.0,  # 30 segundos para info estática do símbolo
+            "terminal_info": 60.0 # 1 minuto para info do terminal
+        }
         
     def _normalize_symbol(self, symbol):
         """Normaliza símbolos B3 para chaves genéricas (ex: WING26 -> WIN$)."""
@@ -589,15 +595,14 @@ class MT5Bridge:
                 candidate_month += 1
             
             # Ajuste de ano para Dezembro
-            year_calc = now.year
+            year_calc = int(now.year)
             if now.month == 12 and candidate_month == 2:
-                year_short = str(year_calc + 1)[2:]
                 year_calc += 1
             elif candidate_month > 12:
                 candidate_month = 2
-                year_short = str(year_calc + 1)[2:]
                 year_calc += 1
 
+            year_short = str(year_calc)[-2:]
             expiry_date = get_expiry_date(year_calc, candidate_month)
 
             # --- 2. Verificar se já venceu (com margem de segurança pós-pregão 18h) ---
@@ -606,7 +611,8 @@ class MT5Bridge:
                 candidate_month += 2
                 if candidate_month > 12:
                     candidate_month = 2
-                    year_short = str(int(year_short) + 1)[-2:]
+                    year_calc += 1
+                year_short = str(year_calc)[-2:]
                 
             current_letter = expiry_map[candidate_month]
             current_symbol = f"{base}{current_letter}{year_short}"
@@ -637,8 +643,17 @@ class MT5Bridge:
             return current_symbol
 
         except Exception as e:
-            logging.error(f"Erro ao calcular simbolo WIN: {sanitize_log(e)}")
-            return f"{base}$" # Fallback genérico
+            logging.error(f"Erro ao calcular simbolo {base}: {sanitize_log(e)}")
+            # [ANTIVIBE-CODING] Tenta encontrar qualquer símbolo que comece com a base se o cálculo falhar
+            try:
+                all_symbols = mt5.symbols_get()
+                if all_symbols:
+                    for s in all_symbols:
+                        if s.name.startswith(base) and len(s.name) == 6:
+                            logging.warning(f"⚠️ Fallback de emergência para {base}: {s.name}")
+                            return s.name
+            except: pass
+            return f"{base}$" # Fallback final genérico
 
     def get_market_data(self, symbol, timeframe=mt5.TIMEFRAME_M1, n_candles=100):
         """Coleta candles históricos e retorna como DataFrame."""
@@ -779,6 +794,27 @@ class MT5Bridge:
             logging.error(f"Erro ao calcular lucro diário: {sanitize_log(e)}")
             return 0.0
 
+    def get_account_info(self):
+        """Retorna informações da conta com cache de 1s para reduzir carga no terminal (PT-BR)."""
+        if not self.connected: 
+            return None
+            
+        now = time.time()
+        cache_key = "account_info"
+        if cache_key in self._cache:
+            data, timestamp = self._cache[cache_key]
+            if now - timestamp < self._cache_ttl.get(cache_key, 1.0):
+                return data
+                
+        try:
+            info = mt5.account_info()
+            if info:
+                self._cache[cache_key] = (info, now)
+            return info
+        except Exception as e:
+            logging.error(f"Erro ao obter account_info: {sanitize_log(e)}")
+            return None
+
     def get_trading_performance(self):
         """
         Calcula as estatísticas de performance diária acessando o histórico de deals do MT5.
@@ -862,6 +898,59 @@ class MT5Bridge:
             return settlement
         except Exception as e:
             logging.error(f"Erro ao obter Preço de Ajuste (Settlement) para {symbol}: {sanitize_log(e)}")
+            return 0.0
+
+    def get_vwap(self, symbol):
+        """
+        [MT5-INTEG] Retorna o VWAP real do símbolo via session_price_avg do MT5.
+        O session_price_avg é o campo oficial da B3 para o Preço Médio Ponderado por Volume (VWAP) do dia.
+        """
+        if not self.connected: return 0.0
+        try:
+            # [ANTIVIBE-CODING] - Redundância de VWAP em 3 Camadas
+            info = mt5.symbol_info(symbol)
+            vwap_val = 0.0
+            last_val = 0.0
+
+            if info:
+                vwap_val = info.session_price_avg
+                last_val = info.last
+                
+                # [v24.4.3] Validação de Escala
+                if vwap_val > 0 and last_val > 0:
+                    dist_percent = abs(vwap_val - last_val) / last_val
+                    if dist_percent > 0.40:
+                        logging.debug(f"⚠️ [VWAP-SCALE] Valor anômalo detectado para {symbol}: {vwap_val}. Ignorando.")
+                        vwap_val = 0.0
+                
+                # Fallback para Preço de Referência (Ajuste)
+                if vwap_val <= 0:
+                    vwap_val = getattr(info, 'session_price_ref', 0.0)
+            
+            # [PRO-ADJUST] Fallback 3: Cálculo Manual via Candles M1 (Resiliência Total)
+            if vwap_val <= 0:
+                # Tenta baixar os candles do dia atual (Máximo 540 min de pregão)
+                rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M1, 0, 540)
+                if rates is not None and len(rates) > 0:
+                    sum_pv = 0.0
+                    total_vol = 0
+                    for r in rates:
+                        typical = (r['high'] + r['low'] + r['close']) / 3.0
+                        vol = r['tick_volume']
+                        sum_pv += typical * vol
+                        total_vol += vol
+                    
+                    if total_vol > 0:
+                        vwap_val = sum_pv / total_vol
+                        logging.info(f"📊 [VWAP-MANUAL] Calculado via {len(rates)} candles: {vwap_val:.1f}")
+
+            if vwap_val > 0: return float(vwap_val)
+                
+            # Fallback final: último preço
+            tick = mt5.symbol_info_tick(symbol)
+            return float(tick.last) if tick and tick.last > 0 else 0.0
+        except Exception as e:
+            logging.error(f"Erro em get_vwap para {symbol}: {sanitize_log(e)}")
             return 0.0
 
     def get_bluechips_data(self):

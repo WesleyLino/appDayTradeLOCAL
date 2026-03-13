@@ -752,124 +752,79 @@ async def autonomous_bot_loop():
                 
 
                 # Determinar ativo correlacionado para Arbitragem Estatística (WIN vs WDO)
-
                 cross_symbol = "WDO$" if "WIN" in symbol.upper() else "WIN$"
 
-                
-
                 # Coleta Ultra-Rápida (Prioridade 1) incluindo Cross-Asset
-
                 t0 = time_module.perf_counter()
-
                 tick_info, book, tns, cross_tns = await asyncio.gather(
-
                     asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol),
-
                     asyncio.to_thread(bridge.get_order_book, symbol),
-
-                    asyncio.to_thread(bridge.get_time_and_sales, symbol, n_ticks=50),
-
-                    asyncio.to_thread(bridge.get_time_and_sales, cross_symbol, n_ticks=50) # Veto Inter-Mercados
-
+                    asyncio.to_thread(bridge.get_time_and_sales, symbol, n_ticks=20), # Reduzido de 50 para 20
+                    asyncio.to_thread(bridge.get_time_and_sales, cross_symbol, n_ticks=20) # Reduzido de 50 para 20
                 )
-
                 dt_gather_fast = (time_module.perf_counter() - t0) * 1000
-
                 logging.debug(f"P1 Gather Time: {dt_gather_fast:.2f}ms")
 
-                
-
                 if tick_info:
-
                     last_price = tick_info.last
-
                     last_valid_price = last_price
-
                 else:
-
                     last_price = last_valid_price
-
                     logging.warning("Tick Info falhou. Usando ultimo preco valido.")
 
-
-
                 # Coleta Otimizada (HFT v2.1)
-
                 # Somente o estritamente necessário para o sinal e execução entra no loop principal
-
                 if loop_count % 5 == 1 or 'data_60' not in locals():
-
                     # 1.1 Coleta Essencial (MT5 Rapid)
-
                     data_60, account_info, daily_realized = await asyncio.gather(
-
                         asyncio.to_thread(bridge.get_market_data, symbol, n_candles=60),
-
-                        asyncio.to_thread(bridge.mt5.account_info),
-
-                        asyncio.to_thread(bridge.get_daily_realized_profit)
-
+                        asyncio.to_thread(bridge.get_account_info), # Otimizado: USA CACHE
+                        asyncio.to_thread(bridge.get_daily_realized_profit) # Otimizado: USA CACHE
                     )
 
-                    
-
                     # [REFINAMENTO 26/02] Detecção de Fechamento de Trade para Cooldown
-
                     if daily_realized != prev_daily_realized:
-
                         pnl_trade = daily_realized - prev_daily_realized
-
                         ai.record_result(pnl_trade)
-
                         prev_daily_realized = daily_realized
 
-                    
-
                     # [SOTA v2.1] Sincronização de 8 Canais (PatchTST Pipeline)
-
                     if data_60 is not None and not data_60.empty:
-
                         multi_data = data_60.copy()
-
                         # Preencher colunas de microestrutura para atingir os 8 canais requeridos
-
                         # Nota: CVD e OFI atuais são usados para preencher o histórico se ausente
-
                         if 'cvd' not in multi_data.columns: multi_data['cvd'] = cvd_val if 'cvd_val' in locals() else 0.0
-
                         if 'ofi' not in multi_data.columns: multi_data['ofi'] = wen_ofi_val if 'wen_ofi_val' in locals() else 0.0
-
                         if 'volume_ratio' not in multi_data.columns: multi_data['volume_ratio'] = 1.0
 
-                        
-
                         expected_cols = ['open', 'high', 'low', 'close', 'tick_volume', 'cvd', 'ofi', 'volume_ratio']
-
                         for col in expected_cols:
-
                             if col not in multi_data.columns: multi_data[col] = 0.0
-
                         multi_data = multi_data[expected_cols].tail(60)
 
 
-
-                
-
                 # 1.2 Atuallização via Cache (Background Worker) - SEMPRE ATUALIZAR (HFT Optimization)
-
                 ctx = load_market_context() # [ANTIVIBE-CODING]
-
                 bluechips = ctx.get("bluechips", {})
-
                 synthetic_idx = ctx.get("synthetic_index", 0.0)
-
                 macro_change = ctx.get("macro", {"score": 0.0, "reason": "Dados de background"})
-
                 vol_expected = ctx.get("calendar", {}).get("volatility_expected", False)
-
                 vol_reason = ctx.get("calendar", {}).get("reason", "")
+                # [REVISÃO FINAL] Sincronia Multi-Ativo (WIN e WDO)
+                inst_symbol = "WIN$" if ("WIN" in symbol or "IND" in symbol) else "WDO$"
+                settlement_price = ctx.get("settlements", {}).get(inst_symbol, ctx.get("settlement_price", 0.0))
+                real_vwap      = ctx.get("vwaps", {}).get(inst_symbol, ctx.get("vwap", 0.0))
+                
+                # [PRO-ADJUST] Data Rescue: Se os dados de background falharem, tentar resgate direto
+                if settlement_price <= 0 or real_vwap <= 0:
+                    try:
+                         sym = bridge.get_current_symbol("WIN" if "WIN" in inst_symbol else "WDO")
+                         if settlement_price <= 0:
+                             settlement_price = bridge.get_settlement_price(sym)
+                         if real_vwap <= 0:
+                             real_vwap = bridge.get_vwap(sym)
+                    except: pass
 
-                settlement_price = ctx.get("settlement_price", 0.0)
                 # [MT5-INTEG] Novos dados de alta fidelidade publicados pelo MarketDataWorker
                 htf_bias       = ctx.get("htf_bias", "NEUTRAL")        # Viés tendência H1
                 real_cvd_ctx   = ctx.get("real_cvd", 0.0)              # CVD via ticks reais
@@ -878,255 +833,130 @@ async def autonomous_bot_loop():
                 commission_today = ctx.get("commission_today", 0.0)    # Custo real do dia
 
 
-
                 if loop_count % 5 == 1:
 
 
-
-                    
-
                     # Multi-data fallback (usado para correlações/índices sintéticos)
-
                     # No HFT v2.1, o worker deveria prover isso, mas para manter compatibilidade:
-
                     if 'multi_data' not in locals():
-
                         multi_data = pd.DataFrame() # Será populado conforme necessário no futuro pelo worker
 
-                    
-
                     # Inicialização segura para evitar UnboundLocalError
-
                     if 'sentiment_score' not in locals():
-
                         sentiment_score = 0.0
-
                         headlines = [] # Agora será uma lista de objetos ou strings
 
-
-
                     # 1.3 Coleta de Dados Macro/Sentimento (Background Files)
-
                     if loop_count % 20 == 1:
-
                         logging.debug("Iniciando leitura de Sentimento e Macro do Cache...")
 
-                        
-
                         # Carregar Sentimento do Arquivo (NewsSentimentWorker)
-
                         try:
-
                             sentiment_path = os.path.join("data", "news_sentiment.json")
-
                             if os.path.exists(sentiment_path):
-
                                 with open(sentiment_path, "r", encoding="utf-8") as f:
-
                                     sent_data = json.load(f)
-
                                     sentiment_score = float(sent_data.get("score", 0.0))
-
                                     # PRIORIDADE: Lista de Notícias Detalhada. FALLBACK: Resumo fact_check.
-
                                     news = sent_data.get("news", [])
-
                                     headlines = news if news else [sent_data.get("fact_check", "Nenhum resumo de notícias disponível")]
-
                                     ai.latest_sentiment_score = sentiment_score
-
                                     # [SOTA v5] Sincronizar Âncora de Sentimento no Ciclo Lento
-
                                     if last_price > 0:
-
                                         ai.update_sentiment_anchor(last_price)
-
                                     logging.debug(f"Sentimento carregado: {sentiment_score} | Notícias: {len(news)}")
-
                             else:
-
                                 sentiment_score = 0.0
-
                                 headlines = ["Aguardando análise de IA..."]
-
                         except Exception as e:
-
                             logging.error(f"Erro ao ler news_sentiment.json: {e}")
-
                             sentiment_score = 0.0
-
                             headlines = []
 
-
-
                         # Nota: Settlement e Volatilidade agora vêm do context_json atualizado pelo MarketDataWorker
-
                         daily_rates = await asyncio.to_thread(bridge.mt5.copy_rates_from_pos, symbol, bridge.mt5.TIMEFRAME_D1, 0, 2)
-
                         logging.debug("Leitura de Cache Macro concluída.")
-
-                        
 
                     logging.debug(f"Coleta Lenta executada (Loop {loop_count})")
 
-                
-
                 # 1.1 Processamento de Conta e Risco
-
                 if account_info is None:
-
                     if risk.dry_run:
-
                         # [SIMULATION] Create synthetic account if MT5 info is missing
-
                         account = {
-
                             "balance": 500.0,
-
                             "equity": 500.0 + daily_realized,
-
                             "profit": 0.0,
-
                             "margin": 0.0,
-
                             "margin_free": 500.0,
-
                             "currency": "BRL"
-
                         }
-
                     else:
-
                         logging.warning(f"AGUARDE: account_info indisponível para {symbol}. Tentando novamente...")
-
                         await asyncio.sleep(1)
-
                         continue
-
                 else:
-
                     account = account_info._asdict()
 
-                
-
                 floating_profit = account_info.profit if account_info else 0.0
-
                 total_daily_profit = daily_realized + floating_profit
 
-
-
                 # [SIMULATION] Override balance/equity with virtual values when in Dry Run
-
                 if risk.dry_run:
-
                     virtual_capital = 500.0
-
                     account['balance'] = virtual_capital
-
                     account['equity'] = virtual_capital + total_daily_profit
-
                     logging.debug(f"[SIM] Saldo Virtual Ativo: {account['balance']} | Equity: {account['equity']}")
 
-
-
                 # Validação de Risco Diário
-
                 risk_ok, risk_msg = risk.check_daily_loss(total_daily_profit)
 
-                
-
                 # Validação de Dados de Mercado (Fail-Safe)
-
                 if not isinstance(data_60, pd.DataFrame):
-
                     logging.warning(f"WAIT: data_60 não é DataFrame ({type(data_60)}). Ignorando iteração.")
-
                     await asyncio.sleep(1)
-
                     continue
-
-                    
 
                 if data_60.empty:
-
                     logging.warning(f"WAIT: Dados Históricos vazios para {symbol}. Ignorando iteração.")
-
                     await asyncio.sleep(1)
-
                     continue
 
-                
-
                 # --- ALPHA-X: PSR & RELIABILITY ---
-
                 ai_predict_data = {}
-
                 ai_confidence = 0.0
-
                 volatility = current_atr / last_price if last_price > 0 else 0
-
                 # Usamos um epsilon de 0.01 (B3 Tick Min) para evitar ruído estatístico
-
                 pnl_diff = total_daily_profit - prev_total_profit
-
                 if abs(pnl_diff) > 0.01:
-
                     returns_history.append(pnl_diff)
-
                     prev_total_profit = total_daily_profit
 
-                
-
                 # Manter histórico manejável (últimos 1000 retornos)
-
                 if len(returns_history) > 1000: returns_history.pop(0)
 
-                
-
                 reliability_ok, current_psr = risk.validate_reliability(returns_history)
-
                 # ----------------------------------
 
-                
-
                 # Validação de Horário
-
                 time_allowed = risk.is_time_allowed()
 
-                
-
                 latency_ms = (time_module.perf_counter() - start_time) * 1000
-
                 if latency_ms > 300: # Sincronizado com o alerta do Frontend
-
                     logging.warning(f"ALERTA DE ALTA LATÊNCIA: {latency_ms:.2f}ms")
 
-                
-
                 # Heartbeat Log (1 min)
-
                 if time_module.time() - last_heartbeat > 60:
-
                     logging.info(f"HEARTBEAT: {symbol} | PnL Dia: {total_daily_profit:.2f} | Risco: {'OK' if risk_ok else 'TRAVADO'} | Latência: {latency_ms:.1f}ms")
-
                     last_heartbeat = time_module.time()
 
-
-
                 # 1.2 Calcular ATR (Average True Range)
-
                 current_atr = 0.0
-
                 avg_atr = 0.0
-
                 if data_60 is not None and len(data_60) >= 28:
-
                     high_low = data_60['high'] - data_60['low']
-
                     current_atr = high_low.rolling(window=14).mean().iloc[-1]
-
                     avg_atr = high_low.mean()
-
                 # [PAUSA PARCIAL - 03/03/2026] VERIFICA VOLATILIDADE M1 NA ABERTURA (Live)
                 hoje = now.date()
                 if dia_abertura_cache != hoje:
@@ -1157,280 +987,160 @@ async def autonomous_bot_loop():
                     add_operational_log(f"✅ [PAUSA VOLATILIDADE] ATR={current_atr:.1f}pts normalizou. Retomando.", "info")
                     logging.info(f"✅ [PAUSA VOLATILIDADE] ATR={current_atr:.1f}pts normalizou. Retomando operações.")
 
-                
-
                 # 2. Processar Lógica de IA e Risco
-
                 logging.debug("Iniciando processamento de IA...")
-
                 # Sentimento agora é atualizado no ciclo lento (linha 249)
-
                 # OBI via Microstructure Analyzer (v50.1)
                 obi = micro_analyzer.calculate_wen_ofi(book)
-
-                cvd_val = micro_analyzer.calculate_cvd(tns) 
-
-                
+                cvd_val = micro_analyzer.calculate_cvd(tns)
 
                 # Inferência SOTA Multi-Ativo (usa multi_data sincronizado)
-
                 logging.debug("Executando inferência SOTA...")
 
-                
-
                 # Garantir 60 linhas e 8 canais (Contrato SOTA v5)
-
                 sota_input = multi_data
-
                 if sota_input is None or len(sota_input) < 60:
-
                     logging.debug("SOTA: multi_data insuficiente no loop rápido. Gerando buffer de segurança.")
-
                     if data_60 is not None and not data_60.empty:
-
                         base_val = data_60['close'].values[-60:]
-
                         if len(base_val) < 60:
-
                             base_val = np.pad(base_val, (60 - len(base_val), 0), 'edge')
-
                     else:
-
                         base_val = np.zeros(60)
-
-                        
 
                     sota_input = pd.DataFrame({
                         'open': base_val, 'high': base_val, 'low': base_val, 'close': base_val,
-                        'tick_volume': np.zeros(60), 
+                        'tick_volume': np.zeros(60),
                         'cvd': np.full(60, float(cvd_val)), # Injeta o CVD real do momento
                         'ofi': np.full(60, float(obi)),     # Injeta o OBI (proxy de OFI) real
                         'volume_ratio': np.ones(60)
                     })
 
 
-
-                    
-
                 ai_predict_data = await inference.predict(sota_input)
-
                 ai_confidence = ai_predict_data.get("confidence", 0.0) if isinstance(ai_predict_data, dict) else 0.0
-
                 logging.debug(f"Inferência concluída. Confidence: {ai_confidence}")
 
-                
-
                 # Validação de Condição de Mercado (Estágio 2)
-
                 volatility = data_60['close'].std() if data_60 is not None and not data_60.empty else 0
-
                 regime = ai.detect_regime(volatility, obi)
-
                 # macro_change movido para o ciclo lento
 
-                
-
                 # [SOTA v5] Cálculo de Spread Normalizado (WIN: 5 pts = 1.0)
-
                 live_spread = 1.0
-
                 if tick_info:
-
                     live_spread = (tick_info.ask - tick_info.bid) / 5.0 # Normalizado para escala SOTA v5
 
-                
-
                 # --- HFT v2.0: CVD Turbo (Otimizado: Usar tns do gather P1) ---
-
                 # Reutilizando tns já capturado no início do loop para evitar nova chamada MT5
-
                 cvd_val = micro_analyzer.calculate_cvd(tns)
 
-                
-
                 # Rastreamento de Agressão Cruzada (WDO/WIN) para Veto Inter-Mercados
-
                 cross_cvd = micro_analyzer.calculate_cvd(cross_tns) if cross_tns is not None else 0.0
 
-                
-
                 # Normalização da Agressão Cruzada para a IA (Threshold base do WDO = 50.0)
-
                 # Assim, um CVD de 75 no WDO gera wdo_aggression_norm de 1.5, triggando o veto.
-
                 wdo_aggression_norm = (cross_cvd / 50.0) if "WIN" in symbol.upper() else 0.0
-
-                
 
                 # [ANTIVIBE-CODING] Override de Controle Manual de Notícias
                 effective_sentiment = ai.latest_sentiment_score if (getattr(risk, 'enable_news_filter', True)) else 0.0
-                
+
                 # Score Final (0-100) e Direção
                 decision = ai.calculate_decision(
-                    obi=obi, 
-                    sentiment=effective_sentiment, 
-                    score=ai_predict_data, 
+                    obi=obi,
+                    sentiment=effective_sentiment,
+                    score=ai_predict_data,
                     regime=regime,
                     atr=current_atr,
-
                     volatility=volatility,
-
                     hour=current_hour,
-
                     minute=now.minute,
-
                     current_price=last_price,
-
+                    vwap=real_vwap, # INJETANDO VWAP REAL
                     spread=live_spread,
-
                     wdo_aggression=wdo_aggression_norm
-
                 )
-
                 # [PAUSA PARCIAL] Bloqueio final antes de aplicar qualquer heurística
                 if dia_pausado_vol:
                     decision["direction"] = "WAIT"
                     decision["reason"] = "ATR_DIA_PAUSADO"
 
                 ai_total_score = decision["score"]
-
                 ai_direction = decision["direction"]
 
-
-
                 # --- ALPHA-X: OFI Ponderado (SOTA) ---
-
                 wen_ofi_val = micro_analyzer.calculate_wen_ofi(book)
 
-                
-
                 if wen_ofi_val > 500 and ai_direction == "BUY":
-
                     ai_total_score = min(100.0, ai_total_score + 4.0)
-
                 elif wen_ofi_val < -500 and ai_direction == "SELL":
-
                     ai_total_score = min(100.0, ai_total_score + 4.0)
-
-
 
                 # --- ALPHA-X: PSR RELIABILITY VETO ---
-
                 if not reliability_ok and len(returns_history) >= 30:
-
                     logging.warning(f"VETO ALPHA-X: PSR insuficiente ({current_psr:.4f})")
-
                     ai_total_score = 50.0
-
                     ai_direction = "NEUTRAL"
-
-                
 
                 cvd_threshold = 50.0 if "WDO" in symbol or "DOL" in symbol else 500.0
 
-                
-
                 if cvd_val > cvd_threshold and ai_direction == "BUY":
-
                     ai_total_score = min(100.0, ai_total_score + 5.0)
-
                     if ai_total_score > 80: logging.info(f"GATILHO CVD (+5.0): Fluxo Comprador Forte ({cvd_val:.0f})")
-
                 elif cvd_val < -cvd_threshold and ai_direction == "SELL":
-
                     ai_total_score = min(100.0, ai_total_score + 5.0)
-
                     if ai_total_score > 80: logging.info(f"GATILHO CVD (+5.0): Fluxo Vendedor Forte ({cvd_val:.0f})")
 
-                
-
                 # --- FASE 5: SUITE DE MICROESTRUTURA HFT B3 ---
-
                 current_hhmm = datetime.now().strftime("%H:%M")
 
-                
-
                 # 5.1 Bloqueio de Leilão
-
                 auction_block = False
-
                 if "09:55" <= current_hhmm <= "10:10":
-
                     auction_block = True
-
-                    ai_total_score = 50.0 
-
+                    ai_total_score = 50.0
                     ai_direction = "NEUTRAL"
 
-
-
                 # 5.2 NY Open Boost
-
                 if "10:30" <= current_hhmm <= "11:30" and not auction_block:
-
                      ai_total_score = min(100.0, ai_total_score + 5.0)
 
-
-
                 # 5.3 Defesa de Ajuste (Settlement Trap) - Otimizado: USA CACHE
-
                 # settlement_price buscado no ciclo lento
 
-                
-
                 # Obter preço atual do TICK já capturado no gather (P1)
-
                 # Reutilizando last_price já definido
-
-                
 
                 safe_dist = 3.0 if "WDO" in symbol or "DOL" in symbol else 50.0
 
-                
-
                 if settlement_price > 0 and not auction_block and last_price > 0:
-
                     dist = last_price - settlement_price
 
-                    
+                    # [VWAP-FIX] Trava de Sanidade Dinâmica: Veto só se for plausível (4% do preço para WIN)
+                    max_plausible_dist = 50.0 if "WDO" in symbol or "DOL" in symbol else (last_price * 0.04)
 
                     settlement_veto = False
-
                     settlement_msg = ""
 
-                    # Veto COMPRA: Preço logo abaixo do ajuste (Resistência)
-
-                    if ai_direction == "BUY" and -safe_dist < dist < 0:
-
-                        settlement_veto = True
-
-                        settlement_msg = f"Ajuste funcionando como Resistência (Dist: {dist:.1f})"
-
-                    # Veto VENDA: Preço logo acima do ajuste (Suporte)
-
-                    elif ai_direction == "SELL" and 0 < dist < safe_dist:
-
-                        settlement_veto = True
-
-                        settlement_msg = f"Ajuste funcionando como Suporte (Dist: {dist:.1f})"
-
-                        
+                    if abs(dist) < max_plausible_dist:
+                        # Veto COMPRA: Preço logo abaixo do ajuste (Resistência)
+                        if ai_direction == "BUY" and -safe_dist < dist < 0:
+                            settlement_veto = True
+                            settlement_msg = f"Ajuste funcionando como Resistência (Dist: {dist:.1f})"
+                        # Veto VENDA: Preço logo acima do ajuste (Suporte)
+                        elif ai_direction == "SELL" and 0 < dist < safe_dist:
+                            settlement_veto = True
+                            settlement_msg = f"Ajuste funcionando como Suporte (Dist: {dist:.1f})"
 
                     if settlement_veto:
-
                         logging.warning(f"DEFESA HFT: Veto de Ajuste ({settlement_price}). {settlement_msg}")
-
                         ai_total_score = 50.0
-
                         ai_direction = "NEUTRAL"
                         decision["score"] = 50.0
                         decision["direction"] = "NEUTRAL"
                         decision["veto"] = f"SETTLEMENT_VETO: {settlement_msg}"
 
-                
-
                 # 5b.1 Pinning (Opções)
-
                 today_dt = datetime.now()
 
                 if today_dt.weekday() == 4 and 15 <= today_dt.day <= 21:
@@ -2079,6 +1789,8 @@ async def autonomous_bot_loop():
 
                                                         "order_status": "PENDENTE_HFT",
 
+                                                        "regime": int(regime),
+
                                                         "ticket": order_ticket,
 
                                                         "synthetic_index": float(synthetic_idx),
@@ -2400,6 +2112,14 @@ async def autonomous_bot_loop():
                                 await asyncio.to_thread(bridge.mt5.order_send, req)
 
     
+
+                # [ANTIVIBE-CODING] Log de Mudança de Regime (Garantia de Sincronia)
+                if 'last_regime' not in locals():
+                    last_regime = regime
+                elif regime != last_regime:
+                    labels = {0: "LATERAL", 1: "TENDÊNCIA", 2: "VOLÁTIL"}
+                    logging.info(f"🔄 [REGIME CHANGE] {labels.get(last_regime, '??')} -> {labels.get(regime, '??')} (Vol: {volatility:.1f} | OBI: {obi:.2f})")
+                    last_regime = regime
 
                 await asyncio.sleep(0.05)
 
