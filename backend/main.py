@@ -2236,36 +2236,27 @@ async def autonomous_bot_loop():
                 try:
 
                     packet = {
-
                         "symbol": str(symbol),
-
                         "price": float(last_price),
-
                         "obi": float(obi),
-
-                        "ai_confidence": float(ai_confidence),
-
+                        "ai_confidence": float(ai_total_score) / 100.0,
                         "book": book, 
-
                         "sentiment": {
-
                             "score": float(sentiment_score),
-
                             "headlines": headlines
-
                         },
-
                         "macro": macro_change if isinstance(macro_change, dict) else {"score": float(macro_change), "reason": "S&P 500"},
-
                         "calendar": {
-
                             "volatility_expected": vol_expected,
-
                             "reason": str(vol_reason)
-
                         },
-
-                        "ai_prediction": decision,
+                        "ai_prediction": {
+                            "score": float(ai_total_score),
+                            "direction": str(ai_direction),
+                            "veto": decision.get("veto"),
+                            "lot_multiplier": float(decision.get("lot_multiplier", 1.0)),
+                            "forecast": float(ai_predict_data.get("forecast", last_price) if isinstance(ai_predict_data, dict) else last_price)
+                        },
 
                         "account": account,
 
