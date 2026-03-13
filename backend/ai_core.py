@@ -85,19 +85,26 @@ class InferenceEngine:
 
     def _predict_sync(self, dataframe):
         try:
-            cols = ['open', 'high', 'low', 'close', 'tick_volume']
-            if not all(c in dataframe.columns for c in cols):
-                return self._neutral_output()
-
+            # [v24.4.1] Sincronização de 8 Canais Obrigatórios
+            cols = ['open', 'high', 'low', 'close', 'tick_volume', 'cvd', 'ofi', 'volume_ratio']
+            
+            # Garante que todas as colunas existem (Padding com zero se faltar)
+            for c in cols:
+                if c not in dataframe.columns:
+                    dataframe[c] = 0.0
+            
             input_data = dataframe[cols].values[-60:].astype(np.float32)
-            input_tensor = np.expand_dims(input_data, axis=0) # [1, 60, 5]
+            input_tensor = np.expand_dims(input_data, axis=0) # [1, 60, 8]
 
             if self.use_onnx and self.ort_session:
                 input_name = self.ort_session.get_inputs()[0].name
-                preds = self.ort_session.run(None, {input_name: input_tensor})[0]
+                # [AMD/DirectML] Sempre usar float32 para evitar erro de Cast
+                raw_preds = self.ort_session.run(None, {input_name: input_tensor})[0]
+                preds = raw_preds[0] if raw_preds.ndim == 3 else raw_preds
             elif self.model:
                 with torch.no_grad():
-                    preds = self.model(torch.tensor(input_tensor)).numpy()[0]
+                    raw_preds = self.model(torch.tensor(input_tensor)).numpy()
+                    preds = raw_preds[0] if raw_preds.ndim == 3 else raw_preds
             else:
                 return self._neutral_output()
 

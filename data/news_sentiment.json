@@ -1,59 +1,59 @@
 {
-  "score": -0.7,
-  "reliability": "high",
-  "risk_classification": "EXTREME",
-  "fact_check": "Conflito militar no Oriente M\u00e9dio intensifica-se com m\u00edsseis voando no Ir\u00e3, gerando rachaduras no mercado de cr\u00e9dito privado. A\u00e7\u00f5es corporativas como KinderCare e Immutep despencam devido a guidance fraco e interrup\u00e7\u00e3o de estudos, respectivamente. Sa\u00edda de CEO na Adobe. Futuros da TSX sobem em meio ao conflito e alta do petr\u00f3leo, enquanto Carvana registra alta ap\u00f3s desdobramento de a\u00e7\u00f5es.",
+  "score": -0.65,
+  "reliability": "medium",
+  "risk_classification": "HIGH",
+  "fact_check": "O mercado enfrenta riscos elevados com o petr\u00f3leo atingindo US$ 100, elevando a defasagem do diesel da Petrobras para 72%, e a escalada do conflito no Ir\u00e3, impactando futuros globais. H\u00e1 tamb\u00e9m uma desacelera\u00e7\u00e3o nas vendas globais de ve\u00edculos el\u00e9tricos. No cen\u00e1rio corporativo, movimentos pontuais em Carvana e Magalu (positivos) e Adobe e Immutep (negativos) s\u00e3o observados.",
   "news": [
     {
-      "headline": "HSBC eleva NIO para compra",
-      "relevance": 0.2,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "A\u00e7\u00f5es da KinderCare caem 32% ap\u00f3s guidance fraco",
-      "relevance": 0.6,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "J.P. Morgan aposta em seguran\u00e7a energ\u00e9tica",
-      "relevance": 0.2,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "A\u00e7\u00f5es da Immutep caem 80% ap\u00f3s interrup\u00e7\u00e3o de estudo",
-      "relevance": 0.6,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Greer prev\u00ea guerra com Ir\u00e3 em semanas",
-      "relevance": 0.2,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Mercado de cr\u00e9dito privado com rachaduras em meio a m\u00edsseis no Ir\u00e3",
-      "relevance": 1.0,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "A\u00e7\u00f5es da Carvana sobem ap\u00f3s desdobramento 5 para 1",
-      "relevance": 0.6,
+      "headline": "A\u00e7\u00f5es da Carvana sobem ap\u00f3s aprova\u00e7\u00e3o de desdobramento de 5 para 1.",
+      "relevance": 0.4,
       "impact": "BULLISH"
     },
     {
-      "headline": "CEO da Adobe anuncia sa\u00edda; Barclays rebaixa",
+      "headline": "A\u00e7\u00f5es da Adobe caem com sa\u00edda de presidente e incertezas sobre estrat\u00e9gia de IA.",
+      "relevance": 0.5,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Petr\u00f3leo a US$ 100 eleva defasagem do diesel da Petrobras para 72%, segundo Abicom.",
+      "relevance": 0.9,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Governo brasileiro planeja intensificar fiscaliza\u00e7\u00e3o em postos de combust\u00edveis.",
+      "relevance": 0.3,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "A\u00e7\u00f5es da Immutep despencam 80% ap\u00f3s interrup\u00e7\u00e3o de estudo sobre c\u00e2ncer de pulm\u00e3o.",
+      "relevance": 0.2,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Um quinto dos adolescentes australianos ainda usa TikTok e Snapchat ap\u00f3s proibi\u00e7\u00e3o.",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Magalu (MGLU3) salta 8% apesar de resultado fraco no 4T.",
+      "relevance": 0.7,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "A\u00e7\u00f5es como Vale, Vivo e Magalu em destaque para acompanhamento hoje.",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Vendas globais de ve\u00edculos el\u00e9tricos caem novamente em fevereiro.",
       "relevance": 0.6,
       "impact": "BEARISH"
     },
     {
-      "headline": "JPM destaca a\u00e7\u00e3o em tecnologia m\u00e9dica europeia",
-      "relevance": 0.2,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Futuros da TSX sobem com conflito no Ir\u00e3 e petr\u00f3leo alto",
-      "relevance": 1.0,
-      "impact": "BULLISH"
+      "headline": "Futuros da TSX sobem em meio a conflito no Ir\u00e3 e pre\u00e7os elevados do petr\u00f3leo.",
+      "relevance": 0.9,
+      "impact": "BEARISH"
     }
   ],
-  "timestamp": 1773409533.2792659
+  "timestamp": 1773410413.962534
 }

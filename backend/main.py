@@ -1201,11 +1201,11 @@ async def autonomous_bot_loop():
                         
 
                     sota_input = pd.DataFrame({
-
                         'open': base_val, 'high': base_val, 'low': base_val, 'close': base_val,
-
-                        'tick_volume': np.zeros(60), 'cvd': np.zeros(60), 'ofi': np.zeros(60), 'volume_ratio': np.ones(60)
-
+                        'tick_volume': np.zeros(60), 
+                        'cvd': np.full(60, float(cvd_val)), # Injeta o CVD real do momento
+                        'ofi': np.full(60, float(obi)),     # Injeta o OBI (proxy de OFI) real
+                        'volume_ratio': np.ones(60)
                     })
 
 

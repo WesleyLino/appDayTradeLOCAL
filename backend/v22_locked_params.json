@@ -39,6 +39,6 @@
     "use_bluechip_bias": true,
     "bluechip_bias_threshold": 0.25,
     "account_config": {
-        "initial_balance": 3000.0
+        "initial_balance": 500.0
     }
 }

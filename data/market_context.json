@@ -1,20 +1,20 @@
 {
-  "timestamp": 1773409605.0418649,
+  "timestamp": 1773415473.4695256,
   "bluechips": {
-    "VALE3": 0.03137999749675154,
-    "PETR4": -1.0411960395238162,
-    "ITUB4": 1.1510487990948348,
-    "BBDC4": 0.3108342045983061,
-    "ELET3": 2.008839032401739
+    "VALE3": -0.4184040341947242,
+    "PETR4": -1.3283684769659396,
+    "ITUB4": -0.32958855470993803,
+    "BBDC4": -1.7483372290452073,
+    "ELET3": 2.011885496976602
   },
-  "synthetic_index": 0.24474699426623767,
+  "synthetic_index": -0.6432410721431197,
   "macro": {
-    "score": 0.531628563392431,
+    "score": -0.4852743079987821,
     "reason": "S&P 500 Change"
   },
   "calendar": {
-    "volatility_expected": true,
-    "reason": "ALTA VOLATILIDADE: Abertura NYSE"
+    "volatility_expected": false,
+    "reason": "Mercado Est\u00e1vel"
   },
   "settlement_price": 0.0,
   "htf_bias": "BEAR",
