@@ -1,28 +1,28 @@
 {
-  "timestamp": 1773197675.744564,
+  "timestamp": 1773409605.0418649,
   "bluechips": {
-    "VALE3": 1.4591291251939809,
-    "PETR4": -0.6003593552894506,
-    "ITUB4": 1.6205309962682994,
-    "BBDC4": 2.71094457918606,
-    "ELET3": 2.009293319330176
+    "VALE3": 0.03137999749675154,
+    "PETR4": -1.0411960395238162,
+    "ITUB4": 1.1510487990948348,
+    "BBDC4": 0.3108342045983061,
+    "ELET3": 2.008839032401739
   },
-  "synthetic_index": 1.3102959182516651,
+  "synthetic_index": 0.24474699426623767,
   "macro": {
-    "score": -0.23150552587116374,
+    "score": 0.531628563392431,
     "reason": "S&P 500 Change"
   },
   "calendar": {
-    "volatility_expected": false,
-    "reason": "Mercado Est\u00e1vel"
+    "volatility_expected": true,
+    "reason": "ALTA VOLATILIDADE: Abertura NYSE"
   },
   "settlement_price": 0.0,
-  "htf_bias": "BULL",
+  "htf_bias": "BEAR",
   "real_cvd": 0.0,
   "real_cvd_wdo": 0.0,
   "wdo_win_signal": "NEUTRO",
   "low_liquidity": false,
-  "volume_d1": 22867615,
-  "avg_volume_10d": 19447422.0,
+  "volume_d1": 22038212,
+  "avg_volume_10d": 21109297.0,
   "commission_today": 0.0
 }

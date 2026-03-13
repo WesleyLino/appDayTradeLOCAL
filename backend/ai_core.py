@@ -1,3 +1,20 @@
+# --- MONKEY-PATCH PARA CONFLITO ONNX/BEARTYPE (v24.4.1) ---
+try:
+    import sys
+    import types
+    if 'onnxscript' not in sys.modules:
+        sys.modules['onnxscript'] = types.ModuleType('onnxscript')
+    import onnxscript
+    if not hasattr(onnxscript, 'values'):
+        onnxscript.values = types.ModuleType('values')
+        sys.modules['onnxscript.values'] = onnxscript.values
+    if not hasattr(onnxscript.values, 'ParamSchema'):
+        class DummyParamSchema: pass
+        onnxscript.values.ParamSchema = DummyParamSchema
+except Exception:
+    pass
+# ---------------------------------------------------------
+
 import os
 import logging
 import numpy as np
@@ -8,6 +25,8 @@ import onnxruntime as ort
 import gc
 import time
 from backend.models import PatchTST
+from backend.microstructure_analyzer import MicrostructureAnalyzer
+import json
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -26,16 +45,37 @@ class InferenceEngine:
 
     def _load_engine(self):
         try:
-            # Fallback para PyTorch (SOTA v22 standard)
+            # 1. Tentar ONNX (Prioridade SOTA v24.4 AMD/DirectML)
+            onnx_path = self.model_path.replace(".pth", "_optimized.onnx")
+            if os.path.exists(onnx_path):
+                providers = ['DmlExecutionProvider', 'CPUExecutionProvider']
+                self.ort_session = ort.InferenceSession(onnx_path, providers=providers)
+                self.use_onnx = True
+                logging.info(f"--- [v24.4.1] ONNX Engine Ativo ({self.ort_session.get_providers()[0]})")
+                return
+
+            # 2. Fallback para PyTorch (SOTA v22 standard)
             if os.path.exists(self.model_path):
-                # O SOTA usa 5 canais e 3 quantis
                 self.model = PatchTST(c_in=5, context_window=60, target_window=5, d_model=128, n_heads=4, n_layers=3)
                 state_dict = torch.load(self.model_path, map_location='cpu')
                 self.model.load_state_dict(state_dict)
                 self.model.eval()
-                logging.info("--- [v22.5.7] PyTorch Engine Ativo (DmlExecutionProvider)")
+                logging.info("--- [v22.5.7] PyTorch Engine Ativo (CPU Fallback)")
         except Exception as e:
-            logging.error(f"Erro ao carregar InferenceEngine: {e}")
+            logging.error(f"Erro ao carregar InferenceEngine: {repr(e)}")
+
+    def check_resources(self):
+        """Verifica se os arquivos de modelo necessários existem."""
+        missing = []
+        if not os.path.exists(self.model_path):
+            # Se não tem o .pth, verifica se ao menos tem o .onnx alternativo
+            onnx_path = self.model_path.replace(".pth", "_optimized.onnx")
+            if not os.path.exists(onnx_path):
+                missing.append(self.model_path)
+        return missing
+
+    def _neutral_output(self):
+        return {"score": 0.5, "forecast_norm": 0.0, "confidence": 0.0, "uncertainty_norm": 1.0, "q50": 0.0}
 
     async def predict(self, dataframe):
         """Interface pública assíncrona."""
@@ -68,21 +108,20 @@ class InferenceEngine:
                 f_delta = float(preds) if np.isscalar(preds) else float(preds[0])
             
             final_score = max(0.0, min(1.0, 0.5 + (f_delta / 2.0)))
+            confidence = 0.85 + (abs(f_delta) * 0.1)
             
             return {
                 "score": float(final_score),
                 "forecast_norm": float(f_delta),
-                "confidence": 0.85 + (abs(f_delta) * 0.1),
+                "confidence": float(confidence),
+                "uncertainty_norm": float(1.0 - confidence),
                 "q10": float(preds[-1, 0]) if preds.ndim == 2 else 0.0,
                 "q50": float(preds[-1, 1]) if preds.ndim == 2 else 0.0,
                 "q90": float(preds[-1, 2]) if preds.ndim == 2 else 0.0
             }
         except Exception as e:
-            logging.error(f"Erro na inferência: {e}")
+            logging.error(f"Erro na inferência: {repr(e)}")
             return self._neutral_output()
-
-    def _neutral_output(self):
-        return {"score": 0.5, "forecast_norm": 0.0, "confidence": 0.0, "q50": 0.0}
 
 class AICore:
     """
@@ -95,13 +134,20 @@ class AICore:
         self.sentiment_anchor = 0.0
         self.price_history = []
         self.h1_trend = 0
-        self.micro_analyzer = self
+        self.micro_analyzer = MicrostructureAnalyzer()
         self.latest_sentiment_score = 0.0
         self.confidence_buy_threshold = 58.0
         self.confidence_sell_threshold = 42.0
         self.uncertainty_threshold = 0.4
         self.consecutive_losses = 0
         self.vwap_dist_threshold = 800.0
+        self.use_h1_trend_bias = True
+        self.h1_ma_period = 20
+        self.confidence_relax_factor = 0.80
+        self.uncertainty_threshold_base = 0.25
+        self.lot_multiplier_partial = 0.25
+        self.atr_confidence_relax_trigger = 100.0
+        self.momentum_bypass_threshold = 81.0 # [v24.4] Thresh de ativação institucional
 
     async def predict_with_patchtst(self, engine, data):
         if engine is None: return {"score": 50.0}
@@ -118,6 +164,18 @@ class AICore:
         if last_close > ma20 * 1.002: self.h1_trend = 1
         elif last_close < ma20 * 0.998: self.h1_trend = -1
         else: self.h1_trend = 0
+
+    def detect_regime(self, volatility, obi):
+        """
+        [v24.4 COMPAT] Identifica o regime de mercado para o main.py.
+        0: Lateral, 1: Tendência, 2: Volátil
+        """
+        try:
+            if abs(obi) > 1.2: return 1 # Fluxo direcional forte
+            if volatility > 150.0: return 2 # Volatilidade excessiva
+            return 0 # Mercado em consolidação
+        except:
+            return 0
 
     def identify_market_regime(self, df, h1_trend, atr, adx, bb_up, bb_down, bb_mid):
         try:
@@ -148,7 +206,9 @@ class AICore:
         hour = kwargs.get('hour', 10)
         minute = kwargs.get('minute', 0)
         atr = kwargs.get('atr', 0.0)
-
+        # [ANTIVIBE-CODING] Mapeamento Crítico de Regimes: 0=Lateral, 1=Tendência, 2=Volátil
+        regime = int(regime)
+        
         # 2. Normalização de Score (FUSÃO SOTA v22)
         if isinstance(patchtst_score_in, dict):
             patchtst_score_val = float(patchtst_score_in.get("score", 50.0))
@@ -325,3 +385,24 @@ class AICore:
         else:
             self.consecutive_losses = 0
             self.ia_cooldown_until = 0
+
+    def analyze(self, book, ticks_df):
+        """Proxy para MicrostructureAnalyzer."""
+        return self.micro_analyzer.analyze(book, ticks_df)
+
+    def calculate_wen_ofi(self, book):
+        """Proxy para MicrostructureAnalyzer."""
+        return self.micro_analyzer.calculate_wen_ofi(book)
+
+    async def update_sentiment(self):
+        """Lê o sentimento gerado pelo NewsSentimentWorker."""
+        path = os.path.join("data", "news_sentiment.json")
+        try:
+            if os.path.exists(path):
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    self.latest_sentiment_score = float(data.get("score", 0.0))
+                    return self.latest_sentiment_score
+        except Exception as e:
+            logging.error(f"Erro ao ler sentimento em AICore: {repr(e)}")
+        return 0.0

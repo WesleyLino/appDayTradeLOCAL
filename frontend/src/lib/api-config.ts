@@ -12,11 +12,8 @@ const getBackendConfig = () => {
   // Porta padrão do backend FastAPI definida no main.py
   const PORT = "8000";
 
-  // Se estiver acessando via localhost, usar 127.0.0.1 explicitamente costuma ser mais estável no Windows/FastAPI
-  const host =
-    hostname === "localhost" || hostname === "127.0.0.1"
-      ? "127.0.0.1"
-      : hostname;
+  // No Windows, usar o mesmo hostname de acesso garante consistência com CORS e WebSocket
+  const host = hostname; 
 
   return {
     http: `http://${host}:${PORT}`,

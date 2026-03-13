@@ -17,7 +17,7 @@
     "uncertainty_threshold": 0.4,
     "use_ai_core": true,
     "active_regimes": [0, 1, 2, 3],
-    "max_daily_loss": 600.0,
+    "max_daily_loss": 150.0,
     "force_lots": 2,
     "aggressive_mode": true,
     "use_trailing_stop": true,
@@ -39,7 +39,7 @@
     "use_bluechip_bias": true,
     "bluechip_bias_threshold": 0.25,
     "account_config": {
-        "initial_balance": 3000.0
+        "initial_balance": 500.0
     },
     "version": "v24.0",
     "momentum_bypass_threshold": 84.0,

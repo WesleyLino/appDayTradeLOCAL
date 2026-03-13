@@ -1,49 +1,59 @@
 {
-  "score": -0.2,
+  "score": -0.7,
   "reliability": "high",
-  "risk_classification": "MEDIUM",
-  "fact_check": "GPA anuncia plano de recupera\u00e7\u00e3o extrajudicial e suas a\u00e7\u00f5es caem. Prio reporta preju\u00edzo l\u00edquido de US$185 milh\u00f5es no 4\u00ba trimestre. Cury e Allos registram forte aumento de lucro no 4\u00ba trimestre. Bolsas de NY fecham mistas ap\u00f3s declara\u00e7\u00f5es de Trump sobre Ormuz. Petrobras far\u00e1 leil\u00e3o de diesel no RS em meio a relatos de escassez.",
+  "risk_classification": "EXTREME",
+  "fact_check": "Conflito militar no Oriente M\u00e9dio intensifica-se com m\u00edsseis voando no Ir\u00e3, gerando rachaduras no mercado de cr\u00e9dito privado. A\u00e7\u00f5es corporativas como KinderCare e Immutep despencam devido a guidance fraco e interrup\u00e7\u00e3o de estudos, respectivamente. Sa\u00edda de CEO na Adobe. Futuros da TSX sobem em meio ao conflito e alta do petr\u00f3leo, enquanto Carvana registra alta ap\u00f3s desdobramento de a\u00e7\u00f5es.",
   "news": [
     {
-      "headline": "GPA (PCAR3): A\u00e7\u00e3o cai 3% ap\u00f3s an\u00fancio de recupera\u00e7\u00e3o extrajudicial.",
-      "relevance": 0.7,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Prio registra preju\u00edzo l\u00edquido de US$185 milh\u00f5es no 4\u00ba trimestre.",
-      "relevance": 0.6,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Cury (CURY3) tem aumento de 63% no lucro do 4\u00ba trimestre, para R$ 270 milh\u00f5es.",
-      "relevance": 0.6,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Bolsas de NY fecham mistas ap\u00f3s declara\u00e7\u00f5es de Trump sobre Ormuz.",
-      "relevance": 0.5,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Petrobras far\u00e1 leil\u00e3o de diesel no RS em meio a relatos de escassez.",
-      "relevance": 0.5,
+      "headline": "HSBC eleva NIO para compra",
+      "relevance": 0.2,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Allos (ALOS3) tem alta de 62% no lucro do 4\u00ba trimestre, para R$ 252 milh\u00f5es.",
+      "headline": "A\u00e7\u00f5es da KinderCare caem 32% ap\u00f3s guidance fraco",
+      "relevance": 0.6,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "J.P. Morgan aposta em seguran\u00e7a energ\u00e9tica",
+      "relevance": 0.2,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "A\u00e7\u00f5es da Immutep caem 80% ap\u00f3s interrup\u00e7\u00e3o de estudo",
+      "relevance": 0.6,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Greer prev\u00ea guerra com Ir\u00e3 em semanas",
+      "relevance": 0.2,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Mercado de cr\u00e9dito privado com rachaduras em meio a m\u00edsseis no Ir\u00e3",
+      "relevance": 1.0,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "A\u00e7\u00f5es da Carvana sobem ap\u00f3s desdobramento 5 para 1",
       "relevance": 0.6,
       "impact": "BULLISH"
     },
     {
-      "headline": "Starboard adquire participa\u00e7\u00e3o de US$ 350 milh\u00f5es na CarMax (EUA).",
-      "relevance": 0.2,
-      "impact": "BULLISH"
+      "headline": "CEO da Adobe anuncia sa\u00edda; Barclays rebaixa",
+      "relevance": 0.6,
+      "impact": "BEARISH"
     },
     {
-      "headline": "A\u00e7\u00f5es da NIO disparam com lucro forte e entregas robustas no 4\u00ba trimestre.",
+      "headline": "JPM destaca a\u00e7\u00e3o em tecnologia m\u00e9dica europeia",
       "relevance": 0.2,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Futuros da TSX sobem com conflito no Ir\u00e3 e petr\u00f3leo alto",
+      "relevance": 1.0,
       "impact": "BULLISH"
     }
   ],
-  "timestamp": 1773196790.2811844
+  "timestamp": 1773409533.2792659
 }

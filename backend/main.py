@@ -152,23 +152,27 @@ load_dotenv()
 
 
 
-# --- MONKEY-PATCH PARA CONFLITO ONNX/BEARTYPE ---
-
+# --- MONKEY-PATCH PARA CONFLITO ONNX/BEARTYPE (v24.4.1) ---
+# Deve ser executado antes de qualquer import do beartype ou torch.onnx
 try:
-
-    import onnxscript.values as v
-
-    if not hasattr(v, 'ParamSchema'):
-
+    import sys
+    import types
+    
+    # Criar módulos/atributos fictícios para satisfazer a verificação de tipos do beartype
+    if 'onnxscript' not in sys.modules:
+        sys.modules['onnxscript'] = types.ModuleType('onnxscript')
+    
+    import onnxscript
+    if not hasattr(onnxscript, 'values'):
+        onnxscript.values = types.ModuleType('values')
+        sys.modules['onnxscript.values'] = onnxscript.values
+    
+    if not hasattr(onnxscript.values, 'ParamSchema'):
         class DummyParamSchema: pass
-
-        v.ParamSchema = DummyParamSchema
-
-except ImportError:
-
+        onnxscript.values.ParamSchema = DummyParamSchema
+except Exception:
     pass
-
-# -----------------------------------------------
+# ---------------------------------------------------------
 
 from backend.mt5_bridge import MT5Bridge
 
@@ -1161,7 +1165,8 @@ async def autonomous_bot_loop():
 
                 # Sentimento agora é atualizado no ciclo lento (linha 249)
 
-                obi = ai.detect_spoofing(book, tns)
+                # OBI via Microstructure Analyzer (v50.1)
+                obi = micro_analyzer.calculate_wen_ofi(book)
 
                 cvd_val = micro_analyzer.calculate_cvd(tns) 
 
@@ -1262,12 +1267,10 @@ async def autonomous_bot_loop():
                 
                 # Score Final (0-100) e Direção
                 decision = ai.calculate_decision(
-                    obi, 
-                    effective_sentiment, 
-                    ai_predict_data, # Passamos o dict completo para o veto de incerteza
-
-                    regime,
-
+                    obi=obi, 
+                    sentiment=effective_sentiment, 
+                    score=ai_predict_data, 
+                    regime=regime,
                     atr=current_atr,
 
                     volatility=volatility,
