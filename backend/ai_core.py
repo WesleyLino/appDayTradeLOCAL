@@ -85,8 +85,8 @@ class InferenceEngine:
 
     def _predict_sync(self, dataframe):
         try:
-            # [v24.4.1] Sincronização de 8 Canais Obrigatórios
-            cols = ['open', 'high', 'low', 'close', 'tick_volume', 'cvd', 'ofi', 'volume_ratio']
+            # [v24.4.1] Sincronização de 5 Canais Obrigatórios (v22 Legacy compatibility)
+            cols = ['open', 'high', 'low', 'close', 'tick_volume']
             
             # Garante que todas as colunas existem (Padding com zero se faltar)
             for c in cols:
@@ -94,7 +94,7 @@ class InferenceEngine:
                     dataframe[c] = 0.0
             
             input_data = dataframe[cols].values[-60:].astype(np.float32)
-            input_tensor = np.expand_dims(input_data, axis=0) # [1, 60, 8]
+            input_tensor = np.expand_dims(input_data, axis=0) # [1, 60, 5]
 
             if self.use_onnx and self.ort_session:
                 input_name = self.ort_session.get_inputs()[0].name

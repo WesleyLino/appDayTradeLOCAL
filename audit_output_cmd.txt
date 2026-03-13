@@ -1,0 +1,275 @@
+2026-03-13 20:16:22,800 - INFO - \U0001f916 [AUDIT-13MAR] Iniciando Diagnóstico de Potencial SOTA v22...
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\backend\ai_core.py:60: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  state_dict = torch.load(self.model_path, map_location='cpu')
+2026-03-13 20:16:22,827 - INFO - --- [v22.5.7] PyTorch Engine Ativo (CPU Fallback)
+2026-03-13 20:16:23,088 - INFO - --- [v24.4.1] ONNX Engine Ativo (DmlExecutionProvider)
+2026-03-13 20:16:23,088 - INFO - --- Motor de Inferência SOTA carregado.
+2026-03-13 20:16:23,088 - INFO - \U0001f4c5 CALENDÁRIO ECONÔMICO: 0 alertas críticos carregados.
+2026-03-13 20:16:23,088 - INFO - [SEC] Golden Params V24 carregados com sucesso no BacktestPro.
+2026-03-13 20:16:23,088 - WARNING - [INIT] [INIT-STATE] use_ai_core_param=True
+2026-03-13 20:16:23,089 - INFO - [SYNC] [v22.5.1] RiskManager sincronizado: limite=999 | OBI=2.0 | Squeeze=1.2
+2026-03-13 20:16:23,089 - INFO - [DATA] [v22.5.3/4/5] H1 + Hysteresis: use_h1=True | MA=20 | Hyst=400.0 | Relax=1.0
+2026-03-13 20:16:23,096 - INFO - --- [v22.5.7] PyTorch Engine Ativo (CPU Fallback)
+2026-03-13 20:16:23,096 - INFO - \U0001f4ca Coletando dados reais e processando simulação...
+2026-03-13 20:16:23,097 - INFO - \U0001f4e5 Coletando 1500 candles de WIN$...
+2026-03-13 20:16:23,107 - INFO - Conectado com sucesso!
+2026-03-13 20:16:23,107 - INFO - Servidor: GenialInvestimentos-PRD
+2026-03-13 20:16:23,107 - INFO - Corretora: Genial Investimentos Corretora de Valores Mobiliários S.A.
+2026-03-13 20:16:23,107 - INFO - Conta: 4635067
+2026-03-13 20:16:23,107 - INFO - Saldo: R$ 500.00
+2026-03-13 20:16:23,107 - INFO - [OK] Servidor Genial Verificado: GenialInvestimentos-PRD
+2026-03-13 20:16:23,107 - INFO - [OK] AlgoTrading: ATIVADO (Negociacao Permitida)
+2026-03-13 20:16:23,112 - INFO - \u2705 1500 candles carregados.
+2026-03-13 20:16:23,112 - INFO - \U0001f680 Iniciando Simulação High Fidelity com 1500 velas...
+2026-03-13 20:16:23,124 - INFO - \U0001f52c Calculando Microestrutura em Vetor (CVD/OFI/Ratio)...
+2026-03-13 20:16:24,781 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=59.3): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,788 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=57.9): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,794 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=51.8): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,800 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=53.2): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,806 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=52.5): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,812 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=53.9): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,890 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=55.4): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,895 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=55.4): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,904 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=54.3): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,911 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=55.0): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,917 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=55.4): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,922 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=54.6): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,928 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=58.6): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,933 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=58.6): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,938 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=58.2): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,943 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=58.9): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,948 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=59.6): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,964 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=59.6): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,969 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=56.8): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,978 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=56.4): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,984 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=57.5): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,990 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=56.4): Buy=56.4, Sell=43.6
+2026-03-13 20:16:24,996 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=57.5): Buy=56.4, Sell=43.6
+2026-03-13 20:16:25,004 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=58.2): Buy=56.4, Sell=43.6
+2026-03-13 20:16:25,011 - INFO - \U0001f48e [RELAX-V24] Ativo (ATR=53.9): Buy=56.4, Sell=43.6
+2026-03-13 20:16:25,163 - INFO - \U0001f4c5 Mudança de dia detectada (2026-03-11 -> 2026-03-12). Resetando métricas diárias.
+2026-03-13 20:16:25,461 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:25,461 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 83.7)
+2026-03-13 20:16:25,461 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=42.3, OBI=1.5, Regime=0
+2026-03-13 20:16:25,461 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-12 10:16:00 | Dir: VENDA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:25,461 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 196.1 > 120.0). Threshold: 15.0
+2026-03-13 20:16:25,461 - INFO - \U0001f680 [v24 GOLDEN-WINDOW] TP expandido (+50%): 235 pts
+2026-03-13 20:16:25,461 - INFO - \U0001f6e1\ufe0f [RISK SL] Stop Loss expandido via IA: x3.0 (765 pts)
+2026-03-13 20:16:25,461 - INFO - GATILHO V22 [SOTA_SNIPER_VENDA]: sell @ 183190.0 | Lotes: 1.0
+2026-03-13 20:16:25,463 - INFO - \U0001f6e1\ufe0f [v24.1 BREAKEVEN] SL movido p/ 183185.0 (-5.0)
+2026-03-13 20:16:25,468 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:25,645 - INFO - [AUDIT-VWAP] Price: 180915.0 | VWAP: 182742.4 | Dist: 1827.4 | MaxPermitida: 10854.9
+2026-03-13 20:16:25,651 - INFO - [AUDIT-VWAP] Price: 180880.0 | VWAP: 182733.7 | Dist: 1853.7 | MaxPermitida: 10852.8
+2026-03-13 20:16:25,666 - INFO - [AUDIT-VWAP] Price: 180900.0 | VWAP: 182721.0 | Dist: 1821.0 | MaxPermitida: 10854.0
+2026-03-13 20:16:25,671 - INFO - [AUDIT-VWAP] Price: 180810.0 | VWAP: 182713.1 | Dist: 1903.1 | MaxPermitida: 10848.6
+2026-03-13 20:16:25,676 - INFO - [AUDIT-VWAP] Price: 180685.0 | VWAP: 182703.2 | Dist: 2018.2 | MaxPermitida: 10841.1
+2026-03-13 20:16:25,681 - INFO - [AUDIT-VWAP] Price: 180615.0 | VWAP: 182685.2 | Dist: 2070.2 | MaxPermitida: 10836.9
+2026-03-13 20:16:25,688 - INFO - [AUDIT-VWAP] Price: 180795.0 | VWAP: 182669.3 | Dist: 1874.3 | MaxPermitida: 10847.7
+2026-03-13 20:16:25,693 - INFO - [AUDIT-VWAP] Price: 180815.0 | VWAP: 182664.8 | Dist: 1849.8 | MaxPermitida: 10848.9
+2026-03-13 20:16:25,709 - INFO - [AUDIT-VWAP] Price: 180800.0 | VWAP: 182651.9 | Dist: 1851.9 | MaxPermitida: 10848.0
+2026-03-13 20:16:25,722 - INFO - [AUDIT-VWAP] Price: 180735.0 | VWAP: 182640.9 | Dist: 1905.9 | MaxPermitida: 10844.1
+2026-03-13 20:16:28,544 - INFO - \U0001f4c5 Mudança de dia detectada (2026-03-12 -> 2026-03-13). Resetando métricas diárias.
+2026-03-13 20:16:28,546 - WARNING - \u26a0\ufe0f [FILTRO DE GAP] Abertura com gap de 1015.0 pts (> 800). Risco de anomalia detectado.
+2026-03-13 20:16:28,546 - WARNING - \U0001f6ab [VETO V22.2] Dia 2026-03-13 pausado por: Gap Excessivo (1015.0 pts)
+2026-03-13 20:16:28,733 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,733 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 86.7)
+2026-03-13 20:16:28,733 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=58.6, OBI=0.7, Regime=0
+2026-03-13 20:16:28,733 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 10:17:00 | Dir: COMPRA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,733 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 215.4 > 120.0). Threshold: 15.0
+2026-03-13 20:16:28,733 - INFO - \U0001f680 [v24 GOLDEN-WINDOW] TP expandido (+50%): 258 pts
+2026-03-13 20:16:28,733 - INFO - \U0001f6e1\ufe0f [RISK SL] Stop Loss expandido via IA: x3.0 (840 pts)
+2026-03-13 20:16:28,733 - INFO - GATILHO V22 [SOTA_SNIPER_COMPRA]: buy @ 182510.0 | Lotes: 1.0
+2026-03-13 20:16:28,733 - INFO - \U0001f6e1\ufe0f [v24.1 BREAKEVEN] SL movido p/ 182515.0 (+5.0)
+2026-03-13 20:16:28,742 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,749 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,749 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 86.3)
+2026-03-13 20:16:28,749 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=57.9, OBI=0.7, Regime=0
+2026-03-13 20:16:28,749 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 10:20:00 | Dir: COMPRA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,759 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,759 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 86.4)
+2026-03-13 20:16:28,759 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=57.1, OBI=0.6, Regime=0
+2026-03-13 20:16:28,759 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 10:21:00 | Dir: COMPRA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,770 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,770 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 86.3)
+2026-03-13 20:16:28,770 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=59.8, OBI=1.0, Regime=0
+2026-03-13 20:16:28,770 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 10:22:00 | Dir: COMPRA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,779 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,789 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,795 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,801 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,802 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 83.6)
+2026-03-13 20:16:28,802 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=45.3, OBI=1.5, Regime=0
+2026-03-13 20:16:28,802 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 10:29:00 | Dir: VENDA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,802 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 190.0 > 120.0). Threshold: 15.0
+2026-03-13 20:16:28,802 - INFO - \U0001f6e1\ufe0f [RIGOR V22.5] Operação contra-tendência detectada (sell). Elevando exigência de confiança.
+2026-03-13 20:16:28,802 - INFO - \U0001f680 [v24 GOLDEN-WINDOW] TP expandido (+50%): 228 pts
+2026-03-13 20:16:28,802 - INFO - \U0001f6e1\ufe0f [RISK SL] Stop Loss expandido via IA: x3.0 (741 pts)
+2026-03-13 20:16:28,802 - INFO - GATILHO V22 [SOTA_SNIPER_VENDA]: sell @ 182865.0 | Lotes: 1.0
+2026-03-13 20:16:28,803 - INFO - \U0001f6e1\ufe0f [v24.1 BREAKEVEN] SL movido p/ 182860.0 (-5.0)
+2026-03-13 20:16:28,809 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,809 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 86.7)
+2026-03-13 20:16:28,809 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=57.9, OBI=0.8, Regime=0
+2026-03-13 20:16:28,809 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 10:31:00 | Dir: COMPRA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,816 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,834 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,835 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 85.5)
+2026-03-13 20:16:28,835 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=58.5, OBI=1.3, Regime=0
+2026-03-13 20:16:28,835 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 10:50:00 | Dir: COMPRA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,835 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 220.4 > 120.0). Threshold: 15.0
+2026-03-13 20:16:28,835 - INFO - \U0001f680 [v24 GOLDEN-WINDOW] TP expandido (+50%): 264 pts
+2026-03-13 20:16:28,835 - INFO - \U0001f6e1\ufe0f [RISK SL] Stop Loss expandido via IA: x3.0 (859 pts)
+2026-03-13 20:16:28,835 - INFO - GATILHO V22 [SOTA_SNIPER_COMPRA]: buy @ 182735.0 | Lotes: 1.0
+2026-03-13 20:16:28,836 - INFO - \U0001f6e1\ufe0f [v24.1 BREAKEVEN] SL movido p/ 182740.0 (+5.0)
+2026-03-13 20:16:28,844 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,844 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 86.5)
+2026-03-13 20:16:28,845 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=45.0, OBI=1.0, Regime=0
+2026-03-13 20:16:28,845 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 10:52:00 | Dir: VENDA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,855 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,855 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 83.3)
+2026-03-13 20:16:28,855 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=61.5, OBI=1.7, Regime=0
+2026-03-13 20:16:28,857 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 10:53:00 | Dir: COMPRA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,864 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,870 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,870 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 81.9)
+2026-03-13 20:16:28,870 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=40.6, OBI=1.9, Regime=0
+2026-03-13 20:16:28,871 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 10:56:00 | Dir: VENDA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,878 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,878 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 83.0)
+2026-03-13 20:16:28,878 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=61.6, OBI=1.7, Regime=0
+2026-03-13 20:16:28,878 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 10:57:00 | Dir: COMPRA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,884 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,884 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 80.3)
+2026-03-13 20:16:28,884 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=64.7, OBI=2.2, Regime=0
+2026-03-13 20:16:28,885 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 10:58:00 | Dir: COMPRA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,891 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,891 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 85.0)
+2026-03-13 20:16:28,891 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=43.5, OBI=1.2, Regime=0
+2026-03-13 20:16:28,891 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 10:59:00 | Dir: VENDA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,897 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,897 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 83.7)
+2026-03-13 20:16:28,897 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=44.6, OBI=1.5, Regime=0
+2026-03-13 20:16:28,898 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 11:00:00 | Dir: VENDA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,898 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 191.4 > 120.0). Threshold: 15.0
+2026-03-13 20:16:28,898 - WARNING - \U0001f6d1 [VETO LATERALIDADE] ADX 14.6 < 15.0 (Tendência Fraca)
+2026-03-13 20:16:28,898 - INFO - [VETO LATERALIDADE] 2026-03-13 11:00:00 | Motivo: ADX_BAIXO | Sinal Abortado.
+2026-03-13 20:16:28,904 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,913 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,913 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 82.1)
+2026-03-13 20:16:28,913 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=40.6, OBI=1.9, Regime=0
+2026-03-13 20:16:28,913 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 11:07:00 | Dir: VENDA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,913 - INFO - \u26a1 [ADX DINÂMICO] Alta Volatilidade (ATR 207.5 > 120.0). Threshold: 15.0
+2026-03-13 20:16:28,913 - INFO - \U0001f680 [v24 GOLDEN-WINDOW] TP expandido (+50%): 249 pts
+2026-03-13 20:16:28,913 - INFO - \U0001f6e1\ufe0f [RISK SL] Stop Loss expandido via IA: x3.0 (809 pts)
+2026-03-13 20:16:28,913 - INFO - GATILHO V22 [SOTA_SNIPER_VENDA]: sell @ 182525.0 | Lotes: 1.0
+2026-03-13 20:16:28,913 - INFO - \U0001f6e1\ufe0f [v24.1 BREAKEVEN] SL movido p/ 182520.0 (-5.0)
+2026-03-13 20:16:28,913 - INFO - \U0001f48e [PIRAMIDAÇÃO DINÂMICA] Autorizada! Lucro 155.0 | Fluxo: -0.72 | Vol Atual: 1.0
+2026-03-13 20:16:28,913 - INFO - \U0001f48e [PIRAMIDAÇÃO] +1 contrato adicionado @ 182370.0 | Novo Lote: 2.0
+2026-03-13 20:16:28,919 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,919 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 82.1)
+2026-03-13 20:16:28,919 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=62.5, OBI=1.9, Regime=0
+2026-03-13 20:16:28,924 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,924 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 81.3)
+2026-03-13 20:16:28,924 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=39.8, OBI=2.0, Regime=0
+2026-03-13 20:16:28,926 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 11:10:00 | Dir: VENDA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,931 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,931 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 86.5)
+2026-03-13 20:16:28,931 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=55.8, OBI=0.7, Regime=0
+2026-03-13 20:16:28,937 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,937 - INFO - [v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: 84.5)
+2026-03-13 20:16:28,937 - INFO - \U0001f680 [BYPASS-PRO] Ativado! Score=43.5, OBI=1.4, Regime=0
+2026-03-13 20:16:28,937 - INFO - \U0001f680 [MOMENTUM ENTRY] 2026-03-13 11:12:00 | Dir: VENDA | Entrando a favor da Inércia Direcional.
+2026-03-13 20:16:28,943 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:28,950 - INFO - [v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).
+2026-03-13 20:16:30,063 - INFO - [AUDIT-VWAP] Price: 179915.0 | VWAP: 181752.1 | Dist: 1837.1 | MaxPermitida: 10794.9
+2026-03-13 20:16:30,070 - INFO - [AUDIT-VWAP] Price: 179770.0 | VWAP: 181743.7 | Dist: 1973.7 | MaxPermitida: 10786.2
+2026-03-13 20:16:30,077 - INFO - [AUDIT-VWAP] Price: 179785.0 | VWAP: 181739.6 | Dist: 1954.6 | MaxPermitida: 10787.1
+2026-03-13 20:16:30,083 - INFO - [AUDIT-VWAP] Price: 179835.0 | VWAP: 181735.1 | Dist: 1900.1 | MaxPermitida: 10790.1
+2026-03-13 20:16:30,678 - INFO - [AUDIT-VWAP] Price: 179730.0 | VWAP: 181551.6 | Dist: 1821.6 | MaxPermitida: 10783.8
+2026-03-13 20:16:30,684 - INFO - [AUDIT-VWAP] Price: 179600.0 | VWAP: 181547.9 | Dist: 1947.9 | MaxPermitida: 10776.0
+2026-03-13 20:16:30,694 - INFO - [AUDIT-VWAP] Price: 179620.0 | VWAP: 181544.8 | Dist: 1924.8 | MaxPermitida: 10777.2
+2026-03-13 20:16:30,701 - INFO - [AUDIT-VWAP] Price: 179735.0 | VWAP: 181542.2 | Dist: 1807.2 | MaxPermitida: 10784.1
+2026-03-13 20:16:30,708 - INFO - [AUDIT-VWAP] Price: 179585.0 | VWAP: 181539.2 | Dist: 1954.2 | MaxPermitida: 10775.1
+2026-03-13 20:16:30,729 - INFO - [AUDIT-VWAP] Price: 179590.0 | VWAP: 181536.4 | Dist: 1946.4 | MaxPermitida: 10775.4
+2026-03-13 20:16:30,735 - INFO - [AUDIT-VWAP] Price: 179645.0 | VWAP: 181533.9 | Dist: 1888.9 | MaxPermitida: 10778.7
+2026-03-13 20:16:30,743 - INFO - [AUDIT-VWAP] Price: 179620.0 | VWAP: 181532.4 | Dist: 1912.4 | MaxPermitida: 10777.2
+2026-03-13 20:16:30,749 - INFO - [AUDIT-VWAP] Price: 179590.0 | VWAP: 181528.6 | Dist: 1938.6 | MaxPermitida: 10775.4
+2026-03-13 20:16:30,754 - INFO - [AUDIT-VWAP] Price: 179625.0 | VWAP: 181525.9 | Dist: 1900.9 | MaxPermitida: 10777.5
+2026-03-13 20:16:30,761 - INFO - [AUDIT-VWAP] Price: 179570.0 | VWAP: 181523.3 | Dist: 1953.3 | MaxPermitida: 10774.2
+2026-03-13 20:16:30,767 - INFO - [AUDIT-VWAP] Price: 179500.0 | VWAP: 181519.1 | Dist: 2019.1 | MaxPermitida: 10770.0
+2026-03-13 20:16:30,773 - INFO - [AUDIT-VWAP] Price: 179490.0 | VWAP: 181517.3 | Dist: 2027.3 | MaxPermitida: 10769.4
+2026-03-13 20:16:30,780 - INFO - [AUDIT-VWAP] Price: 179440.0 | VWAP: 181514.8 | Dist: 2074.8 | MaxPermitida: 10766.4
+2026-03-13 20:16:30,787 - INFO - [AUDIT-VWAP] Price: 179465.0 | VWAP: 181511.9 | Dist: 2046.9 | MaxPermitida: 10767.9
+2026-03-13 20:16:30,795 - INFO - [AUDIT-VWAP] Price: 179580.0 | VWAP: 181508.5 | Dist: 1928.5 | MaxPermitida: 10774.8
+2026-03-13 20:16:30,802 - INFO - [AUDIT-VWAP] Price: 179645.0 | VWAP: 181506.3 | Dist: 1861.3 | MaxPermitida: 10778.7
+2026-03-13 20:16:30,806 - INFO - [AUDIT-VWAP] Price: 179585.0 | VWAP: 181504.6 | Dist: 1919.6 | MaxPermitida: 10775.1
+2026-03-13 20:16:30,813 - INFO - [AUDIT-VWAP] Price: 179520.0 | VWAP: 181502.0 | Dist: 1982.0 | MaxPermitida: 10771.2
+2026-03-13 20:16:30,819 - INFO - [AUDIT-VWAP] Price: 179395.0 | VWAP: 181498.4 | Dist: 2103.4 | MaxPermitida: 10763.7
+2026-03-13 20:16:30,825 - INFO - [AUDIT-VWAP] Price: 179465.0 | VWAP: 181496.1 | Dist: 2031.1 | MaxPermitida: 10767.9
+2026-03-13 20:16:30,831 - INFO - [AUDIT-VWAP] Price: 179500.0 | VWAP: 181494.0 | Dist: 1994.0 | MaxPermitida: 10770.0
+2026-03-13 20:16:30,838 - INFO - [AUDIT-VWAP] Price: 179530.0 | VWAP: 181491.5 | Dist: 1961.5 | MaxPermitida: 10771.8
+2026-03-13 20:16:30,846 - INFO - [AUDIT-VWAP] Price: 179500.0 | VWAP: 181489.6 | Dist: 1989.6 | MaxPermitida: 10770.0
+2026-03-13 20:16:30,852 - INFO - [AUDIT-VWAP] Price: 179445.0 | VWAP: 181487.2 | Dist: 2042.2 | MaxPermitida: 10766.7
+2026-03-13 20:16:30,859 - INFO - [AUDIT-VWAP] Price: 179320.0 | VWAP: 181483.9 | Dist: 2163.9 | MaxPermitida: 10759.2
+2026-03-13 20:16:30,864 - INFO - [AUDIT-VWAP] Price: 179395.0 | VWAP: 181480.7 | Dist: 2085.7 | MaxPermitida: 10763.7
+2026-03-13 20:16:30,870 - INFO - [AUDIT-VWAP] Price: 179455.0 | VWAP: 181478.7 | Dist: 2023.7 | MaxPermitida: 10767.3
+2026-03-13 20:16:30,879 - INFO - [AUDIT-VWAP] Price: 179440.0 | VWAP: 181476.9 | Dist: 2036.9 | MaxPermitida: 10766.4
+2026-03-13 20:16:30,885 - INFO - [AUDIT-VWAP] Price: 179330.0 | VWAP: 181473.9 | Dist: 2143.9 | MaxPermitida: 10759.8
+2026-03-13 20:16:30,891 - INFO - [AUDIT-VWAP] Price: 179460.0 | VWAP: 181471.4 | Dist: 2011.4 | MaxPermitida: 10767.6
+2026-03-13 20:16:30,896 - INFO - [AUDIT-VWAP] Price: 179490.0 | VWAP: 181469.1 | Dist: 1979.1 | MaxPermitida: 10769.4
+2026-03-13 20:16:30,902 - INFO - [AUDIT-VWAP] Price: 179625.0 | VWAP: 181466.6 | Dist: 1841.6 | MaxPermitida: 10777.5
+2026-03-13 20:16:30,913 - INFO - [AUDIT-VWAP] Price: 179630.0 | VWAP: 181462.1 | Dist: 1832.1 | MaxPermitida: 10777.8
+2026-03-13 20:16:31,330 - INFO - [AUDIT-VWAP] Price: 179540.0 | VWAP: 181410.2 | Dist: 1870.2 | MaxPermitida: 10772.4
+2026-03-13 20:16:31,336 - INFO - [AUDIT-VWAP] Price: 179550.0 | VWAP: 181409.2 | Dist: 1859.2 | MaxPermitida: 10773.0
+2026-03-13 20:16:31,344 - INFO - [AUDIT-VWAP] Price: 179585.0 | VWAP: 181408.7 | Dist: 1823.7 | MaxPermitida: 10775.1
+2026-03-13 20:16:31,350 - INFO - [AUDIT-VWAP] Price: 179595.0 | VWAP: 181408.2 | Dist: 1813.2 | MaxPermitida: 10775.7
+2026-03-13 20:16:31,389 - INFO - [AUDIT-VWAP] Price: 179605.0 | VWAP: 181405.4 | Dist: 1800.4 | MaxPermitida: 10776.3
+2026-03-13 20:16:31,420 - INFO - [AUDIT-VWAP] Price: 179585.0 | VWAP: 181402.6 | Dist: 1817.6 | MaxPermitida: 10775.1
+2026-03-13 20:16:31,428 - INFO - [AUDIT-VWAP] Price: 179605.0 | VWAP: 181402.3 | Dist: 1797.3 | MaxPermitida: 10776.3
+2026-03-13 20:16:31,437 - INFO - [AUDIT-VWAP] Price: 179510.0 | VWAP: 181401.3 | Dist: 1891.3 | MaxPermitida: 10770.6
+2026-03-13 20:16:31,446 - INFO - [AUDIT-VWAP] Price: 179560.0 | VWAP: 181400.7 | Dist: 1840.7 | MaxPermitida: 10773.6
+2026-03-13 20:16:31,452 - INFO - [AUDIT-VWAP] Price: 179545.0 | VWAP: 181400.4 | Dist: 1855.4 | MaxPermitida: 10772.7
+2026-03-13 20:16:31,458 - INFO - [AUDIT-VWAP] Price: 179435.0 | VWAP: 181399.6 | Dist: 1964.6 | MaxPermitida: 10766.1
+2026-03-13 20:16:31,464 - INFO - [AUDIT-VWAP] Price: 179500.0 | VWAP: 181398.7 | Dist: 1898.7 | MaxPermitida: 10770.0
+2026-03-13 20:16:31,471 - INFO - [AUDIT-VWAP] Price: 179555.0 | VWAP: 181398.3 | Dist: 1843.3 | MaxPermitida: 10773.3
+2026-03-13 20:16:31,478 - INFO - [AUDIT-VWAP] Price: 179495.0 | VWAP: 181397.7 | Dist: 1902.7 | MaxPermitida: 10769.7
+2026-03-13 20:16:31,484 - INFO - [AUDIT-VWAP] Price: 179560.0 | VWAP: 181397.1 | Dist: 1837.1 | MaxPermitida: 10773.6
+2026-03-13 20:16:31,502 - INFO - [AUDIT-VWAP] Price: 179585.0 | VWAP: 181395.9 | Dist: 1810.9 | MaxPermitida: 10775.1
+2026-03-13 20:16:31,508 - INFO - [AUDIT-VWAP] Price: 179515.0 | VWAP: 181395.4 | Dist: 1880.4 | MaxPermitida: 10770.9
+2026-03-13 20:16:31,516 - INFO - [AUDIT-VWAP] Price: 179500.0 | VWAP: 181395.1 | Dist: 1895.1 | MaxPermitida: 10770.0
+2026-03-13 20:16:31,522 - INFO - [AUDIT-VWAP] Price: 179545.0 | VWAP: 181395.0 | Dist: 1850.0 | MaxPermitida: 10772.7
+2026-03-13 20:16:31,529 - INFO - [AUDIT-VWAP] Price: 179575.0 | VWAP: 181394.8 | Dist: 1819.8 | MaxPermitida: 10774.5
+2026-03-13 20:16:31,536 - INFO - [AUDIT-VWAP] Price: 179595.0 | VWAP: 181394.6 | Dist: 1799.6 | MaxPermitida: 10775.7
+2026-03-13 20:16:31,550 - INFO - Simulacao concluida.
+2026-03-13 20:16:31,763 - INFO - 
+--- [ BALANÇO REAL SOTA - 13/03 ] ---
+2026-03-13 20:16:31,763 - INFO - \u2705 Trades Executados: 4
+2026-03-13 20:16:31,763 - INFO - \U0001f4b0 PnL Total: R$ 131.00
+2026-03-13 20:16:31,763 - INFO - 
+--- [ SHADOW AUDIT (POTENCIAL) ] ---
+2026-03-13 20:16:31,764 - INFO - \U0001f50d Candidatos Identificados: 1235
+2026-03-13 20:16:31,764 - INFO - \U0001f6ab Vetados por Baixa Confiança IA: 0
+2026-03-13 20:16:31,764 - INFO - \U0001f6ab Vetados por Fluxo/Bias: 0
+2026-03-13 20:16:31,764 - INFO - 
+\U0001f6e0\ufe0f Detalhes dos Vetos IA:
+2026-03-13 20:16:31,764 - INFO -    - PANICO_MERCADO_SEM_BYPASS: 294
+2026-03-13 20:16:31,764 - INFO -    - ADX_BAIXO: 1
+2026-03-13 20:16:31,764 - INFO - 
+\U0001f4c8 COMPRAS: 2 | Ganhos: 2
+2026-03-13 20:16:31,764 - INFO - \U0001f4c9 VENDAS: 2 | Ganhos: 2
+2026-03-13 20:16:31,764 - INFO - 
+\U0001f4a1 [DIAGNÓSTICO FINAL]
+2026-03-13 20:16:31,764 - INFO - Sistema operando com máxima assertividade para o capital de R$ 3k.
+
+==================================================
+RELATORIO DO PASSADO (WIN$)
+==================================================
+Saldo Inicial: R$ 500.00
+Saldo Final:   R$ 664.00
+Lucro Líquido: R$ 164.00
+Total Trades:  5
+Win Rate:      100.0%
+Profit Factor: inf
+Max Drawdown:  0.00%
+
+Relatório Visual salvo em: backend/backtest_report.html
+==================================================
