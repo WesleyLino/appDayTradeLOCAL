@@ -57,7 +57,7 @@ async def run_shadow_audit_11mar():
 
     # Trades realizados
     trades = bt.trades
-    logger.info(f"✅ Auditoria Concluída.")
+    logger.info("✅ Auditoria Concluída.")
     logger.info(f"📊 Trades Executados: {len(trades)}")
     for t in trades:
         logger.info(f"   - Trade {t['side']} às {t['entry_time']} | PnL: R$ {t['pnl_fin']:.2f} | Motivo: {t['reason']}")

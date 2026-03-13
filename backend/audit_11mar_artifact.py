@@ -69,7 +69,7 @@ async def run_audit():
                 pnl_total = trades['pnl_fin'].sum()
                 prejuizo = trades[trades['pnl_fin'] < 0]['pnl_fin'].sum()
                 
-                f.write(f"## 💰 Performance Financeira\n")
+                f.write("## 💰 Performance Financeira\n")
                 f.write(f"- **PnL Total Líquido:** R$ {pnl_total:.2f}\n")
                 f.write(f"- **Operações COMPRADAS:** {len(buys)} trades | PnL: R$ {buys['pnl_fin'].sum():.2f}\n")
                 f.write(f"- **Operações VENDIDAS:** {len(sells)} trades | PnL: R$ {sells['pnl_fin'].sum():.2f}\n")

@@ -36,7 +36,7 @@ async def run_final_audit_expert():
         'tp_dist': 400.0                  # Base (Será multiplicado pelo RegimeExpert)
     }
 
-    print(f"📥 Sincronizando dados históricos WIN$ para Auditoria Expert...")
+    print("📥 Sincronizando dados históricos WIN$ para Auditoria Expert...")
     bt_loader = BacktestPro(symbol="WIN$", n_candles=15000)
     data_full = await bt_loader.load_data()
     
@@ -48,7 +48,7 @@ async def run_final_audit_expert():
     totais = {"pnl": 0.0, "compra": 0.0, "venda": 0.0, "trades": 0, "drawdown_max": 0.0}
     current_peak = 3000.0
 
-    print(f"\n🏆 VALIDAÇÃO FINAL V36 EXPERT - 15 DIAS")
+    print("\n🏆 VALIDAÇÃO FINAL V36 EXPERT - 15 DIAS")
     print(f"{'Data':<12} | {'Símbolo':<7} | {'PnL Total':<10} | {'Trades':<6} | {'Regime Med':<10} | {'Status'}")
     print("-" * 80)
 
@@ -100,7 +100,7 @@ async def run_final_audit_expert():
         totais["trades"] += len(day_trades)
 
     print("-" * 80)
-    print(f"📊 CONSOLIDADO V36 EXPERT (1 Lote):")
+    print("📊 CONSOLIDADO V36 EXPERT (1 Lote):")
     print(f"   >>> Capital Final Estimado: R$ {3000 + totais['pnl']:.2f}")
     print(f"   >>> PnL Acumulado: R$ {totais['pnl']:.2f}")
     print(f"   >>> Profit Factor Estimado: { (totais['compra'] + totais['venda']) / abs(min(-1, (totais['compra'] if totais['compra']<0 else 0) + (totais['venda'] if totais['venda']<0 else 0) )) :.2f}")

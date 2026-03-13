@@ -41,7 +41,7 @@ async def run_audit_unlimited_optimized():
         'tp_dist': 500.0                      # Alvos longos
     }
 
-    print(f"📥 Coletando e Filtrando dados (Início: 19/02/2026)...")
+    print("📥 Coletando e Filtrando dados (Início: 19/02/2026)...")
     bt_loader = BacktestPro(symbol="WIN$", n_candles=10000)
     data_raw = await bt_loader.load_data()
     
@@ -56,7 +56,7 @@ async def run_audit_unlimited_optimized():
     resultados = []
     totais = {"pnl": 0.0, "trades": 0, "win_rate": 0.0}
 
-    print(f"\n🚀 TESTE ILIMITADO V36 - POTENCIAL BRUTO (19/02 - 11/03)")
+    print("\n🚀 TESTE ILIMITADO V36 - POTENCIAL BRUTO (19/02 - 11/03)")
     print(f"{'Data':<12} | {'PnL Total':<10} | {'Trades':<6} | {'Status'}")
     print("-" * 50)
 
@@ -87,8 +87,8 @@ async def run_audit_unlimited_optimized():
         totais["trades"] += len(day_trades)
 
     print("-" * 50)
-    print(f"📊 CONSOLIDADO ILIMITADO:")
-    print(f"   >>> Capital Inicial: R$ 3.000,00")
+    print("📊 CONSOLIDADO ILIMITADO:")
+    print("   >>> Capital Inicial: R$ 3.000,00")
     print(f"   >>> PnL Bruto Total: R$ {totais['pnl']:.2f} ({ (totais['pnl']/3000)*100 :.1f}%)")
     print(f"   >>> Performance Hoje (11/03): R$ {resultados[-1]['pnl']:.2f}")
 

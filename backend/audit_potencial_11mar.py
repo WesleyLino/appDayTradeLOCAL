@@ -29,14 +29,14 @@ async def run_audit():
         return
 
     # No MT5, as datas podem estar deslocadas. Filtramos o período expandido e cortamos o dia 11/03
-    logger.info(f"📊 Processando simulação para o dia solicitado...")
+    logger.info("📊 Processando simulação para o dia solicitado...")
     await bt.run()
     
     trades = bt.trades
     if not trades:
         logger.warning("⚠️ Nenhum trade executado pelo motor principal.")
         shadow = bt.shadow_signals
-        logger.info(f"🔍 Shadow Audit (Sinais Vetados):")
+        logger.info("🔍 Shadow Audit (Sinais Vetados):")
         logger.info(f"   - Candidatos V22: {shadow['v22_candidates']}")
         logger.info(f"   - Vetos IA: {shadow['filtered_by_ai']}")
         logger.info(f"   - Vetos Fluxo: {shadow['filtered_by_flux']}")

@@ -147,4 +147,4 @@ def sanitize_log(e):
     try:
         return str(e).encode('utf-8', 'replace').decode('utf-8')
     except:
-        return "Unknown error (encoding failure)"
+        return "Erro desconhecido (falha de codificação)"

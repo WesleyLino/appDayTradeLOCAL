@@ -34,7 +34,7 @@ async def run_expert_bi_audit():
         'tp_dist': 300.0
     }
 
-    print(f"📥 Sincronizando dados históricos WIN$ (15 dias)...")
+    print("📥 Sincronizando dados históricos WIN$ (15 dias)...")
     bt_loader = BacktestPro(symbol="WIN$", n_candles=15000)
     data_full = await bt_loader.load_data()
     
@@ -52,7 +52,7 @@ async def run_expert_bi_audit():
         "vetos_totais": 0
     }
 
-    print(f"\n💎 AUDITORIA EXPERT BI-DIRECIONAL (V22.5.7)")
+    print("\n💎 AUDITORIA EXPERT BI-DIRECIONAL (V22.5.7)")
     print(f"{'Data':<10} | {'PnL':<8} | {'Compra':<8} | {'Venda':<8} | {'Loss':<8} | {'Opt. Perd.'}")
     print("-" * 70)
 
@@ -113,7 +113,7 @@ async def run_expert_bi_audit():
         consolidado["vetos_totais"] += vetos
 
     print("-" * 70)
-    print(f"📊 RESUMO CONSOLIDADO:")
+    print("📊 RESUMO CONSOLIDADO:")
     print(f"   PnL Líquido: R$ {consolidado['pnl_total']:.2f}")
     print(f"   Gross Profit (C+V): R$ {consolidado['total_compra'] + consolidado['total_venda']:.2f}")
     print(f"   Gross Loss: R$ {abs(consolidado['total_prejuizo']):.2f}")

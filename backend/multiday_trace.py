@@ -270,7 +270,7 @@ async def main():
     perda_pot_sell = sum(r['sell']['perda_brl'] for r in resultados)
 
     print(f"📅  Dias analisados: {len(resultados)} | Ativos: {len(dias_ativos)} | Pausados (filtro ATR): {len(dias_pausados)}")
-    print(f"")
+    print("")
     print(f"{'Lado':<8} {'Sinais':>7} {'Takes':>7} {'Stops':>7} {'Assert':>9} {'Ganho':>10} {'Perda':>10} {'PnL':>10}")
     print(f"{'-'*8} {'-'*7} {'-'*7} {'-'*7} {'-'*9} {'-'*10} {'-'*10} {'-'*10}")
     print(f"{'BUY':<8} {buy_total:>7} {total_buy_t:>7} {total_buy_s:>7} {buy_assert:>8.1f}% "
@@ -282,7 +282,7 @@ async def main():
           f"{total_buy_s+total_sell_s:>7} "
           f"{((total_buy_t+total_sell_t)/(buy_total+sell_total)*100) if (buy_total+sell_total) > 0 else 0:>8.1f}% "
           f"R${ganho_pot_buy+ganho_pot_sell:>8.2f} R${perda_pot_buy+perda_pot_sell:>8.2f} R${total_pnl:>+8.2f}")
-    print(f"")
+    print("")
     print(f"💰  PnL Total Bruto (sinais tecnicos): R$ {total_pnl:+.2f}")
     print(f"💡  Ganho potencial total (Takes):     R$ {ganho_pot_buy+ganho_pot_sell:.2f}")
     print(f"⚠️   Perda potencial total (Stops):     R$ {perda_pot_buy+perda_pot_sell:.2f}")
@@ -297,7 +297,7 @@ async def main():
         print(f"    PnL acumulado dos dias pausados (oportunidade/risco): R$ {pnl_pausados:+.2f}")
 
     # ---- Top/Bottom por dia ----
-    print(f"\n📈  RANKING DIARIO POR PnL:")
+    print("\n📈  RANKING DIARIO POR PnL:")
     ranking = sorted(resultados, key=lambda r: r['pnl_dia'], reverse=True)
     for i, r in enumerate(ranking):
         flag = "🟢" if r['pnl_dia'] >= 0 else "🔴"

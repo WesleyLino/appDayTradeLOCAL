@@ -94,6 +94,8 @@ class BacktestPro:
             'pyramid_signal_threshold': kwargs.get('pyramid_signal_threshold', locked_params.get('pyramid_signal_threshold', 0.6)),
             'pyramid_max_volume': kwargs.get('pyramid_max_volume', locked_params.get('pyramid_max_volume', 1)),
             'volatility_pause_threshold': kwargs.get('volatility_pause_threshold', locked_params.get('volatility_pause_threshold', 250.0)),
+            'volatility_scalability_threshold': kwargs.get('volatility_scalability_threshold', 450.0), # [v24.3] Limite para pausa total
+            'reduced_lot_factor': kwargs.get('reduced_lot_factor', 0.5), # [v24.3] Redução de lote em vol alta
             'rsi_buy_level': kwargs.get('rsi_buy_level', locked_params.get('rsi_buy_level', 32)),
             'rsi_sell_level': kwargs.get('rsi_sell_level', locked_params.get('rsi_sell_level', 68)),
             'confidence_buy_threshold': kwargs.get('confidence_buy_threshold', None),
@@ -549,35 +551,51 @@ class BacktestPro:
                 if self._velas_hoje <= 10:
                     self._hl_acumulado += (row['high'] - row['low'])
 
-                # [PAUSA PARCIAL - 03/03/2026] VERIFICA VOLATILIDADE M1 NA ABERTURA
-                # H-L médio imune a gaps overnight. 03/03 = 314pts. Dias normais = ~180pts.
-                HL_EXTREMO     = self.opt_params.get('volatility_pause_threshold', 250.0)  # [v52.2] Sincronizado
-                ATR_NORMALIZA  = 80.0   # Limiar de normalização: retoma a operar
-
-                if self._velas_hoje == 10 and not self._dia_pausado_atr:
-                    hl_abertura = self._hl_acumulado / 10.0
-                    if hl_abertura > HL_EXTREMO:
-                        self._dia_pausado_atr = True
-                        logging.warning(
-                            f"⚠️ [PAUSA VOLATILIDADE] {current_date} | H-L abertura={hl_abertura:.1f}pts "
-                            f"(limiar={HL_EXTREMO}). Operações PAUSADAS até ATR<{ATR_NORMALIZA}."
-                        )
-                elif self._dia_pausado_atr:
-                    # Verifica normalização: ATR caiu abaixo de 80pts? (ATR M1 rolling 14)
-                    if atr_current < ATR_NORMALIZA:
-                        self._dia_pausado_atr = False
-                        logging.info(
-                            f"✅ [PAUSA VOLATILIDADE] {current_date} | ATR={atr_current:.1f}pts normalizou. "
-                            f"Retomando operações às {row.name.strftime('%H:%M')}."
-                        )
-
-                # [v23] Bypass de Volatilidade para Momentum Direcional
+                # [v24.4] MONITORAMENTO DINÂMICO DE RISCO (Córtex de Risco)
+                ATR_MM20_AVG = 75.0  # Média histórica do WIN em M1 (Normalização)
+                
+                # Média ultra-curta (últimos 10 candles) para detectar estabilização
+                last_10_candles = self.data.iloc[max(0, i-10):i]
+                ultra_short_hl = (last_10_candles['high'] - last_10_candles['low']).mean() if len(last_10_candles) > 0 else atr_current
+                
+                # Cálculo de Inércia de Volatilidade
+                if not hasattr(self, '_last_atr'): self._last_atr = atr_current
+                atr_delta = atr_current - self._last_atr
+                self._last_atr = atr_current
+                
+                # Lógica de Normalização Acelerada:
+                # Se os últimos 10 min estão estabilizados (< 100 pts de HL médio), relaxamos as travas.
+                if ultra_short_hl < 100.0 and self._velas_hoje > 20:
+                    risk_index = 0.8  # Nível de segurança normal
+                    if self._velas_hoje % 15 == 0:
+                        logging.debug(f"📉 [NORMALIZANDO] {row.name} | HL 10min={ultra_short_hl:.1f} | Risco reduzido.")
+                else:
+                    attenuation = 0.85 if atr_delta < 0 else 1.0
+                    risk_index = (atr_current / ATR_MM20_AVG) * attenuation
+                
+                # Cálculo de Lote Dinâmico Baseado no Risco
+                if risk_index <= 0.85:    
+                    current_lot_factor = 1.0
+                    self._reduced_lot_mode = False
+                elif risk_index <= 1.6:   
+                    current_lot_factor = max(0.5, 1.3 - (risk_index * 0.5))
+                    self._reduced_lot_mode = True
+                else:                     
+                    current_lot_factor = 0.3
+                    self._reduced_lot_mode = True
+                
+                self._extreme_vol_factor = current_lot_factor
+                
+                # Determinar se podemos operar
                 is_momentum_bypass = ai_decision.get('is_momentum_bypass', False) if 'ai_decision' in locals() else False
                 
-                if self._dia_pausado_atr and not is_momentum_bypass:
-                    self.shadow_signals['veto_reasons']['ATR_DIA_PAUSADO'] = \
-                        self.shadow_signals['veto_reasons'].get('ATR_DIA_PAUSADO', 0) + 1
-                    continue  # Próxima vela — sem entradas (salvo se for Momentum Bypass)
+                # [v24.4] Sensibilidade Fluida:
+                # Não há mais veto binário por volatilidade média. O risco agora controla LOTE e BYPASS.
+                # Veto apenas em Pânico Absoluto (> 2.5 = 187 pts de ATR)
+                if risk_index > 2.5 and not is_momentum_bypass:
+                    self.shadow_signals['veto_reasons']['PANICO_MERCADO_SEM_BYPASS'] = self.shadow_signals['veto_reasons'].get('PANICO_MERCADO_SEM_BYPASS', 0) + 1
+                    continue
+                
                 if is_opening_window:
                     if current_ema30 < current_ema90 * 0.9998:  # Margem de 0.02% para evitar falsos alertas
                         self._bias_diario = 'baixa'
@@ -626,11 +644,16 @@ class BacktestPro:
                 # --- [FASE 27] CORTEX DE DECISÃO CEGA ---
                 if use_ai_core:
                     # Preparar métricas sincronizadas
-                    # [CORRIGIDO AUDITORIA 03/03/2026] OBI Proxy = Volume Direcional (sem L2, mas representativo)
-                    # Candle de alta: volume positivo (+compra dominante)
-                    # Candle de baixa: volume negativo (-venda dominante)
-                    # Normalizado pela média dos últimos 20 períodos → OBI em escala [-3, +3]
-                    obi = 0.0  # Sem L2 no backtest OHLCV (OBI real disponível apenas ao vivo)
+                    # [v24.3] Proxy de OBI para Backtest: Deslocamento / Amplitude * 3.0
+                    # Representa o desequilíbrio de fluxo baseado na força do candle.
+                    candle_range = (row['high'] - row['low'])
+                    if candle_range > 0:
+                        obi = ((row['close'] - row['open']) / candle_range) * 3.0
+                    else:
+                        obi = 0.0
+                    
+                    # Suavização leve para evitar ruído extremo
+                    obi = max(-3.0, min(3.0, obi))
 
 
                     sentiment_score = 0.0
@@ -707,25 +730,37 @@ class BacktestPro:
                         bluechip_score=0.0
                     )
                     
+                    ai_dir = ai_decision.get('direction', 'NEUTRAL')
+                    ai_score = ai_decision.get('score', 50.0)
+                    is_momentum_bypass = ai_decision.get('is_momentum_bypass', False)
+                    
                     # [v36 PRIME] GATILHOS ASSIMÉTRICOS (RSI DINÂMICO) PROVINIENTES DA IA
                     rsi_buy_level = ai_decision.get('rsi_buy_trigger', self.opt_params.get('rsi_buy_level', 32))
                     rsi_sell_level = ai_decision.get('rsi_sell_trigger', self.opt_params.get('rsi_sell_level', 68))
                     v_spike_mult = self.opt_params.get('vol_spike_mult', 1.5)
-
-                    # [v22.5.5-PROTECT] Bloqueio Rigoroso de Compras Removido do Backtester
-                    # A decisão agora é delegada ao AICore que possui a lógica de Bypass Institucional (v22.5.7).
-                    
                     vol_spike_eff = row['tick_volume'] > (vol_sma * v_spike_mult)
 
-                    # [MODO FUSÃO SOTA] Gatilhos Matemáticos (RSI/BB) + Filtro de Convicção IA
-                    v22_buy_raw = (rsi < rsi_buy_level and row['close'] < lower_bb) and vol_spike_eff
-                    v22_sell_raw = (rsi > rsi_sell_level and row['close'] > upper_bb) and vol_spike_eff
+                    # [v24.3] GATILHO DE TENDÊNCIA (Trend-Following)
+                    # Se em Momentum Bypass, permite entrada direta sem esperar reversão de RSI/BB
+                    v24_momentum_buy = is_momentum_bypass and ai_dir == "COMPRA" and getattr(self.ai, 'h1_trend', 0) >= 0
+                    v24_momentum_sell = is_momentum_bypass and ai_dir == "VENDA" and getattr(self.ai, 'h1_trend', 0) <= 0
                     
+                    # Estabilidade Direcional Corrigida (0=Sell, 100=Buy)
+                    if ai_dir == "COMPRA":
+                        ai_stability = ai_score / 100.0
+                    elif ai_dir == "VENDA":
+                        ai_stability = (100.0 - ai_score) / 100.0
+                    else:
+                        ai_stability = 0.5 # Neutro
+                    
+                    # Consolidar Sinais
+                    v22_buy = (v22_buy_raw and ai_dir == "COMPRA" and ai_stability >= self.opt_params['confidence_level']) or v24_momentum_buy
+                    v22_sell = (v22_sell_raw and ai_dir == "VENDA" and ai_stability >= self.opt_params['confidence_level']) or v24_momentum_sell
+                    
+                    if is_momentum_bypass and (v24_momentum_buy or v24_momentum_sell):
+                        logging.info(f"🚀 [MOMENTUM ENTRY] {row.name} | Dir: {ai_dir} | Entrando a favor da Inércia Direcional.")
+
                     self.shadow_signals['v22_candidates'] = self.shadow_signals.get('v22_candidates', 0) + 1
-                    
-                    ai_dir = ai_decision.get('direction', 'NEUTRAL')
-                    ai_score = ai_decision.get('score', 50.0)
-                    is_momentum_bypass = ai_decision.get('is_momentum_bypass', False)
                     
                     # [v36.1] Estabilidade Direcional Corrigida (0=Sell, 100=Buy)
                     if ai_dir == "COMPRA":
@@ -734,24 +769,24 @@ class BacktestPro:
                         ai_stability = (100.0 - ai_score) / 100.0
                     else:
                         ai_stability = 0.5 # Neutro
+
                     
                     if v22_buy_raw or v22_sell_raw:
                         logging.debug(f"[SINAL] {row.name} | Dir: {ai_dir} | Stability: {ai_stability:.2f} | Veto: {ai_decision.get('veto')} | Reason: {ai_decision.get('reason')}")
 
                     
-                    # [v50.1] Diagnóstico Granulado de Filtros
                     if v22_buy_raw or v22_sell_raw:
+                        logging.info(f"[DIAGNÓSTICO] {row.name} | Risk Index: {risk_index:.2f} | Lote: {current_lot_factor*100:.0f}% | IA Score: {ai_score:.1f}")
                         self.shadow_signals['component_fail']['ai_veto_total'] = self.shadow_signals['component_fail'].get('ai_veto_total', 0) + 1
                         if ai_dir == "WAIT":
                             reason = ai_decision.get('reason', 'UNKNOWN')
                             self.shadow_signals['veto_reasons'][reason] = self.shadow_signals['veto_reasons'].get(reason, 0) + 1
                         else:
-                            # Threshold assimétrico ou global
-                            thr_buy = self.opt_params.get('confidence_buy_threshold') or self.opt_params['confidence_threshold']
-                            thr_sell = self.opt_params.get('confidence_sell_threshold') or self.opt_params['confidence_threshold']
-                            
-                            if (v22_buy_raw and ai_stability < thr_buy) or (v22_sell_raw and ai_stability < thr_sell):
+                            # Threshold dinâmico v24.4
+                            dynamic_thr = ai_decision.get('dynamic_bypass_thresh', self.opt_params['confidence_threshold'])
+                            if (v22_buy_raw and ai_stability < dynamic_thr) or (v22_sell_raw and ai_stability < dynamic_thr):
                                 self.shadow_signals['veto_reasons']['LOW_CONFIDENCE'] = self.shadow_signals['veto_reasons'].get('LOW_CONFIDENCE', 0) + 1
+
 
                     # Decisão Final: Precisa do gatilho técnico + viés de direção da IA + confiança + travas operacionais
                     thr_buy = self.opt_params.get('confidence_buy_threshold') or self.opt_params['confidence_threshold']
@@ -1017,7 +1052,8 @@ class BacktestPro:
                         self.opt_params['base_lot'], 
                         current_atr=atr_current, 
                         regime=current_regime,
-                        tp_multiplier=tp_multiplier,
+                        tp_multiplier=float(ai_decision.get("tp_multiplier", 1.0).iloc[0]) if isinstance(ai_decision.get("tp_multiplier"), (pd.Series, pd.DataFrame)) else float(ai_decision.get("tp_multiplier", 1.0)),
+                        sl_multiplier=float(ai_decision.get("sl_multiplier", 1.0).iloc[0]) if isinstance(ai_decision.get("sl_multiplier"), (pd.Series, pd.DataFrame)) else float(ai_decision.get("sl_multiplier", 1.0)), 
                         current_time=row.name.time()
                     )
                     
@@ -1053,20 +1089,24 @@ class BacktestPro:
                     multiplicador_sl = 1.5 if atr_current > 70 else 1.3
                     atr_sl = max(150.0, min(400.0, atr_current * multiplicador_sl)) if atr_current > 0 else 200.0
                     tech_sl_pts = atr_sl
-                    # [REC.1 - 03/03/2026] TP ADAPTATIVO em dias voláteis
-                    # ATR M1 > 90pts = dia extremo (Δ dia > ~3000pts) → TP = 250pts (realização rápida segura)
-                    # ATR M1 ≤ 90pts = dia normal → TP = 400pts (configuração melhorias A-H mantida)
                     tech_tp_pts = 250.0 if atr_current > 90 else 400.0
                     sl_tech = row['close'] + tech_sl_pts
                     tp_tech = row['close'] - tech_tp_pts
-                    tech_lot = 1  # Lote mínimo conservador
                     
+                    # [v24.3] Cálculo de Lote Dinâmico com Escalonamento
+                    base_lots = self.opt_params.get('force_lots', 1)
+                    if getattr(self, '_reduced_lot_mode', False):
+                        # Reduz o lote para o fator configurado (ex: 50%), mínimo 1 contrato
+                        final_lot = max(1, int(base_lots * self.opt_params.get('reduced_lot_factor', 0.5)))
+                    else:
+                        final_lot = base_lots
+
                     self.position = {
                         'side': 'sell',
                         'entry_price': row['close'],
                         'sl': sl_tech,
                         'tp': tp_tech,
-                        'lots': tech_lot,
+                        'lots': final_lot, # Changed from tech_lot to final_lot
                         'index': i,
                         'time': row.name,
                         'quantile_confidence': 'NORMAL',

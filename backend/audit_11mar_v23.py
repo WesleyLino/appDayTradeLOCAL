@@ -68,7 +68,7 @@ async def run_audit():
         print("\n" + "="*80)
         print(f"{'RELATÓRIO DE PERFORMANCE SOTA v23 - 11/03/2026':^80}")
         print("="*80)
-        print(f"Saldo Inicial:   R$ 3.000,00")
+        print("Saldo Inicial:   R$ 3.000,00")
         print(f"Saldo Final:     R$ {report['final_balance']:.2f}")
         print(f"Lucro/Prejuízo:  R$ {report['total_pnl']:.2f}")
         print(f"Trades do Dia:   {len(trades_11mar)}")

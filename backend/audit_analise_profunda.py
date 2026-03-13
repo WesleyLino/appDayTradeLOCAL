@@ -59,8 +59,8 @@ async def generate_deep_report():
             f.write("| :--- | :--- |\n")
             f.write(f"| **Saldo Final** | R$ {3000.0 + trades['pnl_fin'].sum():.2f} |\n")
             f.write(f"| **Lucro Líquido** | R$ {trades['pnl_fin'].sum():.2f} |\n")
-            f.write(f"| **Máximo Drawdown** | R$ 0,00 |\n")
-            f.write(f"| **Fator de Lucro** | Infinito (Sem perdas) |\n\n")
+            f.write("| **Máximo Drawdown** | R$ 0,00 |\n")
+            f.write("| **Fator de Lucro** | Infinito (Sem perdas) |\n\n")
         else:
             f.write("Nenhum trade executado (Filtros Conservadores Ativos).\n\n")
 

@@ -60,21 +60,21 @@ class RiskManager:
         # [v36 EXPERT] DNA do Mercado - Matriz de Regimes (Sincronizado com Plano Mestre)
         self.regime_settings = {
             1: { # TENDÊNCIA (Trend Rider)
-                "label": "Trending",
+                "label": "Tendência",
                 "trailing_trigger": 120.0, "trailing_lock": 90.0,
                 "rsi_buy": 38.0, "rsi_sell": 62.0,
                 "take_profit": 550.0, "use_partial": True, "partial_tp": 50.0,
                 "lot_multiplier": 1.0, "stop_loss": 250.0
             },
             0: { # LATERAL (Sniper Scalper)
-                "label": "Sideways",
+                "label": "Lateral",
                 "trailing_trigger": 60.0, "trailing_lock": 45.0, # Ativa mais cedo
                 "rsi_buy": 22.0, "rsi_sell": 78.0, # Mais assertivo (Sniper)
                 "take_profit": 150.0, "use_partial": True, "partial_tp": 30.0,
                 "lot_multiplier": 1.0, "stop_loss": 180.0
             },
             2: { # VOLATILIDADE (Safety First)
-                "label": "Volatile",
+                "label": "Volatilidade",
                 "trailing_trigger": 50.0, "trailing_lock": 30.0,
                 "rsi_buy": 15.0, "rsi_sell": 85.0,
                 "take_profit": 200.0, "use_partial": True, "partial_tp": 30.0,
@@ -82,7 +82,7 @@ class RiskManager:
                 "min_confidence": 0.65, "cooldown": 30
             },
             3: { # REVERSÃO (Mean Reversion)
-                "label": "Reversion",
+                "label": "Reversão",
                 "trailing_trigger": 60.0, "trailing_lock": 40.0,
                 "rsi_buy": 22.0, "rsi_sell": 78.0, # NOVO: Assertividade bi-direcional em reversão
                 "take_profit": 300.0, "use_partial": True, "partial_tp": 80.0,
@@ -795,6 +795,7 @@ class RiskManager:
                         self.adx_volatility_threshold = params.get("adx_volatility_threshold", self.adx_volatility_threshold)
                         self.atr_volatility_trigger = params.get("atr_volatility_trigger", self.atr_volatility_trigger)
                         self.bollinger_squeeze_threshold = mapped_params.get("bollinger_squeeze_threshold", self.bollinger_squeeze_threshold)
+                        self.max_daily_loss = float(params.get("max_daily_loss", self.max_daily_loss))
                         self.daily_trade_limit = params.get("daily_trade_limit", self.daily_trade_limit)
                         self.min_atr_threshold = mapped_params.get("min_atr_threshold", self.min_atr_threshold)
                         self.flux_imbalance_threshold = mapped_params.get("flux_imbalance_threshold", self.flux_imbalance_threshold)
@@ -808,7 +809,7 @@ class RiskManager:
                 logging.error(f"❌ RISK: Erro crítico ao carregar parâmetros de {json_path}: {e}")
         return False
 
-    def get_order_params(self, symbol, type, price, volume, current_atr=None, regime=None, tp_multiplier=1.0, current_time=None, **kwargs):
+    def get_order_params(self, symbol, type, price, volume, current_atr=None, regime=None, tp_multiplier=1.0, sl_multiplier=1.0, current_time=None, **kwargs):
         """
         Retorna parâmetros calculados para envio de ordem OCO.
         [SOTA v5] Suporta tp_multiplier e alvos baseados em ATR/Regime.
@@ -850,7 +851,12 @@ class RiskManager:
         # [v23] Lógica de Momentum e Abertura consolidada
         if tp_multiplier > 1.1:
             tp_points *= tp_multiplier
-            sl_points *= 1.2
+            # sl_points *= 1.2 # [ANTIVIBE] Removido multiplicador legado em favor do sl_multiplier da IA
+            
+        # [v24.2] Aplica multiplicador de Stop Loss vindo da IA (Momentum Bypass)
+        if sl_multiplier > 1.0:
+            sl_points *= sl_multiplier
+            logging.info(f"🛡️ [RISK SL] Stop Loss expandido via IA: x{sl_multiplier} ({sl_points:.0f} pts)")
             
         # [v23] Aplicar multiplicador de lote por Regime
         r_params = self.get_regime_specific_params(regime)
@@ -863,8 +869,7 @@ class RiskManager:
             sl_points *= 2.0
             logging.info(f"⚡ [RISCO v23] Abertura ({now_time}). Lote: {volume}, Stop: {sl_points}")
 
-        if tp_multiplier != 1.0 and tp_points > 0:
-            tp_points *= tp_multiplier
+        # [v24.2] Multiplicadores consolidados acimas
 
         if type in (mt5.ORDER_TYPE_BUY, mt5.ORDER_TYPE_BUY_LIMIT, mt5.ORDER_TYPE_BUY_STOP):
             side = "buy"
@@ -951,13 +956,11 @@ class RegimeExpert:
     def __init__(self):
         # Matriz de Multiplicadores SOTA V36
         self.matrix = {
-            1: {"label": "Trending", "sl_mult": 1.1, "tp_mult": 1.4}, # Tendência: Alvos longos
-            0: {"label": "Sideways", "sl_mult": 0.8, "tp_mult": 0.7}, # Lateral: Proteção curta
-            2: {"label": "Volatile", "sl_mult": 1.3, "tp_mult": 0.8}, # Volátil: Stop largo, Alvo curto
-            3: {"label": "Reversion", "sl_mult": 1.0, "tp_mult": 1.1} # Reversão: Padrão
+            1: {"label": "Tendência", "sl_mult": 1.1, "tp_mult": 1.4}, # Tendência: Alvos longos
+            0: {"label": "Lateral", "sl_mult": 0.8, "tp_mult": 0.7}, # Lateral: Proteção curta
+            2: {"label": "Volatilidade", "sl_mult": 1.3, "tp_mult": 0.8}, # Volátil: Stop largo, Alvo curto
+            3: {"label": "Reversão", "sl_mult": 1.0, "tp_mult": 1.1} # Reversão: Padrão
         }
 
     def get_regime_settings(self, regime_idx):
-        if isinstance(regime_idx, dict):
-            regime_idx = regime_idx.get('id', 0)
         return self.matrix.get(regime_idx, self.matrix[0])

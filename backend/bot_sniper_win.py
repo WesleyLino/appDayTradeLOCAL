@@ -178,7 +178,7 @@ class SniperBotWIN:
             # [v23] Redução de lote se a abertura foi excessivamente volátil
             if getattr(self, 'dia_pausado_vol', False):
                 lots *= 0.5
-                logger.info(f"⚠️ [VOL REDUC] Lote reduzido em 50% devido à volatilidade da abertura.")
+                logger.info("⚠️ [VOL REDUC] Lote reduzido em 50% devido à volatilidade da abertura.")
             
             if lot_mult != 1.0:
                 logger.info(f"🧬 [REGIME MULT] Lote ajustado em {lot_mult}x pelo regime {r_params.get('label')}")
@@ -202,6 +202,7 @@ class SniperBotWIN:
             current_atr=current_atr, 
             regime=regime, 
             tp_multiplier=tp_multiplier,
+            sl_multiplier=ai_decision.get("sl_multiplier", 1.0), # [v24.2] Sincronizado para momentum
             prev_extremes=prev_cand,
             current_time=datetime.now().time(), # [v24] Essencial para Janela de Ouro
             comment="MOMENTUM_BYPASS" if (ai_decision and ai_decision.get("is_momentum_bypass")) else "SNIPER_SOTA"
@@ -392,7 +393,7 @@ class SniperBotWIN:
                 # Agora a redução é aplicada no lote dentro do execute_trade.
                 if self.dia_pausado_vol and not decision["is_momentum_bypass"]:
                     if side != "NEUTRAL":
-                        logger.info(f"ℹ️ [INFO VOL] Sniper operando com lote reduzido (Abertura > 250)")
+                        logger.info("ℹ️ [INFO VOL] Sniper operando com lote reduzido (Abertura > 250)")
 
                 # Veto de Macro/Segurança (Mantemos mesmo no Momentum)
                 if is_trade_allowed and not self.risk.is_macro_allowed("BUY" if side == "buy" else "SELL", bc_score):
@@ -425,4 +426,6 @@ class SniperBotWIN:
         self.running = False; self.bridge.disconnect()
 
 if __name__ == "__main__":
-    bot = SniperBotWIN(dry_run=True); asyncio.run(bot.run())
+    # [ANTIVIBE-CODING] - Ativação de CONTA REAL para saldo de 3000 BRL
+    bot = SniperBotWIN(dry_run=False)
+    asyncio.run(bot.run())

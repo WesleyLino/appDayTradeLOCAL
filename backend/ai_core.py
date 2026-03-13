@@ -33,7 +33,7 @@ class InferenceEngine:
                 state_dict = torch.load(self.model_path, map_location='cpu')
                 self.model.load_state_dict(state_dict)
                 self.model.eval()
-                logging.info(f"--- [v22.5.7] PyTorch Engine Ativo (SOTA v22 Legacy)")
+                logging.info("--- [v22.5.7] PyTorch Engine Ativo (DmlExecutionProvider)")
         except Exception as e:
             logging.error(f"Erro ao carregar InferenceEngine: {e}")
 
@@ -126,9 +126,9 @@ class AICore:
             price_change = abs(last_candles['close'].iloc[-1] - last_candles['close'].iloc[0])
             # [v24.2] Detecção de Tendência Super Permissiva para Ralis de Auditoria
             if (price_change > (atr * 0.9) or h1_trend != 0):
-                return 1 # Trending
-            if atr > 350: return 2 # Super Volatile / Noise
-            return 0 # Mean Reversion / Consolidation
+                return 1 # Tendência (Trending)
+            if atr > 350: return 2 # Super Volátil / Ruído (Noise)
+            return 0 # Reversão à Média / Consolidação
         except:
             return 0
 
@@ -147,6 +147,7 @@ class AICore:
         avg_vol_20 = kwargs.get('avg_vol_20', 1.0)
         hour = kwargs.get('hour', 10)
         minute = kwargs.get('minute', 0)
+        atr = kwargs.get('atr', 0.0)
 
         # 2. Normalização de Score (FUSÃO SOTA v22)
         if isinstance(patchtst_score_in, dict):
@@ -168,19 +169,23 @@ class AICore:
         if obi_abs < 0.1:
             # Sem OBI (Dias de Auditoria/Offline), confiamos mais na IA
             score_raw = (patchtst_score_val * 0.7) + (sent_score_norm * 0.3)
+        if obi_abs < 0.1:
+            # Sem OBI (Dias de Auditoria/Offline), confiamos mais na IA
+            score_raw = (patchtst_score_val * 0.7) + (sent_score_norm * 0.3)
         else:
-            score_raw = (patchtst_score_val * 0.4) + (obi_score * 0.4) + (sent_score_norm * 0.2)
+            # [v24.3] Maior peso ao fluxo (OBI) para capturar ralis institucionais
+            score_raw = (patchtst_score_val * 0.2) + (obi_score * 0.6) + (sent_score_norm * 0.2)
         
         # 3. Inicialização de Variáveis de Controle
         is_momentum_bypass = False
         is_golden_window = False
-        direction = "NEUTRAL"
+        direction = "NEUTRO"
         exec_strategy = "PASSIVA"
         
         # 4. Detecção de Janela de Ouro (Abertura B3 - Alpha de Tempo)
         if (hour == 10 and minute >= 15) or (hour == 11 and minute <= 15):
             is_golden_window = True
-            logging.info(f"[v24.2 GOLDEN-WINDOW] Ativa via Tempo (10:15-11:15).")
+            logging.info("[v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).")
             # Relaxamento de incerteza na Janela de Ouro
             self.uncertainty_threshold = 0.8
         else:
@@ -188,31 +193,70 @@ class AICore:
 
         obi_abs = abs(float(obi))
         
-        # 5. Definição do Momentum Bypass
-        # [v24.2] Na Janela de Ouro ou Tendência Forte (Regime 1), relaxamos thresholds e ampliamos alvos
-        if is_golden_window and (obi_abs >= 1.5 or float(score_raw) >= 55.0): # [v24.2] Relaxado de 60 -> 55
+        # [v24.4] MONITORAMENTO DINÂMICO DE RISCO (Córtex de Risco)
+        # Ajuste dinâmico de sensibilidade baseado na volatilidade real (ATR)
+        base_bypass = getattr(self, "momentum_bypass_threshold", 81.0)
+        risk_factor = atr / 75.0 # Normalização WIN
+        
+        # [v24.4] Calibragem Fina de Risco
+        vol_impact = risk_factor * 2.0  # Menos punitivo
+        obi_relief = min(12.0, (obi_abs - 1.0) * 5.0) if obi_abs > 1.0 else 0.0
+        
+        # O thresh final sobe menos com a volatilidade e desce MAIS com o fluxo confirmado
+        dynamic_bypass_thresh = max(base_bypass - 3.0, min(89.0, base_bypass + vol_impact - obi_relief))
+        
+        # Convicção Direcional (IA + Fluxo)
+        is_high_conviction = (score_raw >= dynamic_bypass_thresh or score_raw <= (100.0 - dynamic_bypass_thresh))
+        
+        if is_golden_window and (obi_abs >= 1.5 or (float(score_raw) >= 55.0 or float(score_raw) <= 45.0)):
             is_momentum_bypass = True
-            logging.info(f"[v24.2 GOLDEN-BYPASS] Ativado via Janela de Ouro!")
-        elif (regime == 1 and float(score_raw) >= 52.0) or (float(score_raw) >= 80.0 or float(score_raw) <= 20.0):
-            if obi_abs >= 1.5 or is_golden_window or regime == 1:
-                is_momentum_bypass = True
-                logging.info(f"[v24.2 MOMENTUM-BYPASS] Ativado via Fluxo/Regime!")
+            logging.info(f"[v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: {dynamic_bypass_thresh:.1f})")
+        elif is_high_conviction and (obi_abs >= 1.5 or is_golden_window or regime == 1):
+            # Alta convicção dinâmica com suporte de fluxo ou regime
+            is_momentum_bypass = True
+            logging.info(f"[v24.4 MOMENTUM-BYPASS] Ativado via Fluxo/Regime! (Thresh: {dynamic_bypass_thresh:.1f})")
+
+        # [v24] Lógica de Multiplicador de Alvos Exponenciais (Momentum Bypass)
+        tp_multiplier = 1.0
+        sl_multiplier = 1.0 # [v24.2] Novo multiplicador para Stop Loss em Momento
+
+        if is_momentum_bypass:
+            # Alvos Institucionais para Ralis (x8 TP / x3 SL)
+            # Esses valores garantem que capturamos o movimento total sem stop curto demais
+            tp_multiplier = 8.0 
+            sl_multiplier = 3.0
+            logging.info(f"🚀 [BYPASS-PRO] Ativado! Score={score_raw:.1f}, OBI={obi_abs:.1f}, Regime={regime}")
+        else:
+            # Multiplicador padrão do SOTA para ganhos estendidos
+            tp_multiplier = 1.5
+            # [v24.2.1] Extensão em Tendência (Regime 1): x1.15 adicional
+            if regime == 1:
+                tp_multiplier *= 1.15
+                if current_vol > 0:
+                    logging.info(f"📈 [REGIME-1] Alvos Normais. Score={score_raw:.1f}, OBI={obi_abs:.1f}, Bypass=OFF")
+            sl_multiplier = 1.0 # Mantém Stop Loss padrão se não for momentum bruto
 
         # 6. Decisão de Direção e Multiplicadores de Alvo
-        sl_multiplier = 1.0
-        tp_multiplier = 1.0
         if is_momentum_bypass:
             exec_strategy = "MOMENTUM"
             direction = "COMPRA" if (score_raw >= 50 or obi > 0) else "VENDA"
-            # [v24.2] Alvos Institucionais MAX (Captura de Ralis Lendários como 11/03)
-            sl_multiplier = 3.0 # 150 -> 450 pts (Suporta as sacudidas da B3)
-            tp_multiplier = 8.0 # 300 -> 2400 pts (Barra o rali completo de 11/03)
         else:
-            if score_raw >= self.confidence_buy_threshold:
+            # [v24.2.1] Relaxamento Dinâmico de Confiança para Baixa Volatilidade (ATR < 60)
+            # Permite capturar sinais em mercados lentos mas direcionais
+            buy_thresh = self.confidence_buy_threshold
+            sell_thresh = self.confidence_sell_threshold
+            
+            if 0 < atr < 60:
+                relax = float(getattr(self, 'confidence_relax_factor', 0.75))
+                buy_thresh = 50.0 + (buy_thresh - 50.0) * relax
+                sell_thresh = 50.0 - (50.0 - sell_thresh) * relax
+                logging.info(f"💎 [RELAX-V24] Ativo (ATR={atr:.1f}): Buy={buy_thresh:.1f}, Sell={sell_thresh:.1f}")
+
+            if score_raw >= buy_thresh:
                 direction = "COMPRA"
-            elif score_raw <= self.confidence_sell_threshold:
+            elif score_raw <= sell_thresh:
                 direction = "VENDA"
-            exec_strategy = "SNIPER" if direction != "NEUTRAL" else "PASSIVA"
+            exec_strategy = "SNIPER" if direction != "NEUTRO" else "PASSIVA"
 
         # 7. Avaliação de Vetos
         vwap_veto = False
@@ -243,7 +287,7 @@ class AICore:
         if veto_reason:
             if current_vol > 0: # Reduz log spam
                 logging.warning(f"[DEBUG-AI] Veto: {veto_reason} | Score: {score_raw:.1f} | Bypass: {is_momentum_bypass} | Regime: {regime} | Dist VWAP: {dist_vwap:.1f}")
-            direction = "WAIT"
+            direction = "AGUARDAR"
             exec_strategy = "PASSIVA"
         
         return {
@@ -252,7 +296,8 @@ class AICore:
             "execution_strategy": exec_strategy,
             "is_momentum_bypass": is_momentum_bypass,
             "lot_multiplier": 1.0,
-            "tp_multiplier": 1.5 if is_momentum_bypass else 1.0,
+            "tp_multiplier": tp_multiplier,
+            "sl_multiplier": sl_multiplier, # [v24.2] Sincronizado para RiskManager
             "veto": veto_reason,
             "reason": veto_reason,
             "h1_trend": self.h1_trend,

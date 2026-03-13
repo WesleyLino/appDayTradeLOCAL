@@ -143,7 +143,7 @@ async def run_detailed_audit():
     report_path = r"C:\Users\Wesley Lino\.gemini\antigravity\brain\ceff438f-e2a0-4d7f-b7c5-0346fcb35837\analise_profunda_11mar_v24_1.md"
     
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write(f"# 🔍 Auditoria Profunda SOTA v24.1: 11/03/2026\n\n")
+        f.write("# 🔍 Auditoria Profunda SOTA v24.1: 11/03/2026\n\n")
         f.write("> **Status**: Auditoria Bi-Direcional Finalizada com Capital de R$ 3.000,00\n\n")
         
         f.write("## 1. Resumo Executivo (Realizado)\n")

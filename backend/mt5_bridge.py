@@ -35,6 +35,14 @@ class MT5Bridge:
         self.connected = False
         self._macro_symbol_cache = None # [HFT v2.1] Cache para evitar busca repetitiva
         
+    def _normalize_symbol(self, symbol):
+        """Normaliza símbolos B3 para chaves genéricas (ex: WING26 -> WIN$)."""
+        if not symbol: return "WIN$"
+        s = str(symbol).upper()
+        if "WIN" in s: return "WIN$"
+        if "WDO" in s: return "WDO$"
+        return s
+        
         # self.connect() # Movido para chamada explícita
 
     def connect(self):

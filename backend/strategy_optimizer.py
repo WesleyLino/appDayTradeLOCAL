@@ -501,7 +501,7 @@ async def main():
 
     print(f"⚙️   RSI={p['rsi_period']} | SL={p['sl_dist']} | TP={p['tp_dist']} | BB={p['bb_dev']}")
     print(f"     RSI-Compra≤{p['rsi_buy_level']} | RSI-Venda≥{p['rsi_sell_level']} | MultVol={p['vol_spike_mult']}")
-    print(f"📥   Coletando histórico MT5...")
+    print("📥   Coletando histórico MT5...")
 
     df_all = await bt.load_data()
     if df_all is None or df_all.empty:

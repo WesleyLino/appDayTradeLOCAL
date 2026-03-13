@@ -1,0 +1,12 @@
+RELATORIO FINAL 11/03
+==============================
+Ganho (COMPRA): R$ 134.00
+Ganho (VENDA):  R$ 1.00
+Prejuizo:       R$ 92.00
+Liquido:        R$ 43.00
+------------------------------
+FILTROS:
+   - Confianca: 8
+   - Volatilidade: 0
+   - Outros: 0
+==============================

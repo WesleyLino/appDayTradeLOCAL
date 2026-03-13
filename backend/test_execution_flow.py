@@ -86,15 +86,41 @@ async def test_execution_logic():
     print(f"SL: {params_lat['sl']} (Esperado ~{current_price + 10 + 130} - mult 1.3)")
     print(f"TP: {params_lat['tp']} (Esperado ~{current_price + 10 - 80} - mult 0.8 lateral)")
 
-    # Teste de Quantização B3
-    print("\n--- Cenário 3: Quantização Tick Size B3 ---")
-    bad_price = 120002.34
-    quantized = bot.risk._quantize_price("WINJ24", bad_price)
-    print(f"Original: {bad_price} -> Quantized: {quantized} (Tick 5.0)")
-    if quantized % 5 == 0:
-        print("✅ SUCESSO: Preço quantizado corretamente.")
+    # Cenário 4: Momentum Bypass (IA Autoritária)
+    print("\n--- Cenário 4: MOMENTUM BYPASS (IA x8 TP / x3 SL) ---")
+    regime = 1
+    atr = 150.0 # ATR base WIN
+    tp_mult_institucional = 8.0
+    sl_mult_institucional = 3.0
+    
+    params_momentum = bot.risk.get_order_params(
+        "WINJ24", 
+        bot.bridge.mt5.ORDER_TYPE_BUY_LIMIT, 
+        current_price, 
+        1, 
+        current_atr=atr, 
+        regime=regime,
+        tp_multiplier=tp_mult_institucional,
+        sl_multiplier=sl_mult_institucional
+    )
+    
+    print(f"Preço Entrada: {params_momentum['price']}")
+    # No SOTA, se houver ATR, o cálculo é ATR * RegimeMult * MomentumMult
+    expected_tp_dist = (atr * 1.5) * tp_mult_institucional # Regime 1 TP Mult = 1.5
+    expected_sl_dist = (atr * 1.3) * sl_mult_institucional # Regime 1 SL Mult = 1.3
+    
+    print(f"SL: {params_momentum['sl']} (Distância: {abs(params_momentum['sl'] - current_price):.0f} pts | Esperado: ~{expected_sl_dist})")
+    print(f"TP: {params_momentum['tp']} (Distância: {abs(params_momentum['tp'] - current_price):.0f} pts | Esperado: ~{expected_tp_dist})")
+
+    if abs(params_momentum['tp'] - current_price) >= expected_tp_dist:
+        print("✅ SUCESSO: TP Institucional expandido corretamente.")
     else:
-        print("❌ FALHA: Preço não respeita Tick Size 5.0")
+        print("❌ FALHA: TP não atingiu a escala institucional.")
+        
+    if abs(params_momentum['sl'] - current_price) >= (expected_sl_dist - 20):
+        print("✅ SUCESSO: SL Institucional expandido corretamente (com tolerância Anti-Violinada).")
+    else:
+        print("❌ FALHA: SL não atingiu a escala institucional.")
 
     print("\n✅ Teste de Lógica de Execução Concluído!")
 

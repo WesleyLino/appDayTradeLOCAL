@@ -36,7 +36,7 @@ async def run_audit_v36():
     }
 
     # Coleta de Dados massiva (15.000 candles para cobrir 19/02 até 11/03 com folga)
-    print(f"📥 Sincronizando dados históricos WIN$ (15k candles)...")
+    print("📥 Sincronizando dados históricos WIN$ (15k candles)...")
     bt_loader = BacktestPro(symbol="WIN$", n_candles=15000)
     data_full = await bt_loader.load_data()
     
@@ -49,7 +49,7 @@ async def run_audit_v36():
     resultados = []
     totais = {"pnl": 0.0, "compra": 0.0, "venda": 0.0, "vetos": 0}
 
-    print(f"\n🚀 AUDITORIA V36 - HISTÓRICO 15 DIAS (CAPITAL R$ 3.000)")
+    print("\n🚀 AUDITORIA V36 - HISTÓRICO 15 DIAS (CAPITAL R$ 3.000)")
     print(f"{'Data':<12} | {'Símbolo':<7} | {'PnL Total':<10} | {'Trades':<6} | {'Vetos':<6} | {'Status'}")
     print("-" * 75)
 
@@ -107,8 +107,8 @@ async def run_audit_v36():
         totais["venda"] += v_dia
 
     print("-" * 75)
-    print(f"📊 RESULTADO CONSOLIDADO V36:")
-    print(f"   >>> Capital Inicial: R$ 3.000,00")
+    print("📊 RESULTADO CONSOLIDADO V36:")
+    print("   >>> Capital Inicial: R$ 3.000,00")
     print(f"   >>> PnL Acumulado (15 Dias): R$ {totais['pnl']:.2f} ({ (totais['pnl']/3000)*100 :.1f}%)")
     print(f"   >>> Lucro Compra: R$ {totais['compra']:.2f}")
     print(f"   >>> Lucro Venda: R$ {totais['venda']:.2f}")
