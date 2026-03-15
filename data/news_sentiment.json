@@ -1,59 +1,59 @@
 {
-  "score": -0.5,
-  "reliability": "medium",
-  "risk_classification": "MEDIUM",
-  "fact_check": "O Ibovespa opera em queda, perdendo o patamar de 179 mil pontos, com VALE3 e PETR4 em baixa. H\u00e1 incerteza externa. O CEO da Petrobras afirmou que medidas sobre diesel n\u00e3o alteram a estrat\u00e9gia de pre\u00e7os. Hypera apresenta sinais de melhora no 4T e projeta crescimento futuro. Mercados europeus (Espanha, Su\u00e9cia) tamb\u00e9m fecharam em queda.",
+  "score": -0.65,
+  "reliability": "high",
+  "risk_classification": "HIGH",
+  "fact_check": "Mercados globais e brasileiros em queda, com Ibovespa em terceira semana negativa, impulsionados por preocupa\u00e7\u00f5es com guerra no Ir\u00e3 e avers\u00e3o a risco. Not\u00edcias corporativas pontuais no Brasil mostram resultados mistos, mas n\u00e3o revertem o sentimento macro negativo.",
   "news": [
     {
-      "headline": "Ibovespa recua e opera abaixo de 179 mil pontos com incerteza global.",
-      "relevance": 0.9,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Hypera avan\u00e7a com sinais de melhora no 4T e foco em semaglutida.",
-      "relevance": 0.6,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Hypera projeta acelera\u00e7\u00e3o de vendas e aposta em semaglutida para 2026.",
-      "relevance": 0.5,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "An\u00e1lise sobre potencial impacto duplo de taxa\u00e7\u00e3o em petroleiras.",
-      "relevance": 0.7,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "CEO da Petrobras afirma que medidas sobre diesel n\u00e3o alteram estrat\u00e9gia de pre\u00e7os.",
-      "relevance": 0.9,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "A\u00e7\u00f5es da Hexcel caem ap\u00f3s nomea\u00e7\u00e3o de novo CFO.",
-      "relevance": 0.2,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "BBI projeta rota\u00e7\u00e3o dom\u00e9stica e aposta no Brasil para 2T.",
+      "headline": "Memecoin de Trump dispara 60% com evento em Mar-a-Lago",
       "relevance": 0.1,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Mercado espanhol fecha em queda, IBEX 35 recua 0,47%.",
+      "headline": "Magalu (MGLU3) fecha em leve queda ap\u00f3s balan\u00e7o do 4T",
+      "relevance": 0.6,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "M\u00e9xico: A\u00e7\u00f5es fecham em queda, \u00cdndice S&P/BMV IPC recua 0,66%",
       "relevance": 0.4,
       "impact": "BEARISH"
     },
     {
-      "headline": "Ibovespa recua, perde 179 mil pontos; VALE3 e PETR4 em queda.",
+      "headline": "Brasil: A\u00e7\u00f5es fecham em queda, \u00cdndice Bovespa recua 0,91%",
+      "relevance": 0.8,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Ibovespa fecha com nova queda e emenda terceira semana negativa",
+      "relevance": 0.9,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Ibovespa fecha semana abaixo de 178 mil pontos por guerra no Ir\u00e3",
       "relevance": 1.0,
       "impact": "BEARISH"
     },
     {
-      "headline": "Mercado sueco fecha em queda, OMX Stockholm 30 recua 1,45%.",
-      "relevance": 0.3,
+      "headline": "Trump autoriza Venezuela a vender fertilizantes devido \u00e0 guerra",
+      "relevance": 0.5,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Hypera sobe ap\u00f3s 4T e aposta em semaglutida",
+      "relevance": 0.6,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Bolsas de NY caem por avers\u00e3o a riscos de guerra, terminam semana em queda",
+      "relevance": 0.9,
       "impact": "BEARISH"
+    },
+    {
+      "headline": "Raytheon garante contrato de US$ 2 bilh\u00f5es para terminais de sat\u00e9lite",
+      "relevance": 0.3,
+      "impact": "NEUTRAL"
     }
   ],
-  "timestamp": 1773426046.3896227
+  "timestamp": 1773448759.9241517
 }

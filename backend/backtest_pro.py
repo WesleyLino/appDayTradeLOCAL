@@ -355,6 +355,14 @@ class BacktestPro:
         data['upper_bb'] = data['sma_20'] + bb_d * data['std_20']
         data['lower_bb'] = data['sma_20'] - bb_d * data['std_20']
 
+        # 2.5 RSI calculation (SOTA Period = 9)
+        delta = data['close'].diff()
+        gain = (delta.where(delta > 0, 0)).ewm(span=9, adjust=False).mean()
+        loss = (-delta.where(delta < 0, 0)).ewm(span=9, adjust=False).mean()
+        rs = gain / (loss + 1e-9)
+        data['rsi'] = 100 - (100 / (1 + rs))
+
+
         # 3. ATR 14
         tr = pd.concat([data['high'] - data['low'], 
                        (data['high'] - data['close'].shift()).abs(), 
@@ -528,6 +536,22 @@ class BacktestPro:
                 # 5. Volume Analysis (Alpha V22)
                 v_mult = self.opt_params['vol_spike_mult']  # [v52.2] Sincronizado com JSON (0.8)
                 vol_spike = row['tick_volume'] > (vol_sma * v_mult)
+                
+                # [v22.5.7] Gatilhos Técnicos (Candidatos para a IA)
+                cond_rsi_buy = (rsi < self.opt_params.get('rsi_buy_level', 30))
+                cond_bb_buy = (row['close'] < lower_bb)
+                cond_rsi_sell = (rsi > self.opt_params.get('rsi_sell_level', 70))
+                cond_bb_sell = (row['close'] > upper_bb)
+                
+                current_flux_thresh = self.opt_params.get('flux_imbalance_threshold', 1.2)
+                if self.opt_params.get('adaptive_flux_active', False) and atr_current > 200:
+                    current_flux_thresh = 1.05
+                    
+                cond_vol_buy = (row['tick_volume'] > vol_sma * current_flux_thresh)
+                cond_vol_sell = (row['tick_volume'] > vol_sma * current_flux_thresh)
+
+                v22_buy_raw = cond_rsi_buy and cond_bb_buy and cond_vol_buy
+                v22_sell_raw = cond_rsi_sell and cond_bb_sell and cond_vol_sell
                 
                 # --- MELHORIA H (V28): Filtro de Tendência Diária ---
                 # Na abertura de cada dia, deteta se EMA30 < EMA90 → mercado em baixa.

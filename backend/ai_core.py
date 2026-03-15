@@ -85,16 +85,20 @@ class InferenceEngine:
 
     def _predict_sync(self, dataframe):
         try:
-            # [v24.4.1] Sincronização de 5 Canais Obrigatórios (v22 Legacy compatibility)
-            cols = ['open', 'high', 'low', 'close', 'tick_volume']
+            # [v24.4.1] Sincronização de Canais (v22=5, v24=8)
+            if self.use_onnx and self.ort_session and self.ort_session.get_inputs()[0].shape[2] == 8:
+                cols = ['open', 'high', 'low', 'close', 'tick_volume', 'cvd_normal', 'ofi_normal', 'trap_index']
+            else:
+                cols = ['open', 'high', 'low', 'close', 'tick_volume']
             
-            # Garante que todas as colunas existem (Padding com zero se faltar)
+            # Garante que todas as colunas existem (Padding com zero se faltar para evitar quebra)
             for c in cols:
                 if c not in dataframe.columns:
+                    # [v24.4] Se faltar métricas de microestrutura, inicializa com neutro
                     dataframe[c] = 0.0
             
             input_data = dataframe[cols].values[-60:].astype(np.float32)
-            input_tensor = np.expand_dims(input_data, axis=0) # [1, 60, 5]
+            input_tensor = np.expand_dims(input_data, axis=0) # [1, 60, N]
 
             if self.use_onnx and self.ort_session:
                 input_name = self.ort_session.get_inputs()[0].name
@@ -254,10 +258,28 @@ class AICore:
             logging.info("[v24.2 JANELA-DE-OURO] Ativa via Tempo (10:15-11:15).")
             # Relaxamento de incerteza na Janela de Ouro
             self.uncertainty_threshold = 0.8
+        elif (hour == 9):
+            # [v24.4.1] Janela de Abertura B3 - Vigor Inicial
+            is_opening_window = True
+            logging.info(f"[v24.4.1 ABERTURA-VIGOROSA] Janela de Abertura (09:00-10:00).")
+            self.uncertainty_threshold = 0.6 # Mais tolerante que o normal (0.4)
         else:
             self.uncertainty_threshold = 0.4 # Default v22
 
-        obi_abs = abs(float(obi))
+        # [v24.4.1] Fusão de Scores com Vigor de Abertura
+        is_opening_window = (hour == 9)
+        if is_opening_window:
+            # Dá mais peso à IA temporal durante a abertura para capturar gaps e impulsos
+            score_raw = (patchtst_score_val * 0.4) + (obi_score * 0.4) + (sent_score_norm * 0.2)
+        else:
+            if obi_abs < 0.1:
+                score_raw = (patchtst_score_val * 0.7) + (sent_score_norm * 0.3)
+            else:
+                score_raw = (patchtst_score_val * 0.2) + (obi_score * 0.6) + (sent_score_norm * 0.2)
+        
+        # [v24.4.1] Barreira de Entrada Dinâmica
+        # Reduz em 5 pontos durante a abertura para ser mais agressivo no momentum inicial
+        opening_discount = 5.0 if is_opening_window else 0.0
         
         # [v24.4] Calibragem Fina de Risco - Sensibilidade Multi-Ativo
         is_wdo = (current_price < 15000) # [AUDIT] Identifica se é WDO (Preço ~5k) vs WIN (Preço ~130k)
@@ -269,19 +291,19 @@ class AICore:
         vol_impact = risk_factor * 2.0  # Menos punitivo
         obi_relief = min(12.0, (obi_abs - 1.0) * 5.0) if obi_abs > 1.0 else 0.0
         
-        # O thresh final sobe menos com a volatilidade e desce MAIS com o fluxo confirmado
-        dynamic_bypass_thresh = max(self.momentum_bypass_threshold - 3.0, min(89.0, self.momentum_bypass_threshold + vol_impact - obi_relief))
-        
+        dynamic_bypass_thresh = max(self.momentum_bypass_threshold - 3.0 - opening_discount, 
+                                    min(89.0, self.momentum_bypass_threshold + vol_impact - obi_relief - opening_discount))
+
         # Convicção Direcional (IA + Fluxo)
         is_high_conviction = (score_raw >= dynamic_bypass_thresh or score_raw <= (100.0 - dynamic_bypass_thresh))
         
         if is_golden_window and (obi_abs >= 1.5 or (float(score_raw) >= 55.0 or float(score_raw) <= 45.0)):
             is_momentum_bypass = True
             logging.info(f"[v24.4 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Thresh: {dynamic_bypass_thresh:.1f})")
-        elif is_high_conviction and (obi_abs >= 1.5 or is_golden_window or regime == 1):
-            # Alta convicção dinâmica com suporte de fluxo ou regime
+        elif is_high_conviction and (obi_abs >= 1.5 or is_golden_window or is_opening_window or regime == 1):
+            # Alta convicção dinâmica com suporte de fluxo, regime ou abertura vigorosa
             is_momentum_bypass = True
-            logging.info(f"[v24.4 MOMENTUM-BYPASS] Ativado via Fluxo/Regime! (Thresh: {dynamic_bypass_thresh:.1f})")
+            logging.info(f"[v24.4 MOMENTUM-BYPASS] Ativado via Fluxo/Regime/Abertura! (Thresh: {dynamic_bypass_thresh:.1f})")
 
         # [v24] Lógica de Multiplicador de Alvos Exponenciais (Momentum Bypass)
         tp_multiplier = 1.0
@@ -330,9 +352,15 @@ class AICore:
         vwap_veto = False
         dist_vwap = abs(current_price - vwap)
         
-        # [v24.4] Sincronia de Precisão: Threshold de VWAP dinâmico (WIN: 2% do preço, WDO: 40 pts)
+        # [v24.4.1] Sincronia de Precisão: Threshold de VWAP dinâmico
         limit_eff = (current_price * 0.02) if not is_wdo else 40.0
         
+        # [v24.4.1] Relaxamento VWAP em Baixa Volatilidade (Reversões Precoces)
+        atr_limit = 60.0 if not is_wdo else 3.5
+        if 0 < atr < atr_limit:
+            limit_eff *= 1.20 # Aumenta tolerância em 20% para capturar reversões
+            logging.info(f"💎 [VWAP-FLEX] Baixa Volatilidade ({atr:.1f}). Tolerância expandida: {limit_eff:.1f}")
+
         # [v24.4.3] Trava de Sanidade Reforçada Dinâmica: Aceita até 6% de distância em ralis 2026
         max_valid_dist = (current_price * 0.06) if not is_wdo else 300.0
         
@@ -348,8 +376,8 @@ class AICore:
         elif dist_vwap > max_valid_dist:
             vwap_veto = False
             logging.warning(f"🛡️ [SANITY-TRAP] VWAP Anômalo Detectado ({dist_vwap:.1f}). Ignorando veto para evitar travamento institucional.")
-        elif is_momentum_bypass or is_golden_window or regime == 1 or float(score_raw) >= 60.0:
-            vwap_veto = False # Momentum e Convicção Alta ignoram VWAP
+        elif is_momentum_bypass or is_golden_window or is_opening_window or regime == 1 or float(score_raw) >= 60.0:
+            vwap_veto = False # Momentum, Convicção Alta e ABERTURA ignoram VWAP
         else:
             if obi_abs >= 2.0: limit_eff *= 2.0
             if float(dist_vwap) > float(limit_eff): vwap_veto = True
