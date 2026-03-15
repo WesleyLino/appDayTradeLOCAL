@@ -2,6 +2,7 @@ import sqlite3
 import logging
 from datetime import datetime
 
+
 class PersistenceManager:
     def __init__(self, db_path="trading_state.db"):
         self.db_path = db_path
@@ -12,18 +13,18 @@ class PersistenceManager:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            
+
             # Tabela de estado global
-            cursor.execute('''
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS system_state (
                     key TEXT PRIMARY KEY,
                     value TEXT,
                     updated_at TIMESTAMP
                 )
-            ''')
-            
+            """)
+
             # Tabela de logs de operações (para auditoria local)
-            cursor.execute('''
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS trade_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     symbol TEXT,
@@ -33,8 +34,8 @@ class PersistenceManager:
                     timestamp TIMESTAMP,
                     status TEXT
                 )
-            ''')
-            
+            """)
+
             conn.commit()
             conn.close()
         except Exception as e:
@@ -45,10 +46,13 @@ class PersistenceManager:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute('''
+            cursor.execute(
+                """
                 INSERT OR REPLACE INTO system_state (key, value, updated_at)
                 VALUES (?, ?, ?)
-            ''', (key, str(value), datetime.now()))
+            """,
+                (key, str(value), datetime.now()),
+            )
             conn.commit()
             conn.close()
         except Exception as e:
@@ -59,7 +63,7 @@ class PersistenceManager:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute('SELECT value FROM system_state WHERE key = ?', (key,))
+            cursor.execute("SELECT value FROM system_state WHERE key = ?", (key,))
             row = cursor.fetchone()
             conn.close()
             return row[0] if row else None
@@ -72,15 +76,21 @@ class PersistenceManager:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute('''
+            cursor.execute(
+                """
                 INSERT INTO trade_history (symbol, type, price, volume, timestamp, status)
                 VALUES (?, ?, ?, ?, ?, ?)
-            ''', (symbol, side, price, volume, datetime.now(), status))
+            """,
+                (symbol, side, price, volume, datetime.now(), status),
+            )
             conn.commit()
             conn.close()
-            logging.info(f"Trade salvo no SQLite: {side} {volume} de {symbol} a {price}")
+            logging.info(
+                f"Trade salvo no SQLite: {side} {volume} de {symbol} a {price}"
+            )
         except Exception as e:
             logging.error(f"Erro ao salvar trade no banco: {e}")
+
 
 if __name__ == "__main__":
     # Teste rápido

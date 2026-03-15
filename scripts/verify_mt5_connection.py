@@ -3,9 +3,10 @@ import sys
 import os
 import time
 
+
 def verify_mt5():
     print("--- INICIANDO VERIFICAÇÃO DE CONEXÃO MT5 (GENIAL) ---")
-    
+
     if not mt5.initialize():
         print(f"❌ Falha ao inicializar MT5. Erro: {mt5.last_error()}")
         sys.exit(1)
@@ -39,26 +40,33 @@ def verify_mt5():
 
     # 4. Validar Dados de Mercado (WIN/WDO)
     print("\nTestando Recebimento de Dados (Market Data)...")
-    
+
     # Importar lógica de cálculo de símbolo da bridge para garantir consistência
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     from backend.mt5_bridge import MT5Bridge
-    bridge = MT5Bridge() # Instância para usar helpers (já conectado pelo main, mas ok instanciar leve)
-    
+
+    bridge = (
+        MT5Bridge()
+    )  # Instância para usar helpers (já conectado pelo main, mas ok instanciar leve)
+
     # Recalcular símbolos atuais
     win_sym = bridge.get_current_symbol("WIN")
     wdo_sym = bridge.get_current_symbol("WDO")
-    
+
     def check_symbol_data(symbol):
         if not mt5.symbol_select(symbol, True):
-            print(f"❌ Erro: Não foi possível selecionar o símbolo {symbol}. Verifique se adicionou no Market Watch.")
+            print(
+                f"❌ Erro: Não foi possível selecionar o símbolo {symbol}. Verifique se adicionou no Market Watch."
+            )
             return False
-            
+
         tick = mt5.symbol_info_tick(symbol)
         if tick is None:
-            print(f"⚠️ Aviso: Tick vazio para {symbol}. Mercado pode estar fechado ou sem liquidez.")
+            print(
+                f"⚠️ Aviso: Tick vazio para {symbol}. Mercado pode estar fechado ou sem liquidez."
+            )
             return False
-            
+
         print(f"✅ {symbol}: Preço={tick.last} | Bid={tick.bid} | Ask={tick.ask}")
         return True
 
@@ -68,12 +76,13 @@ def verify_mt5():
     # 5. Teste de Latência (Ping Simples)
     print("\nTestando latência de conexão...")
     t0 = time.time()
-    mt5.terminal_info() # Chamada leve
+    mt5.terminal_info()  # Chamada leve
     latency = (time.time() - t0) * 1000
     print(f"📶 Latência API Local: {latency:.2f}ms")
 
     mt5.shutdown()
     print("\n--- FIM DA VERIFICAÇÃO ---")
+
 
 if __name__ == "__main__":
     verify_mt5()

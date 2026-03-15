@@ -1,6 +1,7 @@
 """
 Diagnóstico: verifica se MT5 retorna dados e por que não há trades nos backtests
 """
+
 import sys
 import os
 import asyncio
@@ -9,12 +10,16 @@ import MetaTrader5 as mt5
 from datetime import datetime
 
 # Ativa logs para ver tudo
-logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s',
-                    handlers=[logging.StreamHandler(sys.stdout)])
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(levelname)s: %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from backend.mt5_bridge import MT5Bridge
 from backend.backtest_pro import BacktestPro
+
 
 async def diag():
     bridge = MT5Bridge()
@@ -27,16 +32,20 @@ async def diag():
     # Testa coleta de dados para 1 dia simples
     dia = datetime(2026, 2, 25)
     date_from = dia.replace(hour=8, minute=0)
-    date_to   = dia.replace(hour=18, minute=30)
+    date_to = dia.replace(hour=18, minute=30)
     print(f"\n[DADOS] Coletando M1 para {dia.strftime('%d/%m/%Y')}...")
     data = bridge.get_market_data_range("WIN$N", mt5.TIMEFRAME_M1, date_from, date_to)
 
     if data is None or data.empty:
         print("[ERRO] Sem dados! Tentando simbolo alternativo WIN$...")
-        data = bridge.get_market_data_range("WIN$", mt5.TIMEFRAME_M1, date_from, date_to)
+        data = bridge.get_market_data_range(
+            "WIN$", mt5.TIMEFRAME_M1, date_from, date_to
+        )
 
     if data is None or data.empty:
-        print("[ERRO] Sem dados para nenhum simbolo. Verificando simbolos disponiveis no MT5...")
+        print(
+            "[ERRO] Sem dados para nenhum simbolo. Verificando simbolos disponiveis no MT5..."
+        )
         syms = mt5.symbols_get()
         if syms:
             win_syms = [s.name for s in syms if "WIN" in s.name]
@@ -55,7 +64,7 @@ async def diag():
     bt = BacktestPro(
         symbol="WIN$N",
         initial_balance=3000.0,
-        use_ai_core=False,     # Modo legado para teste
+        use_ai_core=False,  # Modo legado para teste
         aggressive_mode=True,
         confidence_threshold=0.65,  # Threshold mais baixo para forcar sinais
     )
@@ -74,6 +83,7 @@ async def diag():
         print(f"  Shadows: {result['shadow_signals']}")
 
     bridge.disconnect()
+
 
 if __name__ == "__main__":
     asyncio.run(diag())

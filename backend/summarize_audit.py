@@ -1,17 +1,18 @@
 import json
-with open('backend/audit_v11_raw_data.json', 'r') as f:
+
+with open("backend/audit_v11_raw_data.json", "r") as f:
     data = json.load(f)
 
-total_pnl = sum(r['total_pnl'] for r in data)
-pnl_buy = sum(r['pnl_buy'] for r in data)
-pnl_sell = sum(r['pnl_sell'] for r in data)
-profitable_days = len([r for r in data if r['total_pnl'] > 0])
-losing_days = len([r for r in data if r['total_pnl'] < 0])
-total_trades = sum(r['trades'] for r in data)
-total_missed = sum(r['missed'] for r in data)
-total_ai = sum(r.get('filtered_ai', 0) for r in data)
-total_flux = sum(r.get('filtered_flux', 0) for r in data)
-total_sent = sum(r.get('filtered_sent', 0) for r in data)
+total_pnl = sum(r["total_pnl"] for r in data)
+pnl_buy = sum(r["pnl_buy"] for r in data)
+pnl_sell = sum(r["pnl_sell"] for r in data)
+profitable_days = len([r for r in data if r["total_pnl"] > 0])
+losing_days = len([r for r in data if r["total_pnl"] < 0])
+total_trades = sum(r["trades"] for r in data)
+total_missed = sum(r["missed"] for r in data)
+total_ai = sum(r.get("filtered_ai", 0) for r in data)
+total_flux = sum(r.get("filtered_flux", 0) for r in data)
+total_sent = sum(r.get("filtered_sent", 0) for r in data)
 
 print(f"Total PnL: {total_pnl:.2f}")
 print(f"Buy PnL: {pnl_buy:.2f}")

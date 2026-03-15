@@ -4,6 +4,7 @@ import os
 # Add current directory to path
 sys.path.append(os.getcwd())
 
+
 def test_import(module_name):
     print(f"Testing import of {module_name}...")
     try:
@@ -12,8 +13,10 @@ def test_import(module_name):
     except Exception:
         print(f"❌ Failed: {module_name}")
         import traceback
+
         traceback.print_exc()
         print("-" * 50)
+
 
 modules = [
     "backend.mt5_bridge",
@@ -24,7 +27,7 @@ modules = [
     "backend.microstructure_analyzer",
     "backend.data_collector",
     "backend.sentiment_analyzer",
-    "backend.calendar_manager"
+    "backend.calendar_manager",
 ]
 
 for m in modules:

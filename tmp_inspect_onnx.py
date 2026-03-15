@@ -1,4 +1,5 @@
 import onnxruntime as ort
+
 try:
     path = "backend/models/patchtst_weights_sota_optimized.onnx"
     sess = ort.InferenceSession(path)

@@ -1,15 +1,15 @@
 import asyncio
 import pandas as pd
 import logging
-from datetime import datetime
-import os
 import glob
-import sys
 from backend.backtest_pro import BacktestPro
 
 # Configuração de logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
+
 
 async def run_audit_18_02():
     target_date = "2026-02-18"
@@ -20,25 +20,27 @@ async def run_audit_18_02():
     if not csv_files:
         logger.error("Arquivo MASTER CSV não encontrado!")
         return
-    
+
     master_csv = csv_files[0]
     logger.info(f"Usando arquivo: {master_csv}")
 
     # 2. Carregar dados e filtrar pelo dia alvo
     try:
         df_full = pd.read_csv(master_csv)
-        df_full['time'] = pd.to_datetime(df_full['time'])
-        
+        df_full["time"] = pd.to_datetime(df_full["time"])
+
         # Filtro expandido para garantir contexto
-        mask = (df_full['time'] >= f"{target_date} 09:00:00") & (df_full['time'] <= f"{target_date} 18:30:00")
+        mask = (df_full["time"] >= f"{target_date} 09:00:00") & (
+            df_full["time"] <= f"{target_date} 18:30:00"
+        )
         df_day = df_full[mask].copy()
-        
+
         if df_day.empty:
             logger.error(f"Sem dados para {target_date} no CSV!")
             return
-        
+
         # O BacktestPro espera que 'time' seja o index ou esteja formatado corretamente
-        df_day.set_index('time', inplace=True)
+        df_day.set_index("time", inplace=True)
     except Exception as e:
         logger.error(f"Erro ao processar dados: {e}")
         return
@@ -51,7 +53,7 @@ async def run_audit_18_02():
         "use_ai_core": False,
         "symbol": "WIN$",
         "lot_size": 1,
-        "risk_reward": 2.0
+        "risk_reward": 2.0,
     }
 
     # Config para SOTA v3.1 (Com AI Core e Calibragem Nova)
@@ -61,7 +63,7 @@ async def run_audit_18_02():
         "lot_size": 1,
         "risk_reward": 2.0,
         "confidence_threshold": 0.7,
-        "uncertainty_threshold": 0.25 # Calibragem v3.1
+        "uncertainty_threshold": 0.25,  # Calibragem v3.1
     }
 
     # 4. Executar Backtests
@@ -78,24 +80,31 @@ async def run_audit_18_02():
     # 5. Comparação de Métricas
     metrics = {
         "Date": target_date,
-        "Legacy_PnL": results_legacy.get('total_pnl', 0),
-        "Legacy_Trades": len(results_legacy.get('trades', [])),
-        "SOTA_PnL": results_sota.get('total_pnl', 0),
-        "SOTA_Trades": len(results_sota.get('trades', [])),
-        "SOTA_WinRate": results_sota.get('win_rate', 0),
-        "SOTA_Drawdown": results_sota.get('max_drawdown', 0),
-        "Shadow_Signals": results_sota.get('shadow_signals', {}).get('filtered_by_ai', 0)
+        "Legacy_PnL": results_legacy.get("total_pnl", 0),
+        "Legacy_Trades": len(results_legacy.get("trades", [])),
+        "SOTA_PnL": results_sota.get("total_pnl", 0),
+        "SOTA_Trades": len(results_sota.get("trades", [])),
+        "SOTA_WinRate": results_sota.get("win_rate", 0),
+        "SOTA_Drawdown": results_sota.get("max_drawdown", 0),
+        "Shadow_Signals": results_sota.get("shadow_signals", {}).get(
+            "filtered_by_ai", 0
+        ),
     }
 
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print(f"RESULTADOS AUDITORIA {target_date}")
-    print("="*50)
-    print(f"PnL LEGACY:    R$ {metrics['Legacy_PnL']:.2f} ({metrics['Legacy_Trades']} trades)")
-    print(f"PnL SOTA v3.1: R$ {metrics['SOTA_PnL']:.2f} ({metrics['SOTA_Trades']} trades)")
+    print("=" * 50)
+    print(
+        f"PnL LEGACY:    R$ {metrics['Legacy_PnL']:.2f} ({metrics['Legacy_Trades']} trades)"
+    )
+    print(
+        f"PnL SOTA v3.1: R$ {metrics['SOTA_PnL']:.2f} ({metrics['SOTA_Trades']} trades)"
+    )
     print(f"Win Rate SOTA: {metrics['SOTA_WinRate']:.1f}%")
     print(f"Drawdown SOTA: R$ {metrics['SOTA_Drawdown']:.2f}")
     print(f"Sinais Vetados pela IA: {metrics['Shadow_Signals']}")
-    print("="*50)
+    print("=" * 50)
+
 
 if __name__ == "__main__":
     asyncio.run(run_audit_18_02())

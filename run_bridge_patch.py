@@ -14,19 +14,20 @@ except ImportError:
     print("MT5 module not found, skipping specific bridge test.")
     sys.exit(0)
 
+
 def test_bridge_access():
     print("--- Testando Acesso ao Módulo MT5 via Bridge ---")
     bridge = MT5Bridge()
-    
+
     # Check if .mt5 attribute exists and matches the module
-    if hasattr(bridge, 'mt5'):
+    if hasattr(bridge, "mt5"):
         print(f"✅ bridge.mt5 attribute found: {bridge.mt5}")
         if bridge.mt5 == mt5_module:
             print("✅ bridge.mt5 references the correct module.")
         else:
             print("❌ bridge.mt5 does not match imported module!")
             sys.exit(1)
-            
+
         # Check if we can access constants used in main.py
         try:
             buy_type = bridge.mt5.ORDER_TYPE_BUY
@@ -35,10 +36,11 @@ def test_bridge_access():
         except AttributeError as e:
             print(f"❌ Failed to access constants: {e}")
             sys.exit(1)
-            
+
     else:
         print("❌ bridge.mt5 attribute NOT found!")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     test_bridge_access()

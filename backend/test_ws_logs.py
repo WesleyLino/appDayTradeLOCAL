@@ -1,8 +1,8 @@
-
 import asyncio
 import json
 import websockets
 import time
+
 
 async def test_dynamic_logs():
     uri = "ws://localhost:8000/ws"
@@ -19,7 +19,9 @@ async def test_dynamic_logs():
                     data = json.loads(message)
                     if "logs" in data and len(data["logs"]) > 0:
                         latest_log = data["logs"][0]
-                        print(f"[{latest_log['time']}] {latest_log['msg']} ({latest_log['type']})")
+                        print(
+                            f"[{latest_log['time']}] {latest_log['msg']} ({latest_log['type']})"
+                        )
                     else:
                         print("Pacote recebido, mas sem logs novos.")
                 except asyncio.TimeoutError:
@@ -28,7 +30,10 @@ async def test_dynamic_logs():
                     print(f"Erro ao receber: {e}")
                     break
     except Exception as e:
-        print(f"Falha na conexão: {e}. Certifique-se de que o backend está rodando na porta 8000.")
+        print(
+            f"Falha na conexão: {e}. Certifique-se de que o backend está rodando na porta 8000."
+        )
+
 
 if __name__ == "__main__":
     asyncio.run(test_dynamic_logs())

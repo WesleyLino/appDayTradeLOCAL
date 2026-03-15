@@ -1,12 +1,11 @@
 import pandas as pd
-import numpy as np
 import os
 
 path = os.path.join("data", "sota_training", "training_WIN$_MASTER.csv")
 if os.path.exists(path):
     df = pd.read_csv(path)
-    body = (df['close'] - df['open']).abs()
-    hl = (df['high'] - df['low']).replace(0, 1e-8)
+    body = (df["close"] - df["open"]).abs()
+    hl = (df["high"] - df["low"]).replace(0, 1e-8)
     ofi = body / hl
     print(f"OFI Max: {ofi.max():.4f}")
     print(f"OFI Mean: {ofi.mean():.4f}")

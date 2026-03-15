@@ -3,24 +3,24 @@ import time
 import subprocess
 import logging
 import os
-import json
 from datetime import datetime, timedelta
 
 # --- CORREÇÃO DE ENCODING PARA WINDOWS ---
 if sys.platform == "win32":
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 # -----------------------------------------
 
 # Configuração de log
-log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
+log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
 os.makedirs(log_dir, exist_ok=True)
 logging.basicConfig(
-    filename=os.path.join(log_dir, 'continuous_learning.log'),
+    filename=os.path.join(log_dir, "continuous_learning.log"),
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    encoding='utf-8'
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    encoding="utf-8",
 )
 
 
@@ -30,12 +30,14 @@ def run_retraining_cycle():
     Atualiza o cérebro da IA com os dados mais recentes.
     """
     logging.info("🧬 Iniciando Ciclo de Re-treino do PatchTST (Deep Learning)...")
-    
+
     # 1. Coleta e Enriquecimento de Dados
     logging.info("📥 Passo 1/3: Coletando e enriquecendo dados históricos...")
     try:
         cmd_data = ["python", "-m", "backend.data_collector_historical"]
-        subprocess.run(cmd_data, check=True, text=True, capture_output=True, encoding='utf-8')
+        subprocess.run(
+            cmd_data, check=True, text=True, capture_output=True, encoding="utf-8"
+        )
         logging.info("✅ Dados MASTER atualizados com CVD/OFI.")
     except Exception as e:
         logging.error(f"❌ Falha na coleta de dados: {e}")
@@ -46,7 +48,9 @@ def run_retraining_cycle():
     try:
         # Usamos o módulo diretamente para herdar os patches de compatibilidade
         cmd_train = ["python", "-m", "backend.train_patchtst"]
-        subprocess.run(cmd_train, check=True, text=True, capture_output=True, encoding='utf-8')
+        subprocess.run(
+            cmd_train, check=True, text=True, capture_output=True, encoding="utf-8"
+        )
         logging.info("✅ PatchTST re-treinado e ONNX exportado com sucesso.")
     except Exception as e:
         logging.error(f"❌ Falha no re-treino do PatchTST: {e}")
@@ -65,16 +69,15 @@ def run_optimization_cycle():
     cmd = [
         "python",
         os.path.join(os.path.dirname(__file__), "optimizer.py"),
-        "--symbol", "WIN$",
-        "--n", "5000",
+        "--symbol",
+        "WIN$",
+        "--n",
+        "5000",
     ]
 
     try:
         process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
         stdout, stderr = process.communicate()
 
@@ -91,7 +94,9 @@ def run_optimization_cycle():
 
 
 def main():
-    logging.info("🚀 Sistema Imunológico Autônomo Iniciado. Monitorando Concept Drift...")
+    logging.info(
+        "🚀 Sistema Imunológico Autônomo Iniciado. Monitorando Concept Drift..."
+    )
 
     # Executa ciclo integral na primeira inicialização
     if run_retraining_cycle():
@@ -111,7 +116,7 @@ def main():
             f"(em {sleep_secs / 3600:.1f}h)"
         )
         time.sleep(sleep_secs)
-        
+
         # Executa ciclo integral diário
         if run_retraining_cycle():
             run_optimization_cycle()

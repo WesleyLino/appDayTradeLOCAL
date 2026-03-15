@@ -5,19 +5,22 @@ from hmmlearn.hmm import GaussianHMM
 import joblib
 import os
 
+
 class MarketRegimeModel:
     def __init__(self, n_components=3, model_path="data/models/regime_hmm.pkl"):
         self.n_components = n_components
         self.model_path = model_path
-        self.model = GaussianHMM(n_components=self.n_components, covariance_type="full", n_iter=100)
+        self.model = GaussianHMM(
+            n_components=self.n_components, covariance_type="full", n_iter=100
+        )
         self.is_trained = False
 
     def _prepare_features(self, df: pd.DataFrame):
         # Calcula retornos logarítmicos e Volatilidade (ATR proxy)
-        df['log_return'] = np.log(df['close'] / df['close'].shift(1))
-        df['volatility'] = df['log_return'].rolling(window=14).std()
+        df["log_return"] = np.log(df["close"] / df["close"].shift(1))
+        df["volatility"] = df["log_return"].rolling(window=14).std()
         df.dropna(inplace=True)
-        return df[['log_return', 'volatility']].values
+        return df[["log_return", "volatility"]].values
 
     def train(self, historical_data: pd.DataFrame):
         """Treina o HMM com dados históricos para aprender os 3 estados."""
@@ -42,10 +45,10 @@ class MarketRegimeModel:
         """
         if not self.is_trained:
             self.load_model()
-        
+
         features = self._prepare_features(recent_data)
         if len(features) == 0:
-            return 2 # Na dúvida, assuma Choppy (Lateral)
-            
+            return 2  # Na dúvida, assuma Choppy (Lateral)
+
         regimes = self.model.predict(features)
-        return regimes[-1] # Retorna o estado do último minuto
+        return regimes[-1]  # Retorna o estado do último minuto
