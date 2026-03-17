@@ -44,6 +44,7 @@ class MarketDataWorker:
                 # Cálculo do Índice Sintético
                 synthetic_index = 0.0
                 if bluechips and isinstance(bluechips, dict):
+                    # [LOCKDOWN-V22] - Pesos das Blue Chips bloqueados
                     weights = {
                         "VALE3": 0.14,
                         "PETR4": 0.12,

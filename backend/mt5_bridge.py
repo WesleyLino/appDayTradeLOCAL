@@ -1177,7 +1177,7 @@ class MT5Bridge:
         if macro_symbol is None:
             return 0.0
 
-        # Pega variação diária
+        # [BALIZAMENTO B3] Fonte de Verdade Única: Variação diária baseada em D-1
         # Preço de fechamento ontem vs atual
         rates = mt5.copy_rates_from_pos(macro_symbol, mt5.TIMEFRAME_D1, 0, 2)
         if rates is None or len(rates) < 2:

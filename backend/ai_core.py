@@ -572,12 +572,16 @@ class AICore:
             self.ia_cooldown_until = 0
 
     def analyze(self, book, ticks_df):
-        """Proxy para MicrostructureAnalyzer."""
-        return self.micro_analyzer.analyze(book, ticks_df)
+        """Proxy para MicrostructureAnalyzer com proteção anti-quebra."""
+        if hasattr(self, "micro_analyzer") and hasattr(self.micro_analyzer, "analyze"):
+            return self.micro_analyzer.analyze(book, ticks_df)
+        return {"imbalance": 0.0, "spread": 5.0, "volume_ratio": 1.0, "liquidity_score": 0.5}
 
     def calculate_wen_ofi(self, book):
-        """Proxy para MicrostructureAnalyzer."""
-        return self.micro_analyzer.calculate_wen_ofi(book)
+        """Proxy para MicrostructureAnalyzer com proteção anti-quebra."""
+        if hasattr(self, "micro_analyzer") and hasattr(self.micro_analyzer, "calculate_wen_ofi"):
+            return self.micro_analyzer.calculate_wen_ofi(book)
+        return 0.0
 
     async def update_sentiment(self):
         """Lê o sentimento gerado pelo NewsSentimentWorker."""

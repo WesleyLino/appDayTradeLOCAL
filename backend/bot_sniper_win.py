@@ -479,8 +479,12 @@ class SniperBotWIN:
                 except:
                     pass
 
-                self.ai.micro_analyzer.analyze(book, ticks_df)
-                weighted_ofi = self.ai.micro_analyzer.calculate_wen_ofi(book)
+                try:
+                    self.ai.analyze(book, ticks_df)
+                    weighted_ofi = self.ai.calculate_wen_ofi(book)
+                except Exception as e:
+                    logging.debug(f"Aviso Microestrutura (Ignorado): {repr(e)}")
+                    weighted_ofi = 0.0
 
                 df["rsi"] = self.calculate_rsi(df["close"], self.rsi_period)
                 df["vol_sma"] = df["tick_volume"].rolling(20).mean()
@@ -545,7 +549,7 @@ class SniperBotWIN:
                     hour=now.hour,
                     minute=now.minute,
                     ofi=weighted_ofi,
-                    cvd_accel=self.ai.micro_analyzer.last_cvd_accel,  # [v24.5] Aceleração
+                    cvd_accel=getattr(self.ai.micro_analyzer, "last_cvd_accel", 0.0) if hasattr(self.ai, "micro_analyzer") else 0.0,  # [v24.5] Aceleração
                     current_price=last["close"],
                     spread=self.bridge.get_latency_and_spread(self.symbol)[1],
                     sma_20=last["bb_mid"],

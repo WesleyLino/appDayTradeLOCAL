@@ -634,25 +634,39 @@ class BacktestPro:
                         self.position["lots"],
                         regime=getattr(self, "current_regime", 0),
                     ):
-                        # Executa Parcial: Fecha metade dos lotes
+                        # [v27] Executa Parcial: Registro Obrigatório para Auditoria Financeira
                         full_lots = self.position["lots"]
-                        partial_lots = max(1, full_lots // 2)
+                        partial_lots = max(1, int(full_lots // 2))
+                        
+                        if full_lots >= 2:
+                            mult = 0.20 if "WIN" in self.symbol else 10.0
+                            partial_pnl = pnl_pts * partial_lots * mult
 
-                        mult = 0.20 if "WIN" in self.symbol else 10.0
-                        partial_pnl = pnl_pts * partial_lots * mult
+                            # Registro na lista de trades para o relatório
+                            self.trades.append({
+                                "entry_time": self.position["time"],
+                                "exit_time": row.name,
+                                "side": self.position["side"],
+                                "entry_price": self.position["entry_price"],
+                                "exit_price": row["close"],
+                                "lots": float(partial_lots),
+                                "pnl_pts": float(pnl_pts),
+                                "pnl_fin": float(partial_pnl),
+                                "reason": "SCALING_OUT",
+                                "quantile_confidence": self.position.get("quantile_confidence", "NORMAL")
+                            })
 
-                        # Realiza o lucro da metade
-                        self.balance += partial_pnl
-                        self.daily_pnl += partial_pnl
-                        self.position["lots"] -= partial_lots
-                        self.position["partial_executed"] = True
+                            self.balance += partial_pnl
+                            self.daily_pnl += partial_pnl
+                            self.position["lots"] -= partial_lots
+                            self.position["partial_executed"] = True
 
-                        # [v24.5] Ajusta Stop Loss para o Breakeven após parcial (Garantia de lucro)
-                        self.position["sl"] = self.position["entry_price"]
+                            # [v24.5] Ajusta Stop Loss para o Breakeven após parcial
+                            self.position["sl"] = self.position["entry_price"]
 
-                        logging.info(
-                            f"💰 [PARCIAL-SNIPER] {side_now.upper()} @ {price_now} | Lucro Parcial: R${partial_pnl:.2f} | Restante: {self.position['lots']} lotes | SL movido para BE"
-                        )
+                            logging.info(
+                                f"💰 [PARCIAL] {side_now.upper()} @ {price_now} | Lucro: R${partial_pnl:.2f} | Restante: {self.position['lots']} lotes | SL @ BE"
+                            )
 
                 exit_type, exit_price = self.simulate_oco(
                     row, self.position, prev_row=data.iloc[i - 1] if i > 0 else None
@@ -667,28 +681,64 @@ class BacktestPro:
                     self._close_trade(row["close"], "ALPHA_DECAY", row.name)
                     self.last_trade_time = row.name
                 else:
-                    # [v50.1] Simulação de Piramidação (Scaling In) - Apenas se posição ainda ativa
-                    profit_now = (
-                        (row["close"] - self.position["entry_price"])
-                        if self.position["side"] == "buy"
-                        else (self.position["entry_price"] - row["close"])
-                    )
-                    if self.risk.allow_pyramiding(
-                        profit_now,
-                        row.get("ofi", 0),
-                        self.position["lots"],
-                        profit_threshold=self.opt_params.get(
-                            "pyramid_profit_threshold"
-                        ),
-                        signal_threshold=self.opt_params.get(
-                            "pyramid_signal_threshold"
-                        ),
-                        max_volume=self.opt_params.get("pyramid_max_volume"),
-                    ):
-                        self.position["lots"] += 1
-                        logging.info(
-                            f"💎 [PIRAMIDAÇÃO] +1 contrato adicionado @ {row['close']} | Novo Lote: {self.position['lots']}"
+                    # [MELHORIA-G] Verificar reversão de OBI com posição aberta (Saída de Emergência)
+                    # Aplica somente quando use_ai_core está ativo (OBI proxy disponível)
+                    _use_ai_g = self.opt_params.get("use_ai_core", False)
+                    if _use_ai_g and self.position:
+                        _cr_pos_g = row["high"] - row["low"]
+                        _obi_pos_g = (
+                            ((row["close"] - row["open"]) / _cr_pos_g * 3.0)
+                            if _cr_pos_g > 0
+                            else 0.0
                         )
+                        _obi_pos_g = max(-3.0, min(3.0, _obi_pos_g))
+                        if self.risk.check_obi_reversal(self.position["side"], _obi_pos_g):
+                            self._close_trade(row["close"], "OBI_REVERSAL", row.name)
+                            self.last_trade_time = row.name
+
+                    if self.position:  # Piramida somente se posição ainda estiver aberta
+                        # [v50.1] Simulação de Piramidação (Scaling In) - Apenas se posição ainda ativa
+                        profit_now = (
+                            (row["close"] - self.position["entry_price"])
+                            if self.position["side"] == "buy"
+                            else (self.position["entry_price"] - row["close"])
+                        )
+                        # [MELHORIA-C] Piramidação Progressiva em Alta Convicção.
+                        # Em tendência forte (H1 confirmado + ADX > 30), eleva o limite
+                        # de piramidação de 1 para 2 contratos adicionais.
+                        # v24_locked_params.json (pyramid_max_volume: 1) é a base para
+                        # condições normais — esta lógica é condicional e aditiva.
+                        _max_pyra_c = self.opt_params.get("pyramid_max_volume", 1)
+                        _use_ai_c = self.opt_params.get("use_ai_core", False)
+                        if _use_ai_c:
+                            _h1_for_c = getattr(self.ai, "h1_trend", 0)
+                            _adx_for_c = 0.0
+                            try:
+                                _adx_for_c = float(data.loc[row.name, "adx"])
+                            except Exception:
+                                pass
+                            if _h1_for_c != 0 and _adx_for_c > 30:
+                                _max_pyra_c = min(2, _max_pyra_c * 2)
+                                logging.info(
+                                    f"[MELHORIA-C PYRAMID+] ADX={_adx_for_c:.1f} H1={_h1_for_c} "
+                                    f"→ max_pyramid elevado para {_max_pyra_c} (tendência forte)"
+                                )
+                        if self.risk.allow_pyramiding(
+                            profit_now,
+                            row.get("ofi", 0),
+                            self.position["lots"],
+                            profit_threshold=self.opt_params.get(
+                                "pyramid_profit_threshold"
+                            ),
+                            signal_threshold=self.opt_params.get(
+                                "pyramid_signal_threshold"
+                            ),
+                            max_volume=_max_pyra_c,
+                        ):
+                            self.position["lots"] += 1
+                            logging.info(
+                                f"💎 [PIRAMIDAÇÃO] +1 contrato adicionado @ {row['close']} | Novo Lote: {self.position['lots']}"
+                            )
 
             # [SOTA v5] Simulação de Spread Dinâmico (1.0 a 3.5 pts)
             fixed_spread = self.opt_params.get("spread")
@@ -769,8 +819,40 @@ class BacktestPro:
                 cond_vol_buy = row["tick_volume"] > vol_sma * current_flux_thresh
                 cond_vol_sell = row["tick_volume"] > vol_sma * current_flux_thresh
 
-                v22_buy_raw = cond_rsi_buy and cond_bb_buy and cond_vol_buy
-                v22_sell_raw = cond_rsi_sell and cond_bb_sell and cond_vol_sell
+                # [MELHORIA-E] Padrão de Candle como confirmação adicional de entrada.
+                # Reduz falsos positivos do RSI(9) em M1. Opera como filtro AND — não substitui os demais.
+                _prev_e = data.iloc[i - 1] if i > 0 else row
+                _body_prev_e = abs(_prev_e["close"] - _prev_e["open"])
+
+                # Engolfo de Alta: corpo atual engloba o corpo anterior na direção altista
+                _cond_engulfo_buy = (
+                    row["close"] > _prev_e["open"]
+                    and row["open"] < _prev_e["close"]
+                    and abs(row["close"] - row["open"]) > _body_prev_e
+                )
+                # Engolfo de Baixa: corpo atual engloba o corpo anterior na direção baixista
+                _cond_engulfo_sell = (
+                    row["close"] < _prev_e["open"]
+                    and row["open"] > _prev_e["close"]
+                    and abs(row["close"] - row["open"]) > _body_prev_e
+                )
+                # Pin Bar de Alta: pavio inferior >= 2x corpo, pavio superior pequeno
+                _cond_pinbar_buy = (
+                    body > 0
+                    and lower_wick >= body * 2.0
+                    and upper_wick <= body * 0.5
+                )
+                # Pin Bar de Baixa: pavio superior >= 2x corpo, pavio inferior pequeno
+                _cond_pinbar_sell = (
+                    body > 0
+                    and upper_wick >= body * 2.0
+                    and lower_wick <= body * 0.5
+                )
+                cond_candle_confirm_buy = _cond_engulfo_buy or _cond_pinbar_buy
+                cond_candle_confirm_sell = _cond_engulfo_sell or _cond_pinbar_sell
+
+                v22_buy_raw = cond_rsi_buy and cond_bb_buy and cond_vol_buy and cond_candle_confirm_buy
+                v22_sell_raw = cond_rsi_sell and cond_bb_sell and cond_vol_sell and cond_candle_confirm_sell
 
                 # --- MELHORIA H (V28): Filtro de Tendência Diária ---
                 # Na abertura de cada dia, deteta se EMA30 < EMA90 → mercado em baixa.
@@ -1227,6 +1309,37 @@ class BacktestPro:
                     dyn_tp = self.opt_params["tp_dist"] * tp_multiplier
                     use_partial_flag = ai_decision.get("use_partial", True)
 
+                    # [MELHORIA-B] SL Dinâmico por ATR.
+                    # Adapta o stop à volatilidade real: menor em dias tranquilos, maior em dias voláteis.
+                    # v24_locked_params.json (sl_dist: 150) permanece como fallback para o multiplicador da IA.
+                    # Fórmula: max(80pts, min(200pts, ATR_atual × 1.2))
+                    if use_ai_core:
+                        _atr_sl_b = max(80.0, min(200.0, atr_current * 1.2))
+                        dyn_sl = _atr_sl_b * sl_multiplier
+                        logging.debug(
+                            f"[MELHORIA-B SL-ATR] ATR={atr_current:.1f} → "
+                            f"SL Dinâmico={dyn_sl:.1f} pts (sl_dist base: {self.opt_params['sl_dist']})"
+                        )
+
+                    # [MELHORIA-D] TP Expansivo em Tendência Forte.
+                    # Quando ADX > 30 + H1 confirma direção, expande TP em +50% (cap 800pts)
+                    # para capturar movimentos extensos que o TP fixo de 400pts desperdiçava.
+                    # v24_locked_params.json (tp_dist: 400) permanece como base — multiplicador
+                    # adicional é aplicado condicionalmente (somente em tendência forte detectada).
+                    _h1_tp_d = getattr(self.ai, "h1_trend", 0) if use_ai_core else 0
+                    _adx_tp_d = 0.0
+                    try:
+                        _adx_tp_d = float(data.loc[row.name, "adx"])
+                    except Exception:
+                        pass
+                    if use_ai_core and _adx_tp_d > 30 and _h1_tp_d != 0:
+                        _base_tp_d = self.opt_params["tp_dist"] * tp_multiplier
+                        dyn_tp = min(800.0, _base_tp_d * 1.5)
+                        logging.info(
+                            f"[MELHORIA-D TP+] ADX={_adx_tp_d:.1f} H1={_h1_tp_d} → "
+                            f"TP Expandido: {_base_tp_d:.0f} → {dyn_tp:.0f} pts"
+                        )
+
                     # Ajustes de alvos por regime (Compatibilidade com Phase 13)
                     # [v24.2] Respeitar os multiplicadores da IA sem limites legados de 200pts
                     pass
@@ -1429,11 +1542,12 @@ class BacktestPro:
                         + 1
                     )
 
-                # Sentiment Filter (V2.5)
+                # Sentiment Filter (V2.5) — [MELHORIA-A] Threshold ajustado de ±0.5 para ±0.3
+                # Alinhado com o is_direction_allowed() do RiskManager para consistência total.
                 sentiment_ok = True
                 if self.sentiment_stream and row.name in self.sentiment_stream:
                     score = self.sentiment_stream[row.name]
-                    if (v22_buy and score < -0.5) or (v22_sell and score > 0.5):
+                    if (v22_buy and score < -0.3) or (v22_sell and score > 0.3):
                         sentiment_ok = False
 
                 # Flux Filter (Proxy para Backtest CSV)

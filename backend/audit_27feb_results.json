@@ -1,0 +1,72 @@
+{
+    "date": "2026-02-27",
+    "pnl": 0.0,
+    "trades": [
+        {
+            "entry_time": "2026-02-27 10:00:00",
+            "exit_time": "2026-02-27 10:01:00",
+            "side": "sell",
+            "entry_price": 193345.0,
+            "exit_price": 193345.0,
+            "lots": 0.0,
+            "pnl_pts": 0.0,
+            "pnl_fin": 0.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-02-27 10:09:00",
+            "exit_time": "2026-02-27 10:10:00",
+            "side": "sell",
+            "entry_price": 193435.0,
+            "exit_price": 193435.0,
+            "lots": 0.0,
+            "pnl_pts": 0.0,
+            "pnl_fin": 0.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-02-27 11:16:00",
+            "exit_time": "2026-02-27 11:17:00",
+            "side": "sell",
+            "entry_price": 193215.0,
+            "exit_price": 193215.0,
+            "lots": 0.0,
+            "pnl_pts": 0.0,
+            "pnl_fin": 0.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        }
+    ],
+    "shadow": {
+        "total_missed": 30,
+        "filtered_by_ai": 22,
+        "filtered_by_flux": 0,
+        "filtered_by_bias": 30,
+        "veto_reasons": {
+            "LOW_CONFIDENCE": 22,
+            "null": 22,
+            "PANICO_MERCADO_SEM_BYPASS": 75,
+            "ADX_BAIXO": 3
+        },
+        "v22_candidates": 900,
+        "component_fail": {
+            "rsi": 0,
+            "bb": 0,
+            "volume": 0,
+            "ai_veto_total": 41
+        },
+        "tiers": {
+            "70-75": 0,
+            "75-80": 0,
+            "80-85": 0
+        },
+        "sell_vetos_ai": 21,
+        "buy_vetos_ai": 20
+    },
+    "drawdown": 0.006
+}

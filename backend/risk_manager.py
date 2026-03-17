@@ -299,7 +299,12 @@ class RiskManager:
         self.post_event_momentum = False
         return True
 
-    def is_direction_allowed(self, direction: str, sentiment_score: float) -> bool:
+    def is_direction_allowed(
+        self,
+        direction: str,
+        sentiment_score: float,
+        synthetic_idx: float = 0.0,
+    ) -> bool:
         """[MELHORIA-3] Veto Direcional — bloqueia apenas o lado contrário ao sentimento.
 
         Chamado quando o sistema está em Veto de Calendário ou regime de risco alto.
@@ -307,17 +312,43 @@ class RiskManager:
         Args:
             direction:       "BUY" ou "SELL"
             sentiment_score: float entre -1.0 e +1.0 (do NewsSentimentWorker)
+            synthetic_idx:   float (variação % das Blue Chips) — usado no warmup
 
         Returns:
-            True  → direção permitida pelo sentimento
-            False → direção vetada (lado contrário ao sentimento)
+            True  → direção permitida
+            False → direção vetada
         """
-        # Se o usuário desativou manualmente o filtro de notícias, libera as operações incondicionalmente desta barreira
+        # Se o usuário desativou manualmente o filtro de notícias, libera as operações
         if hasattr(self, "enable_news_filter") and not self.enable_news_filter:
             return True
 
-        if sentiment_score > 0.5:
-            # Mercado com viés BULLISH forte → bloqueia VENDA
+        # [MELHORIA-F] Warmup de Sentimento: nos primeiros 5min do pregão (09:00-09:05),
+        # o NewsSentimentWorker ainda não processou notícias suficientes.
+        # Durante esse período, usamos o synthetic_idx (Blue Chips) como proxy de sentimento.
+        now = datetime.now()
+        is_warmup_window = (now.hour == 9 and now.minute < 5)
+        if is_warmup_window:
+            logging.info(
+                f"[MELHORIA-F WARMUP] Janela de warmup ativa (09:00-09:05). "
+                f"Usando Blue Chips ({synthetic_idx:.2f}%) como proxy de sentimento."
+            )
+            if direction == "BUY" and synthetic_idx < -0.2:
+                logging.warning(
+                    f"[MELHORIA-F WARMUP] COMPRA bloqueada: Blue Chips negativos ({synthetic_idx:.2f}%)"
+                )
+                return False
+            if direction == "SELL" and synthetic_idx > 0.2:
+                logging.warning(
+                    f"[MELHORIA-F WARMUP] VENDA bloqueada: Blue Chips positivos ({synthetic_idx:.2f}%)"
+                )
+                return False
+            return True  # Libera durante warmup com validação básica de macro
+
+        # [MELHORIA-A] Threshold reduzido de ±0.5 para ±0.3.
+        # Com ±0.5, sentimentos levemente direcionais (ex: +0.35) bloqueavam ambos os lados.
+        # Com ±0.3, mantém o veto para casos verdadeiramente neutros e libera viés leve.
+        if sentiment_score > 0.3:
+            # Mercado com viés BULLISH → bloqueia VENDA
             if direction == "SELL":
                 logging.warning(
                     f"⛔ [VETO DIRECIONAL] VENDA bloqueada: sentimento BULLISH ({sentiment_score:.2f})"
@@ -325,8 +356,8 @@ class RiskManager:
                 return False
             return True
 
-        if sentiment_score < -0.5:
-            # Mercado com viés BEARISH forte → bloqueia COMPRA
+        if sentiment_score < -0.3:
+            # Mercado com viés BEARISH → bloqueia COMPRA
             if direction == "BUY":
                 logging.warning(
                     f"⛔ [VETO DIRECIONAL] COMPRA bloqueada: sentimento BEARISH ({sentiment_score:.2f})"
@@ -334,7 +365,7 @@ class RiskManager:
                 return False
             return True
 
-        # Sentimento neutro (-0.5 a +0.5) → bloqueia ambos os lados
+        # Sentimento neutro (-0.3 a +0.3) → bloqueia ambos os lados
         logging.info(
             f"⛔ [VETO DIRECIONAL] Sentimento neutro ({sentiment_score:.2f}). "
             f"Operação {direction} suspensa."
@@ -442,6 +473,40 @@ class RiskManager:
             return True, "LIMITE_VELOCIDADE_PERDA"
 
         return False, "VELOCIDADE_OK"
+
+    def check_obi_reversal(
+        self,
+        position_side: str,
+        current_obi: float,
+        obi_reversal_threshold: float = 1.2,
+    ) -> bool:
+        """[MELHORIA-G] Detecção de Reversão de OBI com posição aberta.
+
+        Se o fluxo de ordens inverter fortemente contra a posição, sinaliza saída precoce
+        antes que o trailing stop ou SL sejam atingidos.
+
+        Args:
+            position_side:           "buy" ou "sell"
+            current_obi:             OBI calculado no candle atual (-3.0 a +3.0)
+            obi_reversal_threshold:  Intensidade de reversão para acionar saída (default: 1.2)
+
+        Returns:
+            True  → OBI reverteu fortemente contra a posição (saída recomendada)
+            False → OBI ainda favorável ou neutro
+        """
+        if position_side.lower() == "buy" and current_obi <= -obi_reversal_threshold:
+            logging.warning(
+                f"⚡ [MELHORIA-G OBI-REVERSAL] COMPRA em risco: OBI reverteu para "
+                f"{current_obi:.2f} (Threshold: -{obi_reversal_threshold:.1f})"
+            )
+            return True
+        if position_side.lower() == "sell" and current_obi >= obi_reversal_threshold:
+            logging.warning(
+                f"⚡ [MELHORIA-G OBI-REVERSAL] VENDA em risco: OBI reverteu para "
+                f"{current_obi:.2f} (Threshold: +{obi_reversal_threshold:.1f})"
+            )
+            return True
+        return False
 
     def check_time_stop(self, elapsed_seconds, current_profit_points, current_atr=None):
         """
