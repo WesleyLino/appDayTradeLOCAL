@@ -270,6 +270,7 @@ class BacktestPro:
             "filtered_by_flux": 0,
             "filtered_by_bias": 0,
             "veto_reasons": {},
+            "shadow_by_date": {},   # [GRANULAR] vetos segregados por data (AAAA-MM-DD)
             "v22_candidates": 0,
             "component_fail": {"rsi": 0, "bb": 0, "volume": 0},
             "tiers": {"70-75": 0, "75-80": 0, "80-85": 0},
@@ -283,6 +284,28 @@ class BacktestPro:
         # True = operações suspensas até ATR normalizar (< ATR_NORMALIZA)
         self._dia_pausado_atr = False
         self.data = None  # Para inspeção externa
+
+    def _shadow_veto(self, reason: str, ts) -> None:
+        """
+        [GRANULAR] Registra um veto no shadow_signals de forma dupla:
+          - veto_reasons[reason]: contador global legado (retrocompatível)
+          - shadow_by_date[AAAA-MM-DD][reason]: contador por data (novo)
+
+        Parâmetros:
+            reason: string identificadora do veto (ex: 'PANICO_MERCADO_SEM_BYPASS')
+            ts:     timestamp do candle (datetime, pd.Timestamp ou qualquer obj com .date())
+        """
+        # Legado — mantém compatibilidade total com scripts existentes
+        self.shadow_signals["veto_reasons"][reason] = (
+            self.shadow_signals["veto_reasons"].get(reason, 0) + 1
+        )
+        # Granular por data
+        try:
+            date_key = str(ts.date()) if hasattr(ts, "date") else str(ts)[:10]
+        except Exception:
+            date_key = "desconhecido"
+        daily = self.shadow_signals["shadow_by_date"].setdefault(date_key, {})
+        daily[reason] = daily.get(reason, 0) + 1
 
     async def load_data(self):
         if self.data_file is not None and os.path.exists(self.data_file):
@@ -941,21 +964,14 @@ class BacktestPro:
                 if risk_index > 2.5:
                     if not is_momentum_bypass:
                         # Caso 1: Pânico sem IA com convicção — veto total (proteção máxima)
-                        self.shadow_signals["veto_reasons"]["PANICO_MERCADO_SEM_BYPASS"] = (
-                            self.shadow_signals["veto_reasons"].get(
-                                "PANICO_MERCADO_SEM_BYPASS", 0
-                            )
-                            + 1
-                        )
+                        self._shadow_veto("PANICO_MERCADO_SEM_BYPASS", row.name)
                         continue
                     else:
                         # Caso 2: Momentum bypass ativo — verifica se H1 confirma tendência
                         _h1_panico = getattr(self.ai, "h1_trend", 0)
                         if _h1_panico == 0:
                             # Sem tendência H1 clara → não vale o risco em mercado explosivo
-                            self.shadow_signals["veto_reasons"]["PANICO_SEM_H1"] = (
-                                self.shadow_signals["veto_reasons"].get("PANICO_SEM_H1", 0) + 1
-                            )
+                            self._shadow_veto("PANICO_SEM_H1", row.name)
                             continue
                         # Caso 3: Momentum bypass + H1 confirmado → lote reduzido e segue
                         current_lot_factor = min(current_lot_factor, 0.5)
@@ -1213,9 +1229,7 @@ class BacktestPro:
                         )
                         if ai_dir == "WAIT":
                             reason = ai_decision.get("reason", "UNKNOWN")
-                            self.shadow_signals["veto_reasons"][reason] = (
-                                self.shadow_signals["veto_reasons"].get(reason, 0) + 1
-                            )
+                            self._shadow_veto(reason, row.name)
                         else:
                             # Threshold dinâmico v24.4
                             dynamic_thr = ai_decision.get(
@@ -1225,14 +1239,7 @@ class BacktestPro:
                             if (v22_buy_raw and ai_stability < dynamic_thr) or (
                                 v22_sell_raw and ai_stability < dynamic_thr
                             ):
-                                self.shadow_signals["veto_reasons"][
-                                    "LOW_CONFIDENCE"
-                                ] = (
-                                    self.shadow_signals["veto_reasons"].get(
-                                        "LOW_CONFIDENCE", 0
-                                    )
-                                    + 1
-                                )
+                                self._shadow_veto("LOW_CONFIDENCE", row.name)
 
                     # Decisão Final: Precisa do gatilho técnico + viés de direção da IA + confiança + travas operacionais
                     thr_buy = (
@@ -1272,9 +1279,7 @@ class BacktestPro:
                             logging.info(
                                 f"[VETO LATERALIDADE] {row.name} | Motivo: {s_reason} | Sinal Abortado."
                             )
-                            self.shadow_signals["veto_reasons"][s_reason] = (
-                                self.shadow_signals["veto_reasons"].get(s_reason, 0) + 1
-                            )
+                            self._shadow_veto(s_reason, row.name)
                             v22_buy = False
                             v22_sell = False
 
@@ -1309,9 +1314,7 @@ class BacktestPro:
                         if v22_buy_raw or v22_sell_raw:
                             self.shadow_signals["filtered_by_ai"] += 1
                             reason = ai_decision.get("reason", "LOW_CONFIDENCE")
-                            self.shadow_signals["veto_reasons"][reason] = (
-                                self.shadow_signals["veto_reasons"].get(reason, 0) + 1
-                            )
+                            self._shadow_veto(reason, row.name)
                     if v22_buy_raw and not v22_buy:
                         self.shadow_signals["buy_vetos_ai"] = (
                             self.shadow_signals.get("buy_vetos_ai", 0) + 1
@@ -1517,10 +1520,7 @@ class BacktestPro:
                 vol_stable = vol_min < atr_current < vol_max
 
                 if not vol_stable and atr_current < vol_min:
-                    self.shadow_signals["veto_reasons"]["INERCIA_VOLATIL"] = (
-                        self.shadow_signals["veto_reasons"].get("INERCIA_VOLATIL", 0)
-                        + 1
-                    )
+                    self._shadow_veto("INERCIA_VOLATIL", row.name)
 
                 # AI Filter (SOTA Stability)
                 # Se estiver usando AI Core, respeitamos a decisão e estabilidade real do modelo
@@ -1562,10 +1562,7 @@ class BacktestPro:
                     not ai_filter_ok
                     and ai_stability >= self.opt_params["confidence_threshold"]
                 ):
-                    self.shadow_signals["veto_reasons"]["RIGOR_DIRECIONAL"] = (
-                        self.shadow_signals["veto_reasons"].get("RIGOR_DIRECIONAL", 0)
-                        + 1
-                    )
+                    self._shadow_veto("RIGOR_DIRECIONAL", row.name)
 
                 # Sentiment Filter (V2.5) — [MELHORIA-A] Threshold ajustado de ±0.5 para ±0.3
                 # Alinhado com o is_direction_allowed() do RiskManager para consistência total.
@@ -1637,6 +1634,7 @@ class BacktestPro:
                         self.shadow_signals["filtered_by_bias"] = (
                             self.shadow_signals.get("filtered_by_bias", 0) + 1
                         )
+                        self._shadow_veto("BIAS_BUY_VETADO", row.name)
                         logging.debug(
                             f"[VETO] [H] BUY vetado por tendência diária de BAIXA em {row.name}"
                         )
@@ -1648,6 +1646,7 @@ class BacktestPro:
                         self.shadow_signals["filtered_by_bias"] = (
                             self.shadow_signals.get("filtered_by_bias", 0) + 1
                         )
+                        self._shadow_veto("BIAS_SELL_VETADO", row.name)
                         logging.debug(
                             f"[VETO] [H] SELL vetado por tendência diária de ALTA em {row.name}"
                         )
