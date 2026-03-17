@@ -1,0 +1,139 @@
+{
+    "date": "2026-03-16",
+    "pnl": 99.0,
+    "win_rate": 85.71,
+    "trades_count": 7,
+    "trades_buys": 6,
+    "trades_sells": 1,
+    "trades": [
+        {
+            "entry_time": "2026-03-16 10:00:00",
+            "exit_time": "2026-03-16 10:02:00",
+            "side": "buy",
+            "entry_price": 182555.0,
+            "exit_price": 182605.0,
+            "lots": 1.0,
+            "pnl_pts": 50.0,
+            "pnl_fin": 10.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-03-16 10:15:00",
+            "exit_time": "2026-03-16 10:17:00",
+            "side": "buy",
+            "entry_price": 182580.0,
+            "exit_price": 182630.0,
+            "lots": 1.0,
+            "pnl_pts": 50.0,
+            "pnl_fin": 10.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-03-16 10:27:00",
+            "exit_time": "2026-03-16 10:29:00",
+            "side": "buy",
+            "entry_price": 182350.0,
+            "exit_price": 182300.0,
+            "lots": 1.0,
+            "pnl_pts": -50.0,
+            "pnl_fin": -10.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-03-16 10:39:00",
+            "exit_time": "2026-03-16 10:42:00",
+            "side": "buy",
+            "entry_price": 182960.0,
+            "exit_price": 183050.0,
+            "lots": 1.0,
+            "pnl_pts": 90.0,
+            "pnl_fin": 18.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-03-16 10:50:00",
+            "exit_time": "2026-03-16 10:52:00",
+            "side": "buy",
+            "entry_price": 182765.0,
+            "exit_price": 182955.0,
+            "lots": 1.0,
+            "pnl_pts": 190.0,
+            "pnl_fin": 38.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-03-16 11:01:00",
+            "exit_time": "2026-03-16 11:03:00",
+            "side": "buy",
+            "entry_price": 183015.0,
+            "exit_price": 183120.0,
+            "lots": 1.0,
+            "pnl_pts": 105.0,
+            "pnl_fin": 21.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-03-16 11:29:00",
+            "exit_time": "2026-03-16 11:31:00",
+            "side": "sell",
+            "entry_price": 182690.0,
+            "exit_price": 182630.0,
+            "lots": 1.0,
+            "pnl_pts": 60.0,
+            "pnl_fin": 12.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        }
+    ],
+    "shadow": {
+        "total_missed": 0,
+        "filtered_by_ai": 0,
+        "filtered_by_flux": 0,
+        "filtered_by_bias": 0,
+        "veto_reasons": {
+            "PANICO_MERCADO_SEM_BYPASS": 57,
+            "ADX_BAIXO": 8,
+            "INERCIA_VOLATIL": 1
+        },
+        "shadow_by_date": {
+            "2026-03-13": {
+                "PANICO_MERCADO_SEM_BYPASS": 15
+            },
+            "2026-03-16": {
+                "PANICO_MERCADO_SEM_BYPASS": 42,
+                "ADX_BAIXO": 8,
+                "INERCIA_VOLATIL": 1
+            }
+        },
+        "v22_candidates": 895,
+        "component_fail": {
+            "rsi": 0,
+            "bb": 0,
+            "volume": 0
+        },
+        "tiers": {
+            "70-75": 0,
+            "75-80": 0,
+            "80-85": 0
+        }
+    },
+    "shadow_16mar_only": {
+        "PANICO_MERCADO_SEM_BYPASS": 42,
+        "ADX_BAIXO": 8,
+        "INERCIA_VOLATIL": 1
+    },
+    "drawdown": 0.019230769230769232
+}

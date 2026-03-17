@@ -1,0 +1,182 @@
+{
+    "date": "2026-02-19",
+    "pnl": 86.0,
+    "win_rate": 72.73,
+    "trades_count": 11,
+    "trades_buys": 8,
+    "trades_sells": 3,
+    "trades": [
+        {
+            "entry_time": "2026-02-19 09:22:00",
+            "exit_time": "2026-02-19 09:23:00",
+            "side": "buy",
+            "entry_price": 190265.0,
+            "exit_price": 190190.0,
+            "lots": 1.0,
+            "pnl_pts": -75.0,
+            "pnl_fin": -15.0,
+            "reason": "OBI_REVERSAL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-02-19 09:40:00",
+            "exit_time": "2026-02-19 09:42:00",
+            "side": "buy",
+            "entry_price": 190185.0,
+            "exit_price": 190270.0,
+            "lots": 1.0,
+            "pnl_pts": 85.0,
+            "pnl_fin": 17.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-02-19 09:58:00",
+            "exit_time": "2026-02-19 10:00:00",
+            "side": "buy",
+            "entry_price": 190495.0,
+            "exit_price": 190595.0,
+            "lots": 1.0,
+            "pnl_pts": 100.0,
+            "pnl_fin": 20.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-02-19 10:13:00",
+            "exit_time": "2026-02-19 10:15:00",
+            "side": "sell",
+            "entry_price": 189875.0,
+            "exit_price": 189765.0,
+            "lots": 1.0,
+            "pnl_pts": 110.0,
+            "pnl_fin": 22.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-02-19 10:23:00",
+            "exit_time": "2026-02-19 10:24:00",
+            "side": "buy",
+            "entry_price": 190165.0,
+            "exit_price": 190085.0,
+            "lots": 1.0,
+            "pnl_pts": -80.0,
+            "pnl_fin": -16.0,
+            "reason": "OBI_REVERSAL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-02-19 10:33:00",
+            "exit_time": "2026-02-19 10:35:00",
+            "side": "buy",
+            "entry_price": 190280.0,
+            "exit_price": 190425.0,
+            "lots": 1.0,
+            "pnl_pts": 145.0,
+            "pnl_fin": 29.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-02-19 10:43:00",
+            "exit_time": "2026-02-19 10:46:00",
+            "side": "sell",
+            "entry_price": 190290.0,
+            "exit_price": 190205.0,
+            "lots": 1.0,
+            "pnl_pts": 85.0,
+            "pnl_fin": 17.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-02-19 10:56:00",
+            "exit_time": "2026-02-19 10:58:00",
+            "side": "sell",
+            "entry_price": 190175.0,
+            "exit_price": 190090.0,
+            "lots": 1.0,
+            "pnl_pts": 85.0,
+            "pnl_fin": 17.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-02-19 11:07:00",
+            "exit_time": "2026-02-19 11:09:00",
+            "side": "buy",
+            "entry_price": 190110.0,
+            "exit_price": 190160.0,
+            "lots": 1.0,
+            "pnl_pts": 50.0,
+            "pnl_fin": 10.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-02-19 11:17:00",
+            "exit_time": "2026-02-19 11:20:00",
+            "side": "buy",
+            "entry_price": 190210.0,
+            "exit_price": 190260.0,
+            "lots": 1.0,
+            "pnl_pts": 50.0,
+            "pnl_fin": 10.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        },
+        {
+            "entry_time": "2026-02-19 11:29:00",
+            "exit_time": "2026-02-19 11:31:00",
+            "side": "buy",
+            "entry_price": 190095.0,
+            "exit_price": 189970.0,
+            "lots": 1.0,
+            "pnl_pts": -125.0,
+            "pnl_fin": -25.0,
+            "reason": "SL",
+            "quantile_confidence": "HIGH",
+            "execution_mode": "LIMIT"
+        }
+    ],
+    "shadow": {
+        "total_missed": 0,
+        "filtered_by_ai": 0,
+        "filtered_by_flux": 0,
+        "filtered_by_bias": 0,
+        "veto_reasons": {
+            "PANICO_MERCADO_SEM_BYPASS": 42
+        },
+        "shadow_by_date": {
+            "2026-02-19": {
+                "PANICO_MERCADO_SEM_BYPASS": 42
+            }
+        },
+        "v22_candidates": 839,
+        "component_fail": {
+            "rsi": 0,
+            "bb": 0,
+            "volume": 0
+        },
+        "tiers": {
+            "70-75": 0,
+            "75-80": 0,
+            "80-85": 0
+        }
+    },
+    "shadow_19fev_only": {
+        "PANICO_MERCADO_SEM_BYPASS": 42
+    },
+    "drawdown": 0.04091653027823241
+}
