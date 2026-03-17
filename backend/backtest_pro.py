@@ -930,14 +930,39 @@ class BacktestPro:
                 # [v24.4] Sensibilidade Fluida:
                 # Não há mais veto binário por volatilidade média. O risco agora controla LOTE e BYPASS.
                 # Veto apenas em Pânico Absoluto (> 2.5 = 187 pts de ATR)
-                if risk_index > 2.5 and not is_momentum_bypass:
-                    self.shadow_signals["veto_reasons"]["PANICO_MERCADO_SEM_BYPASS"] = (
-                        self.shadow_signals["veto_reasons"].get(
-                            "PANICO_MERCADO_SEM_BYPASS", 0
+                #
+                # [MELHORIA-H] Bypass Condicional de Pânico (autorizado 17/03/2026).
+                # Lógica anterior: veto total se risk > 2.5 e sem momentum_bypass.
+                # Lógica nova:
+                #   - Sem momentum_bypass → veto total mantido (comportamento original)
+                #   - Com momentum_bypass MAS sem H1 confirmado → veto mantido (mercado caótico)
+                #   - Com momentum_bypass E H1 confirmado → permite operação com lote reduzido (0.5)
+                #     para capturar tendências fortes mesmo em ATR elevado, limitando exposição.
+                if risk_index > 2.5:
+                    if not is_momentum_bypass:
+                        # Caso 1: Pânico sem IA com convicção — veto total (proteção máxima)
+                        self.shadow_signals["veto_reasons"]["PANICO_MERCADO_SEM_BYPASS"] = (
+                            self.shadow_signals["veto_reasons"].get(
+                                "PANICO_MERCADO_SEM_BYPASS", 0
+                            )
+                            + 1
                         )
-                        + 1
-                    )
-                    continue
+                        continue
+                    else:
+                        # Caso 2: Momentum bypass ativo — verifica se H1 confirma tendência
+                        _h1_panico = getattr(self.ai, "h1_trend", 0)
+                        if _h1_panico == 0:
+                            # Sem tendência H1 clara → não vale o risco em mercado explosivo
+                            self.shadow_signals["veto_reasons"]["PANICO_SEM_H1"] = (
+                                self.shadow_signals["veto_reasons"].get("PANICO_SEM_H1", 0) + 1
+                            )
+                            continue
+                        # Caso 3: Momentum bypass + H1 confirmado → lote reduzido e segue
+                        current_lot_factor = min(current_lot_factor, 0.5)
+                        logging.info(
+                            f"[MELHORIA-H BYPASS] Pânico com convicção: lote reduzido para 0.5 | "
+                            f"ATR={atr_current:.1f} | risk={risk_index:.2f} | H1={_h1_panico}"
+                        )
 
                 if is_opening_window:
                     if (
