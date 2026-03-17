@@ -1,0 +1,122 @@
+{
+  "validacao_melhoria_h": true,
+  "data_execucao": "2026-03-17 17:27:10.269051",
+  "capital": 500.0,
+  "resultados": [
+    {
+      "data": "2026-03-05",
+      "tipo": "CANDIDATO",
+      "trades": 7,
+      "pnl_total": -67.0,
+      "win_rate_pct": 42.9,
+      "panico_veto": 250,
+      "panico_sem_h1": 0,
+      "bypass_ativado": 0,
+      "total_missed": 0,
+      "drawdown": 0.1957
+    },
+    {
+      "data": "2026-03-03",
+      "tipo": "CANDIDATO",
+      "trades": 7,
+      "pnl_total": -57.0,
+      "win_rate_pct": 42.9,
+      "panico_veto": 241,
+      "panico_sem_h1": 0,
+      "bypass_ativado": 0,
+      "total_missed": 0,
+      "drawdown": 0.164
+    },
+    {
+      "data": "2026-01-29",
+      "tipo": "CANDIDATO",
+      "trades": 8,
+      "pnl_total": 80.0,
+      "win_rate_pct": 75.0,
+      "panico_veto": 193,
+      "panico_sem_h1": 0,
+      "bypass_ativado": 0,
+      "total_missed": 0,
+      "drawdown": 0.0497
+    },
+    {
+      "data": "2026-01-30",
+      "tipo": "CANDIDATO",
+      "trades": 3,
+      "pnl_total": -8.0,
+      "win_rate_pct": 33.3,
+      "panico_veto": 140,
+      "panico_sem_h1": 0,
+      "bypass_ativado": 0,
+      "total_missed": 9,
+      "drawdown": 0.058
+    },
+    {
+      "data": "2026-03-06",
+      "tipo": "CANDIDATO",
+      "trades": 1,
+      "pnl_total": 23.0,
+      "win_rate_pct": 100.0,
+      "panico_veto": 323,
+      "panico_sem_h1": 0,
+      "bypass_ativado": 0,
+      "total_missed": 0,
+      "drawdown": 0.0
+    },
+    {
+      "data": "2026-01-22",
+      "tipo": "CANDIDATO",
+      "trades": 10,
+      "pnl_total": 123.0,
+      "win_rate_pct": 80.0,
+      "panico_veto": 82,
+      "panico_sem_h1": 0,
+      "bypass_ativado": 0,
+      "total_missed": 0,
+      "drawdown": 0.07
+    },
+    {
+      "data": "2026-01-21",
+      "tipo": "CONTROLE",
+      "trades": 8,
+      "pnl_total": 22.0,
+      "win_rate_pct": 50.0,
+      "panico_veto": 6,
+      "panico_sem_h1": 0,
+      "bypass_ativado": 0,
+      "total_missed": 0,
+      "drawdown": 0.0526
+    },
+    {
+      "data": "2025-12-22",
+      "tipo": "CONTROLE",
+      "trades": 10,
+      "pnl_total": -72.0,
+      "win_rate_pct": 40.0,
+      "panico_veto": 0,
+      "panico_sem_h1": 0,
+      "bypass_ativado": 0,
+      "total_missed": 0,
+      "drawdown": 0.2172
+    },
+    {
+      "data": "2026-01-05",
+      "tipo": "CONTROLE",
+      "trades": 8,
+      "pnl_total": 2.0,
+      "win_rate_pct": 62.5,
+      "panico_veto": 0,
+      "panico_sem_h1": 0,
+      "bypass_ativado": 0,
+      "total_missed": 0,
+      "drawdown": 0.0797
+    }
+  ],
+  "sumario": {
+    "candidatos_pnl": 94.0,
+    "candidatos_wr": 62.4,
+    "bypass_total": 0,
+    "panico_veto_total": 1229,
+    "controles_pnl": -48.0
+  }
+}
