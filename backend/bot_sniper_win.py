@@ -589,13 +589,13 @@ class SniperBotWIN:
 
                 if decision["is_momentum_bypass"]:
                     # [v23.1] BYPASS INSTITUCIONAL: IA tem autoridade total (Threshold 88%)
-                    if decision["direction"] == "COMPRA" and pressure > 1.1:
+                    if decision["direction"] == "BUY" and pressure > 1.1:
                         is_trade_allowed = True
                         side = "buy"
                         logger.info(
                             f"🚀 [MOMENTUM BYPASS] IA Score {decision['score']:.1f}% > 88% | Fluxo: {pressure:.2f}"
                         )
-                    elif decision["direction"] == "VENDA" and pressure < -1.1:
+                    elif decision["direction"] == "SELL" and pressure < -1.1:
                         is_trade_allowed = True
                         side = "sell"
                         logger.info(
@@ -605,14 +605,14 @@ class SniperBotWIN:
                     # SNIPER TRADICIONAL: Depende dos indicadores (RSI/Volume) + IA Neutra/Sniper
                     if (
                         c_buy_sniper
-                        and decision["direction"] == "COMPRA"
+                        and decision["direction"] == "BUY"
                         and pressure > self.flux_threshold
                     ):
                         is_trade_allowed = True
                         side = "buy"
                     elif (
                         c_sell_sniper
-                        and decision["direction"] == "VENDA"
+                        and decision["direction"] == "SELL"
                         and pressure < -self.flux_threshold
                     ):
                         is_trade_allowed = True

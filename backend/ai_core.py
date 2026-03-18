@@ -305,7 +305,7 @@ class AICore:
         # 3. Inicialização de Variáveis de Controle
         is_momentum_bypass = False
         is_golden_window = False
-        direction = "NEUTRO"
+        direction = "NEUTRAL"
         exec_strategy = "PASSIVA"
 
         # 4. Detecção de Janela de Ouro (Abertura B3 - Alpha de Tempo)
@@ -429,7 +429,14 @@ class AICore:
         # 6. Decisão de Direção e Multiplicadores de Alvo
         if is_momentum_bypass:
             exec_strategy = "MOMENTUM"
-            direction = "COMPRA" if (score_raw >= 50 or obi > 0) else "VENDA"
+            # [CORRIGIDO] Score é o critério primário. OBI só desempata em score=50 neutro.
+            # Bug anterior: `score_raw >= 50 or obi > 0` fazia obi=0.1 sobrepor score=18 (venda forte).
+            if score_raw > 50:
+                direction = "BUY"
+            elif score_raw < 50:
+                direction = "SELL"
+            else:
+                direction = "BUY" if obi > 0 else "SELL"  # Desempate pelo fluxo
         else:
             # [v24.2.1] Relaxamento Dinâmico de Confiança para Baixa Volatilidade (ATR < 60)
             # Permite capturar sinais em mercados lentos mas direcionais
@@ -446,10 +453,10 @@ class AICore:
                 )
 
             if score_raw >= buy_thresh:
-                direction = "COMPRA"
+                direction = "BUY"
             elif score_raw <= sell_thresh:
-                direction = "VENDA"
-            exec_strategy = "SNIPER" if direction != "NEUTRO" else "PASSIVA"
+                direction = "SELL"
+            exec_strategy = "SNIPER" if direction != "NEUTRAL" else "PASSIVA"
 
         # 7. Avaliação de Vetos
         vwap_veto = False
@@ -509,15 +516,29 @@ class AICore:
             rsi_buy_trigger = 32.0
             rsi_sell_trigger = 68.0
 
-        # Vetos Finais (Com Bypass de Sanidade v24.5)
+        # Vetos Finais (Com Bypass de Sanidade v24.5 + MELHORIA-1)
         veto_reason = None
 
-        # Se is_momentum_bypass é True, ignoramos até a incerteza para capturar o sweep
-        eff_uncertainty_thresh = self.uncertainty_threshold
+        # [MELHORIA-1 v2] Threshold de Incerteza Condicional — Fusão Temporal + OBI
+        # Princípio: eff_threshold = max(threshold_por_horario, bonus_obi)
+        # Garante que janelas permissivas (Janela de Ouro=0.85) não sejam reduzidas pelo OBI.
+        # A MELHORIA-1 ADICIONA permissividade — nunca reduz.
+        #   is_momentum_bypass → 0.65 ou o temporal se maior (Janela de Ouro sobrepõe)
+        #   OBI >= 0.3 no horário normal → 0.55 (melhoria sobre 0.40 padrão)
+        #   OBI < 0.3 no horário normal → 0.40 padrão (conservador)
+        #   Janela de Ouro (10-11:30) → self.uncertainty_threshold = 0.85 (já muito permissivo)
         if is_momentum_bypass:
-            eff_uncertainty_thresh = (
-                0.65  # Tolerância expandida para pânico institucional
+            # Momentum bypass: usa o maior entre 0.65 e o threshold temporal atual
+            eff_uncertainty_thresh = max(0.65, self.uncertainty_threshold)
+        elif obi_abs >= 0.3:
+            # OBI confirma direção: MELHORIA-1 aumenta para 0.55, mas respeita janelas mais generosas
+            eff_uncertainty_thresh = max(0.55, self.uncertainty_threshold)
+            logging.debug(
+                f"[MELHORIA-1] Uncertainty threshold: max(0.55, {self.uncertainty_threshold:.2f}) = {eff_uncertainty_thresh:.2f} (OBI={obi_abs:.2f})"
             )
+        else:
+            # Sem fluxo direcional → usa threshold temporal puro (0.40 normal, 0.85 Janela de Ouro)
+            eff_uncertainty_thresh = self.uncertainty_threshold
 
         if uncertainty > eff_uncertainty_thresh:
             veto_reason = "UNCERTAINTY"
@@ -527,26 +548,29 @@ class AICore:
         if veto_reason:
             if current_vol > 0:  # Reduz log spam
                 logging.warning(
-                    f"[DEBUG-AI] Veto: {veto_reason} | Score: {score_raw:.1f} | Bypass: {is_momentum_bypass} | Regime: {regime} | Dist VWAP: {dist_vwap:.1f}"
+                    f"[DEBUG-AI] Veto: {veto_reason} | Score: {score_raw:.1f} | Bypass: {is_momentum_bypass} | OBI: {obi_abs:.2f} | Thresh: {eff_uncertainty_thresh:.2f} | Uncertainty: {uncertainty:.2f}"
                 )
-            direction = "AGUARDAR"
+            direction = "WAIT"
             exec_strategy = "PASSIVA"
 
         return {
             "score": float(score_raw),
             "direction": direction,
             "execution_strategy": exec_strategy,
+            "execution_mode": exec_strategy,       # [COMPAT] alias para backtest_pro.py
             "is_momentum_bypass": is_momentum_bypass,
             "is_golden_window": is_golden_window,
             "lot_multiplier": 1.0,
             "tp_multiplier": tp_multiplier,
-            "sl_multiplier": sl_multiplier,  # [v24.2] Sincronizado para RiskManager
+            "sl_multiplier": sl_multiplier,
             "veto": veto_reason,
             "reason": veto_reason,
             "h1_trend": self.h1_trend,
             "quantile_confidence": "HIGH" if is_momentum_bypass else "NORMAL",
             "rsi_buy_trigger": rsi_buy_trigger,
             "rsi_sell_trigger": rsi_sell_trigger,
+            "use_partial": True,                   # [COMPAT] habilita saídas parciais
+            "uncertainty": max(0.0, min(1.0, abs(score_raw - 50.0) / 50.0 * -1 + 1)),  # 50=max incerteza, 0/100=certeza
         }
 
     def update_sentiment_anchor(self, price):

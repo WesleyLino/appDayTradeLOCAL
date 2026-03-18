@@ -346,8 +346,8 @@ async def startup_event():
 
         try:
             sentiment_worker = NewsSentimentWorker(
-                interval=60
-            )  # 1 minuto para testes de dinamismo
+                interval=120
+            )  # 2 minutos para testes de dinamismo
 
             asyncio.create_task(sentiment_worker.run())
 
@@ -810,11 +810,29 @@ async def autonomous_bot_loop():
                                         f"Sentimento carregado: {sentiment_score} | Notícias: {len(news)}"
                                     )
                             else:
-                                sentiment_score = 0.0
-                                headlines = ["Aguardando análise de IA..."]
+                                # [MELHORIA-2] Fallback de Sentimento: CVD + Blue Chips
+                                # Quando Gemini está indisponível (rate limit), usa dados locais
+                                # real_cvd_ctx e synthetic_idx sempre definidos no escopo principal (linhas 758/730)
+                                _cvd_proxy = float(real_cvd_ctx) if real_cvd_ctx else 0.0
+                                _syn_proxy = float(synthetic_idx) if synthetic_idx else 0.0
+                                # Normaliza CVD para [-1, 1] assumindo range máximo de 500 ticks
+                                _cvd_norm = max(-1.0, min(1.0, _cvd_proxy / 500.0))
+                                # Fallback ponderado (máx 0.30 de impacto no score, conservador)
+                                sentiment_score = round((_cvd_norm * 0.4 + _syn_proxy * 0.6) * 0.30, 4)
+                                headlines = ["[FALLBACK LOCAL] Sentimento calculado via CVD + Blue Chips (Gemini indisponível)"]
+                                ai.latest_sentiment_score = sentiment_score
+                                logging.warning(
+                                    f"[SENTIMENTO-FALLBACK] Gemini indisponível. CVD={_cvd_proxy:.0f} Syn={_syn_proxy:.4f} → Score={sentiment_score:.4f}"
+                                )
                         except Exception as e:
                             logging.error(f"Erro ao ler news_sentiment.json: {e}")
-                            sentiment_score = 0.0
+                            # [MELHORIA-2] Fallback por exceção (ex: arquivo corrompido)
+                            # real_cvd_ctx e synthetic_idx sempre no escopo principal
+                            _cvd_proxy = float(real_cvd_ctx) if real_cvd_ctx else 0.0
+                            _cvd_norm = max(-1.0, min(1.0, _cvd_proxy / 500.0))
+                            _syn_proxy = float(synthetic_idx) if synthetic_idx else 0.0
+                            sentiment_score = round((_cvd_norm * 0.4 + _syn_proxy * 0.6) * 0.30, 4)
+                            ai.latest_sentiment_score = sentiment_score
                             headlines = []
 
                         # Nota: Settlement e Volatilidade agora vêm do context_json atualizado pelo MarketDataWorker
@@ -1388,7 +1406,11 @@ async def autonomous_bot_loop():
                                     risk.trailing_trigger if not is_wdo else 5.0
                                 )
 
-                                step_pts = risk.trailing_step if not is_wdo else 2.0
+                                # [MELHORIA-4] Step proporcional ao ATR (25% do ATR atual)
+                                # Era fixo em 5 pts (4-6% do ATR), causando saída prematura por ruído normal
+                                # Range normal do WIN: ATR 80-120 pts → Step 20-30 pts (adequado)
+                                _atr_ref = float(current_atr) if current_atr and current_atr > 0 else 80.0
+                                step_pts = max(10.0, round(_atr_ref * 0.25)) if not is_wdo else 2.0
 
                                 current_price = last_price
 
@@ -1718,17 +1740,41 @@ async def autonomous_bot_loop():
 
                                     else:
                                         logging.warning(
-                                            f"Sniper TTL Expirado. Cancelando {order_ticket}..."
+                                            f"Sniper TTL Expirado. Verificando race condition para {order_ticket}..."
                                         )
 
-                                        add_operational_log(
-                                            f"Sniper TTL Expirado. Ordem {order_ticket} cancelada.",
-                                            "warning",
-                                        )
-
-                                        await asyncio.to_thread(
+                                        cancel_ok = await asyncio.to_thread(
                                             bridge.cancel_order, order_ticket
                                         )
+
+                                        if not cancel_ok:
+                                            # Falha ao cancelar = pode ter sido preenchida no momento exato do TTL
+                                            race_status = await asyncio.to_thread(
+                                                bridge.check_order_status, order_ticket
+                                            )
+                                            if race_status == "FILLED":
+                                                side_pt = "COMPRA" if side == "buy" else "VENDA"
+                                                add_operational_log(
+                                                    f"SNIPER VITÓRIA (RACE): {side_pt} {final_lots} lotes @ {current_order_price}",
+                                                    "success",
+                                                )
+                                                persistence.save_trade(
+                                                    symbol, side, current_order_price,
+                                                    final_lots, "AUTO_SNIPER_RACE",
+                                                )
+                                                logging.info(
+                                                    f"SNIPER RACE CONDITION: Ordem {order_ticket} preenchida no TTL!"
+                                                )
+                                            else:
+                                                add_operational_log(
+                                                    f"Sniper TTL: {order_ticket} expirado sem fill.",
+                                                    "warning",
+                                                )
+                                        else:
+                                            add_operational_log(
+                                                f"Sniper TTL: {order_ticket} cancelado (sem fill).",
+                                                "info",
+                                            )
 
                                 else:
                                     msg = (
@@ -2121,8 +2167,11 @@ async def autonomous_bot_loop():
                             "atr": float(current_atr),
                             "limits": session_limits,  # [HFT v3] Trading Tunnels
                             "performance": risk.get_performance_metrics(),
+                            # [DISPLAY FIX] Converte uncertainty_norm (0-1) para pontos reais (ATR-scaled)
+                            # uncertainty_norm=0.10 * ATR=100pts → exibe "10.0 pts" no painel
+                            # Nenhuma lógica de decisão é alterada — apenas conversão visual
                             "uncertainty_range": float(
-                                ai_predict_data.get("uncertainty_norm", 0.0)
+                                ai_predict_data.get("uncertainty_norm", 0.0) * max(float(current_atr), 1.0)
                                 if isinstance(ai_predict_data, dict)
                                 else 0.0
                             ),

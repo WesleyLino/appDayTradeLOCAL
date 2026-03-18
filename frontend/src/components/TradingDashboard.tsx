@@ -64,9 +64,12 @@ export function TradingDashboard() {
   const isHighLatency = (data?.latency_ms ?? 0) > 300;
 
   // Derived Metrics
-  const aiScore = data?.ai_prediction?.score ?? (data?.ai_confidence ? data.ai_confidence * 100 : 0);
-  const aiDirection = data?.ai_prediction?.direction ?? (data?.ai_direction ?? "NEUTRO");
-  const aiVeto = data?.ai_prediction?.veto ?? (data?.veto_reason ?? null);
+  const aiScore =
+    data?.ai_prediction?.score ??
+    (data?.ai_confidence ? data.ai_confidence * 100 : 0);
+  const aiDirection =
+    data?.ai_prediction?.direction ?? data?.ai_direction ?? "NEUTRO";
+  const aiVeto = data?.ai_prediction?.veto ?? data?.veto_reason ?? null;
 
   const isObiOk = Math.abs(data?.obi ?? 0) > 0.2; // Exemplo de threshold
   const isConfidenceOk = (data?.ai_confidence ?? 0) > 0.6;

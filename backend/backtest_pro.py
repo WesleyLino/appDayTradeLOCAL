@@ -1166,19 +1166,19 @@ class BacktestPro:
                     # Se em Momentum Bypass, permite entrada direta sem esperar reversão de RSI/BB
                     v24_momentum_buy = (
                         is_momentum_bypass
-                        and ai_dir == "COMPRA"
+                        and ai_dir == "BUY"
                         and getattr(self.ai, "h1_trend", 0) >= 0
                     )
                     v24_momentum_sell = (
                         is_momentum_bypass
-                        and ai_dir == "VENDA"
+                        and ai_dir == "SELL"
                         and getattr(self.ai, "h1_trend", 0) <= 0
                     )
 
                     # Estabilidade Direcional Corrigida (0=Sell, 100=Buy)
-                    if ai_dir == "COMPRA":
+                    if ai_dir == "BUY":
                         ai_stability = ai_score / 100.0
-                    elif ai_dir == "VENDA":
+                    elif ai_dir == "SELL":
                         ai_stability = (100.0 - ai_score) / 100.0
                     else:
                         ai_stability = 0.5  # Neutro
@@ -1186,12 +1186,12 @@ class BacktestPro:
                     # Consolidar Sinais
                     v22_buy = (
                         v22_buy_raw
-                        and ai_dir == "COMPRA"
+                        and ai_dir == "BUY"
                         and ai_stability >= self.opt_params["confidence_threshold"]
                     ) or v24_momentum_buy
                     v22_sell = (
                         v22_sell_raw
-                        and ai_dir == "VENDA"
+                        and ai_dir == "SELL"
                         and ai_stability >= self.opt_params["confidence_threshold"]
                     ) or v24_momentum_sell
 
@@ -1205,9 +1205,9 @@ class BacktestPro:
                     )
 
                     # [v36.1] Estabilidade Direcional Corrigida (0=Sell, 100=Buy)
-                    if ai_dir == "COMPRA":
+                    if ai_dir == "BUY":
                         ai_stability = ai_score / 100.0
-                    elif ai_dir == "VENDA":
+                    elif ai_dir == "SELL":
                         ai_stability = (100.0 - ai_score) / 100.0
                     else:
                         ai_stability = 0.5  # Neutro
@@ -1253,14 +1253,14 @@ class BacktestPro:
 
                     v22_buy = (
                         (v22_buy_raw or is_momentum_bypass)
-                        and (ai_dir == "COMPRA")
+                        and (ai_dir == "BUY")
                         and (ai_stability >= thr_buy or is_momentum_bypass)
                         and cooldown_ok
                         and (not bias_veto_buy or is_momentum_bypass)
                     )
                     v22_sell = (
                         (v22_sell_raw or is_momentum_bypass)
-                        and (ai_dir == "VENDA")
+                        and (ai_dir == "SELL")
                         and (ai_stability >= thr_sell or is_momentum_bypass)
                         and cooldown_ok
                         and (not bias_veto_sell or is_momentum_bypass)
@@ -1295,7 +1295,7 @@ class BacktestPro:
                         atr_current <= 100.0
                     )  # [REC.2] Bloqueia VENDA gate técnico em dias voláteis
                     ia_nao_contradiz_venda = (ai_score < 65.0) and (
-                        ai_dir != "COMPRA"
+                        ai_dir != "BUY"
                     )  # [MELHORIA D]
                     v22_sell_technical = (
                         v22_sell_raw

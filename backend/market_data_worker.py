@@ -128,7 +128,10 @@ class MarketDataWorker:
                 ),
                 asyncio.to_thread(self.bridge.get_real_cvd_ticks, symbol_wdo),
                 asyncio.to_thread(self.bridge.get_real_commission_today),
+                asyncio.to_thread(self.bridge.get_vwap, symbol_win),
+                asyncio.to_thread(self.bridge.get_vwap, symbol_wdo),
             )
+
 
             # [PRO-ADJUST] Sticky VWAP: Mantém o último valor válido se a leitura atual falhar
             new_vwap_win = float(vwap_win or 0.0)
@@ -195,19 +198,7 @@ class MarketDataWorker:
                 f"💾 Contexto Ativo: WIN$ VWAP={self._last_vwaps.get('WIN$', 0):.1f} | WDO$ VWAP={self._last_vwaps.get('WDO$', 0):.1f} | CVD={real_cvd:.0f}"
             )
 
-            # [DYNAMIC-FIX] Dashboard Vivo
-            import random
-
-            context["synthetic_index"] += random.uniform(-0.005, 0.005)
-            if context["bluechips"]:
-                for ticker in context["bluechips"]:
-                    context["bluechips"][ticker] += random.uniform(-0.002, 0.002)
-
-            if isinstance(context["macro"], dict):
-                context["macro"]["score"] += random.uniform(-0.005, 0.005)
-            # The original code had an 'elif' for context["macro"] being int/float,
-            # but with the new structure, it will always be a dict if _last_macro was int/float.
-            # So, this 'elif' is no longer needed.
+            # Dados reais — sem perturbações artificiais
 
             # Escrita Atômica
             temp_path = self.output_path + ".tmp"

@@ -1,0 +1,40 @@
+2026-03-18 14:37:14,928 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 43.3 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:14,934 - INFO - ? [BYPASS-PRO] Ativado! Score=90.0, OBI=123.8, Regime=1
+2026-03-18 14:37:15,365 - INFO - ? [REGIME-1] Alvos Normais. Score=56.8, OBI=1.4, Bypass=OFF
+2026-03-18 14:37:15,366 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 56.8 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:15,373 - INFO - ? [BYPASS-PRO] Ativado! Score=90.0, OBI=336.2, Regime=1
+2026-03-18 14:37:15,796 - INFO - ? [REGIME-1] Alvos Normais. Score=43.5, OBI=1.3, Bypass=OFF
+2026-03-18 14:37:15,796 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 43.5 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:16,212 - INFO - ? [REGIME-1] Alvos Normais. Score=57.1, OBI=1.4, Bypass=OFF
+2026-03-18 14:37:16,212 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 57.1 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:16,218 - INFO - ? [BYPASS-PRO] Ativado! Score=90.0, OBI=778.4, Regime=1
+2026-03-18 14:37:16,622 - INFO - ? [REGIME-1] Alvos Normais. Score=42.5, OBI=1.5, Bypass=OFF
+2026-03-18 14:37:16,622 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 42.5 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:17,049 - INFO - ? [REGIME-1] Alvos Normais. Score=40.3, OBI=1.9, Bypass=OFF
+2026-03-18 14:37:17,049 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 40.3 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:17,054 - INFO - ? [BYPASS-PRO] Ativado! Score=90.0, OBI=1508.8, Regime=1
+2026-03-18 14:37:17,462 - INFO - ? [REGIME-1] Alvos Normais. Score=38.2, OBI=2.4, Bypass=OFF
+2026-03-18 14:37:17,463 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 38.2 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:17,470 - INFO - ? [BYPASS-PRO] Ativado! Score=90.0, OBI=1572.8, Regime=1
+2026-03-18 14:37:17,879 - INFO - ? [REGIME-1] Alvos Normais. Score=42.2, OBI=1.6, Bypass=OFF
+2026-03-18 14:37:17,880 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 42.2 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:17,884 - INFO - ? [BYPASS-PRO] Ativado! Score=90.0, OBI=13.4, Regime=1
+2026-03-18 14:37:18,288 - INFO - ? [REGIME-1] Alvos Normais. Score=37.0, OBI=2.6, Bypass=OFF
+2026-03-18 14:37:18,288 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 37.0 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:18,780 - INFO - ? [REGIME-1] Alvos Normais. Score=55.9, OBI=1.2, Bypass=OFF
+2026-03-18 14:37:18,780 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 55.9 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:18,784 - INFO - ? [BYPASS-PRO] Ativado! Score=90.0, OBI=1390.6, Regime=1
+2026-03-18 14:37:19,227 - INFO - ? [REGIME-1] Alvos Normais. Score=43.6, OBI=1.3, Bypass=OFF
+2026-03-18 14:37:19,227 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 43.6 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:19,654 - INFO - ? [REGIME-1] Alvos Normais. Score=56.3, OBI=1.3, Bypass=OFF
+2026-03-18 14:37:19,654 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 56.3 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:19,660 - INFO - ? [BYPASS-PRO] Ativado! Score=90.0, OBI=1189.4, Regime=1
+2026-03-18 14:37:20,103 - INFO - ? [REGIME-1] Alvos Normais. Score=56.1, OBI=1.2, Bypass=OFF
+2026-03-18 14:37:20,103 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 56.1 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:20,571 - INFO - ? [REGIME-1] Alvos Normais. Score=57.4, OBI=1.5, Bypass=OFF
+2026-03-18 14:37:20,571 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 57.4 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:21,026 - INFO - ? [REGIME-1] Alvos Normais. Score=43.9, OBI=1.2, Bypass=OFF
+2026-03-18 14:37:21,026 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 43.9 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:21,473 - INFO - ? [REGIME-1] Alvos Normais. Score=57.6, OBI=1.5, Bypass=OFF
+2026-03-18 14:37:21,474 - WARNING - [DEBUG-AI] Veto: UNCERTAINTY | Score: 57.6 | Bypass: False | Regime: 1 | Dist VWAP: 0.0
+2026-03-18 14:37:21,477 - INFO - ? [BYPASS-PRO] Ativado! Score=90.0, OBI=654.4, Regime=1

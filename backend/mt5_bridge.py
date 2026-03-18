@@ -298,6 +298,18 @@ class MT5Bridge:
         if not self.connected:
             return None
 
+        # [CORRIGIDO] Normaliza tipos LIMIT/STOP para tipos de MERCADO.
+        # TRADE_ACTION_DEAL só aceita ORDER_TYPE_BUY (0) ou ORDER_TYPE_SELL (1).
+        # Se vier BUY_LIMIT(2), BUY_STOP(4), etc. → converte para BUY (0).
+        # Se vier SELL_LIMIT(3), SELL_STOP(5), etc. → converte para SELL (1).
+        BUY_TYPES = {
+            mt5.ORDER_TYPE_BUY,
+            mt5.ORDER_TYPE_BUY_LIMIT,
+            mt5.ORDER_TYPE_BUY_STOP,
+            mt5.ORDER_TYPE_BUY_STOP_LIMIT,
+        }
+        market_type = mt5.ORDER_TYPE_BUY if order_type in BUY_TYPES else mt5.ORDER_TYPE_SELL
+
         # Normalização de Preço para SL/TP
         symbol_info = mt5.symbol_info(symbol)
         if symbol_info is None:
@@ -308,7 +320,7 @@ class MT5Bridge:
         if tick is None:
             return None
 
-        price = tick.ask if order_type == mt5.ORDER_TYPE_BUY else tick.bid
+        price = tick.ask if market_type == mt5.ORDER_TYPE_BUY else tick.bid
 
         if tick_size > 0:
             if sl > 0:
@@ -320,19 +332,21 @@ class MT5Bridge:
             "action": mt5.TRADE_ACTION_DEAL,
             "symbol": symbol,
             "volume": float(volume),
-            "type": order_type,
+            "type": market_type,   # [CORRIGIDO] usa market_type, não o order_type original
             "price": float(price),
             "sl": float(sl),
             "tp": float(tp),
             "magic": 123456,
             "comment": comment,
             "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_RETURN,
+            "type_filling": mt5.ORDER_FILLING_IOC
+            if "WIN" in symbol or "WDO" in symbol
+            else mt5.ORDER_FILLING_RETURN,
         }
 
         result = mt5.order_send(request)
         if result is None:
-            logging.error("order_send (Market) retornou None.")
+            logging.error("order_send (Market) retornou Nulo (None).")
             return None
 
         if result.retcode != mt5.TRADE_RETCODE_DONE:
@@ -345,6 +359,8 @@ class MT5Bridge:
             )
 
         return result
+
+
 
     def place_smart_order(
         self,
@@ -467,15 +483,15 @@ class MT5Bridge:
         if hist_orders and len(hist_orders) > 0:
             state = hist_orders[0].state
             if state == mt5.ORDER_STATE_FILLED:
-                return "PREENCHIDO"
+                return "FILLED"      # [CORRIGIDO] era "PREENCHIDO" -- main.py compara com "FILLED"
             elif state == mt5.ORDER_STATE_CANCELED:
-                return "CANCELADO"
+                return "CANCELED"   # [CORRIGIDO] era "CANCELADO"
             elif state == mt5.ORDER_STATE_PARTIAL:
-                return "PARCIAL"
+                return "PARTIAL"    # [CORRIGIDO] era "PARCIAL"
             else:
-                return f"ESTADO_{state}"
+                return f"STATE_{state}"
 
-        return "DESCONHECIDO"
+        return "UNKNOWN"  # [CORRIGIDO] era "DESCONHECIDO"
 
     def validate_order_compliance(self, symbol, price):
         """
@@ -549,6 +565,9 @@ class MT5Bridge:
         }
 
         result = mt5.order_send(request)
+        if result is None:
+            logging.error(f"close_position: order_send retornou None para ticket {ticket}")
+            return False
         if result.retcode != mt5.TRADE_RETCODE_DONE:
             logging.error(
                 f"Erro ao fechar posição {ticket}: {sanitize_log(result.comment)}"
@@ -606,6 +625,9 @@ class MT5Bridge:
         }
 
         result = mt5.order_send(request)
+        if result is None:
+            logging.error(f"close_partial_position: order_send retornou None para ticket {ticket}")
+            return False
         if result.retcode != mt5.TRADE_RETCODE_DONE:
             logging.error(
                 f"Erro ao fechar parcialmente {ticket}: {sanitize_log(result.comment)}"
@@ -643,8 +665,11 @@ class MT5Bridge:
         }
 
         result = mt5.order_send(request)
+        if result is None:
+            logging.error(f"update_sltp: order_send retornou None para ticket {ticket}")
+            return False
         if result.retcode != mt5.TRADE_RETCODE_DONE:
-            logging.error(f"Erro ao atualizar SL/TP {ticket}: {result.comment}")
+            logging.error(f"Erro ao atualizar SL/TP {ticket}: {sanitize_log(result.comment)}")
             return False
 
         return True
@@ -1058,7 +1083,7 @@ class MT5Bridge:
             last_val = 0.0
 
             if info:
-                vwap_val = info.session_price_avg
+                vwap_val = getattr(info, "session_price_avg", 0.0)
                 last_val = info.last
 
                 # [v24.4.3] Validação de Escala

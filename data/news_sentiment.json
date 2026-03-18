@@ -1,59 +1,54 @@
 {
-  "score": -0.65,
+  "score": -0.6,
   "reliability": "high",
   "risk_classification": "HIGH",
-  "fact_check": "Mercados globais e brasileiros em queda, com Ibovespa em terceira semana negativa, impulsionados por preocupa\u00e7\u00f5es com guerra no Ir\u00e3 e avers\u00e3o a risco. Not\u00edcias corporativas pontuais no Brasil mostram resultados mistos, mas n\u00e3o revertem o sentimento macro negativo.",
+  "fact_check": "Acordo de estudo sobre glaucoma impulsiona Artelo Biosciences. Google Labs atualiza ferramenta, impactando negativamente a Figma. Empresas brasileiras como MBRF, Ra\u00edzen, Cargill, Vibra e Ambev s\u00e3o citadas por descumprimento de frete m\u00ednimo, indicando risco regulat\u00f3rio. Ataque a campo de g\u00e1s no Ir\u00e3 eleva preocupa\u00e7\u00f5es geopol\u00edticas e energ\u00e9ticas globais. Zillow Group se beneficia da retirada de processo judicial. Not\u00edcias baseadas em opini\u00f5es de analistas e desempenho de \u00edndice sem causa prim\u00e1ria s\u00e3o consideradas ru\u00eddo.",
   "news": [
     {
-      "headline": "Memecoin de Trump dispara 60% com evento em Mar-a-Lago",
-      "relevance": 0.1,
+      "headline": "A\u00e7\u00f5es da Artelo Biosciences disparam com acordo de estudo sobre glaucoma",
+      "relevance": 0.3,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "A\u00e7\u00f5es da Grail sobem ap\u00f3s upgrade do TD Cowen por perspectivas de teste de c\u00e2ncer",
+      "relevance": 0.0,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Magalu (MGLU3) fecha em leve queda ap\u00f3s balan\u00e7o do 4T",
-      "relevance": 0.6,
-      "impact": "BEARISH"
+      "headline": "A\u00e7\u00f5es da Duolingo caem ap\u00f3s rebaixamento da Argus para neutro",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
     },
     {
-      "headline": "M\u00e9xico: A\u00e7\u00f5es fecham em queda, \u00cdndice S&P/BMV IPC recua 0,66%",
+      "headline": "A\u00e7\u00f5es da Figma caem ap\u00f3s Google Labs atualizar ferramenta de design Stitch",
       "relevance": 0.4,
       "impact": "BEARISH"
     },
     {
-      "headline": "Brasil: A\u00e7\u00f5es fecham em queda, \u00cdndice Bovespa recua 0,91%",
+      "headline": "TD Cowen destaca duas a\u00e7\u00f5es de telecom para observar",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "MBRF, Ra\u00edzen, Cargill, Vibra e Ambev est\u00e3o entre empresas que mais descumprem frete m\u00ednimo, diz Renan Filho",
       "relevance": 0.8,
       "impact": "BEARISH"
     },
     {
-      "headline": "Ibovespa fecha com nova queda e emenda terceira semana negativa",
-      "relevance": 0.9,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Ibovespa fecha semana abaixo de 178 mil pontos por guerra no Ir\u00e3",
+      "headline": "A\u00e7\u00f5es europeias recuam ap\u00f3s ataque a campo de g\u00e1s do Ir\u00e3 reavivar preocupa\u00e7\u00f5es",
       "relevance": 1.0,
       "impact": "BEARISH"
     },
     {
-      "headline": "Trump autoriza Venezuela a vender fertilizantes devido \u00e0 guerra",
-      "relevance": 0.5,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Hypera sobe ap\u00f3s 4T e aposta em semaglutida",
-      "relevance": 0.6,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Bolsas de NY caem por avers\u00e3o a riscos de guerra, terminam semana em queda",
-      "relevance": 0.9,
+      "headline": "Reino Unido - A\u00e7\u00f5es fecharam o preg\u00e3o em queda e o \u00cdndice Investing.com Reino Unido 100 recuou 0,90%",
+      "relevance": 0.2,
       "impact": "BEARISH"
     },
     {
-      "headline": "Raytheon garante contrato de US$ 2 bilh\u00f5es para terminais de sat\u00e9lite",
+      "headline": "A\u00e7\u00f5es da Zillow Group sobem ap\u00f3s Compass retirar processo judicial",
       "relevance": 0.3,
-      "impact": "NEUTRAL"
+      "impact": "BULLISH"
     }
   ],
-  "timestamp": 1773448759.9241517
+  "timestamp": 1773863755.6377716
 }

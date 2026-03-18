@@ -633,10 +633,14 @@ class RiskManager:
 
     def check_breakeven(self, current_profit_points, entry_price, side="buy"):
         """
-        [v22 GOLDEN] Verifica se a operação atingiu o gatilho de Breakeven.
-        Gatilho: 60 pts. Trava: +5 pts a favor.
+        [v22 GOLDEN + MELHORIA-6] Verifica se a operação atingiu o gatilho de Breakeven.
+        BUY:  Gatilho padrão (be_trigger = 60 pts). Mercado tem viés de alta — deixa respirar.
+        SELL: Gatilho antecipado (40 pts). Operação contra-fluxo no mercado BR — protege capital cedo.
         """
-        if current_profit_points >= self.be_trigger:
+        # [MELHORIA-6] Breakeven assimétrico: SELL ativa 20 pts antes do BUY
+        effective_trigger = self.be_trigger if side.lower() == "buy" else min(self.be_trigger, 40.0)
+
+        if current_profit_points >= effective_trigger:
             if side.lower() == "buy":
                 new_sl = entry_price + self.be_lock
             else:
@@ -663,9 +667,10 @@ class RiskManager:
 
     def get_dynamic_trailing_params(self, current_atr, side="buy", regime_params=None):
         """
-        [v24] Trailing Stop Dinâmico Assimétrico.
-        Compra: Trend Following (Largo).
-        Venda: Panic/Short Squeeze (Estrangulador).
+        [v24 + MELHORIA-4] Trailing Stop Dinâmico Assimétrico com Step Proporcional ao ATR.
+        Compra: Trend Following (Largo) — trigger maior para deixar o movimento se desenvolver.
+        Venda: Panic/Short Squeeze (Estrangulador) — trigger menor para proteger capital cedo.
+        Step: Proporcional ao ATR (25%) para evitar saídas prematuras por ruído normal de tick.
         """
         if regime_params and "trailing_trigger" in regime_params:
             return (
@@ -674,17 +679,25 @@ class RiskManager:
                 float(regime_params["trailing_step"]),
             )
 
+        # [MELHORIA-4] Step proporcional ao ATR (25% do ATR, com mínimos por símbolo)
+        # WIN/IND: range normal ATR 80-150 pts → step 20-37 pts (adequado, evita ruído)
+        # WDO/DOL: range normal ATR 4-8 pts → step 1-2 pts
+        atr_ref = float(current_atr) if current_atr and current_atr > 0 else 80.0
+        is_micro = atr_ref < 10.0  # Detecta WDO/DOL via ATR
+        min_step = 2.0 if is_micro else 10.0
+        dynamic_step = max(min_step, round(atr_ref * 0.25))
+
         # [v24] Lógica Assimétrica Baseada em Auditoria HFT
         if side.lower() == "sell":
             # Venda e pânico: Estrangular rápido (Panic/Short Squeeze)
-            trigger = 80.0  # [v24.5] Começa a estrangular cedo na venda
-            lock = 60.0  # Trava lucro inicial
-            step = 20.0  # Estrangulamento de 20 em 20 pts (Agressivo)
+            trigger = 80.0   # [v24.5] Começa a estrangular cedo na venda
+            lock = 60.0      # Trava lucro inicial
+            step = dynamic_step  # [MELHORIA-4] Proporcional ao ATR (era fixo 20 pts)
         else:
             # Compra: Trend Following (Deixar respirar para ralis)
             trigger = 150.0  # [v24.5] Dá mais espaço para a compra se desenvolver
-            lock = 100.0  # Lock de lucro mais fundo
-            step = 50.0  # Passo largo para evitar violinada em M5 (Conservador)
+            lock = 100.0     # Lock de lucro mais fundo
+            step = dynamic_step  # [MELHORIA-4] Proporcional ao ATR (era fixo 50 pts)
 
         return float(trigger), float(lock), float(step)
 
@@ -1088,20 +1101,40 @@ class RiskManager:
         """
         import MetaTrader5 as mt5
 
+        # [MELHORIA-3] TP Adaptativo por Regime — usa regime_settings como âncora principal
+        # Fundamentação: TP fixo de 500 pts é inalcançável em lateral (Regime 0/2).
+        # regime_settings já define take_profit realista para cada regime:
+        #   Regime 0 (Lateral):    150 pts — alvo atingível no range
+        #   Regime 1 (Tendência):  550 pts — captura o movimento estendido
+        #   Regime 2 (Volatilidade): 200 pts — saída rápida no rompimento
+        #   Regime 3 (Reversão):   300 pts — alvo médio para reversão
+        r_settings = self.get_regime_specific_params(regime)
+        regime_tp = float(r_settings.get("take_profit", self.tp_dist))
+        regime_sl = float(r_settings.get("stop_loss", self.sl_dist))
+
         if current_atr and current_atr > 0:
-            tp_mult = 1.0
-            sl_mult = 1.3
-            if regime == 1:
-                tp_mult = 1.5
-            elif regime == 0:
-                tp_mult = 0.8
-            sl_points = float(current_atr * sl_mult)
-            tp_points = float(current_atr * tp_mult)
+            # ATR como refinamento: se ATR sugere alvo maior que o regime, usa ATR (mercado em movimento)
+            # Se ATR sugere alvo menor (ex: ATR=40 em lateral), mantém o alvo do regime (mais conservador)
+            atr_tp = float(current_atr * 1.5)
+            atr_sl = float(current_atr * 1.2)
+            # Toma o maior entre ATR e regime_tp para BUY, mas limita a 2x o regime_tp para evitar alvos impossíveis
+            tp_points = max(regime_tp * 0.7, min(atr_tp, regime_tp * 1.5))
+            sl_points = max(regime_sl * 0.7, min(atr_sl, regime_sl * 1.5))
+            logging.debug(
+                f"[MELHORIA-3] TP Adaptativo: Regime={regime} | RegimeTP={regime_tp:.0f} | ATR-TP={atr_tp:.0f} | Final={tp_points:.0f}"
+            )
         else:
+            # Sem ATR — usa regime_settings diretamente
+            tp_points = regime_tp
+            sl_points = regime_sl
             norm_sym = self._normalize_symbol(symbol)
             d_params = self.dynamic_params.get(norm_sym, {})
-            sl_points = float(d_params.get("sl", 130.0))
-            tp_points = float(d_params.get("tp", 100.0))
+            # Fallback para dynamic_params se disponível
+            if d_params.get("sl"):
+                sl_points = float(d_params["sl"])
+            if d_params.get("tp"):
+                tp_points = float(d_params["tp"])
+
 
         # [v24] Janela de Ouro (10:00 - 11:30)
         if current_time:
@@ -1112,17 +1145,16 @@ class RiskManager:
                     f"🚀 [v24 GOLDEN-WINDOW] TP expandido (+50%): {tp_points:.0f} pts"
                 )
 
-        # [v23] Valores Default por Símbolo (Se não houver ATR)
-        if not (current_atr and current_atr > 0):
+        # [MELHORIA-3] Fallback sem ATR já tratado acima via regime_settings.
+        # Bloco legado [v23] removido — sobrescrevia TP=100 pts para WIN, anulando MELHORIA-3.
+        # Proteção mínima por símbolo para garantir valores > 0 (casos extremos sem regime)
+        if tp_points <= 0 or sl_points <= 0:
             if "WDO" in symbol or "DOL" in symbol:
-                sl_points = 5.0
-                tp_points = 10.0
-            elif "WIN" in symbol or "IND" in symbol:
-                sl_points = 130.0
-                tp_points = 100.0
+                sl_points = sl_points if sl_points > 0 else 5.0
+                tp_points = tp_points if tp_points > 0 else 10.0
             else:
-                sl_points = 150.0
-                tp_points = 150.0
+                sl_points = sl_points if sl_points > 0 else 130.0
+                tp_points = tp_points if tp_points > 0 else 150.0
 
         # [v23] Lógica de Momentum e Abertura consolidada
         if tp_multiplier > 1.1:
