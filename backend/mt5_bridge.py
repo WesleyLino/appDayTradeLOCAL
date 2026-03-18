@@ -268,7 +268,10 @@ class MT5Bridge:
             "sl": float(sl),
             "tp": float(tp),
             "type_time": mt5.ORDER_TIME_DAY,  # Expira no final do dia se não cancelada antes
-            "type_filling": mt5.ORDER_FILLING_RETURN,
+            # [FIX #27] WIN/WDO na B3 exigem IOC; demais símbolos usam RETURN
+            "type_filling": mt5.ORDER_FILLING_IOC
+            if "WIN" in symbol or "WDO" in symbol
+            else mt5.ORDER_FILLING_RETURN,
             "comment": comment,
             "magic": 123456,
         }
@@ -884,10 +887,11 @@ class MT5Bridge:
 
     def get_previous_candle_extremes(self, symbol, timeframe=None):
         """Retorna High e Low do candle M1 anterior para SL dinâmico."""
-        tf = timeframe or self.mt5.TIMEFRAME_M1
-        rates = self.mt5.copy_rates_from_pos(symbol, tf, 1, 1)
+        # [FIX #34] self.mt5 não existe — usar o módulo mt5 importado globalmente
+        tf = timeframe or mt5.TIMEFRAME_M1
+        rates = mt5.copy_rates_from_pos(symbol, tf, 1, 1)
         if rates is not None and len(rates) > 0:
-            return {"high": float(rates[0].high), "low": float(rates[0].low)}
+            return {"high": float(rates[0]["high"]), "low": float(rates[0]["low"])}
         return None
 
     def get_order_book(self, symbol):

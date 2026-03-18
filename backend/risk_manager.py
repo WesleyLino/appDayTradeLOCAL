@@ -1241,10 +1241,12 @@ class RiskManager:
                 else price - tp_points
             )
 
-            sl = self._quantize_price(symbol, sl)
-            tp = self._quantize_price(symbol, tp)
-            sl = self._apply_anti_violinada(symbol, sl, side)
-            tp = self._apply_anti_violinada(symbol, tp, side)
+        # [FIX-CRÍTICO] Quantização aplicada em AMBOS os caminhos (anterior bug: só no else)
+        # Sem isto, SL/TP enviados sem múltiplo de 5 pts causam rejection silenciosa na B3
+        sl = self._quantize_price(symbol, sl)
+        tp = self._quantize_price(symbol, tp)
+        sl = self._apply_anti_violinada(symbol, sl, side)
+        tp = self._apply_anti_violinada(symbol, tp, side)
 
         return {
             "action": mt5.TRADE_ACTION_PENDING,

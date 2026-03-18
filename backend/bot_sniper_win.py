@@ -432,9 +432,10 @@ class SniperBotWIN:
                     continue
 
                 acc = self.bridge.get_account_health()
-                total_pnl = self.bridge.get_daily_realized_profit() + acc.get(
-                    "profit", 0
-                )
+                # [FIX #33] get_account_health() não retorna "profit".
+                # O P&L flutuante é equity - balance (posições abertas).
+                floating_pnl = acc.get("equity", 0) - acc.get("balance", 0)
+                total_pnl = self.bridge.get_daily_realized_profit() + floating_pnl
                 if (
                     not self.risk.check_daily_loss(total_pnl)[0]
                     or not self.risk.check_equity_kill_switch(

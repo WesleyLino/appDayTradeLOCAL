@@ -299,6 +299,10 @@ async def startup_event():
 
         # Conexão MT5 (Refatorado para não ser bloqueante)
 
+        # [FIX] Reseta o estado de pânico a cada inicialização para evitar bloqueio permanente
+        persistence.save_state("panic_status", "IDLE")
+        logging.info("[OK] Estado de pânico resetado para: IDLE")
+
         logging.info("Conectando ao MT5 Bridge...")
 
         connected = await asyncio.to_thread(bridge.connect)
@@ -1622,6 +1626,10 @@ async def autonomous_bot_loop():
                                     bridge.mt5.symbol_info_tick, symbol
                                 )
 
+                                if tick_info is None:
+                                    logging.warning("[SNIPER] symbol_info_tick retornou None. Abortando ordem.")
+                                    continue
+
                                 current_order_price = (
                                     tick_info.ask if side == "buy" else tick_info.bid
                                 )
@@ -1805,6 +1813,10 @@ async def autonomous_bot_loop():
                                 tick_info = await asyncio.to_thread(
                                     bridge.mt5.symbol_info_tick, symbol
                                 )
+
+                                if tick_info is None:
+                                    logging.warning("[PASSIVO] symbol_info_tick retornou None. Abortando ordem.")
+                                    continue
 
                                 limit_price = (
                                     tick_info.bid if side == "buy" else tick_info.ask
@@ -2453,15 +2465,18 @@ async def place_order(req: OrderRequest):
 
     account_info = await asyncio.to_thread(bridge.mt5.account_info)
 
-    if not risk.check_daily_loss(account_info.profit if account_info else 0):
-        return {"status": "error", "message": "Limite de perda diária atingido"}
+    # [FIX #28] check_daily_loss retorna (bool, msg) — desempacotar antes de avaliar
+    _loss_ok, _loss_msg = risk.check_daily_loss(account_info.profit if account_info else 0)
+    if not _loss_ok:
+        return {"status": "error", "message": f"Limite de perda diária atingido: {_loss_msg}"}
 
     symbol = await asyncio.to_thread(bridge.get_current_symbol, "WIN")
 
+    # [FIX #24] Execução manual usa mercado imediato (DEAL + IOC), não pendente (PENDING + LIMIT)
     order_type = (
-        bridge.mt5.ORDER_TYPE_BUY_LIMIT
+        bridge.mt5.ORDER_TYPE_BUY
         if side == "buy"
-        else bridge.mt5.ORDER_TYPE_SELL_LIMIT
+        else bridge.mt5.ORDER_TYPE_SELL
     )
 
     tick = await asyncio.to_thread(bridge.mt5.symbol_info_tick, symbol)
@@ -2486,11 +2501,21 @@ async def place_order(req: OrderRequest):
 
     params["symbol"] = symbol
 
+    # [FIX #24] Sobrescreve action/type/filling para execução imediata no mercado
+    params["action"] = bridge.mt5.TRADE_ACTION_DEAL
+    params["type"] = order_type
+    params["type_filling"] = bridge.mt5.ORDER_FILLING_IOC  # IOC obrigatório para WIN/WDO na B3
+
     # Envio Real da Ordem
 
     result = await asyncio.to_thread(bridge.mt5.order_send, params)
 
     latency = (time_module.perf_counter() - start_order) * 1000
+
+    # [FIX #25] Guard contra result None (timeout/desconexão do MT5)
+    if result is None:
+        logging.error(f"⚡ PIPELINE_ORDEM: MT5 retornou None. Lado={side}, Latência={latency:.2f}ms")
+        return {"status": "error", "message": "MT5 retornou None (timeout ou desconexão)"}
 
     logging.info(
         f"⚡ PIPELINE_ORDEM: Lado={side}, Vol={volume}, Resultado={result.retcode}, Latência={latency:.2f}ms"
