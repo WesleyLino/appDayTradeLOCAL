@@ -553,6 +553,11 @@ class AICore:
             direction = "WAIT"
             exec_strategy = "PASSIVA"
 
+        # [FIX #37] Breakdown de contribuição para log de execução em main.py
+        total_weight = (0.4 if is_opening_window else (0.3 if (is_golden_window or regime == 1) else (0.7 if obi_abs < 0.1 else 0.2)))
+        obi_weight   = (0.4 if is_opening_window else (0.5 if (is_golden_window or regime == 1) else (0.0 if obi_abs < 0.1 else 0.6)))
+        sent_weight  = 0.2
+
         return {
             "score": float(score_raw),
             "direction": direction,
@@ -571,6 +576,11 @@ class AICore:
             "rsi_sell_trigger": rsi_sell_trigger,
             "use_partial": True,                   # [COMPAT] habilita saídas parciais
             "uncertainty": max(0.0, min(1.0, abs(score_raw - 50.0) / 50.0 * -1 + 1)),  # 50=max incerteza, 0/100=certeza
+            "breakdown": {                         # [FIX #37] Log de execução main.py L1597-1599
+                "patchtst_contribution": (patchtst_score_val - 50.0) / 100.0 * total_weight,
+                "obi_contribution":      (obi_score - 50.0)          / 100.0 * obi_weight,
+                "sentiment_contribution":(sent_score_norm - 50.0)    / 100.0 * sent_weight,
+            },
         }
 
     def update_sentiment_anchor(self, price):

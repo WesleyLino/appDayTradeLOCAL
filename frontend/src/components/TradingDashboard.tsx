@@ -58,7 +58,8 @@ export function TradingDashboard() {
     lotMultiplier: data?.ai_prediction?.lot_multiplier ?? 1.0,
   };
 
-  const riskOk = data?.risk_status.time_ok && data?.risk_status.loss_ok;
+  // [FIX #TD-1] Optional chain completo para evitar crash quando data é null
+  const riskOk = data?.risk_status?.time_ok && data?.risk_status?.loss_ok;
 
   // Latency Alert Threshold
   const isHighLatency = (data?.latency_ms ?? 0) > 300;
@@ -68,8 +69,9 @@ export function TradingDashboard() {
     data?.ai_prediction?.score ??
     (data?.ai_confidence ? data.ai_confidence * 100 : 0);
   const aiDirection =
-    data?.ai_prediction?.direction ?? data?.ai_direction ?? "NEUTRO";
-  const aiVeto = data?.ai_prediction?.veto ?? data?.veto_reason ?? null;
+    data?.ai_prediction?.direction ?? "NEUTRO";
+  // [FIX #TD-4] veto_reason não existe em TradeData — usa apenas ai_prediction.veto
+  const aiVeto = data?.ai_prediction?.veto ?? null;
 
   const isObiOk = Math.abs(data?.obi ?? 0) > 0.2; // Exemplo de threshold
   const isConfidenceOk = (data?.ai_confidence ?? 0) > 0.6;
@@ -77,8 +79,8 @@ export function TradingDashboard() {
     typeof data?.sentiment === "object"
       ? data.sentiment.score
       : (data?.sentiment ?? 0);
-  const isSentimentOk = Math.abs(sentimentValue) > 0.1;
-
+  // [NOTA] isSentimentOk removida — não usada no JSX. sentimentValue exibido em L643.
+  // Integrar em isAuthorized é decisão de negócio que requer autorização explícita.
   const isAuthorized = riskOk && isObiOk && isConfidenceOk;
 
   // [ANTIVIBE-CODING] - Sincronização de Estado Autônomo via WebSocket
@@ -376,9 +378,10 @@ export function TradingDashboard() {
             <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-0.5">
               Patrimônio
             </p>
+            {/* [FIX #TD-2] Guard account?.equity para evitar crash quando null */}
             <p className="text-2xl font-mono font-bold text-foreground tabular-nums tracking-tighter">
               R${" "}
-              {data?.account.equity.toLocaleString("pt-BR", {
+              {data?.account?.equity?.toLocaleString("pt-BR", {
                 minimumFractionDigits: 2,
               }) ?? "0,00"}
             </p>
@@ -444,8 +447,9 @@ export function TradingDashboard() {
                 </button>
               </div>
 
+              {/* [FIX #TD-10] Backend verifica side in ["close_all","panic"] em lowercase */}
               <button
-                onClick={() => sendOrder("CLOSE_ALL")}
+                onClick={() => sendOrder("close_all")}
                 className="py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-500 font-bold text-white hover:brightness-110 active:scale-95 shadow-[0_0_20px_rgba(239,68,68,0.4)] flex items-center justify-center gap-2 border border-white/10"
               >
                 <AlertCircle size={20} />
@@ -558,12 +562,13 @@ export function TradingDashboard() {
                   <span
                     className={cn(
                       "px-2 py-0.5 rounded text-[10px] font-bold border",
-                      data?.risk_status.time_ok
+                      // [FIX #TD-11] Optional chain reforçada — risk_status pode ser undefined em pacotes parciais
+                      data?.risk_status?.time_ok
                         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                         : "bg-red-500/10 text-red-400 border-red-500/20",
                     )}
                   >
-                    {data?.risk_status.time_ok ? "OK" : "BLOQUEADO"}
+                    {data?.risk_status?.time_ok ? "OK" : "BLOQUEADO"}
                   </span>
                 </li>
                 <li className="flex justify-between items-center">
@@ -756,7 +761,7 @@ export function TradingDashboard() {
               </div>
             </div>
 
-            {/* Termômetro Blue Chips (New Quant Feature) */}
+            {/* [FIX #TD-13] Comentário duplicado removido */}
             {/* Termômetro Blue Chips (New Quant Feature) */}
             <div className="p-4 glass rounded-2xl shadow-lg flex flex-col gap-3 min-h-[180px]">
               <div className="flex items-center justify-between">
@@ -928,8 +933,8 @@ export function TradingDashboard() {
             </div>
           </div>
 
-          <div className="md:col-span-1">
-            {/* Filtros HFT (Toggles Manuais) */}
+          {/* [FIX #TD-5] md:col-span-1 era ineficaz sem grid pai — removido wrapper desnecessário */}
+          <div>
             <div className="grid grid-cols-3 gap-2 mt-2 border-t border-border/40 pt-4">
               {/* Toggle: Calendário Econômico */}
               <div
@@ -941,10 +946,11 @@ export function TradingDashboard() {
                 )}
               >
                 <div className="flex flex-col gap-1">
+                  {/* [FIX #TD-3] Escape duplo removido — Tailwind exige colchetes simples */}
                   <Label
                     htmlFor="calendar-filter"
                     className={cn(
-                      "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
+                      "text-[11px] font-bold uppercase tracking-wider cursor-pointer",
                       calendarFilterEnabled
                         ? "text-emerald-500"
                         : "text-muted-foreground",
@@ -985,7 +991,7 @@ export function TradingDashboard() {
                   <Label
                     htmlFor="news-filter"
                     className={cn(
-                      "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
+                      "text-[11px] font-bold uppercase tracking-wider cursor-pointer",
                       newsFilterEnabled
                         ? "text-emerald-500"
                         : "text-muted-foreground",
@@ -1025,7 +1031,7 @@ export function TradingDashboard() {
                   <Label
                     htmlFor="macro-filter"
                     className={cn(
-                      "text-\\[11px\\] font-bold uppercase tracking-wider cursor-pointer",
+                      "text-[11px] font-bold uppercase tracking-wider cursor-pointer",
                       macroFilterEnabled
                         ? "text-emerald-500"
                         : "text-muted-foreground",

@@ -52,8 +52,6 @@ class MT5Bridge:
             return "WDO$"
         return s
 
-        # self.connect() # Movido para chamada explícita
-
     def connect(self):
         """Estabelece conexão com o MetaTrader 5 local."""
         if not self.mt5.initialize():
@@ -217,13 +215,15 @@ class MT5Bridge:
                     # Se for LIMIT, talvez queiramos ser um pouco mais agressivos na retentativa
                     # mas para este escopo, apenas atualizamos para o novo preço de mercado
                     params["price"] = new_price
-                    # Recalcular SL/TP se necessário (geralmente mantemos o offset original se for relativo)
-                    # No RiskManager, SL/TP são absolutos, então precisamos deslocar junto com o preço
-                    diff = new_price - result.request.price
+                    # [FIX MT5-5] result.request pode ser None se MT5 gerou erro sem preencher request
+                    # Usa o preço anterior do próprio params como referência segura
+                    prev_price = params.get("_prev_price", new_price)
+                    diff = new_price - prev_price
                     if params["sl"] > 0:
                         params["sl"] += diff
                     if params["tp"] > 0:
                         params["tp"] += diff
+                    params["_prev_price"] = new_price  # atualiza ref para próxima iteração
 
                 continue  # Próxima tentativa no loop
 
@@ -452,10 +452,10 @@ class MT5Bridge:
             if orders is None or len(orders) == 0:
                 return
 
+            # [FIX MT5-1] time_setup do MT5 é sempre UTC Epoch — alinha com utcnow()
             now_ts = datetime.utcnow().timestamp()
             for order in orders:
-                # time_setup é o timestamp de criação da ordem no servidor (Unix Epoch)
-                setup_time = order.time_setup
+                setup_time = int(order.time_setup)  # garante int (sem microseg)
                 elapsed = now_ts - setup_time
 
                 if elapsed > timeout_seconds:
@@ -1103,24 +1103,43 @@ class MT5Bridge:
                 if vwap_val <= 0:
                     vwap_val = getattr(info, "session_price_ref", 0.0)
 
-            # [PRO-ADJUST] Fallback 3: Cálculo Manual via Candles M1 (Resiliência Total)
+            # [PRO-ADJUST] Fallback 3: Cálculo Manual via Candles M1 DO DIA ATUAL
+            # [FIX #36] copy_rates_from_pos retorna candles históricos de dias anteriores
+            # após o fechamento do pregão, inflando o VWAP. Usar copy_rates_range com
+            # janela do dia atual (09:00 até agora) para garantir dados intraday.
             if vwap_val <= 0:
-                # Tenta baixar os candles do dia atual (Máximo 540 min de pregão)
-                rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M1, 0, 540)
-                if rates is not None and len(rates) > 0:
-                    sum_pv = 0.0
-                    total_vol = 0
-                    for r in rates:
-                        typical = (r["high"] + r["low"] + r["close"]) / 3.0
-                        vol = r["tick_volume"]
-                        sum_pv += typical * vol
-                        total_vol += vol
+                try:
+                    now_dt = datetime.now()
+                    today_open = now_dt.replace(hour=9, minute=0, second=0, microsecond=0)
+                    rates = mt5.copy_rates_range(
+                        symbol, mt5.TIMEFRAME_M1, today_open, now_dt
+                    )
+                    if rates is not None and len(rates) > 0:
+                        sum_pv = 0.0
+                        total_vol = 0
+                        for r in rates:
+                            typical = (r["high"] + r["low"] + r["close"]) / 3.0
+                            vol = r["tick_volume"]
+                            sum_pv += typical * vol
+                            total_vol += vol
 
-                    if total_vol > 0:
-                        vwap_val = sum_pv / total_vol
-                        logging.info(
-                            f"📊 [VWAP-MANUAL] Calculado via {len(rates)} candles: {vwap_val:.1f}"
-                        )
+                        if total_vol > 0:
+                            vwap_candidate = sum_pv / total_vol
+                            # Sanidade: VWAP manual não pode diferir mais de 10% do tick atual
+                            tick_ref = mt5.symbol_info_tick(symbol)
+                            ref_price = tick_ref.last if tick_ref and tick_ref.last > 0 else 0
+                            if ref_price > 0 and abs(vwap_candidate - ref_price) / ref_price > 0.10:
+                                logging.warning(
+                                    f"⚠️ [VWAP-MANUAL] Valor anômalo ignorado: {vwap_candidate:.1f} "
+                                    f"(Ref: {ref_price:.1f}) — Possível mistura de dados históricos."
+                                )
+                            else:
+                                vwap_val = vwap_candidate
+                                logging.info(
+                                    f"📊 [VWAP-MANUAL] Calculado via {len(rates)} candles intraday: {vwap_val:.1f}"
+                                )
+                except Exception as e_fb3:
+                    logging.debug(f"Fallback 3 VWAP falhou: {repr(e_fb3)}")
 
             if vwap_val > 0:
                 return float(vwap_val)
@@ -1318,17 +1337,20 @@ class MT5Bridge:
         if not self.connected:
             return {"volume_d1": 0, "avg_volume_10d": 0, "low_liquidity": False}
         try:
-            # Pegamos os ultimos 12 dias (indice 11 eh hoje, indice 10 eh D-1, indices 0 a 9 sao D-11 a D-2)
+            # Pegamos os ultimos 12 dias: índice[-1]=hoje(D0), índice[-2]=D-1, índices[:-2]=D-11 a D-2
             rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, 12)
 
             if rates is None or len(rates) < 3:
                 return {"volume_d1": 0, "avg_volume_10d": 0, "low_liquidity": False}
 
-            volume_d1 = int(rates[-2]["real_volume"] or rates[-2]["tick_volume"])
+            # [FIX MT5-3] Indexação robusta: D-1 é sempre o penúltimo elemento independente do tamanho
+            d1_bar = rates[-2]
+            volume_d1 = int(d1_bar["real_volume"] if d1_bar["real_volume"] > 0 else d1_bar["tick_volume"])
 
-            dias_anteriores = rates[:-2]  # 10 dias anteriores ao D-1
+            dias_anteriores = rates[:-2]  # tudo antes de D-1
             avg_10d = sum(
-                int(r["real_volume"] or r["tick_volume"]) for r in dias_anteriores
+                int(r["real_volume"] if r["real_volume"] > 0 else r["tick_volume"])
+                for r in dias_anteriores
             ) / max(len(dias_anteriores), 1)
 
             low_liquidity = (avg_10d > 0) and (

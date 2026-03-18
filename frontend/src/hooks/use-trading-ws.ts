@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { create } from "zustand";
 import { API_CONFIG } from "@/lib/api-config";
 
@@ -21,7 +21,8 @@ interface TradeData {
     type: string;
   }[];
   ai_confidence?: number;
-  regime?: number;
+  // [FIX #TD-9] 'regime' raiz removido — o backend envia em risk_status.regime
+  // regime nunca aparece na raiz do packet
   latency_ms: number;
   synthetic_index?: number;
   macro?: {
@@ -120,8 +121,10 @@ export const useTradingStore = create<TradingStore>((set) => ({
 export function useTradingWebSocket(url: string = API_CONFIG.ws) {
   const setData = useTradingStore((state) => state.setData);
   const setConnected = useTradingStore((state) => state.setConnected);
+  // [FIX #WS-1] connectRef garante referência estável para o onclose,
+  // evitando o acesso de closure antes da declaração (ESLint: immutability)
+  const connectRef = useRef<() => void>(() => {});
   const socketRef = useRef<WebSocket | null>(null);
-
   const connect = useCallback(() => {
     if (socketRef.current?.readyState === WebSocket.OPEN) return;
 
@@ -141,8 +144,8 @@ export function useTradingWebSocket(url: string = API_CONFIG.ws) {
     socket.onclose = () => {
       setConnected(false);
       console.log("WS Disconnected");
-      // Reconectar após 3 segundos
-      setTimeout(() => connect(), 3000);
+      // [FIX #WS-1] Usa connectRef para evitar closure com acesso antes da declaração
+      setTimeout(() => connectRef.current(), 3000);
     };
 
     socket.onerror = (error) => {
@@ -150,6 +153,11 @@ export function useTradingWebSocket(url: string = API_CONFIG.ws) {
       socket.close();
     };
   }, [url, setConnected, setData]);
+
+  // Mantém connectRef sempre sincronizado com a versão atual de connect
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     connect();

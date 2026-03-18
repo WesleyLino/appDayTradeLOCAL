@@ -503,12 +503,8 @@ class BacktestPro:
         data["upper_bb"] = data["sma_20"] + bb_d * data["std_20"]
         data["lower_bb"] = data["sma_20"] - bb_d * data["std_20"]
 
-        # 2.5 RSI calculation (SOTA Period = 9)
-        delta = data["close"].diff()
-        gain = (delta.where(delta > 0, 0)).ewm(span=9, adjust=False).mean()
-        loss = (-delta.where(delta < 0, 0)).ewm(span=9, adjust=False).mean()
-        rs = gain / (loss + 1e-9)
-        data["rsi"] = 100 - (100 / (1 + rs))
+        # 2.5 RSI period sincronizado com opt_params (sem recalcular com span fixo)
+        # [FIX #BP-1] Bloco duplicado removido — RSI já calculado com rsi_period acima
 
         # 3. ATR 14
         tr = pd.concat(
@@ -1614,17 +1610,20 @@ class BacktestPro:
                         # self.shadow_signals['filtered_by_sentiment'] = ...
 
                 # 3. Executar Entrada se todos os filtros conferem
+                # [FIX #BP-2] vol_stable e limit_ok adicionados para v22_sell_technical
                 if (
                     (v22_buy or v22_sell or v22_sell_technical)
                     and time_ok
                     and risk_ok
+                    and limit_ok
+                    and vol_stable
                     and ai_filter_ok
                     and sentiment_ok
                     and flux_ok
                 ):
                     side = (
-                        "buy" if v22_buy else ("sell" if v22_sell else "sell")
-                    )  # Default to sell if v22_sell_technical is true
+                        "buy" if v22_buy else "sell"
+                    )  # Default to sell se v22_sell ou v22_sell_technical
 
                     # [MELHORIA H - V28] Veto de direção por tendência diária
                     if side == "buy" and bias_veto_buy:
@@ -1655,6 +1654,12 @@ class BacktestPro:
                     # [v23] Solicita parâmetros ao RiskManager (já ajustados para abertura/momentum)
                     import MetaTrader5 as mt5
 
+                    # [FIX #BP-4] Extrai scalar seguro de tp_multiplier / sl_multiplier
+                    _tp_raw = ai_decision.get("tp_multiplier", 1.0)
+                    _sl_raw = ai_decision.get("sl_multiplier", 1.0)
+                    _tp_mult = float(_tp_raw.iloc[0]) if isinstance(_tp_raw, (pd.Series, pd.DataFrame)) else float(_tp_raw)
+                    _sl_mult = float(_sl_raw.iloc[0]) if isinstance(_sl_raw, (pd.Series, pd.DataFrame)) else float(_sl_raw)
+
                     params = self.risk.get_order_params(
                         self.symbol,
                         (mt5.ORDER_TYPE_BUY if side == "buy" else mt5.ORDER_TYPE_SELL),
@@ -1662,20 +1667,8 @@ class BacktestPro:
                         self.opt_params["base_lot"],
                         current_atr=atr_current,
                         regime=current_regime,
-                        tp_multiplier=float(
-                            ai_decision.get("tp_multiplier", 1.0).iloc[0]
-                        )
-                        if isinstance(
-                            ai_decision.get("tp_multiplier"), (pd.Series, pd.DataFrame)
-                        )
-                        else float(ai_decision.get("tp_multiplier", 1.0)),
-                        sl_multiplier=float(
-                            ai_decision.get("sl_multiplier", 1.0).iloc[0]
-                        )
-                        if isinstance(
-                            ai_decision.get("sl_multiplier"), (pd.Series, pd.DataFrame)
-                        )
-                        else float(ai_decision.get("sl_multiplier", 1.0)),
+                        tp_multiplier=_tp_mult,
+                        sl_multiplier=_sl_mult,
                         current_time=row.name.time(),
                     )
 
@@ -1782,8 +1775,8 @@ class BacktestPro:
             self.timestamps.append(row.name)
 
         logging.info("Simulacao concluida.")
-        if self.position:
-            # Força o fechamento da última posição para fins de relatório final no backtest
+        # [FIX #BP-3] Guard: 'row' pode ser indefinida se loop não executou
+        if self.position and 'row' in locals():
             self._close_trade(row["close"], "END_OF_SIM", row.name)
         return self.generate_report()
 

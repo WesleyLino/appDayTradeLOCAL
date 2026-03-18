@@ -1,0 +1,61 @@
+﻿
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\frontend\src\components\TradingDashboard.tsx
+   82:9   warning  'isSentimentOk' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+  168:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\frontend\src\components\TradingDashboard.tsx:168:7
+  166 |       !isUpdatingAuto
+  167 |     ) {
+> 168 |       setAutonomousMode(data.risk_status.allow_autonomous);
+      |       ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  169 |     }
+  170 |   }, [data?.risk_status?.allow_autonomous, isUpdatingAuto]);
+  171 |  react-hooks/set-state-in-effect
+  170:6   warning  React Hook useEffect has a missing dependency: 'data.risk_status'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                react-hooks/exhaustive-deps
+  211:30  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  659:55  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  797:49  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  861:58  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  901:42  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\frontend\src\hooks\use-trading-ws.ts
+    3:10  warning  'useState' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+  146:24  error    Error: Cannot access variable before it is declared
+
+`connect` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\frontend\src\hooks\use-trading-ws.ts:146:24
+  144 |       console.log("WS Disconnected");
+  145 |       // Reconectar ap├│s 3 segundos
+> 146 |       setTimeout(() => connect(), 3000);
+      |                        ^^^^^^^ `connect` accessed before it is declared
+  147 |     };
+  148 |
+  149 |     socket.onerror = (error) => {
+
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\frontend\src\hooks\use-trading-ws.ts:126:3
+  124 |   const socketRef = useRef<WebSocket | null>(null);
+  125 |
+> 126 |   const connect = useCallback(() => {
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 127 |     if (socketRef.current?.readyState === WebSocket.OPEN) return;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 128 |
+      ÔÇª
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 152 |     };
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 153 |   }, [url, setConnected, setData]);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `connect` is declared here
+  154 |
+  155 |   useEffect(() => {
+  156 |     connect();  react-hooks/immutability
+
+Ô£û 10 problems (7 errors, 3 warnings)
+

@@ -74,7 +74,8 @@ export function SotaMetrics({
         </div>
 
         {/* Current Exposure (Incerteza Elástica) */}
-        <div className="flex items-center justify-between text-[14px] uppercase tracking-tighter text-white/1px] uppercase tracking-tighter text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/10">
+        {/* [FIX #TD-6] Classe CSS corrompida corrigida — era text-white/1px] (inválida) */}
+        <div className="flex items-center justify-between text-[14px] uppercase tracking-tighter text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/10">
           <div className="flex items-center gap-1.5">
             <Scale className="w-3.5 h-3.5" /> Incerteza Elástica
           </div>
@@ -170,7 +171,8 @@ export function SotaMetrics({
         {/* Macro Sentiment (S&P 500) */}
         <div className="pt-2 border-t border-white/5 space-y-1 text-xs">
           <div className="flex justify-between uppercase tracking-tighter text-muted-foreground">
-            <span className="flex items-center gap-1 text-[14px] font-bol">
+            {/* [FIX #TD-7] Typo 'font-bol' corrigido para 'font-bold' */}
+            <span className="flex items-center gap-1 text-[14px] font-bold">
               <Globe className="w-3 h-3 text-blue-400 text-[18px] font-bold" />{" "}
               Macro S&P 500
             </span>

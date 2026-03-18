@@ -178,20 +178,21 @@ export function PerformanceWidget() {
                 <span>Média Gain</span>
                 <span className="text-emerald-400/80">
                   +R${" "}
-                  {(
-                    data.gross_profit /
-                    (data.total_trades * (data.win_rate / 100) || 1)
-                  ).toFixed(2)}
+                  {/* [FIX #TD-8] Denominador seguro para evitar NaN */}
+                  {(() => {
+                    const wins = data.total_trades * (data.win_rate / 100);
+                    return wins > 0 ? (data.gross_profit / wins).toFixed(2) : "0.00";
+                  })()}
                 </span>
               </div>
               <div className="flex flex-col text-right">
                 <span>Média Loss</span>
                 <span className="text-rose-400/80">
                   -R${" "}
-                  {(
-                    data.gross_loss /
-                    (data.total_trades * (1 - data.win_rate / 100) || 1)
-                  ).toFixed(2)}
+                  {(() => {
+                    const losses = data.total_trades * (1 - data.win_rate / 100);
+                    return losses > 0 ? (data.gross_loss / losses).toFixed(2) : "0.00";
+                  })()}
                 </span>
               </div>
             </div>

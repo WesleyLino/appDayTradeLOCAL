@@ -316,7 +316,8 @@ async def startup_event():
 
         else:
             try:
-                login_info = bridge.mt5.account_info().login
+                _acc = bridge.mt5.account_info()
+                login_info = _acc.login if _acc else "(conta nao disponivel)"
 
                 logging.info(f"[OK] MT5 Bridge conectado: {login_info}")
 
@@ -438,6 +439,18 @@ async def panic_close_all():
         def _close_all_sync():
 
             mt5 = bridge.mt5
+
+            # [FIX #MP-C] Cancelar TODAS as ordens pendentes antes de fechar posições
+            # Previne que ordens LIMIT HFT sejam preenchidas pós-pânico
+            pending_orders = mt5.orders_get()
+            if pending_orders:
+                for order in pending_orders:
+                    cancel_req = {
+                        "action": mt5.TRADE_ACTION_REMOVE,
+                        "order": order.ticket,
+                    }
+                    mt5.order_send(cancel_req)
+                logging.warning(f"PÂNICO: {len(pending_orders)} ordens pendentes canceladas.")
 
             positions = mt5.positions_get()
 
@@ -565,6 +578,13 @@ async def autonomous_bot_loop():
 
         partially_closed_tickets = set()  # [FASE 2] Evitar duplo-fechamento parcial
 
+        # [FIX #MP-A] Inicialização segura para evitar UnboundLocalError no primeiro tick nulo
+        last_price = 0.0
+        last_valid_price = 0.0
+        # Inicialização de sentimento para cobrir iterações antes do ciclo lento
+        sentiment_score = 0.0
+        headlines = []
+
         # [PAUSA PARCIAL] Controle de Volatilidade de Abertura (H-L Extremo)
         dia_pausado_vol = False
         hl_abertura_cache = None
@@ -588,7 +608,8 @@ async def autonomous_bot_loop():
             if not bridge.check_connection():
                 logging.warning("MT5 desconectado. Tentando reconectar...")
 
-                if bridge.connect():
+                # [FIX #MP-H] bridge.connect() e síncrona — envolve em thread para nao bloquear o event loop
+                if await asyncio.to_thread(bridge.connect):
                     logging.info("Reconectado ao MT5 com sucesso!")
 
                 else:
@@ -1854,9 +1875,12 @@ async def autonomous_bot_loop():
 
                                     ai_multiplier = decision.get("lot_multiplier", 1.0)
 
+                                    # [FIX #MP-E] vol_step pertence a symbol_info(), nao a tick_info()
+                                    # tick_info.volume_step nao existe — sempre caia no fallback 1.0
+                                    _sym_info = await asyncio.to_thread(bridge.mt5.symbol_info, symbol)
                                     vol_step = (
-                                        tick_info.volume_step
-                                        if hasattr(tick_info, "volume_step")
+                                        _sym_info.volume_step
+                                        if _sym_info and hasattr(_sym_info, "volume_step")
                                         else 1.0
                                     )
 
@@ -2237,7 +2261,7 @@ async def autonomous_bot_loop():
                     # [DINAMISMO] Pulso de Mercado (Heartbeat)
                     if loop_count % 60 == 0:
                         add_operational_log(
-                            f"PULSO DE MERCADO: IA ativa (Confiança: {ai_confidence:.1f}%, OBI: {obi:.2f}).",
+                            f"PULSO DE MERCADO: IA ativa (Score: {ai_total_score:.1f}% | OBI: {obi:.2f}).",
                             "info",
                         )
 
@@ -2296,13 +2320,32 @@ async def autonomous_bot_loop():
 
                         for order in orders:
                             if (now_ts - order.time_setup) > 60:
-                                req = {
-                                    "action": bridge.mt5.TRADE_ACTION_REMOVE,
-                                    "order": order.ticket,
-                                    "symbol": symbol,
-                                }
-
-                                await asyncio.to_thread(bridge.mt5.order_send, req)
+                                # [FIX #MP-F] Usa bridge.cancel_order para capturar race condition
+                                # mt5.order_send direto pulava verificacao de fill no momento do cancel
+                                cancel_ok = await asyncio.to_thread(
+                                    bridge.cancel_order, order.ticket
+                                )
+                                if not cancel_ok:
+                                    # Verifica se foi preenchida no instante do housekeeping
+                                    final_st = await asyncio.to_thread(
+                                        bridge.check_order_status, order.ticket
+                                    )
+                                    if final_st == "FILLED":
+                                        logging.info(
+                                            f"[HOUSEKEEPING] Ordem {order.ticket} preenchida no TTL! Registrando."
+                                        )
+                                        persistence.save_trade(
+                                            symbol, "limit_housekeeping", order.price_open,
+                                            order.volume_current, "AUTO_LIMIT_HOUSEKEEPING_RACE",
+                                        )
+                                    else:
+                                        logging.warning(
+                                            f"[HOUSEKEEPING] Falha ao cancelar ordem obsoleta {order.ticket}"
+                                        )
+                                else:
+                                    logging.info(
+                                        f"[HOUSEKEEPING] Ordem obsoleta {order.ticket} cancelada (>{60}s sem fill)."
+                                    )
 
                 # [ANTIVIBE-CODING] Log de Mudança de Regime (Garantia de Sincronia)
                 if "last_regime" not in locals():
