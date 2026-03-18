@@ -1,0 +1,345 @@
+{
+    "2026-03-17": {
+        "date": "2026-03-17",
+        "pnl": 64.0,
+        "win_rate": 66.7,
+        "trades_count": 3,
+        "max_drawdown": 0.05,
+        "metrics_all": {
+            "label": "TOTAL",
+            "count": 3,
+            "pnl_total": 64.0,
+            "win_rate": 66.7,
+            "avg_win": 46.0,
+            "avg_loss": 28.0,
+            "profit_factor": 3.29,
+            "max_win": 56.0,
+            "max_loss": -28.0,
+            "avg_duration_min": 2.0
+        },
+        "metrics_buy": {
+            "label": "COMPRA",
+            "count": 0,
+            "pnl_total": 0.0,
+            "win_rate": 0.0,
+            "avg_win": 0.0,
+            "avg_loss": 0.0,
+            "profit_factor": 0.0,
+            "max_win": 0.0,
+            "max_loss": 0.0,
+            "avg_duration_min": 0.0
+        },
+        "metrics_sell": {
+            "label": "VENDA",
+            "count": 3,
+            "pnl_total": 64.0,
+            "win_rate": 66.7,
+            "avg_win": 46.0,
+            "avg_loss": 28.0,
+            "profit_factor": 3.29,
+            "max_win": 56.0,
+            "max_loss": -28.0,
+            "avg_duration_min": 2.0
+        },
+        "missed_opportunities": {
+            "total_missed_global": 3,
+            "vetos_dia": {
+                "PANICO_MERCADO_SEM_BYPASS": 116,
+                "BIAS_BUY_VETADO": 3,
+                "LOW_CONFIDENCE": 1,
+                "null": 1
+            },
+            "vetos_globais": {
+                "PANICO_MERCADO_SEM_BYPASS": 173,
+                "ADX_BAIXO": 8,
+                "INERCIA_VOLATIL": 1,
+                "BIAS_BUY_VETADO": 3,
+                "LOW_CONFIDENCE": 1,
+                "null": 1
+            }
+        },
+        "suggestions": [
+            "✅ Nenhuma melhoria crítica identificada — parâmetros dentro do esperado."
+        ],
+        "shadow": {
+            "total_missed": 3,
+            "filtered_by_ai": 1,
+            "filtered_by_flux": 0,
+            "filtered_by_bias": 3,
+            "veto_reasons": {
+                "PANICO_MERCADO_SEM_BYPASS": 173,
+                "ADX_BAIXO": 8,
+                "INERCIA_VOLATIL": 1,
+                "BIAS_BUY_VETADO": 3,
+                "LOW_CONFIDENCE": 1,
+                "null": 1
+            },
+            "shadow_by_date": {
+                "2026-03-13": {
+                    "PANICO_MERCADO_SEM_BYPASS": 15
+                },
+                "2026-03-16": {
+                    "PANICO_MERCADO_SEM_BYPASS": 42,
+                    "ADX_BAIXO": 8,
+                    "INERCIA_VOLATIL": 1
+                },
+                "2026-03-17": {
+                    "PANICO_MERCADO_SEM_BYPASS": 116,
+                    "BIAS_BUY_VETADO": 3,
+                    "LOW_CONFIDENCE": 1,
+                    "null": 1
+                }
+            },
+            "v22_candidates": 1385,
+            "component_fail": {
+                "rsi": 0,
+                "bb": 0,
+                "volume": 0,
+                "ai_veto_total": 1
+            },
+            "tiers": {
+                "70-75": 0,
+                "75-80": 0,
+                "80-85": 0
+            },
+            "buy_vetos_ai": 1
+        },
+        "trades": [
+            {
+                "entry_time": "2026-03-17 10:01:00",
+                "exit_time": "2026-03-17 10:02:00",
+                "side": "sell",
+                "entry_price": 181840.0,
+                "exit_price": 181980.0,
+                "lots": 1.0,
+                "pnl_pts": -140.0,
+                "pnl_fin": -28.0,
+                "reason": "OBI_REVERSAL",
+                "quantile_confidence": "HIGH",
+                "execution_mode": "MOMENTUM"
+            },
+            {
+                "entry_time": "2026-03-17 11:10:00",
+                "exit_time": "2026-03-17 11:13:00",
+                "side": "sell",
+                "entry_price": 184240.0,
+                "exit_price": 184060.0,
+                "lots": 1.0,
+                "pnl_pts": 180.0,
+                "pnl_fin": 36.0,
+                "reason": "SL",
+                "quantile_confidence": "HIGH",
+                "execution_mode": "MOMENTUM"
+            },
+            {
+                "entry_time": "2026-03-17 11:21:00",
+                "exit_time": "2026-03-17 11:23:00",
+                "side": "sell",
+                "entry_price": 184005.0,
+                "exit_price": 183725.0,
+                "lots": 1.0,
+                "pnl_pts": 280.0,
+                "pnl_fin": 56.0,
+                "reason": "SL",
+                "quantile_confidence": "HIGH",
+                "execution_mode": "MOMENTUM"
+            }
+        ]
+    },
+    "2026-03-18": {
+        "date": "2026-03-18",
+        "pnl": 75.0,
+        "win_rate": 71.4,
+        "trades_count": 7,
+        "max_drawdown": 0.06,
+        "metrics_all": {
+            "label": "TOTAL",
+            "count": 7,
+            "pnl_total": 75.0,
+            "win_rate": 71.4,
+            "avg_win": 24.2,
+            "avg_loss": 23.0,
+            "profit_factor": 2.63,
+            "max_win": 64.0,
+            "max_loss": -27.0,
+            "avg_duration_min": 1.9
+        },
+        "metrics_buy": {
+            "label": "COMPRA",
+            "count": 6,
+            "pnl_total": 63.0,
+            "win_rate": 66.7,
+            "avg_win": 27.25,
+            "avg_loss": 23.0,
+            "profit_factor": 2.37,
+            "max_win": 64.0,
+            "max_loss": -27.0,
+            "avg_duration_min": 1.7
+        },
+        "metrics_sell": {
+            "label": "VENDA",
+            "count": 1,
+            "pnl_total": 12.0,
+            "win_rate": 100.0,
+            "avg_win": 12.0,
+            "avg_loss": 0.0,
+            "profit_factor": Infinity,
+            "max_win": 12.0,
+            "max_loss": 12.0,
+            "avg_duration_min": 3.0
+        },
+        "missed_opportunities": {
+            "total_missed_global": 3,
+            "vetos_dia": {
+                "PANICO_MERCADO_SEM_BYPASS": 100,
+                "LOW_CONFIDENCE": 1,
+                "null": 1
+            },
+            "vetos_globais": {
+                "INERCIA_VOLATIL": 1,
+                "PANICO_MERCADO_SEM_BYPASS": 216,
+                "BIAS_BUY_VETADO": 3,
+                "LOW_CONFIDENCE": 2,
+                "null": 2
+            }
+        },
+        "suggestions": [
+            "⚠️ VENDAS mais assertivas (100.0%) que COMPRAS (66.7%). Considere elevar confidence_buy_threshold."
+        ],
+        "shadow": {
+            "total_missed": 3,
+            "filtered_by_ai": 2,
+            "filtered_by_flux": 0,
+            "filtered_by_bias": 3,
+            "veto_reasons": {
+                "INERCIA_VOLATIL": 1,
+                "PANICO_MERCADO_SEM_BYPASS": 216,
+                "BIAS_BUY_VETADO": 3,
+                "LOW_CONFIDENCE": 2,
+                "null": 2
+            },
+            "shadow_by_date": {
+                "2026-03-16": {
+                    "INERCIA_VOLATIL": 1
+                },
+                "2026-03-17": {
+                    "PANICO_MERCADO_SEM_BYPASS": 116,
+                    "BIAS_BUY_VETADO": 3,
+                    "LOW_CONFIDENCE": 1,
+                    "null": 1
+                },
+                "2026-03-18": {
+                    "PANICO_MERCADO_SEM_BYPASS": 100,
+                    "LOW_CONFIDENCE": 1,
+                    "null": 1
+                }
+            },
+            "v22_candidates": 1346,
+            "component_fail": {
+                "rsi": 0,
+                "bb": 0,
+                "volume": 0,
+                "ai_veto_total": 2
+            },
+            "tiers": {
+                "70-75": 0,
+                "75-80": 0,
+                "80-85": 0
+            },
+            "buy_vetos_ai": 2
+        },
+        "trades": [
+            {
+                "entry_time": "2026-03-18 10:01:00",
+                "exit_time": "2026-03-18 10:03:00",
+                "side": "buy",
+                "entry_price": 181035.0,
+                "exit_price": 181355.0,
+                "lots": 1.0,
+                "pnl_pts": 320.0,
+                "pnl_fin": 64.0,
+                "reason": "SL",
+                "quantile_confidence": "HIGH",
+                "execution_mode": "MOMENTUM"
+            },
+            {
+                "entry_time": "2026-03-18 10:25:00",
+                "exit_time": "2026-03-18 10:26:00",
+                "side": "buy",
+                "entry_price": 181775.0,
+                "exit_price": 181640.0,
+                "lots": 1.0,
+                "pnl_pts": -135.0,
+                "pnl_fin": -27.0,
+                "reason": "OBI_REVERSAL",
+                "quantile_confidence": "HIGH",
+                "execution_mode": "MOMENTUM"
+            },
+            {
+                "entry_time": "2026-03-18 10:34:00",
+                "exit_time": "2026-03-18 10:36:00",
+                "side": "buy",
+                "entry_price": 182315.0,
+                "exit_price": 182410.0,
+                "lots": 1.0,
+                "pnl_pts": 95.0,
+                "pnl_fin": 19.0,
+                "reason": "SL",
+                "quantile_confidence": "HIGH",
+                "execution_mode": "MOMENTUM"
+            },
+            {
+                "entry_time": "2026-03-18 10:44:00",
+                "exit_time": "2026-03-18 10:46:00",
+                "side": "buy",
+                "entry_price": 182090.0,
+                "exit_price": 182140.0,
+                "lots": 1.0,
+                "pnl_pts": 50.0,
+                "pnl_fin": 10.0,
+                "reason": "SL",
+                "quantile_confidence": "HIGH",
+                "execution_mode": "MOMENTUM"
+            },
+            {
+                "entry_time": "2026-03-18 10:54:00",
+                "exit_time": "2026-03-18 10:56:00",
+                "side": "buy",
+                "entry_price": 182070.0,
+                "exit_price": 182150.0,
+                "lots": 1.0,
+                "pnl_pts": 80.0,
+                "pnl_fin": 16.0,
+                "reason": "SL",
+                "quantile_confidence": "HIGH",
+                "execution_mode": "MOMENTUM"
+            },
+            {
+                "entry_time": "2026-03-18 11:08:00",
+                "exit_time": "2026-03-18 11:09:00",
+                "side": "buy",
+                "entry_price": 182935.0,
+                "exit_price": 182840.0,
+                "lots": 1.0,
+                "pnl_pts": -95.0,
+                "pnl_fin": -19.0,
+                "reason": "OBI_REVERSAL",
+                "quantile_confidence": "HIGH",
+                "execution_mode": "MOMENTUM"
+            },
+            {
+                "entry_time": "2026-03-18 11:20:00",
+                "exit_time": "2026-03-18 11:23:00",
+                "side": "sell",
+                "entry_price": 182185.0,
+                "exit_price": 182125.0,
+                "lots": 1.0,
+                "pnl_pts": 60.0,
+                "pnl_fin": 12.0,
+                "reason": "SL",
+                "quantile_confidence": "HIGH",
+                "execution_mode": "MOMENTUM"
+            }
+        ]
+    }
+}
