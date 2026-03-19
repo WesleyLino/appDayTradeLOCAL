@@ -108,8 +108,10 @@ def get_open_positions_mt5() -> list:
     if positions is None:
         return []
     result = []
+    tick = mt5.symbol_info_tick(positions[0].symbol) if positions else None
+    now_ts = tick.time if tick else int(time.time() - 10800)
     for p in positions:
-        time_open_mins = (datetime.now().timestamp() - p.time) / 60.0
+        time_open_mins = (now_ts - p.time) / 60.0
         result.append(
             {
                 "ticket": p.ticket,

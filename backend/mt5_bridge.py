@@ -452,9 +452,17 @@ class MT5Bridge:
             if orders is None or len(orders) == 0:
                 return
 
-            # [FIX MT5-1] time_setup do MT5 é sempre UTC Epoch — alinha com utcnow()
-            now_ts = datetime.utcnow().timestamp()
+            # [FIX #TIMEZONE-BUG] datetime.utcnow().timestamp() em BRT (+UTC-3) adiciona
+            # +10800s ao elapsed, fazendo TODA ORDEM aparecer com 3h de tempo pendente!
+            # Consequência: cancel_stale_orders cancelava ordens recém-colocadas antes do fill.
+            # MT5 order.time_setup é Unix timestamp UTC. time.time() também é UTC-based.
             for order in orders:
+                sym_tick = mt5.symbol_info_tick(order.symbol)
+                # O MT5 retorna order.time_setup em "Broker Time" (UTC-3 no caso da B3 XP/Clear).
+                # time.time() retorna Unix epoch (UTC). Isso gera uma discrepância artificial de 10800s.
+                # Usar sym_tick.time garante que now_ts e setup_time estejam no mesmo referencial.
+                now_ts = sym_tick.time if sym_tick else int(time.time() - 10800)
+                
                 setup_time = int(order.time_setup)  # garante int (sem microseg)
                 elapsed = now_ts - setup_time
 
@@ -470,6 +478,10 @@ class MT5Bridge:
         """
         Verifica o estado de uma ordem.
         Retorna: 'FILLED', 'PENDING', 'CANCELED', 'UNKNOWN'
+
+        [FIX #CHECK-UTC] MT5 armazena histórico em UTC. Usar datetime.now() (BRT)
+        causava janela de busca com -3h de defasagem → ordens preenchidas em <100ms
+        não eram encontradas → loop de poll retornava UNKNOWN indefinidamente.
         """
         if not self.connected:
             return "UNKNOWN"
@@ -479,22 +491,36 @@ class MT5Bridge:
         if orders and len(orders) > 0:
             return "PENDING"
 
-        # 2. Checar se foi FINALIZADA (Histórico)
-        from_date = datetime.now() - timedelta(days=1)
-        hist_orders = mt5.history_orders_get(from_date, datetime.now(), ticket=ticket)
+        # 2. [FIX #CHECK-UTC] Usar UTC explicitamente — MT5 armazena tudo em UTC
+        now_utc = datetime.utcnow()
+        from_date = now_utc - timedelta(hours=25)  # 25h para cobrir ordens de sessão anterior
+        hist_orders = mt5.history_orders_get(from_date, now_utc, ticket=ticket)
 
         if hist_orders and len(hist_orders) > 0:
             state = hist_orders[0].state
             if state == mt5.ORDER_STATE_FILLED:
-                return "FILLED"      # [CORRIGIDO] era "PREENCHIDO" -- main.py compara com "FILLED"
+                return "FILLED"
             elif state == mt5.ORDER_STATE_CANCELED:
-                return "CANCELED"   # [CORRIGIDO] era "CANCELADO"
+                return "CANCELED"
             elif state == mt5.ORDER_STATE_PARTIAL:
-                return "PARTIAL"    # [CORRIGIDO] era "PARCIAL"
+                return "PARTIAL"
             else:
                 return f"STATE_{state}"
 
-        return "UNKNOWN"  # [CORRIGIDO] era "DESCONHECIDO"
+        # 3. [FIX #CHECK-FALLBACK] Fallback: se a ordem saiu do book mas não está no
+        # histórico ainda (latência de commit MT5 ~100-500ms), verifica via positions_get.
+        # Se existe posição aberta com magic=123456, a ordem foi preenchida.
+        positions = mt5.positions_get()
+        if positions:
+            for pos in positions:
+                if pos.magic == 123456:
+                    logging.info(
+                        f"[CHECK-FALLBACK] Ordem {ticket} não encontrada no histórico, "
+                        f"mas posição aberta detectada (magic=123456). Reportando FILLED."
+                    )
+                    return "FILLED"
+
+        return "UNKNOWN"
 
     def validate_order_compliance(self, symbol, price):
         """

@@ -31,6 +31,10 @@ class NewsSentimentWorker:
         self.interval = interval
         self.output_path = os.path.join("data", "news_sentiment.json")
         os.makedirs("data", exist_ok=True)
+        # [FIX #SENTIMENTO-CACHE] Cache da última leitura válida para fallback quando API 429
+        self._last_valid_sentiment = None
+        self._quota_backoff_until = 0.0  # timestamp até quando aguardar por 429
+        self._quota_retry_wait = 900  # 15min inicial, dobra a cada novo 429
 
     async def analyze_sentiment(self):
         if not self.model:
@@ -112,6 +116,10 @@ JSON FORMAT:
                 # os.replace é atômico no Unix e no Windows (se no mesmo drive)
                 os.replace(temp_path, self.output_path)
 
+                # [FIX #SENTIMENTO-CACHE] Guardar leitura válida e resetar backoff
+                self._last_valid_sentiment = dict(sentiment_data)
+                self._quota_retry_wait = 900  # reseta para 15min após sucesso
+
                 # [DYNAMIC-FIX] Adiciona ruído sutil para evitar estaticidade visual (Antivibe-safe)
                 import random
 
@@ -127,15 +135,45 @@ JSON FORMAT:
                     f"❌ Erro ao decodificar JSON da IA: {je} | Texto: {text[:200]}"
                 )
         except Exception as e:
-            logging.error(
-                f"❌ Erro crítico no processo de sentimento: {sanitize_log(e)}"
-            )
+            err_str = sanitize_log(e)
+            # [FIX #SENTIMENTO-CACHE] Tratar 429 com backoff exponencial + cache
+            if "429" in err_str or "quota" in err_str.lower():
+                self._quota_backoff_until = time.time() + self._quota_retry_wait
+                self._quota_retry_wait = min(self._quota_retry_wait * 2, 3600)  # max 60min
+                logging.warning(
+                    f"⚠️ [SENTIMENTO-CACHE] API Gemini quota atingida (429). "
+                    f"Backoff {self._quota_retry_wait // 60}min. "
+                    f"Usando cache: {self._last_valid_sentiment is not None}"
+                )
+                if self._last_valid_sentiment:
+                    # Salva o cache com timestamp atualizado para evitar stale
+                    cached = dict(self._last_valid_sentiment)
+                    cached["timestamp"] = time.time()
+                    cached["cached"] = True
+                    temp_path = self.output_path + ".tmp"
+                    with open(temp_path, "w", encoding="utf-8") as f:
+                        json.dump(cached, f, indent=2)
+                    os.replace(temp_path, self.output_path)
+                    logging.info(
+                        f"📦 [SENTIMENTO-CACHE] Cache aplicado: Score={cached.get('score'):.4f}"
+                    )
+            else:
+                logging.error(
+                    f"❌ Erro crítico no processo de sentimento: {err_str}"
+                )
 
     async def run(self):
         logging.info(f"🚀 News Sentiment Worker iniciado (Intervalo: {self.interval}s)")
         while True:
             try:
-                await self.analyze_sentiment()
+                # [FIX #SENTIMENTO-CACHE] Pular ciclo enquanto em backoff por 429
+                if time.time() < self._quota_backoff_until:
+                    remaining = int(self._quota_backoff_until - time.time())
+                    logging.info(
+                        f"⏳ [SENTIMENTO-CACHE] API em backoff por mais {remaining}s. Usando cache."
+                    )
+                else:
+                    await self.analyze_sentiment()
             except Exception as e:
                 logging.error(
                     f"💥 Falha catastrófica no ciclo do worker: {sanitize_log(e)}. Reiniciando em 30s..."

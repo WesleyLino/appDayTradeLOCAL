@@ -1,7 +1,8 @@
 import asyncio
 import logging
+import time
 from logging.handlers import TimedRotatingFileHandler
-from datetime import datetime, time, date
+from datetime import datetime, time as dtime, date
 from backend.mt5_bridge import MT5Bridge
 from backend.risk_manager import RiskManager
 from backend.ai_core import AICore
@@ -68,6 +69,9 @@ class SniperBotWIN:
         self.last_trade_time = None
         self._last_close_time = 0.0   # [FIX] Timestamp do último fechamento pelo sniper
         self._last_closed_ticket = None  # [FIX] Ticket fechado mais recente pelo sniper
+        self._order_lock_until = 0.0  # [FIX #DUAL-BOT-LOCK] Lock local do Sniper
+        self.SNIPER_ORDER_LOCK_SEC = 12.0  # Igual ao GLOBAL_ORDER_LOCK_SEC do main.py
+        self.MIN_ELAPSED_BEFORE_TRAILING = 30.0  # [FIX #NEW-POS-GUARD] Aguarda 30s antes de gerenciar posição nova
 
         # [PAUSA PARCIAL] Controle de Volatilidade de Abertura
         self.dia_pausado_vol = False
@@ -100,12 +104,12 @@ class SniperBotWIN:
         self.start_time = (
             datetime.strptime(raw_start, "%H:%M").time()
             if isinstance(raw_start, str)
-            else time(10, 0)
+            else dtime(10, 0)
         )
         self.end_time = (
             datetime.strptime(raw_end, "%H:%M").time()
             if isinstance(raw_end, str)
-            else time(17, 15)
+            else dtime(17, 15)
         )
 
         self.rsi_dynamic_buy = float(strategy.get("rsi_dynamic_buy") or 30)
@@ -206,6 +210,23 @@ class SniperBotWIN:
         regime=None,
         is_scaling_in=False,
     ):
+        # [FIX #DUAL-BOT-LOCK] Verificar lock global do main.py antes de qualquer execução
+        try:
+            import backend.main as _main_module
+            _global_lock = getattr(_main_module, '_global_order_lock_until', 0.0)
+            if time.time() < _global_lock:
+                _rem = _global_lock - time.time()
+                logger.warning(f"🔒 [DUAL-BOT-LOCK] Sniper bloqueado pelo lock global do main.py por {_rem:.1f}s. Abortando execute_trade.")
+                return False
+        except Exception as _lk_err:
+            logger.debug(f"[DUAL-BOT-LOCK] Não foi possível verificar lock global: {_lk_err}")
+
+        # [FIX #DUAL-BOT-LOCK] Verificar lock local do Sniper também
+        if time.time() < self._order_lock_until:
+            _rem = self._order_lock_until - time.time()
+            logger.warning(f"🔒 [SNIPER-LOCK] Sniper bloqueado pelo lock local por {_rem:.1f}s. Abortando execute_trade.")
+            return False
+
         tick = self.bridge.mt5.symbol_info_tick(self.symbol)
         if not tick:
             return False
@@ -298,6 +319,14 @@ class SniperBotWIN:
         if result and result.retcode == self.bridge.mt5.TRADE_RETCODE_DONE:
             self.trade_count += 1
             self._save_state()
+            # [FIX #DUAL-BOT-LOCK] Ativar lock local E global após ordem bem-sucedida
+            self._order_lock_until = time.time() + self.SNIPER_ORDER_LOCK_SEC
+            try:
+                import backend.main as _main_module
+                _main_module._global_order_lock_until = time.time() + self.SNIPER_ORDER_LOCK_SEC
+                logger.info(f"🔒 [DUAL-BOT-LOCK] Lock global propagado para main.py por {self.SNIPER_ORDER_LOCK_SEC:.0f}s.")
+            except Exception:
+                pass
             return True
         return False
 
@@ -305,7 +334,7 @@ class SniperBotWIN:
         stats = self.bridge.get_trading_performance()
         if stats["total_trades"] > self.last_total_trades:
             deals = self.bridge.mt5.history_deals_get(
-                datetime.combine(date.today(), time(0, 0)), datetime.now()
+                datetime.combine(date.today(), dtime(0, 0)), datetime.now()
             )
             if deals:
                 out_deals = [
@@ -344,7 +373,22 @@ class SniperBotWIN:
         for pos in positions:
             if pos.sl == 0:
                 continue
-            elapsed = datetime.utcnow().timestamp() - pos.time
+            # [FIX #TIMEZONE-BUG] O timestamp 'pos.time' do MT5 retorna na realidade o "Broker Time" (UTC-3 na B3).
+            # time.time() retorna Unix epoch (UTC). Compará-los gera diferença de 10800s.
+            # O jeito correto e seguro é usar o tick atual daquele mesmo símbolo.
+            current_tick = self.bridge.mt5.symbol_info_tick(pos.symbol)
+            current_mt5_time = current_tick.time if current_tick else int(time.time() - 10800)
+            elapsed = current_mt5_time - pos.time
+
+            # [FIX #NEW-POS-GUARD] Aguarda 30s antes de gerenciar posição recém-aberta.
+            # Previne fechamentos prematuros de posições abertas pelo main.py que o Sniper
+            # detecta no ciclo seguinte (elapsed ≈ 0-3s).
+            if elapsed < self.MIN_ELAPSED_BEFORE_TRAILING:
+                logger.debug(
+                    f"[NEW-POS-GUARD] Ticket #{pos.ticket} ignorado — posição nova ({elapsed:.1f}s < {self.MIN_ELAPSED_BEFORE_TRAILING:.0f}s mínimo)."
+                )
+                continue
+
             current_profit = (
                 (pos.price_current - pos.price_open)
                 if pos.type == self.bridge.mt5.POSITION_TYPE_BUY
@@ -356,8 +400,16 @@ class SniperBotWIN:
             ):
                 if not self.risk.dry_run:
                     self.bridge.close_position(pos.ticket)
-                    self._last_close_time = datetime.utcnow().timestamp()  # [FIX] Notifica main.py via FLIP-5
+                    self._last_close_time = time.time()  # [FIX #TIMEZONE-BUG]
                     self._last_closed_ticket = pos.ticket
+                    # [FIX #DUAL-BOT-LOCK] Ativar lock global após fechamento para bloquear main.py
+                    self._order_lock_until = time.time() + self.SNIPER_ORDER_LOCK_SEC
+                    try:
+                        import backend.main as _main_module
+                        _main_module._global_order_lock_until = time.time() + self.SNIPER_ORDER_LOCK_SEC
+                        logger.info(f"🔒 [DUAL-BOT-LOCK] TIME-STOP: Lock global propagado ao main.py por {self.SNIPER_ORDER_LOCK_SEC:.0f}s (ticket #{pos.ticket}).")
+                    except Exception:
+                        pass
                     logger.info(f"🔒 [SNIPER TIME-STOP] Ticket #{pos.ticket} fechado. main.py será notificado via FLIP-5.")
                 continue
 
@@ -371,7 +423,7 @@ class SniperBotWIN:
             )
             if should_partial and not self.risk.dry_run:
                 self.bridge.close_partial_position(pos.ticket, p_vol)
-                self._last_close_time = datetime.utcnow().timestamp()  # [FIX] Notifica main.py
+                self._last_close_time = time.time()  # [FIX #TIMEZONE-BUG]
                 logger.info(f"🎯 [SNIPER PARCIAL] Ticket #{pos.ticket} parcialmente fechado ({p_vol} lotes).")
                 continue
 
@@ -431,7 +483,7 @@ class SniperBotWIN:
             try:
                 await self.manage_trailing_stop()
                 await self._check_trade_results()
-                self.bridge.cancel_stale_orders(symbol=self.symbol, timeout_seconds=60)
+                self.bridge.cancel_stale_orders(symbol=self.symbol, timeout_seconds=300)
 
                 now = datetime.now()
                 if not self.bridge.check_connection():

@@ -424,6 +424,7 @@ async def startup_event():
 
 async def panic_close_all():
     """Zera todas as posições abertas imediatamente (Execução Assíncrona)."""
+    global _panic_in_progress
 
     # Evita spam do botão de pânico se já estiver ativado
 
@@ -435,6 +436,10 @@ async def panic_close_all():
     logging.warning("!!! BOTÃO DE PÂNICO ACIONADO !!!")
 
     if bridge.connected:
+
+        # [FIX #PANIC-SYNC] Ativa flag ANTES de fechar para que FLIP-5 não trate
+        # o desaparecimento das posições como fechamento externo (SL/TP falso positivo).
+        _panic_in_progress = True
 
         def _close_all_sync():
 
@@ -457,7 +462,6 @@ async def panic_close_all():
             if positions:
                 for pos in positions:
                     # B3 Netting: Enviar ordem oposta via close_position (Centralizado)
-
                     bridge.close_position(pos.ticket)
 
             return True
@@ -465,6 +469,10 @@ async def panic_close_all():
         await asyncio.to_thread(_close_all_sync)
 
         await asyncio.to_thread(persistence.save_state, "panic_status", "CLOSED_ALL")
+
+        # [FIX #PANIC-SYNC] Desativa flag após todas as posições terem sido fechadas
+        _panic_in_progress = False
+        logging.info("[PANIC-SYNC] Flag de pânico desativada. FLIP-5 retoma monitoramento normal.")
 
 
 @app.on_event("shutdown")
@@ -479,12 +487,32 @@ active_websockets: List[WebSocket] = []
 
 latest_market_packet = None
 
+# [FIX #PANIC-SYNC] Flag global: ativo durante panic_close_all para suprimir
+# falsos disparos do FLIP-5, que detectaria os fechamentos do pânico como SL/TP externos.
+_panic_in_progress: bool = False
+
+# [FIX #DUAL-BOT-LOCK] Lock global compartilhado entre main.py e SniperBotWIN.
+# Ambos verificam e atualizam esta variável para garantir que apenas UM sistema
+# coloque ordens por vez, eliminando a race condition de ordens simultâneas.
+_global_order_lock_until: float = 0.0
+GLOBAL_ORDER_LOCK_SEC: float = 12.0  # 2s de margem extra sobre ORDER_LOCK_SEC=10s
+
+# [FIX #CONSEC-LOSS-BREAKER] Circuit Breaker de Perdas Consecutivas.
+# Cada SL externo detectado (FLIP-5) incrementa o contador.
+# O cooldown cresce exponencialmente para prevenir reentradas destrutivas
+# em downtrends acelerados (vide logs 14:56-14:57: 5 ordens em 71s).
+# Tabela de cooldown: 1 SL=10s, 2 SL=60s, 3 SL=180s (3min), 4+ SL=600s (10min).
+_consecutive_sl_hits: int = 0
+_CONSEC_SL_COOLDOWNS: list = [10, 60, 180, 600]  # backoff exponencial em segundos
+
 
 # [ANTIVIBE-CODING] - Background Task (Independente do WebSocket Cliente)
 
 
 async def autonomous_bot_loop():
     global latest_market_packet
+    global _global_order_lock_until  # [FIX #DUAL-BOT-LOCK]
+    global _consecutive_sl_hits       # [FIX #CONSEC-LOSS-BREAKER]
     logging.info(
         "🚀 Background Task: Loop Autônomo inicializado e operando de forma independente."
     )
@@ -522,7 +550,19 @@ async def autonomous_bot_loop():
         # [FIX #FLIP-5] Rastreamento de tickets para detectar fechamentos externos (SL/TP MT5)
         # Quando um ticket some do positions_get sem o bot ter chamado close_position,
         # o cooldown e o lock são ativados imediatamente (SL/TP hit externo).
-        _tracked_position_tickets: set = set()
+        # [FIX #FLIP5-INIT] Inicializa com posições JÁ abertas (se houver) para evitar
+        # que uma posição pré-existente seja tratada como SL/TP externo na 1ª iteração.
+        try:
+            _init_positions = bridge.mt5.positions_get()
+            _tracked_position_tickets: set = (
+                set(p.ticket for p in _init_positions) if _init_positions else set()
+            )
+            if _tracked_position_tickets:
+                logging.info(
+                    f"[FLIP5-INIT] {len(_tracked_position_tickets)} posição(ões) pré-existente(s) carregada(s) no rastreador: {_tracked_position_tickets}"
+                )
+        except Exception:
+            _tracked_position_tickets: set = set()
 
         # [FIX #TREND-ALIGN] Histórico de preços para detectar tendência recente
         # Bloqueia BUY em tendência de queda e SELL em tendência de alta (momentum)
@@ -1429,16 +1469,34 @@ async def autonomous_bot_loop():
                         set(p.ticket for p in _tick_positions) if _tick_positions else set()
                     )
                     _externally_closed = _tracked_position_tickets - _current_tickets
-                    if _externally_closed:
-                        last_close_time = time_module.time()  # [FIX #FLIP-2] Ativa cooldown
-                        _order_lock_until = time_module.time() + ORDER_LOCK_SEC  # [FIX #FLIP-4]
+                    # [FIX #PANIC-SYNC] Não dispara lock/cooldown se pânico estiver em andamento:
+                    # o desaparecimento das posições é INTENCIONAL (fechamento pelo próprio bot).
+                    if _externally_closed and not _panic_in_progress:
+                        last_close_time = time_module.time()  # [FIX #FLIP-2]
+
+                        # [FIX #CONSEC-LOSS-BREAKER] Backoff exponencial por SL consecutivo.
+                        # Cada stop externo em sequência aumenta o cooldown:
+                        # 1° SL=10s, 2°=60s, 3°=180s (3min), 4°+=600s (10min).
+                        _consecutive_sl_hits = min(_consecutive_sl_hits + 1, len(_CONSEC_SL_COOLDOWNS))
+                        _sl_cooldown = _CONSEC_SL_COOLDOWNS[_consecutive_sl_hits - 1]
+                        _order_lock_until = time_module.time() + _sl_cooldown
+                        _global_order_lock_until = time_module.time() + _sl_cooldown + 2.0
+
                         for _tk in _externally_closed:
-                            logging.info(
-                                f"🚨 [FLIP-5 v2] Ticket #{_tk} fechado externamente (SL/TP MT5). Cooldown+Lock ativados em {ORDER_LOCK_SEC:.0f}s."
+                            logging.warning(
+                                f"🚨 [FLIP-5 v3] Ticket #{_tk} fechado por SL/TP externo. "
+                                f"SL consecutivo #{_consecutive_sl_hits}. "
+                                f"Lock=**{_sl_cooldown:.0f}s** (backoff exponencial). "
+                                f"Próximo SL locks: {_CONSEC_SL_COOLDOWNS}"
                             )
+                    elif _externally_closed and _panic_in_progress:
+                        logging.debug(
+                            f"[FLIP-5] Tickets {_externally_closed} fechados pelo PÂNICO. Lock suprimido."
+                        )
                     _tracked_position_tickets = _current_tickets
                 except Exception as _flip5_err:
                     logging.debug(f"[FLIP-5] Erro em tick-level positions_get: {_flip5_err}")
+
 
                 # --- TRAILING STOP (1s Check) ---
 
@@ -1447,7 +1505,9 @@ async def autonomous_bot_loop():
 
                     try:
                         # Reutiliza _tick_positions capturado acima pelo FLIP-5 (evita 2ª chamada MT5)
-                        positions = _tick_positions if '_tick_positions' in dir() else await asyncio.to_thread(
+                        # [FIX #DIR-BUG] dir() retorna atributos do objeto/módulo, NÃO variáveis locais de coroutine.
+                        # locals() é o método correto para verificar se a variável existe no escopo atual.
+                        positions = _tick_positions if '_tick_positions' in locals() else await asyncio.to_thread(
                             bridge.mt5.positions_get, symbol=symbol
                         )
 
@@ -1462,22 +1522,38 @@ async def autonomous_bot_loop():
 
                                 # Se a posição estiver aberta há mais de 15 minutos e não atingiu SL/TP, fechamos.
 
-                                # Pos.time é em segundos (timestamp)
-
-                                pos_age_min = (time_module.time() - pos.time) / 60
+                                # Pos.time é em segundos (timestamp) do broker MT5.
+                                # [FIX #TIMEZONE-BUG] O servidor é UTC-3. time_module.time() é UTC. 
+                                # A divergência era de 180 minutos. Puxando tick.time temos referencial seguro.
+                                current_tick_pos = await asyncio.to_thread(
+                                    bridge.mt5.symbol_info_tick, pos.symbol
+                                )
+                                pos_now_ts = current_tick_pos.time if current_tick_pos else int(time_module.time() - 10800)
+                                pos_age_min = (pos_now_ts - pos.time) / 60
 
                                 if pos_age_min > 15.0:
                                     logging.warning(
                                         f"SAÍDA POR TEMPO ALPHA-X: Posição {pos.ticket} aberta há {pos_age_min:.1f} min. Fechando a mercado."
                                     )
 
+                                    # [FIX #FLIP-5-SYNC] Remove ticket ANTES de close_position.
+                                    # Evita que FLIP-5 (próxima iteração) detecte o desaparecimento
+                                    # como fechamento *externo* e dispare lock duplo redundante.
+                                    _tracked_position_tickets.discard(pos.ticket)
+
                                     await asyncio.to_thread(
                                         bridge.close_position, pos.ticket
                                     )
 
-                                    last_close_time = time_module.time()  # [FIX #FLIP-2] Cooldown
-                                    _order_lock_until = time_module.time() + ORDER_LOCK_SEC  # [FIX #FLIP-4] Lock
-                                    logging.info(f"🔒 [ALPHA-X] Lock {ORDER_LOCK_SEC:.0f}s ativado após fechamento por tempo.")
+                                    last_close_time = pos_now_ts  # [FIX #FLIP-2] Cooldown
+                                    _order_lock_until = pos_now_ts + ORDER_LOCK_SEC  # [FIX #FLIP-4] Lock
+                                    _global_order_lock_until = pos_now_ts + GLOBAL_ORDER_LOCK_SEC  # [FIX #DUAL-BOT-LOCK]
+                                    # [FIX #CONSEC-LOSS-BREAKER] Reset se saída foi lucrativa
+                                    if profit_pts > 0:
+                                        _consecutive_sl_hits = 0
+                                        logging.info("✅ [CONSEC-RESET] Operação lucrativa. Contador de SL zerado.")
+                                    logging.info(f"🔒 [ALPHA-X] Lock local+global ({ORDER_LOCK_SEC:.0f}s/{GLOBAL_ORDER_LOCK_SEC:.0f}s) ativado após fechamento por tempo.")
+
 
                                     continue
 
@@ -1507,7 +1583,7 @@ async def autonomous_bot_loop():
 
                                 # --- FASE 2: VELOCITY LIMIT ---
 
-                                elapsed_sec = time_module.time() - pos.time
+                                elapsed_sec = pos_now_ts - pos.time
 
                                 is_velocity_limit, vel_reason = (
                                     risk.check_velocity_limit(profit_pts, elapsed_sec)
@@ -1518,13 +1594,18 @@ async def autonomous_bot_loop():
                                         f"⚡ SAÍDA POR LIMITE DE VELOCIDADE: Posição {pos.ticket} fechada precocemente devido a exaustão."
                                     )
 
+                                    # [FIX #FLIP-5-SYNC] Mesma correção do ALPHA-X: remove ticket
+                                    # antes de fechar para não gerar lock duplo via FLIP-5.
+                                    _tracked_position_tickets.discard(pos.ticket)
+
                                     await asyncio.to_thread(
                                         bridge.close_position, pos.ticket
                                     )
 
                                     last_close_time = time_module.time()  # [FIX #FLIP-2] Cooldown
                                     _order_lock_until = time_module.time() + ORDER_LOCK_SEC  # [FIX #FLIP-4] Lock
-                                    logging.info(f"⚡ [VELOCITY] Lock {ORDER_LOCK_SEC:.0f}s ativado após fechamento por exaustão.")
+                                    _global_order_lock_until = time_module.time() + GLOBAL_ORDER_LOCK_SEC  # [FIX #DUAL-BOT-LOCK]
+                                    logging.info(f"⚡ [VELOCITY] Lock local+global ({ORDER_LOCK_SEC:.0f}s/{GLOBAL_ORDER_LOCK_SEC:.0f}s) ativado após fechamento por exaustão.")
 
                                     continue
 
@@ -1726,6 +1807,12 @@ async def autonomous_bot_loop():
                             f"nos últimos {_TREND_LOOKBACK} ticks ({_recent[0]:.0f} → {_recent[-1]:.0f})"
                         )
 
+                # [FIX #DUAL-BOT-LOCK] Verificar se o Sniper (ou outra instância) não bloqueou o sistema
+                _global_locked = time_module.time() < _global_order_lock_until
+                if _global_locked:
+                    _gl_remaining = _global_order_lock_until - time_module.time()
+                    logging.debug(f"🔒 [DUAL-BOT-LOCK] Sistema bloqueado pelo lock global por {_gl_remaining:.1f}s.")
+
                 if (
                     risk.allow_autonomous
                     and is_threshold_met
@@ -1736,6 +1823,7 @@ async def autonomous_bot_loop():
                     and not _has_open_position    # [FIX #FLIP-3] Bloqueia se já há posição aberta
                     and not _order_locked         # [FIX #FLIP-4] Bloqueia durante lock de ordem em trânsito
                     and not _trend_veto           # [FIX #TREND-ALIGN] Bloqueia contra tendência recente
+                    and not _global_locked        # [FIX #DUAL-BOT-LOCK] Bloqueia se Sniper atuou recentemente
                 ):
                     if ai_direction in ["BUY", "SELL"]:
                         side = "buy" if ai_direction == "BUY" else "sell"
@@ -1781,7 +1869,24 @@ async def autonomous_bot_loop():
                                     else bridge.mt5.ORDER_TYPE_SELL_LIMIT
                                 )
 
-                                logging.info("🎯 MODO SNIPER: ORDEM LIMITE AGRESSIVA")
+                                # [FIX #PRE-ORDER-GATE] Verificacao live de posicao ANTES de enviar.
+                                # _has_open_position pode estar stale se fill ocorreu dentro do ciclo.
+                                _live_positions = await asyncio.to_thread(
+                                    bridge.mt5.positions_get, symbol=symbol
+                                )
+                                if _live_positions:
+                                    logging.warning(
+                                        f"[PRE-ORDER-GATE] Posicao JA ABERTA detectada live "
+                                        f"({len(_live_positions)} pos). Abortando Sniper. "
+                                        f"Tickets: {[p.ticket for p in _live_positions]}"
+                                    )
+                                    add_operational_log(
+                                        "[PRE-ORDER-GATE] Entrada bloqueada: posicao aberta em tempo real.",
+                                        "warning",
+                                    )
+                                    continue
+
+                                logging.info("MODO SNIPER: ORDEM LIMITE AGRESSIVA")
 
                                 tick_info = await asyncio.to_thread(
                                     bridge.mt5.symbol_info_tick, symbol
@@ -1864,8 +1969,10 @@ async def autonomous_bot_loop():
                                 ):
                                     # [FIX #FLIP-4] Ativar lock imediatamente após ordem aceita
                                     _order_lock_until = time_module.time() + ORDER_LOCK_SEC
+                                    # [FIX #DUAL-BOT-LOCK] Propagar lock para o Sniper também
+                                    _global_order_lock_until = time_module.time() + GLOBAL_ORDER_LOCK_SEC
                                     logging.info(
-                                        f"🔒 [FLIP-4] Lock ativo: novas ordens bloqueadas por {ORDER_LOCK_SEC:.0f}s (Sniper ticket={result.order})"
+                                        f"🔒 [FLIP-4+DUAL] Lock local+global ativo: {ORDER_LOCK_SEC:.0f}s/{ GLOBAL_ORDER_LOCK_SEC:.0f}s (Sniper ticket={result.order})"
                                     )
                                     order_ticket = result.order
 
@@ -1877,17 +1984,30 @@ async def autonomous_bot_loop():
 
                                     filled = False
 
-                                    for _ in range(6):
-                                        await asyncio.sleep(0.5)
-
-                                        status = await asyncio.to_thread(
-                                            bridge.check_order_status, order_ticket
+                                    # [FIX #POLL-INSTANT] Verifica IMEDIATAMENTE antes do 1º sleep
+                                    # Ordens IOC/Exchange são preenchidas em ~29ms.
+                                    # O poll anterior só verificava APÓS 500ms → fill já estava no histórico
+                                    # mas datetime.now() (BRT) não o encontrava [BUG #CHECK-UTC].
+                                    status_imediato = await asyncio.to_thread(
+                                        bridge.check_order_status, order_ticket
+                                    )
+                                    if status_imediato == "FILLED":
+                                        filled = True
+                                        logging.info(
+                                            f"[POLL-INSTANT] Sniper {order_ticket} já preenchido antes do 1º sleep!"
                                         )
 
-                                        if status == "FILLED":
-                                            filled = True
+                                    if not filled:
+                                        for _ in range(6):
+                                            await asyncio.sleep(0.5)
 
-                                            break
+                                            status = await asyncio.to_thread(
+                                                bridge.check_order_status, order_ticket
+                                            )
+
+                                            if status == "FILLED":
+                                                filled = True
+                                                break
 
                                     if filled:
                                         persistence.save_trade(
@@ -1922,26 +2042,70 @@ async def autonomous_bot_loop():
                                         )
 
                                         if not cancel_ok:
-                                            # Falha ao cancelar = pode ter sido preenchida no momento exato do TTL
-                                            race_status = await asyncio.to_thread(
-                                                bridge.check_order_status, order_ticket
+                                            # [FIX #LOCK-CANCEL-FAIL v2] cancel falhou: pode ser fill OU cancel externo.
+                                            # NUNCA assumir fill sem verificar positions_get primeiro.
+                                            await asyncio.sleep(0.3)
+                                            pos_check = await asyncio.to_thread(
+                                                bridge.mt5.positions_get, ticket=order_ticket
                                             )
-                                            if race_status == "FILLED":
-                                                side_pt = "COMPRA" if side == "buy" else "VENDA"
-                                                add_operational_log(
-                                                    f"SNIPER VITÓRIA (RACE): {side_pt} {final_lots} lotes @ {current_order_price}",
-                                                    "success",
+
+                                            # [FIX #BELT-SUSPENDERS] Fallback por simbolo:
+                                            # Em contas MT5 netting, o ticket de POSICAO pode diferir
+                                            # do ticket de ORDEM LIMIT preenchida → pos_check retorna
+                                            # vazio incorretamente. Verificar por simbolo como 2a linha de defesa.
+                                            if not pos_check:
+                                                pos_check_sym = await asyncio.to_thread(
+                                                    bridge.mt5.positions_get, symbol=symbol
                                                 )
-                                                persistence.save_trade(
-                                                    symbol, side, current_order_price,
-                                                    final_lots, "AUTO_SNIPER_RACE",
+                                                if pos_check_sym:
+                                                    pos_check = pos_check_sym
+                                                    logging.warning(
+                                                        f"[BELT-SUSPENDERS Sniper] Posicao NAO encontrada por ticket={order_ticket}, "
+                                                        f"MAS encontrada por simbolo={symbol}. Tratando como fill."
+                                                    )
+
+                                            if pos_check:
+                                                # Posição real confirmada → fill legítimo
+                                                _order_lock_until = time_module.time() + ORDER_LOCK_SEC
+                                                _global_order_lock_until = time_module.time() + GLOBAL_ORDER_LOCK_SEC  # [FIX #DUAL-BOT-LOCK]
+                                                logging.warning(
+                                                    f"🔒 [LOCK-CANCEL-FAIL] Sniper: FILL REAL confirmado via positions_get "
+                                                    f"para {order_ticket}. Lock local={ORDER_LOCK_SEC:.0f}s / global={GLOBAL_ORDER_LOCK_SEC:.0f}s."
                                                 )
-                                                logging.info(
-                                                    f"SNIPER RACE CONDITION: Ordem {order_ticket} preenchida no TTL!"
+                                                race_status = await asyncio.to_thread(
+                                                    bridge.check_order_status, order_ticket
                                                 )
+                                                if race_status == "FILLED":
+                                                    side_pt = "COMPRA" if side == "buy" else "VENDA"
+                                                    add_operational_log(
+                                                        f"SNIPER VITÓRIA (RACE): {side_pt} {final_lots} lotes @ {current_order_price}",
+                                                        "success",
+                                                    )
+                                                    persistence.save_trade(
+                                                        symbol, side, current_order_price,
+                                                        final_lots, "AUTO_SNIPER_RACE",
+                                                    )
+                                                    logging.info(
+                                                        f"SNIPER RACE CONDITION: Ordem {order_ticket} preenchida no TTL!"
+                                                    )
+                                                else:
+                                                    add_operational_log(
+                                                        f"Sniper: Posição detectada mas status nao FILLED para {order_ticket}. Lock ativo.",
+                                                        "warning",
+                                                    )
                                             else:
+                                                # [FIX #EXT-LOCK-UPGRADE] Sem posicao real confirmada.
+                                                # Aumentado de 2s para ORDER_LOCK_SEC (10s): 2s era insuficiente
+                                                # para bloquear o proximo ciclo de sinal do loop principal,
+                                                # causando ordens multiplas em cascata (vide logs 14:42:11-17).
+                                                _order_lock_until = time_module.time() + ORDER_LOCK_SEC
+                                                _global_order_lock_until = time_module.time() + GLOBAL_ORDER_LOCK_SEC  # [FIX #DUAL-BOT-LOCK]
+                                                logging.warning(
+                                                    f"[LOCK-CANCEL-EXT] Sniper {order_ticket}: cancel falhou "
+                                                    f"SEM POSICAO REAL. Lock conservador {ORDER_LOCK_SEC:.0f}s local+global ativado."
+                                                )
                                                 add_operational_log(
-                                                    f"Sniper TTL: {order_ticket} expirado sem fill.",
+                                                    f"Sniper TTL: {order_ticket} cancelado externamente. Lock conservador {ORDER_LOCK_SEC:.0f}s.",
                                                     "warning",
                                                 )
                                         else:
@@ -1957,11 +2121,23 @@ async def autonomous_bot_loop():
                                         else "Tempo_Esgotado/Nulo"
                                     )
 
-                                    # [FIX #ORDER-RETRY] Lock curto após falha: evita spam de retry a 400ms
-                                    _order_lock_until = time_module.time() + ORDER_FAIL_LOCK_SEC
-                                    logging.error(
-                                        f"Falha Crítica na Execução Sniper: {msg} — Lock {ORDER_FAIL_LOCK_SEC:.0f}s ativado."
-                                    )
+                                    # [FIX #ALGO-OFF] Detectar AutoTrading desabilitado (10027)
+                                    if result and getattr(result, "retcode", 0) == 10027:
+                                        logging.critical(
+                                            f"🚨 [ALGOTRADING-OFF] AutoTrading desabilitado no MT5! "
+                                            f"Pausando 30s. Reative AlgoTrading no terminal MT5."
+                                        )
+                                        add_operational_log(
+                                            "CRÍTICO: AutoTrading desabilitado (10027). Pausando 30s. Reative no MT5.",
+                                            "error",
+                                        )
+                                        await asyncio.sleep(30)
+                                    else:
+                                        # [FIX #ORDER-RETRY] Lock curto após falha: evita spam de retry a 400ms
+                                        _order_lock_until = time_module.time() + ORDER_FAIL_LOCK_SEC
+                                        logging.error(
+                                            f"Falha Crítica na Execução Sniper: {msg} — Lock {ORDER_FAIL_LOCK_SEC:.0f}s ativado."
+                                        )
 
                                     add_operational_log(
                                         f"Falha Execução Sniper: {msg}", "error"
@@ -1974,8 +2150,24 @@ async def autonomous_bot_loop():
                                     else bridge.mt5.ORDER_TYPE_SELL_LIMIT
                                 )
 
+                                # [FIX #PRE-ORDER-GATE] Verificacao live de posicao antes de enviar HFT.
+                                _live_positions_hft = await asyncio.to_thread(
+                                    bridge.mt5.positions_get, symbol=symbol
+                                )
+                                if _live_positions_hft:
+                                    logging.warning(
+                                        f"[PRE-ORDER-GATE/HFT] Posicao JA ABERTA detectada live "
+                                        f"({len(_live_positions_hft)} pos). Abortando HFT. "
+                                        f"Tickets: {[p.ticket for p in _live_positions_hft]}"
+                                    )
+                                    add_operational_log(
+                                        "[PRE-ORDER-GATE/HFT] Entrada bloqueada: posicao aberta em tempo real.",
+                                        "warning",
+                                    )
+                                    continue
+
                                 logging.info(
-                                    "🛡️ ENTRADA PASSIVA: ORDEM LIMITE (Topo do Book)"
+                                    "ENTRADA PASSIVA: ORDEM LIMITE (Topo do Book)"
                                 )
 
                                 tick_info = await asyncio.to_thread(
@@ -2087,8 +2279,10 @@ async def autonomous_bot_loop():
                                     ):
                                         # [FIX #FLIP-4] Ativar lock imediatamente após ordem passiva aceita
                                         _order_lock_until = time_module.time() + ORDER_LOCK_SEC
+                                        # [FIX #DUAL-BOT-LOCK] Propagar lock para o Sniper também
+                                        _global_order_lock_until = time_module.time() + GLOBAL_ORDER_LOCK_SEC
                                         logging.info(
-                                            f"🔒 [FLIP-4] Lock ativo: novas ordens bloqueadas por {ORDER_LOCK_SEC:.0f}s (PASSIVO ticket={result.order})"
+                                            f"🔒 [FLIP-4+DUAL] Lock local+global ativo: {ORDER_LOCK_SEC:.0f}s/{GLOBAL_ORDER_LOCK_SEC:.0f}s (PASSIVO ticket={result.order})"
                                         )
                                         order_ticket = result.order
 
@@ -2104,87 +2298,108 @@ async def autonomous_bot_loop():
 
                                         filled = False
 
-                                        for _ in range(6):
-                                            await asyncio.sleep(0.5)
-
-                                            status = await asyncio.to_thread(
-                                                bridge.check_order_status, order_ticket
+                                        # [FIX #POLL-INSTANT] Verifica IMEDIATAMENTE antes do 1º sleep
+                                        # Exchange Execution preenche ordens em ~29ms.
+                                        status_imediato = await asyncio.to_thread(
+                                            bridge.check_order_status, order_ticket
+                                        )
+                                        if status_imediato == "FILLED":
+                                            filled = True
+                                            logging.info(
+                                                f"[POLL-INSTANT] HFT {order_ticket} já preenchido antes do 1º sleep!"
+                                            )
+                                            side_pt = "COMPRA" if side == "buy" else "VENDA"
+                                            add_operational_log(
+                                                f"HFT FILL INSTANT: {side_pt} {final_lots} lotes @ {limit_price}",
+                                                "success",
+                                            )
+                                            persistence.save_trade(
+                                                symbol, side, limit_price,
+                                                final_lots, "AUTO_LIMIT_FILLED",
                                             )
 
-                                            try:
-                                                hb_packet = {
-                                                    "symbol": symbol,
-                                                    "price": limit_price,
-                                                    "obi": obi,
-                                                    "sentiment": ai.latest_sentiment_score,
-                                                    "logs": trade_logs,
-                                                    "risk_status": {
-                                                        "ai_score": ai_total_score,
-                                                        "allow_autonomous": risk.allow_autonomous,
-                                                        "time_ok": time_allowed,
-                                                        "loss_ok": risk_ok,
-                                                        "order_status": "PENDENTE_HFT",
-                                                        "regime": int(regime),
-                                                        "ticket": order_ticket,
-                                                        "synthetic_index": float(
-                                                            synthetic_idx
-                                                        ),
-                                                        "bluechips": bluechips
-                                                        if isinstance(bluechips, dict)
-                                                        else {},
-                                                        "limits": session_limits,
-                                                        "dry_run": risk.dry_run,
-                                                    },
-                                                    "account": account,
-                                                    "timestamp": time_module.time(),
-                                                }
+                                        if not filled:
+                                            for _ in range(6):
+                                                await asyncio.sleep(0.5)
 
-                                                latest_market_packet = hb_packet
-                                                disconnected_ws = []
-                                                for ws in list(active_websockets):
-                                                    try:
-                                                        await ws.send_json(hb_packet)
-                                                    except Exception:
-                                                        disconnected_ws.append(ws)
-                                                for ws in disconnected_ws:
-                                                    if ws in active_websockets:
-                                                        active_websockets.remove(ws)
-                                            except Exception:
-                                                pass
-
-                                            if status == "FILLED":
-                                                filled = True
-
-                                                logging.info(
-                                                    f"HFT FILL: Ordem {order_ticket} executada no spread!"
+                                                status = await asyncio.to_thread(
+                                                    bridge.check_order_status, order_ticket
                                                 )
 
-                                                side_pt = (
-                                                    "COMPRA"
-                                                    if side == "buy"
-                                                    else "VENDA"
-                                                )
-                                                add_operational_log(
-                                                    f"HFT FILL: {side_pt} {final_lots} lotes @ {limit_price}",
-                                                    "success",
-                                                )
+                                                try:
+                                                    hb_packet = {
+                                                        "symbol": symbol,
+                                                        "price": limit_price,
+                                                        "obi": obi,
+                                                        "sentiment": ai.latest_sentiment_score,
+                                                        "logs": trade_logs,
+                                                        "risk_status": {
+                                                            "ai_score": ai_total_score,
+                                                            "allow_autonomous": risk.allow_autonomous,
+                                                            "time_ok": time_allowed,
+                                                            "loss_ok": risk_ok,
+                                                            "order_status": "PENDENTE_HFT",
+                                                            "regime": int(regime),
+                                                            "ticket": order_ticket,
+                                                            "synthetic_index": float(
+                                                                synthetic_idx
+                                                            ),
+                                                            "bluechips": bluechips
+                                                            if isinstance(bluechips, dict)
+                                                            else {},
+                                                            "limits": session_limits,
+                                                            "dry_run": risk.dry_run,
+                                                        },
+                                                        "account": account,
+                                                        "timestamp": time_module.time(),
+                                                    }
 
-                                                persistence.save_trade(
-                                                    symbol,
-                                                    side,
-                                                    limit_price,
-                                                    final_lots,
-                                                    "AUTO_LIMIT_FILLED",
-                                                )
+                                                    latest_market_packet = hb_packet
+                                                    disconnected_ws = []
+                                                    for ws in list(active_websockets):
+                                                        try:
+                                                            await ws.send_json(hb_packet)
+                                                        except Exception:
+                                                            disconnected_ws.append(ws)
+                                                    for ws in disconnected_ws:
+                                                        if ws in active_websockets:
+                                                            active_websockets.remove(ws)
+                                                except Exception:
+                                                    pass
 
-                                                break
+                                                if status == "FILLED":
+                                                    filled = True
 
-                                            elif status == "CANCELED":
-                                                logging.warning(
-                                                    f"Ordem {order_ticket} cancelada externamente."
-                                                )
+                                                    logging.info(
+                                                        f"HFT FILL: Ordem {order_ticket} executada no spread!"
+                                                    )
 
-                                                break
+                                                    side_pt = (
+                                                        "COMPRA"
+                                                        if side == "buy"
+                                                        else "VENDA"
+                                                    )
+                                                    add_operational_log(
+                                                        f"HFT FILL: {side_pt} {final_lots} lotes @ {limit_price}",
+                                                        "success",
+                                                    )
+
+                                                    persistence.save_trade(
+                                                        symbol,
+                                                        side,
+                                                        limit_price,
+                                                        final_lots,
+                                                        "AUTO_LIMIT_FILLED",
+                                                    )
+
+                                                    break
+
+                                                elif status == "CANCELED":
+                                                    logging.warning(
+                                                        f"Ordem {order_ticket} cancelada externamente."
+                                                    )
+
+                                                    break
 
                                         if not filled:
                                             logging.info(
@@ -2196,42 +2411,77 @@ async def autonomous_bot_loop():
                                             )
 
                                             if not cancel_success:
-                                                logging.warning(
-                                                    f"Falha ao cancelar {order_ticket}. Verificando Race Condition..."
+                                                # [FIX #LOCK-CANCEL-FAIL v2] cancel falhou: pode ser fill OU cancel externo.
+                                                # NUNCA assumir fill sem verificar positions_get primeiro.
+                                                await asyncio.sleep(0.3)  # MT5 precisa de ~200ms para atualizar o estado
+                                                pos_check = await asyncio.to_thread(
+                                                    bridge.mt5.positions_get, ticket=order_ticket
                                                 )
 
-                                                final_status = await asyncio.to_thread(
-                                                    bridge.check_order_status,
-                                                    order_ticket,
-                                                )
-
-                                                if final_status == "FILLED":
-                                                    logging.info(
-                                                        f"VITÓRIA POR CONDIÇÃO DE CORRIDA: Ordem {order_ticket} preenchida!"
+                                                # [FIX #BELT-SUSPENDERS] Fallback por simbolo:
+                                                # Em contas MT5 netting, ticket de POSICAO pode diferir
+                                                # do ticket de ORDEM LIMIT → verificar por simbolo.
+                                                if not pos_check:
+                                                    pos_check_sym = await asyncio.to_thread(
+                                                        bridge.mt5.positions_get, symbol=symbol
                                                     )
+                                                    if pos_check_sym:
+                                                        pos_check = pos_check_sym
+                                                        logging.warning(
+                                                            f"[BELT-SUSPENDERS HFT] Posicao NAO encontrada por ticket={order_ticket}, "
+                                                            f"MAS encontrada por simbolo={symbol}. Tratando como fill."
+                                                        )
 
-                                                    side_pt = (
-                                                        "COMPRA"
-                                                        if side == "buy"
-                                                        else "VENDA"
+                                                if pos_check:
+                                                    # Posição real confirmada → fill legítimo
+                                                    _order_lock_until = time_module.time() + ORDER_LOCK_SEC
+                                                    _global_order_lock_until = time_module.time() + GLOBAL_ORDER_LOCK_SEC  # [FIX #DUAL-BOT-LOCK]
+                                                    logging.warning(
+                                                        f"🔒 [LOCK-CANCEL-FAIL] HFT: FILL REAL confirmado via positions_get "
+                                                        f"para {order_ticket}. Lock local={ORDER_LOCK_SEC:.0f}s / global={GLOBAL_ORDER_LOCK_SEC:.0f}s."
                                                     )
-                                                    add_operational_log(
-                                                        f"VITÓRIA POR CONDIÇÃO DE CORRIDA: {side_pt} {final_lots} lotes!",
-                                                        "success",
+                                                    final_status = await asyncio.to_thread(
+                                                        bridge.check_order_status,
+                                                        order_ticket,
                                                     )
-
-                                                    persistence.save_trade(
-                                                        symbol,
-                                                        side,
-                                                        limit_price,
-                                                        final_lots,
-                                                        "AUTO_LIMIT_FILLED_RACE",
-                                                    )
-
+                                                    if final_status == "FILLED":
+                                                        logging.info(
+                                                            f"VITORIA POR CONDICAO DE CORRIDA: Ordem {order_ticket} preenchida!"
+                                                        )
+                                                        side_pt = (
+                                                            "COMPRA"
+                                                            if side == "buy"
+                                                            else "VENDA"
+                                                        )
+                                                        add_operational_log(
+                                                            f"VITORIA POR CONDICAO DE CORRIDA: {side_pt} {final_lots} lotes!",
+                                                            "success",
+                                                        )
+                                                        persistence.save_trade(
+                                                            symbol,
+                                                            side,
+                                                            limit_price,
+                                                            final_lots,
+                                                            "AUTO_LIMIT_FILLED_RACE",
+                                                        )
+                                                    else:
+                                                        add_operational_log(
+                                                            f"HFT: Posicao detectada mas status nao FILLED para {order_ticket}. Lock ativo.",
+                                                            "warning",
+                                                        )
                                                 else:
+                                                    # [FIX #EXT-LOCK-UPGRADE] Sem posicao confirmada por ticket OU simbolo.
+                                                    # Aumentado de 2s para ORDER_LOCK_SEC (10s): 2s causava
+                                                    # cascata de ordens multiplas (vide logs 14:42:11-17).
+                                                    _order_lock_until = time_module.time() + ORDER_LOCK_SEC
+                                                    _global_order_lock_until = time_module.time() + GLOBAL_ORDER_LOCK_SEC  # [FIX #DUAL-BOT-LOCK]
+                                                    logging.warning(
+                                                        f"[LOCK-CANCEL-EXT] HFT {order_ticket}: cancel falhou "
+                                                        f"SEM POSICAO REAL. Lock conservador {ORDER_LOCK_SEC:.0f}s local+global ativado."
+                                                    )
                                                     add_operational_log(
-                                                        f"Erro cancelamento TTL: {order_ticket}",
-                                                        "error",
+                                                        f"HFT TTL: {order_ticket} cancelado externamente. Lock conservador {ORDER_LOCK_SEC:.0f}s.",
+                                                        "warning",
                                                     )
 
                                             else:
@@ -2245,11 +2495,23 @@ async def autonomous_bot_loop():
                                             result.comment if result else "Timeout/None"
                                         )
 
-                                        # [FIX #ORDER-RETRY] Lock curto após qualquer falha de envio PASSIVO
-                                        _order_lock_until = time_module.time() + ORDER_FAIL_LOCK_SEC
-                                        logging.error(
-                                            f"Falha ao enviar Limit Order: {msg} — Lock {ORDER_FAIL_LOCK_SEC:.0f}s ativado."
-                                        )
+                                        # [FIX #ALGO-OFF] Detectar AutoTrading desabilitado (10027)
+                                        if result and getattr(result, "retcode", 0) == 10027:
+                                            logging.critical(
+                                                f"🚨 [ALGOTRADING-OFF] AutoTrading desabilitado no MT5! "
+                                                f"Pausando 30s. Reative AlgoTrading no terminal MT5."
+                                            )
+                                            add_operational_log(
+                                                "CRÍTICO: AutoTrading desabilitado (10027). Pausando 30s. Reative no MT5.",
+                                                "error",
+                                            )
+                                            await asyncio.sleep(30)
+                                        else:
+                                            # [FIX #ORDER-RETRY] Lock curto após qualquer falha de envio PASSIVO
+                                            _order_lock_until = time_module.time() + ORDER_FAIL_LOCK_SEC
+                                            logging.error(
+                                                f"Falha ao enviar Limit Order: {msg} — Lock {ORDER_FAIL_LOCK_SEC:.0f}s ativado."
+                                            )
 
                 elif risk.allow_autonomous and ai_total_score >= 82:
                     if not market_ok:
@@ -2485,8 +2747,12 @@ async def autonomous_bot_loop():
                                         bridge.check_order_status, order.ticket
                                     )
                                     if final_st == "FILLED":
+                                        # [FIX #HK-LOCK] Fill inesperado no housekeeping:
+                                        # ativa lock para evitar nova entrada imediata sobre posição recém-aberta
+                                        _order_lock_until = time_module.time() + ORDER_LOCK_SEC
+                                        _global_order_lock_until = time_module.time() + GLOBAL_ORDER_LOCK_SEC  # [FIX #DUAL-BOT-LOCK]
                                         logging.info(
-                                            f"[HOUSEKEEPING] Ordem {order.ticket} preenchida no TTL! Registrando."
+                                            f"[HOUSEKEEPING] Ordem {order.ticket} preenchida no TTL! Lock local+global ({ORDER_LOCK_SEC:.0f}s/{GLOBAL_ORDER_LOCK_SEC:.0f}s) ativado. Registrando."
                                         )
                                         persistence.save_trade(
                                             symbol, "limit_housekeeping", order.price_open,
