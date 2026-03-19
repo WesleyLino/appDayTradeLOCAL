@@ -63,10 +63,12 @@ class RiskManager:
         )
 
         # [FASE 2] Velocity Limit (Drawdown Acelerado no Tempo)
-        self.velocity_time_limit_sec = 20.0  # Segundos máximos engatado negativamente
+        # [FIX #FLIP-1] ATR=145: oscilação natural ±36pts/s. 20s e -30pts eram muito curtos,
+        # causando fechamento prematuro em < 55ms. Novo: 60s (1 candle M1) e -60pts (40% SL).
+        self.velocity_time_limit_sec = 60.0  # [FIX #FLIP-1] Era 20s → 60s (1 candle M1 completo)
         self.velocity_drawdown_limit = (
-            -30.0
-        )  # Pontos negativos que ativam o timeout rápido
+            -60.0
+        )  # [FIX #FLIP-1] Era -30pts → -60pts (40% do SL real de 150pts)
 
         # [HFT ELITE] Alpha Fade (Decaimento de Ordem)
         self.alpha_fade_timeout = (

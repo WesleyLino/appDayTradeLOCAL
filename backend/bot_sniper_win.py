@@ -66,6 +66,8 @@ class SniperBotWIN:
         self.vol_spike_mult = 1.0
         self.consecutive_wins = 0  # Alpha Scaling tracker
         self.last_trade_time = None
+        self._last_close_time = 0.0   # [FIX] Timestamp do último fechamento pelo sniper
+        self._last_closed_ticket = None  # [FIX] Ticket fechado mais recente pelo sniper
 
         # [PAUSA PARCIAL] Controle de Volatilidade de Abertura
         self.dia_pausado_vol = False
@@ -354,6 +356,9 @@ class SniperBotWIN:
             ):
                 if not self.risk.dry_run:
                     self.bridge.close_position(pos.ticket)
+                    self._last_close_time = datetime.utcnow().timestamp()  # [FIX] Notifica main.py via FLIP-5
+                    self._last_closed_ticket = pos.ticket
+                    logger.info(f"🔒 [SNIPER TIME-STOP] Ticket #{pos.ticket} fechado. main.py será notificado via FLIP-5.")
                 continue
 
             should_partial, p_vol = self.risk.check_scaling_out(
@@ -366,6 +371,8 @@ class SniperBotWIN:
             )
             if should_partial and not self.risk.dry_run:
                 self.bridge.close_partial_position(pos.ticket, p_vol)
+                self._last_close_time = datetime.utcnow().timestamp()  # [FIX] Notifica main.py
+                logger.info(f"🎯 [SNIPER PARCIAL] Ticket #{pos.ticket} parcialmente fechado ({p_vol} lotes).")
                 continue
 
             # [SOTA V22 GOLDEN] - Breakeven via RiskManager

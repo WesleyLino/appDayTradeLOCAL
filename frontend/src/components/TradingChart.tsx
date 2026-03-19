@@ -10,6 +10,7 @@ import {
   HistogramSeries,
   LineSeries,
   LineStyle,
+  UTCTimestamp,
 } from "lightweight-charts";
 import { useTradingStore } from "@/hooks/use-trading-ws";
 
@@ -21,6 +22,11 @@ export function TradingChart() {
   const forecastSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
   const upperSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
   const lowerSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
+  // [FIX #CHART-2] Ref para rastrear o último timestamp enviado ao chart.
+  // lightweight-charts exige timestamps ESTRITAMENTE CRESCENTES.
+  // Sem isso, dois ticks no mesmo segundo (ex: 10:53:57.1 e 10:53:57.9)
+  // geram "Cannot update oldest data" após o Math.floor os igualar (1742xxx).
+  const lastTimestampRef = useRef<number>(0);
   const { data } = useTradingStore();
 
   useEffect(() => {
@@ -120,10 +126,21 @@ export function TradingChart() {
   useEffect(() => {
     if (!data || !candlestickSeriesRef.current) return;
 
-    // 1. Update Candles
-    // Nota: data.timestamp deve vir do backend em SEGUNDOS (time.time())
-    // Se vier em ms, dividir por 1000.
-    const time = data.timestamp as any; // Lightweight charts aceita number (seconds)
+    // [FIX #CHART-1 + #CHART-2] Tratamento completo de timestamp para lightweight-charts v5.
+    // Problema: Backend envia timestamps float Python (ex: 1742389825.421).
+    // Dois ticks chegando no mesmo segundo se tornam o mesmo inteiro após Math.floor,
+    // causando "Cannot update oldest data" (chart exige timestamps ESTRITAMENTE CRESCENTES).
+    // Solução: Rastrear último timestamp e avançar +1 se necessário.
+    const rawTime = Math.floor(data.timestamp);
+    let safeTime: number;
+    if (rawTime > lastTimestampRef.current) {
+      safeTime = rawTime;
+    } else {
+      // Mesmo segundo ou ordem invertida → avança +1 para manter ordem crescente
+      safeTime = lastTimestampRef.current + 1;
+    }
+    lastTimestampRef.current = safeTime;
+    const time = safeTime as UTCTimestamp;
 
     candlestickSeriesRef.current.update({
       time: time,

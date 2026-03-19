@@ -502,11 +502,36 @@ async def autonomous_bot_loop():
 
         last_trailing_check = 0
 
+        # [FIX #FLIP-2] Cooldown pós-fechamento: evita flip-flop imediato de sinal
+        last_close_time = 0  # timestamp do último fechamento de posição
+        POST_CLOSE_COOLDOWN_SEC = 30.0  # 30s entre fechamento e próxima entrada
+
+        # [FIX #FLIP-4] Lock de Ordem Ativa: bloqueia novas ordens por ORDER_LOCK_SEC
+        # após qualquer place_limit_order ser enviada, INDEPENDENTE do positions_get.
+        # Resolve a race condition de 72ms: limit é enviada mas positions_get ainda
+        # retorna vazio até o MT5 confirmar internamente o fill (B3 netting).
+        _order_lock_until = 0.0  # timestamp até o qual novas ordens estão bloqueadas
+        ORDER_LOCK_SEC = 10.0    # 10s de lock após qualquer ordem enviada
+
         last_heartbeat = time_module.time()
 
         # Variáveis de Estado Persistentes no Loop
 
         symbol = "WIN$"  # Inicial
+
+        # [FIX #FLIP-5] Rastreamento de tickets para detectar fechamentos externos (SL/TP MT5)
+        # Quando um ticket some do positions_get sem o bot ter chamado close_position,
+        # o cooldown e o lock são ativados imediatamente (SL/TP hit externo).
+        _tracked_position_tickets: set = set()
+
+        # [FIX #TREND-ALIGN] Histórico de preços para detectar tendência recente
+        # Bloqueia BUY em tendência de queda e SELL em tendência de alta (momentum)
+        _price_history: list = []  # lista circular de preços recentes (max 10 ticks)
+        _TREND_LOOKBACK = 8        # ticks analisados para verificar direção
+        _TREND_MIN_MOVE = 40.0     # movímento mínimo em pontos para vetar direção
+
+        # [FIX #ORDER-RETRY] Lock após falha de envio (evita spam a cada 400ms)
+        ORDER_FAIL_LOCK_SEC = 5.0  # 5s de lock após qualquer falha de order_send
 
         returns_history = []
 
@@ -1392,14 +1417,43 @@ async def autonomous_bot_loop():
                 except Exception as rl_e:
                     logging.debug(f"Erro RL Shadow: {rl_e}")
 
+                # --- [FIX #FLIP-5 v2] DETECÇÃO DE FECHAMENTO EXTERNO — RODA A CADA TICK ---
+                # CORRIGIDO: antes estava dentro do bloco de 1s (trailing check),
+                # causando janela de até 1s onde FLIP-3 via positions=0 e liberava nova entrada.
+                # Agora roda a cada ~250ms, ANTES do FLIP-3, garantindo lock imediato pós-SL/TP.
+                try:
+                    _tick_positions = await asyncio.to_thread(
+                        bridge.mt5.positions_get, symbol=symbol
+                    )
+                    _current_tickets = (
+                        set(p.ticket for p in _tick_positions) if _tick_positions else set()
+                    )
+                    _externally_closed = _tracked_position_tickets - _current_tickets
+                    if _externally_closed:
+                        last_close_time = time_module.time()  # [FIX #FLIP-2] Ativa cooldown
+                        _order_lock_until = time_module.time() + ORDER_LOCK_SEC  # [FIX #FLIP-4]
+                        for _tk in _externally_closed:
+                            logging.info(
+                                f"🚨 [FLIP-5 v2] Ticket #{_tk} fechado externamente (SL/TP MT5). Cooldown+Lock ativados em {ORDER_LOCK_SEC:.0f}s."
+                            )
+                    _tracked_position_tickets = _current_tickets
+                except Exception as _flip5_err:
+                    logging.debug(f"[FLIP-5] Erro em tick-level positions_get: {_flip5_err}")
+
                 # --- TRAILING STOP (1s Check) ---
 
                 if time_module.time() - last_trailing_check > 1.0:
                     last_trailing_check = time_module.time()
 
                     try:
-                        positions = await asyncio.to_thread(
+                        # Reutiliza _tick_positions capturado acima pelo FLIP-5 (evita 2ª chamada MT5)
+                        positions = _tick_positions if '_tick_positions' in dir() else await asyncio.to_thread(
                             bridge.mt5.positions_get, symbol=symbol
+                        )
+
+                        # _tracked_position_tickets já atualizado pelo FLIP-5 acima
+                        _current_tickets = (
+                            set(p.ticket for p in positions) if positions else set()
                         )
 
                         if positions:
@@ -1420,6 +1474,10 @@ async def autonomous_bot_loop():
                                     await asyncio.to_thread(
                                         bridge.close_position, pos.ticket
                                     )
+
+                                    last_close_time = time_module.time()  # [FIX #FLIP-2] Cooldown
+                                    _order_lock_until = time_module.time() + ORDER_LOCK_SEC  # [FIX #FLIP-4] Lock
+                                    logging.info(f"🔒 [ALPHA-X] Lock {ORDER_LOCK_SEC:.0f}s ativado após fechamento por tempo.")
 
                                     continue
 
@@ -1464,6 +1522,10 @@ async def autonomous_bot_loop():
                                         bridge.close_position, pos.ticket
                                     )
 
+                                    last_close_time = time_module.time()  # [FIX #FLIP-2] Cooldown
+                                    _order_lock_until = time_module.time() + ORDER_LOCK_SEC  # [FIX #FLIP-4] Lock
+                                    logging.info(f"⚡ [VELOCITY] Lock {ORDER_LOCK_SEC:.0f}s ativado após fechamento por exaustão.")
+
                                     continue
 
                                 # --- FASE 2: SCALED EXITS (PARTIAL TAKE PROFIT) ---
@@ -1485,6 +1547,11 @@ async def autonomous_bot_loop():
 
                                         if success:
                                             partially_closed_tickets.add(pos.ticket)
+                                            # [FIX] Parcial também atualiza last_close_time:
+                                            # FLIP-5 detecta por ticket (ticket permanece),
+                                            # mas last_close_time evita nova entrada total após saida parcial.
+                                            last_close_time = time_module.time()
+                                            logging.info(f"🎯 [PARCIAL] last_close_time atualizado ({risk.partial_volume} lotes fechados).")
 
                                             # Break-even automático pós parcial
 
@@ -1590,12 +1657,85 @@ async def autonomous_bot_loop():
                     or ai_total_score <= _threshold_sell
                 )
 
+                # [FIX #FLIP-2] Cooldown pós-fechamento
+                _cooldown_remaining = POST_CLOSE_COOLDOWN_SEC - (time_module.time() - last_close_time)
+                if _cooldown_remaining > 0:
+                    logging.debug(
+                        f"⏳ [COOLDOWN] Aguardando {_cooldown_remaining:.1f}s antes da próxima entrada."
+                    )
+
+                # [FIX #FLIP-3 v2] Guard de Posição Aberta — FAIL-SAFE
+                # CORRIGIDO: Era fail-open (se positions_get falhasse → permitia entrada)
+                # Agora: fail-safe (se falhar → bloqueia entrada por segurança)
+                try:
+                    _open_positions = await asyncio.to_thread(
+                        bridge.mt5.positions_get, symbol=symbol
+                    )
+                    # MT5 pode retornar None, () ou tuple com posições
+                    _has_open_position = bool(_open_positions and len(_open_positions) > 0)
+
+                    # Fallback: se retornou vazio mas o lock ainda está ativo (ordem recém enviada),
+                    # assume que a posição ainda não apareceu no positions_get por latência MT5
+                    if not _has_open_position and _order_lock_until > time_module.time():
+                        _has_open_position = True  # Conservador: lock ativo = posição provável
+                        logging.debug("[FLIP-3] Lock ativo → assume posição aberta por segurança.")
+
+                except Exception as _pos_err:
+                    # FAIL-SAFE: qualquer erro em positions_get → BLOQUEIA entrada
+                    _has_open_position = True
+                    logging.warning(
+                        f"⚠️ [FLIP-3 FAIL-SAFE] positions_get falhou ({_pos_err}). Bloqueando entrada por segurança."
+                    )
+
+                if _has_open_position:
+                    logging.info(  # INFO ao invés de DEBUG para aparecer nos logs
+                        f"🛑 [FLIP-3 GUARD] Posição aberta detectada em {symbol}. Nova entrada bloqueada."
+                    )
+
+
+                # [FIX #FLIP-4] Verificar lock de ordem ativa
+                _order_locked = time_module.time() < _order_lock_until
+                if _order_locked:
+                    _lock_remaining = _order_lock_until - time_module.time()
+                    logging.debug(
+                        f"🔒 [FLIP-4 LOCK] Ordem em trânsito. Bloqueando nova entrada por {_lock_remaining:.1f}s."
+                    )
+
+                # [FIX #TREND-ALIGN] Registrar preço atual no histórico circular
+                _price_history.append(float(last_price))
+                if len(_price_history) > 10:
+                    _price_history.pop(0)
+
+                # [FIX #TREND-ALIGN] Filtro de Alinhamento de Tendência
+                # Veta BUY se preço caiu _TREND_MIN_MOVE pts nos últimos _TREND_LOOKBACK ticks
+                # Veta SELL se preço subiu _TREND_MIN_MOVE pts nos últimos _TREND_LOOKBACK ticks
+                _trend_veto = False
+                if len(_price_history) >= _TREND_LOOKBACK and is_threshold_met:
+                    _recent = _price_history[-_TREND_LOOKBACK:]
+                    _price_delta = _recent[-1] - _recent[0]
+                    if ai_direction == "BUY" and _price_delta <= -_TREND_MIN_MOVE:
+                        _trend_veto = True
+                        logging.info(
+                            f"🚧 [TREND-ALIGN] BUY vetado: preço caiu {abs(_price_delta):.0f}pts "
+                            f"nos últimos {_TREND_LOOKBACK} ticks ({_recent[0]:.0f} → {_recent[-1]:.0f})"
+                        )
+                    elif ai_direction == "SELL" and _price_delta >= _TREND_MIN_MOVE:
+                        _trend_veto = True
+                        logging.info(
+                            f"🚧 [TREND-ALIGN] SELL vetado: preço subiu {_price_delta:.0f}pts "
+                            f"nos últimos {_TREND_LOOKBACK} ticks ({_recent[0]:.0f} → {_recent[-1]:.0f})"
+                        )
+
                 if (
                     risk.allow_autonomous
                     and is_threshold_met
                     and risk_ok
                     and market_ok
                     and time_allowed
+                    and _cooldown_remaining <= 0  # [FIX #FLIP-2] Bloqueia re-entrada durante cooldown
+                    and not _has_open_position    # [FIX #FLIP-3] Bloqueia se já há posição aberta
+                    and not _order_locked         # [FIX #FLIP-4] Bloqueia durante lock de ordem em trânsito
+                    and not _trend_veto           # [FIX #TREND-ALIGN] Bloqueia contra tendência recente
                 ):
                     if ai_direction in ["BUY", "SELL"]:
                         side = "buy" if ai_direction == "BUY" else "sell"
@@ -1722,6 +1862,11 @@ async def autonomous_bot_loop():
                                     result
                                     and result.retcode == bridge.mt5.TRADE_RETCODE_DONE
                                 ):
+                                    # [FIX #FLIP-4] Ativar lock imediatamente após ordem aceita
+                                    _order_lock_until = time_module.time() + ORDER_LOCK_SEC
+                                    logging.info(
+                                        f"🔒 [FLIP-4] Lock ativo: novas ordens bloqueadas por {ORDER_LOCK_SEC:.0f}s (Sniper ticket={result.order})"
+                                    )
                                     order_ticket = result.order
 
                                     mode_tag = (
@@ -1812,8 +1957,10 @@ async def autonomous_bot_loop():
                                         else "Tempo_Esgotado/Nulo"
                                     )
 
+                                    # [FIX #ORDER-RETRY] Lock curto após falha: evita spam de retry a 400ms
+                                    _order_lock_until = time_module.time() + ORDER_FAIL_LOCK_SEC
                                     logging.error(
-                                        f"Falha Crítica na Execução Sniper: {msg}"
+                                        f"Falha Crítica na Execução Sniper: {msg} — Lock {ORDER_FAIL_LOCK_SEC:.0f}s ativado."
                                     )
 
                                     add_operational_log(
@@ -1938,6 +2085,11 @@ async def autonomous_bot_loop():
                                         and result.retcode
                                         == bridge.mt5.TRADE_RETCODE_DONE
                                     ):
+                                        # [FIX #FLIP-4] Ativar lock imediatamente após ordem passiva aceita
+                                        _order_lock_until = time_module.time() + ORDER_LOCK_SEC
+                                        logging.info(
+                                            f"🔒 [FLIP-4] Lock ativo: novas ordens bloqueadas por {ORDER_LOCK_SEC:.0f}s (PASSIVO ticket={result.order})"
+                                        )
                                         order_ticket = result.order
 
                                         mode_tag = (
@@ -2093,8 +2245,10 @@ async def autonomous_bot_loop():
                                             result.comment if result else "Timeout/None"
                                         )
 
+                                        # [FIX #ORDER-RETRY] Lock curto após qualquer falha de envio PASSIVO
+                                        _order_lock_until = time_module.time() + ORDER_FAIL_LOCK_SEC
                                         logging.error(
-                                            f"Falha ao enviar Limit Order: {msg}"
+                                            f"Falha ao enviar Limit Order: {msg} — Lock {ORDER_FAIL_LOCK_SEC:.0f}s ativado."
                                         )
 
                 elif risk.allow_autonomous and ai_total_score >= 82:
