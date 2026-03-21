@@ -402,6 +402,18 @@ class AICore:
                 f"[v24.4 MOMENTUM-BYPASS] Ativado via Fluxo/Regime/Abertura! (Thresh: {dynamic_bypass_thresh:.1f})"
             )
 
+        # [MELHORIA C - DIAS MORTOS] Curva adaptativa no crivo da IA Core para Scalping Lateral
+        # Em dias sem volume concentrado (regime==0, obi_abs < 1.0, ATR normal/baixo),
+        # autoriza trades puramente pelo núcleo preditivo do PatchTST caso atinja grande convicção cruzada.
+        is_lateral_bypass = False
+        if regime == 0 and obi_abs < 1.0:
+            # Exige certeza de >=60 ou <=40. Uma score de 60 na rede é alta probabilidade dadas as compressões.
+            if patchtst_score_val >= 60.0 or patchtst_score_val <= 40.0:
+                is_lateral_bypass = True
+                logging.info(
+                    f"🦇 [LATERAL-SCALP-BYPASS] Ativado via IA Core puro! (PatchTST: {patchtst_score_val:.1f})"
+                )
+
         # [v24] Lógica de Multiplicador de Alvos Exponenciais (Momentum Bypass)
         tp_multiplier = 1.0
         sl_multiplier = 1.0  # [v24.2] Novo multiplicador para Stop Loss em Momento
@@ -427,13 +439,11 @@ class AICore:
             sl_multiplier = 1.0  # Mantém Stop Loss padrão se não for momentum bruto
 
         # 6. Decisão de Direção e Multiplicadores de Alvo
-        if is_momentum_bypass:
-            exec_strategy = "MOMENTUM"
-            # [CORRIGIDO] Score é o critério primário. OBI só desempata em score=50 neutro.
-            # Bug anterior: `score_raw >= 50 or obi > 0` fazia obi=0.1 sobrepor score=18 (venda forte).
-            if score_raw > 50:
+        if is_momentum_bypass or is_lateral_bypass:
+            exec_strategy = "MOMENTUM" if is_momentum_bypass else "LATERAL_SCALP"
+            if patchtst_score_val > 50:
                 direction = "BUY"
-            elif score_raw < 50:
+            elif patchtst_score_val < 50:
                 direction = "SELL"
             else:
                 direction = "BUY" if obi > 0 else "SELL"  # Desempate pelo fluxo
@@ -575,6 +585,7 @@ class AICore:
             "execution_strategy": exec_strategy,
             "execution_mode": exec_strategy,       # [COMPAT] alias para backtest_pro.py
             "is_momentum_bypass": is_momentum_bypass,
+            "is_lateral_bypass": is_lateral_bypass,
             "is_golden_window": is_golden_window,
             "lot_multiplier": 1.0,
             "tp_multiplier": tp_multiplier,

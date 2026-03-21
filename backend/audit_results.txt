@@ -1,0 +1,157 @@
+﻿
+================================================================================
+ INICIANDO AUDITORIA BACKTEST: Mini ├ìndice (WIN$) | M1 | Capital: R$ 500,00
+================================================================================
+
+ DIA: 19/02/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (406) | Filtrados (406)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 20/02/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (390) | Filtrados (390)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 23/02/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (418) | Filtrados (418)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 24/02/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 24.00 (4.80%)
+   Ôû║ Saldo Final: R$ 524.00
+   Ôû║ Trades Executados: 1 (Win Rate: 100.0%)
+      - COMPRAS: 0 (Vit├│rias: 0)
+      - VENDAS : 1 (Vit├│rias: 1)
+      - Maiores Preju├¡zos: 0.00
+      - Maiores Ganhos   : 24.00
+   Ôû║ Oportunidades: Sinais Detectados (407) | Filtrados (406)
+      [Motivos Filtro: IA=1, Fluxo=0]
+
+ DIA: 25/02/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (418) | Filtrados (418)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 26/02/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (417) | Filtrados (417)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 27/02/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (408) | Filtrados (408)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 02/03/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (392) | Filtrados (392)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 03/03/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (266) | Filtrados (266)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 04/03/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (408) | Filtrados (408)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 05/03/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (260) | Filtrados (260)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 06/03/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (362) | Filtrados (362)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 09/03/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (380) | Filtrados (380)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 10/03/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (383) | Filtrados (383)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 11/03/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (404) | Filtrados (404)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 12/03/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (389) | Filtrados (389)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 13/03/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (373) | Filtrados (373)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 16/03/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (414) | Filtrados (414)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 19/03/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (363) | Filtrados (363)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+ DIA: 20/03/2026 | Capital Inicial: R$ 500,00
+   Ôû║ PnL L├¡quido: R$ 0.00 (0.00%)
+   Ôû║ Saldo Final: R$ 500.00
+   Ôû║ Trades Executados: 0 (Win Rate: 0.0%)
+   Ôû║ Oportunidades: Sinais Detectados (379) | Filtrados (379)
+      [Motivos Filtro: IA=0, Fluxo=0]
+
+================================================================================
+­ƒôê RESUMO GERAL DAS OPERA├ç├òES
+================================================================================
+Ôû║ Total PnL (Cumulativo se n├úo houvesse saque): R$ 24.00
+Ôû║ Total Trades Realizados: 1
+Ôû║ Assertividade M├®dia Geral: 100.0 (%)
+================================================================================
+

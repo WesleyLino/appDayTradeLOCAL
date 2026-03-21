@@ -1,0 +1,169 @@
+﻿
+================================================================================
+ INICIANDO AUDITORIA BACKTEST: Mini ├ìndice (WIN$) | M1 | Capital: R$ 500,00
+================================================================================
+
+ DIA: 19/02/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 105.00 (21.00%)
+   Ôû║ Trades Executados (s├│ hoje): 7 (Win Rate: 85.7%)
+      - COMPRAS: 3 (Vit├│rias: 3)
+      - VENDAS : 4 (Vit├│rias: 3)
+      - Maiores Preju├¡zos: -15.00
+      - Maiores Ganhos   : 42.00
+
+ DIA: 20/02/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 59.00 (11.80%)
+   Ôû║ Trades Executados (s├│ hoje): 7 (Win Rate: 71.4%)
+      - COMPRAS: 3 (Vit├│rias: 3)
+      - VENDAS : 4 (Vit├│rias: 2)
+      - Maiores Preju├¡zos: -23.00
+      - Maiores Ganhos   : 36.00
+
+ DIA: 23/02/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 66.00 (13.20%)
+   Ôû║ Trades Executados (s├│ hoje): 8 (Win Rate: 87.5%)
+      - COMPRAS: 6 (Vit├│rias: 6)
+      - VENDAS : 2 (Vit├│rias: 1)
+      - Maiores Preju├¡zos: -29.00
+      - Maiores Ganhos   : 26.00
+
+ DIA: 24/02/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 66.00 (13.20%)
+   Ôû║ Trades Executados (s├│ hoje): 9 (Win Rate: 77.8%)
+      - COMPRAS: 4 (Vit├│rias: 3)
+      - VENDAS : 5 (Vit├│rias: 4)
+      - Maiores Preju├¡zos: -37.00
+      - Maiores Ganhos   : 35.00
+
+ DIA: 25/02/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 21.00 (4.20%)
+   Ôû║ Trades Executados (s├│ hoje): 5 (Win Rate: 80.0%)
+      - COMPRAS: 5 (Vit├│rias: 4)
+      - VENDAS : 0 (Vit├│rias: 0)
+      - Maiores Preju├¡zos: -21.00
+      - Maiores Ganhos   : 26.00
+
+ DIA: 26/02/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 195.00 (39.00%)
+   Ôû║ Trades Executados (s├│ hoje): 7 (Win Rate: 85.7%)
+      - COMPRAS: 2 (Vit├│rias: 1)
+      - VENDAS : 5 (Vit├│rias: 5)
+      - Maiores Preju├¡zos: -15.00
+      - Maiores Ganhos   : 52.00
+
+ DIA: 27/02/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 144.00 (28.80%)
+   Ôû║ Trades Executados (s├│ hoje): 6 (Win Rate: 83.3%)
+      - COMPRAS: 0 (Vit├│rias: 0)
+      - VENDAS : 6 (Vit├│rias: 5)
+      - Maiores Preju├¡zos: -29.00
+      - Maiores Ganhos   : 53.00
+
+ DIA: 02/03/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 137.00 (27.40%)
+   Ôû║ Trades Executados (s├│ hoje): 6 (Win Rate: 100.0%)
+      - COMPRAS: 2 (Vit├│rias: 2)
+      - VENDAS : 4 (Vit├│rias: 4)
+      - Maiores Preju├¡zos: 0.00
+      - Maiores Ganhos   : 43.00
+
+ DIA: 03/03/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ -112.00 (-22.40%)
+   Ôû║ Trades Executados (s├│ hoje): 6 (Win Rate: 66.7%)
+      - COMPRAS: 3 (Vit├│rias: 3)
+      - VENDAS : 3 (Vit├│rias: 1)
+      - Maiores Preju├¡zos: -107.00
+      - Maiores Ganhos   : 12.00
+
+ DIA: 04/03/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 85.00 (17.00%)
+   Ôû║ Trades Executados (s├│ hoje): 6 (Win Rate: 100.0%)
+      - COMPRAS: 1 (Vit├│rias: 1)
+      - VENDAS : 5 (Vit├│rias: 5)
+      - Maiores Preju├¡zos: 0.00
+      - Maiores Ganhos   : 37.00
+
+ DIA: 05/03/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 167.00 (33.40%)
+   Ôû║ Trades Executados (s├│ hoje): 6 (Win Rate: 100.0%)
+      - COMPRAS: 2 (Vit├│rias: 2)
+      - VENDAS : 4 (Vit├│rias: 4)
+      - Maiores Preju├¡zos: 0.00
+      - Maiores Ganhos   : 51.00
+
+ DIA: 06/03/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 0.00 (0.00%)
+   Ôû║ Trades Executados (s├│ hoje): 0 (Win Rate: 0.0%)
+
+ DIA: 09/03/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 39.00 (7.80%)
+   Ôû║ Trades Executados (s├│ hoje): 2 (Win Rate: 100.0%)
+      - COMPRAS: 1 (Vit├│rias: 1)
+      - VENDAS : 1 (Vit├│rias: 1)
+      - Maiores Preju├¡zos: 0.00
+      - Maiores Ganhos   : 38.00
+
+ DIA: 10/03/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 13.00 (2.60%)
+   Ôû║ Trades Executados (s├│ hoje): 4 (Win Rate: 75.0%)
+      - COMPRAS: 3 (Vit├│rias: 2)
+      - VENDAS : 1 (Vit├│rias: 1)
+      - Maiores Preju├¡zos: -24.00
+      - Maiores Ganhos   : 26.00
+
+ DIA: 11/03/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ -30.00 (-6.00%)
+   Ôû║ Trades Executados (s├│ hoje): 1 (Win Rate: 0.0%)
+      - COMPRAS: 0 (Vit├│rias: 0)
+      - VENDAS : 1 (Vit├│rias: 0)
+      - Maiores Preju├¡zos: -30.00
+      - Maiores Ganhos   : 0.00
+
+ DIA: 12/03/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 131.00 (26.20%)
+   Ôû║ Trades Executados (s├│ hoje): 2 (Win Rate: 100.0%)
+      - COMPRAS: 0 (Vit├│rias: 0)
+      - VENDAS : 2 (Vit├│rias: 2)
+      - Maiores Preju├¡zos: 0.00
+      - Maiores Ganhos   : 71.00
+
+ DIA: 13/03/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ -37.00 (-7.40%)
+   Ôû║ Trades Executados (s├│ hoje): 3 (Win Rate: 33.3%)
+      - COMPRAS: 0 (Vit├│rias: 0)
+      - VENDAS : 3 (Vit├│rias: 1)
+      - Maiores Preju├¡zos: -43.00
+      - Maiores Ganhos   : 6.00
+
+ DIA: 16/03/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 116.00 (23.20%)
+   Ôû║ Trades Executados (s├│ hoje): 6 (Win Rate: 100.0%)
+      - COMPRAS: 3 (Vit├│rias: 3)
+      - VENDAS : 3 (Vit├│rias: 3)
+      - Maiores Preju├¡zos: 0.00
+      - Maiores Ganhos   : 49.00
+
+ DIA: 19/03/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ -69.00 (-13.80%)
+   Ôû║ Trades Executados (s├│ hoje): 2 (Win Rate: 0.0%)
+      - COMPRAS: 0 (Vit├│rias: 0)
+      - VENDAS : 2 (Vit├│rias: 0)
+      - Maiores Preju├¡zos: -39.00
+      - Maiores Ganhos   : 0.00
+
+ DIA: 20/03/2026 | Capital Alocado: R$ 500,00
+   Ôû║ PnL L├¡quido (s├│ hoje): R$ 59.00 (11.80%)
+   Ôû║ Trades Executados (s├│ hoje): 5 (Win Rate: 60.0%)
+      - COMPRAS: 0 (Vit├│rias: 0)
+      - VENDAS : 5 (Vit├│rias: 3)
+      - Maiores Preju├¡zos: -35.00
+      - Maiores Ganhos   : 39.00
+
+================================================================================
+ RESUMO GERAL DAS OPERA├ç├òES (Contabilizado Dia-a-Dia, isoladamente)
+================================================================================
+Ôû║ Total PnL L├¡quido Agregado: R$ 1155.00
+Ôû║ Total Trades Realizados  : 98
+Ôû║ Assertividade M├®dia Geral: 80.6 (%)
+================================================================================
+

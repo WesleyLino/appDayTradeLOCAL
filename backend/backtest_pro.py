@@ -820,10 +820,17 @@ class BacktestPro:
                 ]  # [v52.2] Sincronizado com JSON (0.8)
                 vol_spike = row["tick_volume"] > (vol_sma * v_mult)
 
-                # [v22.5.7] Gatilhos Técnicos (Candidatos para a IA)
-                cond_rsi_buy = rsi < self.opt_params.get("rsi_buy_level", 30)
+                # [MELHORIA E - ASSERTIVIDADE] Compressão Lógica na Compra
+                # Abaixa a exigência do RSI para < 35 apenas em Regime 1 (Tendência).
+                # Isso captura pequenos rebotes gerando mais oportunidades de saldo positivo.
+                _current_regime = row.get("regime", 0)
+                if _current_regime == 1:
+                    cond_rsi_buy = rsi < 35.0 
+                else:
+                    cond_rsi_buy = rsi < self.opt_params.get("rsi_buy_level", 30.0)
+
                 cond_bb_buy = row["close"] < lower_bb
-                cond_rsi_sell = rsi > self.opt_params.get("rsi_sell_level", 70)
+                cond_rsi_sell = rsi > self.opt_params.get("rsi_sell_level", 70.0)
                 cond_bb_sell = row["close"] > upper_bb
 
                 current_flux_thresh = self.opt_params.get(
@@ -1147,6 +1154,7 @@ class BacktestPro:
                     ai_dir = ai_decision.get("direction", "NEUTRAL")
                     ai_score = ai_decision.get("score", 50.0)
                     is_momentum_bypass = ai_decision.get("is_momentum_bypass", False)
+                    is_lateral_bypass = ai_decision.get("is_lateral_bypass", False)
 
                     # [v36 PRIME] GATILHOS ASSIMÉTRICOS (RSI DINÂMICO) PROVINIENTES DA IA
                     rsi_buy_level = ai_decision.get(
@@ -1248,18 +1256,18 @@ class BacktestPro:
                     )
 
                     v22_buy = (
-                        (v22_buy_raw or is_momentum_bypass)
+                        (v22_buy_raw or is_momentum_bypass or is_lateral_bypass)
                         and (ai_dir == "BUY")
-                        and (ai_stability >= thr_buy or is_momentum_bypass)
+                        and (ai_stability >= thr_buy or is_momentum_bypass or is_lateral_bypass)
                         and cooldown_ok
-                        and (not bias_veto_buy or is_momentum_bypass)
+                        and (not bias_veto_buy or is_momentum_bypass or is_lateral_bypass)
                     )
                     v22_sell = (
-                        (v22_sell_raw or is_momentum_bypass)
+                        (v22_sell_raw or is_momentum_bypass or is_lateral_bypass)
                         and (ai_dir == "SELL")
-                        and (ai_stability >= thr_sell or is_momentum_bypass)
+                        and (ai_stability >= thr_sell or is_momentum_bypass or is_lateral_bypass)
                         and cooldown_ok
-                        and (not bias_veto_sell or is_momentum_bypass)
+                        and (not bias_veto_sell or is_momentum_bypass or is_lateral_bypass)
                     )
 
                     # [v22.3] Filtro Anti-Lateralidade (Anti-Sideways)
