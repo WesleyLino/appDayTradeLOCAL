@@ -18,42 +18,48 @@ class MicrostructureAnalyzer:
         [HFT ELITE] Interface unificada para análise de microestrutura.
         Agrega OFI Ponderado, CVD, Divergência e Icebergs.
         """
-        # 1. OFI Ponderado (Pressão do Book)
+        # 1. OFI Ponderado (Pressão do Book - Fluxo de Ordens)
+        # O OFI mede a mudança líquida no volume em cada nível.
         ofi = self.calculate_wen_ofi(current_book)
 
-        # 2. CVD do batch atual (Pressão de Agressão)
+        # 2. OBI (Order Book Imbalance - Estado do Book)
+        # O OBI mede a proporção de volume atual entre Compra vs Venda.
+        obi_ratio = self.calculate_pure_obi(current_book)
+
+        # 3. CVD do batch atual (Pressão de Agressão)
         cvd = self.calculate_cvd(ticks_df) if ticks_df is not None else 0.0
         self.cvd_history.append(cvd)
         if len(self.cvd_history) > 50:
             self.cvd_history.pop(0)
 
-        # 3. Preço Médio do Batch para Divergência
+        # 4. Preço Médio do Batch para Divergência
         if ticks_df is not None and not ticks_df.empty:
             avg_price = ticks_df["price"].mean()
             self.price_history.append(avg_price)
             if len(self.price_history) > 50:
                 self.price_history.pop(0)
 
-        # 4. Detecção de Divergência (Absorção)
+        # 5. Detecção de Divergência (Absorção)
         divergence = self.detect_divergence(self.price_history, self.cvd_history)
 
-        # 5. Detecção de Icebergs (OHLCV Aprimorado v50.1)
+        # 6. Detecção de Icebergs (OHLCV Aprimorado v50.1)
         iceberg_signal = self.detect_icebergs_v50(
             ticks_df, current_book, ticks_df is None
         )
 
-        # 6. Aceleração de CVD (Urgência)
+        # 7. Aceleração de CVD (Urgência)
         self.last_cvd_accel = self.calculate_cvd_acceleration()
 
-        # [ANTIVIBE-CODING] - Pesos de Agregação Atualizados v50.1 (70% Assertiveness Target)
-        # OFI (Book) + CVD (Tape) + Divergência (Absorção) + Icebergs (Ocultos) + Aceleração (Urgência)
-        # Shift de peso para Urgência e Absorção Oculta
+        # [ANTIVIBE-CODING] - Agregação Sincronizada v24.5 (Padrão Ouro de Assertividade)
+        # O OFI ponderado é o coração da microestrutura.
+        # O OBI ratio dá o viés de barreira.
         final_signal = (
-            (np.tanh(ofi / 500.0) * 0.35)
-            + (np.tanh(cvd / 200.0) * 0.20)
-            + (divergence * 0.15)
-            + (iceberg_signal * 0.20)
-            + (self.last_cvd_accel * 0.10)
+            (np.tanh(ofi / 500.0) * 0.30)        # Fluxo de Book (Delta)
+            + (obi_ratio * 0.15)                 # Estado de Book (Ratio)
+            + (np.tanh(cvd / 200.0) * 0.15)      # Agressão TAPE
+            + (divergence * 0.15)                # Absorção
+            + (iceberg_signal * 0.15)            # Institucional Oculto
+            + (self.last_cvd_accel * 0.10)       # Vigor/Urgência
         )
 
         return float(np.clip(final_signal, -1.0, 1.0))
@@ -81,59 +87,70 @@ class MicrostructureAnalyzer:
 
     def calculate_wen_ofi(self, current_book: dict, levels: int = 5) -> float:
         """
-        [SOTA] Calcula o Weighted Order Flow Imbalance (OFI) Ponderado.
-        L1=1.0, L2=0.8, L3=0.6, L4=0.4, L5=0.2
+        [ULTRA-FAST v24.5] Weighted Order Flow Imbalance.
+        Cálculo otimizado para evitar overhead de dicionário e corrigindo BUG de atribuição de preço.
         """
         if not current_book or self.prev_book_levels is None:
             self.prev_book_levels = current_book
             return 0.0
 
+        curr_bids = current_book.get("bids", [])
+        prev_bids = self.prev_book_levels.get("bids", [])
+        curr_asks = current_book.get("asks", [])
+        prev_asks = self.prev_book_levels.get("asks", [])
+
         ofi_weighted_sum = 0.0
-        weights = [max(0.2, 1.0 - (i * 0.2)) for i in range(levels)]
-
-        curr_bids = current_book.get("bids", [])[:levels]
-        prev_bids = self.prev_book_levels.get("bids", [])[:levels]
-        curr_asks = current_book.get("asks", [])[:levels]
-        prev_asks = self.prev_book_levels.get("asks", [])[:levels]
-
-        limit = min(
-            levels, len(curr_bids), len(prev_bids), len(curr_asks), len(prev_asks)
-        )
+        # Ponderação Linear L1=1.0 até L5=0.2
+        limit = min(levels, len(curr_bids), len(prev_bids), len(curr_asks), len(prev_asks))
 
         for i in range(limit):
-            w = weights[i]
-            ofi_layer = 0.0
+            w = 1.0 - (i * 0.2)
+            
+            # Lado BID (Compradores Passivos)
+            cb_p, cb_v = curr_bids[i]["price"], curr_bids[i]["volume"]
+            pb_p, pb_v = prev_bids[i]["price"], prev_bids[i]["volume"]
+            
+            if cb_p > pb_p:
+                ofi_weighted_sum += cb_v * w
+            elif cb_p < pb_p:
+                ofi_weighted_sum -= pb_v * w
+            else:
+                ofi_weighted_sum += (cb_v - pb_v) * w
 
-            try:
-                cb_p, cb_v = curr_bids[i].get("price", 0), curr_bids[i].get("volume", 0)
-                pb_p, pb_v = prev_bids[i].get("price", 0), prev_bids[i].get("volume", 0)
-                if cb_p > pb_p:
-                    ofi_layer += cb_v
-                elif cb_p < pb_p:
-                    ofi_layer -= pb_v
-                elif cb_p > 0:
-                    ofi_layer += cb_v - pb_v
-            except:
-                pass
-
-            try:
-                ca_p, ca_v = curr_asks[i].get("price", 0), curr_asks[i].get("volume", 0)
-                pa_p, pa_v = prev_asks[i].get("price", 0), prev_asks[i].get("volume", 0)
-                if ca_p < pa_p:
-                    ofi_layer -= (
-                        ca_p  # Correção lógica: venda descendo é pressão vendedora
-                    )
-                elif ca_p > pa_p:
-                    ofi_layer += pa_v
-                elif ca_p > 0:
-                    ofi_layer -= ca_v - pa_v
-            except:
-                pass
-
-            ofi_weighted_sum += ofi_layer * w
+            # Lado ASK (Vendedores Passivos)
+            ca_p, ca_v = curr_asks[i]["price"], curr_asks[i]["volume"]
+            pa_p, pa_v = prev_asks[i]["price"], prev_asks[i]["volume"]
+            
+            if ca_p < pa_p:
+                ofi_weighted_sum -= ca_v * w
+            elif ca_p > pa_p:
+                ofi_weighted_sum += pa_v * w
+            else:
+                ofi_weighted_sum -= (ca_v - pa_v) * w
 
         self.prev_book_levels = current_book
         return ofi_weighted_sum
+
+    def calculate_pure_obi(self, current_book: dict, levels: int = 5) -> float:
+        """
+        [v24.5] Order Book Imbalance (Ratio).
+        Retorna o ratio Volume_Bid / Volume_Ask.
+        Valores > 1.0 (ex: 1.5) indicam predominância de compra.
+        Valores < 1.0 (ex: 0.8) indicam predominância de venda.
+        Compatível com gatilhos de bypass de ai_core.py (thresh 1.5/1.8).
+        """
+        if not current_book or not current_book.get("bids") or not current_book.get("asks"):
+            return 1.0
+
+        # Ponderação por proximidade ao preço atual
+        sum_bid_vol = sum(b.get("volume", 0) * (1.1 - (i * 0.2)) for i, b in enumerate(current_book["bids"][:levels]))
+        sum_ask_vol = sum(a.get("volume", 0) * (1.1 - (i * 0.2)) for i, a in enumerate(current_book["asks"][:levels]))
+
+        if sum_ask_vol == 0:
+            return 10.0 if sum_bid_vol > 0 else 1.0
+        
+        ratio = sum_bid_vol / sum_ask_vol
+        return float(np.clip(ratio, 0.1, 10.0))
 
     def calculate_cvd(self, ticks_df):
         """Calcula Cumulative Volume Delta do batch."""

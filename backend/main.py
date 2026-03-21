@@ -532,7 +532,7 @@ async def autonomous_bot_loop():
 
         # [FIX #FLIP-2] Cooldown pós-fechamento: evita flip-flop imediato de sinal
         last_close_time = 0  # timestamp do último fechamento de posição
-        POST_CLOSE_COOLDOWN_SEC = 30.0  # 30s entre fechamento e próxima entrada
+        POST_CLOSE_COOLDOWN_SEC = 60.0  # [MELHORIA ABSOLUTA] 60s entre fechamento e próxima entrada para esfriar book
 
         # [FIX #FLIP-4] Lock de Ordem Ativa: bloqueia novas ordens por ORDER_LOCK_SEC
         # após qualquer place_limit_order ser enviada, INDEPENDENTE do positions_get.
@@ -1014,8 +1014,9 @@ async def autonomous_bot_loop():
 
                 # Heartbeat Log (1 min)
                 if time_module.time() - last_heartbeat > 60:
+                    status_prefix = " [DRY-RUN]" if risk.dry_run else ""
                     logging.info(
-                        f"HEARTBEAT: {symbol} | PnL Dia: {total_daily_profit:.2f} | Risco: {'OK' if risk_ok else 'TRAVADO'} | Latência: {latency_ms:.1f}ms"
+                        f"HEARTBEAT{status_prefix}: {symbol} | PnL Dia: {total_daily_profit:.2f} | Risco: {'OK' if risk_ok else 'TRAVADO'} | Latência: {latency_ms:.1f}ms"
                     )
                     last_heartbeat = time_module.time()
 
@@ -1078,9 +1079,13 @@ async def autonomous_bot_loop():
 
                 # 2. Processar Lógica de IA e Risco
                 logging.debug("Iniciando processamento de IA...")
-                # Sentimento agora é atualizado no ciclo lento (linha 249)
-                # OBI via Microstructure Analyzer (v50.1)
-                obi = micro_analyzer.calculate_wen_ofi(book)
+                
+                # [v24.5] Sinais SOTA de Microestrutura
+                # OBI Ratio (1.0 = Neutro, 1.5 = Compradores, 0.7 = Vendedores)
+                obi = micro_analyzer.calculate_pure_obi(book)
+                # OFI Delta (Muda fluxo de ordens)
+                wen_ofi_val = micro_analyzer.calculate_wen_ofi(book)
+                # CVD Tape (Agressão Instantânea)
                 cvd_val = micro_analyzer.calculate_cvd(tns)
 
                 # Inferência SOTA Multi-Ativo (usa multi_data sincronizado)
@@ -1188,7 +1193,7 @@ async def autonomous_bot_loop():
                 ai_direction = decision["direction"]
 
                 # --- ALPHA-X: OFI Ponderado (SOTA) ---
-                wen_ofi_val = micro_analyzer.calculate_wen_ofi(book)
+                # wen_ofi_val já calculado no topo para performance
 
                 if wen_ofi_val > 500 and ai_direction == "BUY":
                     ai_total_score = min(100.0, ai_total_score + 4.0)
@@ -1425,7 +1430,7 @@ async def autonomous_bot_loop():
                 # --- FIM DOS FILTROS HTF E LIQUIDEZ ---
 
                 market_condition = risk.validate_market_condition(
-                    symbol, regime, current_atr, avg_atr
+                    symbol, regime, current_atr, avg_atr, spread=live_spread
                 )
 
                 market_ok = market_condition["allowed"]
@@ -1730,8 +1735,14 @@ async def autonomous_bot_loop():
                         f"⚡ [MOMENTUM] Threshold relaxado: Buy>={_threshold_buy} / Sell<={_threshold_sell}"
                     )
                 else:
-                    _threshold_buy = 80  # [SNIPER MODE] Reduzido de 85 para 80 para maior agressividade
-                    _threshold_sell = 20  # [SNIPER MODE] Aumentado de 15 para 20
+                    # [MELHORIA-ELITE] Threshold Adaptativo por Regime
+                    if regime == 0:  # LATERAL: Exige maior assertividade (+5 pontos)
+                        _threshold_buy = 85
+                        _threshold_sell = 15
+                        logging.debug("🛑 [REGIME LATERAL] Threshold elevado para 85/15.")
+                    else:
+                        _threshold_buy = 80  # [SNIPER MODE] Padrao V22
+                        _threshold_sell = 20
 
                 is_threshold_met = (
                     ai_total_score >= _threshold_buy

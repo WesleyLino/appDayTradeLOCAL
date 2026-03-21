@@ -22,11 +22,11 @@ class RiskManager:
         self.max_deviation = 5
         self.allow_autonomous = True
         self.dry_run = (
-            False  # [REAL-EXECUTION-ACTIVE] - Ativação de ordens reais no MT5
+            True  # [TREINAMENTO-ATIVO] - Todas as ordens são simuladas em memória
         )
         # [ANTIVIBE-CODING] - Limites de Perda Agressivos
         self.forbidden_hours = [
-            # (time(8, 55), time(9, 10)),  # [v23] Liberado para abertura flexível com lote 0.5x
+            (time(8, 55), time(9, 15)),  # [MELHORIA ABSOLUTA] Bloqueio de abertura até 09:15 (Alta Volatilidade/Ruído)
             (time(12, 0), time(13, 0)),  # Almoço/Baixa liquidez
             (
                 time(17, 15),
@@ -41,8 +41,8 @@ class RiskManager:
             5.0  # [SOTA V22.5.7] Trailing ultra-curto para capturar lucro bi-direcional
         )
 
-        # [v52.1] Breakeven Ultra-Rápido - Sincronizado com JSON
-        self.be_trigger = 60.0
+        # [MELHORIA ABSOLUTA] Breakeven Ultra-Rápido - Sincronizado com JSON
+        self.be_trigger = 45.0
         self.be_lock = 0.0
 
         # [v22.3] Filtro Anti-Lateralidade (Anti-Sideways)
@@ -480,7 +480,7 @@ class RiskManager:
         self,
         position_side: str,
         current_obi: float,
-        obi_reversal_threshold: float = 1.2,
+        obi_reversal_threshold: float = 2.5,
     ) -> bool:
         """[MELHORIA-G] Detecção de Reversão de OBI com posição aberta.
 
@@ -781,39 +781,47 @@ class RiskManager:
         now = datetime.now().time()
         return now >= time(17, 50)
 
-    def validate_market_condition(self, symbol, regime, current_atr, avg_atr):
+    def validate_market_condition(self, symbol, regime, current_atr, avg_atr, spread=1.0):
         """
         Valida se as condições de mercado são seguras para operar.
         Regras (Compliance com project_rules.json):
         1. Rejeita se Regime = 2 (RUÍDO/ALTA VOLATILIDADE).
-        2. Rejeita se Volatilidade (ATR) > 3x ATR Médio (Circuit Breaker).
-        3. Panic Threshold ajustado por ativo.
+        2. Rejeita se Volatilidade (ATR) > 5x ATR Médio (Circuit Breaker).
+        3. Veto de Inércia (Mercado Parado).
+        4. Veto de Spread Excessivo (Proteção contra Slippage).
         """
         # Regra 1: Regime de Mercado (0=Indefinido, 1=Tendência, 2=Ruído)
         # [RELAXADO] Permitir operação em Ruído (Pois a IA já penaliza o score internamente)
         if regime == 2 and not getattr(self, "force_noise_veto", False):
             logging.debug("⚠️ Regime de Ruído Detectado, permitindo operação cautelosa.")
-            # Retornamos True para allowed, mas a IA terá score menor
-            # A lógica continua para verificar outras condições
-        elif regime == 2:  # Se force_noise_veto for True, ainda bloqueia
+        elif regime == 2:
             return {"allowed": False, "reason": "Regime de Mercado: RUÍDO/VOLÁTIL (2)"}
 
         # Regra 2: Circuit Breaker Dinâmico (Relativo)
-        if avg_atr > 0 and current_atr > (5 * avg_atr):  # [RELAXADO] De 3x para 5x
+        if avg_atr > 0 and current_atr > (5 * avg_atr):
             return {
                 "allowed": False,
                 "reason": f"Circuit Breaker: ATR {current_atr:.1f} > 5x Média {avg_atr:.1f}",
             }
 
-        # Regra 4: Veto de Inércia (Inércia Institucional V22.5.1)
-        # Ignora mercado "parado" ou sem volume institucional
+        # Regra 3: Veto de Inércia (Inércia Institucional V22.5.1)
         min_atr = getattr(self, "min_atr_threshold", 50.0)
         vol_min = max(20.0, min_atr) if ("WIN" in symbol or "IND" in symbol) else 1.5
 
         if current_atr < vol_min:
             return {
                 "allowed": False,
-                "reason": f"Inércia Institucional: ATR {current_atr:.1f} < Mínimo {vol_min:.1f} (Mercado muito parado)",
+                "reason": f"Inércia Institucional: ATR {current_atr:.1f} < Mínimo {vol_min:.1f}",
+            }
+
+        # Regra 4: [MELHORIA-ELITE] Veto de Spread Excessivo
+        # WIN: Spread > 30 pts (6 ticks de 5) é sinal de baixa liquidez/pânico no book
+        # WDO: Spread > 2.5 pts normalizado
+        max_spread = 6.0 if ("WIN" in symbol or "IND" in symbol) else 2.5
+        if spread > max_spread:
+            return {
+                "allowed": False,
+                "reason": f"Spread Excessivo: {spread:.1f} > Max {max_spread:.1f} (Risco Slippage)",
             }
 
         return {"allowed": True, "reason": "Condição de Mercado OK"}

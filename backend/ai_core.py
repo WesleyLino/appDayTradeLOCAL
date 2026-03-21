@@ -508,13 +508,24 @@ class AICore:
             if float(dist_vwap) > float(limit_eff):
                 vwap_veto = True
 
+        # [MELHORIA DA BLINDAGEM INSTITUCIONAL H1]
+        if self.use_h1_trend_bias and self.h1_trend != 0 and direction != "NEUTRAL":
+            if direction == "SELL" and self.h1_trend == 1:
+                logging.warning(f"⛔ [H1 BLINDAGEM] VENDA abortada. Tendência Macro (H1) é de ALTA.")
+                direction = "NEUTRAL"
+                exec_strategy = "PASSIVA"
+            elif direction == "BUY" and self.h1_trend == -1:
+                logging.warning(f"⛔ [H1 BLINDAGEM] COMPRA abortada. Tendência Macro (H1) é de BAIXA.")
+                direction = "NEUTRAL"
+                exec_strategy = "PASSIVA"
+
         # 8. RSI Relaxado
         if regime == 1 or is_momentum_bypass:
             rsi_buy_trigger = 38.0
             rsi_sell_trigger = 62.0
         else:
             rsi_buy_trigger = 32.0
-            rsi_sell_trigger = 68.0
+            rsi_sell_trigger = 72.0  # [MELHORIA-RSI] Maior rigor para vendas em consolidação
 
         # Vetos Finais (Com Bypass de Sanidade v24.5 + MELHORIA-1)
         veto_reason = None

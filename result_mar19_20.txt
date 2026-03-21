@@ -1,0 +1,38 @@
+
+============================================================
+DIAGNÓSTICO E POTENCIAL DE GANHO - SOTA PRO - 19/03 A 20/03
+============================================================
+Capital Inicial:  R$ 500.00
+Saldo Final:      R$ 586.00
+Lucro/Prejuízo:   R$ 86.00
+Total de Trades:  7
+Assertividade Geral: 71.43%
+
+[ ANÁLISE POR DIREÇÃO (POTENCIAL COMPRADA vs VENDIDA) ]
+🔵 COMPRAS (BUY):  1 trades | PnL: R$ 35.00 | Assertividade: 100.00%
+🔴 VENDAS (SELL):  6 trades | PnL: R$ 51.00 | Assertividade: 66.67%
+
+[ ANÁLISE DE PREJUÍZOS ]
+Trades com Perda: 2
+Prejuízo Total Bruto: R$ -69.00
+Pior Drawdown em um trade: R$ -39.00
+
+[ HISTÓRICO DE TRADES ]
+2026-03-19 10:01:00 -> sell | PnL: R$ -39.00 | Reason: SL | Lotes: 1.0
+2026-03-19 11:27:00 -> sell | PnL: R$ -30.00 | Reason: SL | Lotes: 1.0
+2026-03-20 10:06:00 -> sell | PnL: R$ 30.00 | Reason: SL | Lotes: 1.0
+2026-03-20 10:28:00 -> sell | PnL: R$ 25.00 | Reason: SL | Lotes: 1.0
+2026-03-20 10:57:00 -> sell | PnL: R$ 26.00 | Reason: SL | Lotes: 1.0
+2026-03-20 11:08:00 -> sell | PnL: R$ 39.00 | Reason: ALPHA_DECAY | Lotes: 1.0
+2026-03-20 11:22:00 -> buy | PnL: R$ 35.00 | Reason: SL | Lotes: 1.0
+
+[ ANÁLISE DE PERDAS DE OPORTUNIDADES (SHADOW SIGNALS) ]
+Sinais V22 Potenciais Detectados: 864
+Oportunidades Bloqueadas (Vetos): 0
+- Negados pela IA (Baixa Convicção): 0
+- Negados pelo Fluxo OBI:            0
+
+[ PONTOS DE MELHORIA E CALIBRAGEM PERFEITA ]
+✅ O sistema já está lucrativo. MANTENHA as configurações golden sem alterações drásticas.
+
+============================================================
