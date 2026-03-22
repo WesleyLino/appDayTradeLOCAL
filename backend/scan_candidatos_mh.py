@@ -109,5 +109,5 @@ output = {
 }
 with open("backend/candidatos_melhoria_h.json", "w", encoding="utf-8") as f:
     json.dump(output, f, indent=2, ensure_ascii=False)
-print(f"\n  ✅ Exportado: backend/candidatos_melhoria_h.json")
+print("\n  ✅ Exportado: backend/candidatos_melhoria_h.json")
 print(f"  {len(candidatos_datas)} candidatos | {len(controle_datas)} controles")

@@ -107,7 +107,7 @@ def _print_missed(missed: dict, label: str):
     logger.info(f"   🔵 Oportunidades Perdidas — {label}")
     logger.info(f"   Total Perdido (acumulado): {missed['total_missed_global']}")
     if missed["vetos_dia"]:
-        logger.info(f"   Motivos (granular do dia):")
+        logger.info("   Motivos (granular do dia):")
         for reason, count in sorted(missed["vetos_dia"].items(), key=lambda x: -x[1]):
             logger.info(f"      - {reason}: {count}")
     else:

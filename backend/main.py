@@ -1534,7 +1534,17 @@ async def autonomous_bot_loop():
                                     bridge.mt5.symbol_info_tick, pos.symbol
                                 )
                                 pos_now_ts = current_tick_pos.time if current_tick_pos else int(time_module.time() - 10800)
-                                pos_age_min = (pos_now_ts - pos.time) / 60
+                                
+                                elapsed_sec = pos_now_ts - pos.time
+
+                                # 🛡️ [FIX CRÍTICO] GRACE PERIOD (Escudo Anti-Whipsaw 50ms)
+                                # Bloqueia qualquer fechamento por Velocity Limit, Time Barrier ou Trailing Stop
+                                # nos primeiros 3 segundos. Isso impede que o spread inicial negativo
+                                # seja interpretado como exaustão de lucro/momento.
+                                if elapsed_sec < 3.0:
+                                    continue
+
+                                pos_age_min = elapsed_sec / 60
 
                                 if pos_age_min > 15.0:
                                     logging.warning(
@@ -1553,12 +1563,19 @@ async def autonomous_bot_loop():
                                     last_close_time = pos_now_ts  # [FIX #FLIP-2] Cooldown
                                     _order_lock_until = pos_now_ts + ORDER_LOCK_SEC  # [FIX #FLIP-4] Lock
                                     _global_order_lock_until = pos_now_ts + GLOBAL_ORDER_LOCK_SEC  # [FIX #DUAL-BOT-LOCK]
+                                    
+                                    # O lucro neste ponto precisa ser calculado se quisermos o reset
+                                    current_price = last_price
+                                    if pos.type == bridge.mt5.POSITION_TYPE_BUY:
+                                        profit_pts = current_price - pos.price_open
+                                    else:
+                                        profit_pts = pos.price_open - current_price
+
                                     # [FIX #CONSEC-LOSS-BREAKER] Reset se saída foi lucrativa
                                     if profit_pts > 0:
                                         _consecutive_sl_hits = 0
                                         logging.info("✅ [CONSEC-RESET] Operação lucrativa. Contador de SL zerado.")
                                     logging.info(f"🔒 [ALPHA-X] Lock local+global ({ORDER_LOCK_SEC:.0f}s/{GLOBAL_ORDER_LOCK_SEC:.0f}s) ativado após fechamento por tempo.")
-
 
                                     continue
 
@@ -1579,16 +1596,12 @@ async def autonomous_bot_loop():
                                 current_price = last_price
 
                                 # Cálculo de lucro atual para o Tick
-
                                 if pos.type == bridge.mt5.POSITION_TYPE_BUY:
                                     profit_pts = current_price - pos.price_open
-
                                 else:
                                     profit_pts = pos.price_open - current_price
 
                                 # --- FASE 2: VELOCITY LIMIT ---
-
-                                elapsed_sec = pos_now_ts - pos.time
 
                                 is_velocity_limit, vel_reason = (
                                     risk.check_velocity_limit(profit_pts, elapsed_sec)
@@ -1596,7 +1609,7 @@ async def autonomous_bot_loop():
 
                                 if is_velocity_limit:
                                     logging.warning(
-                                        f"⚡ SAÍDA POR LIMITE DE VELOCIDADE: Posição {pos.ticket} fechada precocemente devido a exaustão."
+                                        f"⚡ SAÍDA POR LIMITE DE VELOCIDADE: Posição {pos.ticket} fechada precocemente devido a exaustão. Motivo: {vel_reason}"
                                     )
 
                                     # [FIX #FLIP-5-SYNC] Mesma correção do ALPHA-X: remove ticket
@@ -2135,8 +2148,8 @@ async def autonomous_bot_loop():
                                     # [FIX #ALGO-OFF] Detectar AutoTrading desabilitado (10027)
                                     if result and getattr(result, "retcode", 0) == 10027:
                                         logging.critical(
-                                            f"🚨 [ALGOTRADING-OFF] AutoTrading desabilitado no MT5! "
-                                            f"Pausando 30s. Reative AlgoTrading no terminal MT5."
+                                            "🚨 [ALGOTRADING-OFF] AutoTrading desabilitado no MT5! "
+                                            "Pausando 30s. Reative AlgoTrading no terminal MT5."
                                         )
                                         add_operational_log(
                                             "CRÍTICO: AutoTrading desabilitado (10027). Pausando 30s. Reative no MT5.",
@@ -2509,8 +2522,8 @@ async def autonomous_bot_loop():
                                         # [FIX #ALGO-OFF] Detectar AutoTrading desabilitado (10027)
                                         if result and getattr(result, "retcode", 0) == 10027:
                                             logging.critical(
-                                                f"🚨 [ALGOTRADING-OFF] AutoTrading desabilitado no MT5! "
-                                                f"Pausando 30s. Reative AlgoTrading no terminal MT5."
+                                                "🚨 [ALGOTRADING-OFF] AutoTrading desabilitado no MT5! "
+                                                "Pausando 30s. Reative AlgoTrading no terminal MT5."
                                             )
                                             add_operational_log(
                                                 "CRÍTICO: AutoTrading desabilitado (10027). Pausando 30s. Reative no MT5.",

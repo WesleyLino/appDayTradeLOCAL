@@ -72,7 +72,7 @@ async def run_audit_27feb():
         with open(params_path, "r") as f:
             config = json.load(f)
         sota_params = config.get("strategy_params", config)
-        logger.info(f"🎯 Parâmetros SOTA v24.5 carregados.")
+        logger.info("🎯 Parâmetros SOTA v24.5 carregados.")
     
     # Garantir travas específicas para R$ 500
     bt.opt_params.update(sota_params)
@@ -95,7 +95,7 @@ async def run_audit_27feb():
     win_rate = (len([t for t in trades_day if t.get("pnl_fin", 0) > 0]) / len(trades_day) * 100) if trades_day else 0
 
     logger.info("\n" + "═" * 60)
-    logger.info(f"📋 RELATÓRIO DE AUDITORIA - 27/02/2026")
+    logger.info("📋 RELATÓRIO DE AUDITORIA - 27/02/2026")
     logger.info(f"💰 Resultado Financeiro: R$ {total_pnl:.2f}")
     logger.info(f"📊 Atividade: {len(trades_day)} trades | Assertividade: {win_rate:.1f}%")
     logger.info(f"📈 Compras: {len(buys)} | 📉 Vendas: {len(sells)}")

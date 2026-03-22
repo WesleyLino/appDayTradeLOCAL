@@ -100,7 +100,7 @@ async def run_analysis():
     shadow = tester.shadow_signals
 
     print("\n" + "="*60)
-    print(f"DIAGNÓSTICO E POTENCIAL DE GANHO - SOTA PRO - 19/03 A 20/03")
+    print("DIAGNÓSTICO E POTENCIAL DE GANHO - SOTA PRO - 19/03 A 20/03")
     print("="*60)
     print(f"Capital Inicial:  R$ {capital:.2f}")
     print(f"Saldo Final:      R$ {tester.balance:.2f}")
@@ -128,7 +128,7 @@ async def run_analysis():
         loss_trades = [t for t in trades if t["pnl_fin"] < 0]
         max_loss = min([t["pnl_fin"] for t in trades]) if loss_trades else 0
         total_loss = sum([t["pnl_fin"] for t in loss_trades])
-        print(f"\n[ ANÁLISE DE PREJUÍZOS ]")
+        print("\n[ ANÁLISE DE PREJUÍZOS ]")
         print(f"Trades com Perda: {len(loss_trades)}")
         print(f"Prejuízo Total Bruto: R$ {total_loss:.2f}")
         print(f"Pior Drawdown em um trade: R$ {max_loss:.2f}")

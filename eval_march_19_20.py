@@ -80,12 +80,12 @@ async def run_analysis():
             loss_trades = [t for t in trades if t["pnl_fin"] < 0]
             max_loss = min([t["pnl_fin"] for t in trades]) if loss_trades else 0
             total_loss = sum([t["pnl_fin"] for t in loss_trades])
-            f.write(f"\n[ ANÁLISE DE PREJUÍZOS ]\n")
+            f.write("\n[ ANÁLISE DE PREJUÍZOS ]\n")
             f.write(f"Trades com Perda: {len(loss_trades)}\n")
             f.write(f"Prejuízo Total Bruto: R$ {total_loss:.2f}\n")
             f.write(f"Pior Drawdown em um trade: R$ {max_loss:.2f}\n")
 
-        f.write(f"\n[ HISTÓRICO DE TRADES ]\n")
+        f.write("\n[ HISTÓRICO DE TRADES ]\n")
         for t in trades:
             f.write(f"{t['entry_time']} -> {t['side']} | PnL: R$ {t['pnl_fin']:.2f} | Reason: {t['reason']} | Lotes: {t['lots']}\n")
 

@@ -1,4 +1,5 @@
-import re, os
+import re
+import os
 
 main = open("backend/main.py", encoding="utf-8").read()
 routes = re.findall(r'@app\.(get|post|put|delete|websocket)\("([^"]+)"', main)

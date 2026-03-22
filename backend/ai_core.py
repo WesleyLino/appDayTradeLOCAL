@@ -521,11 +521,11 @@ class AICore:
         # [MELHORIA DA BLINDAGEM INSTITUCIONAL H1]
         if self.use_h1_trend_bias and self.h1_trend != 0 and direction != "NEUTRAL":
             if direction == "SELL" and self.h1_trend == 1:
-                logging.warning(f"⛔ [H1 BLINDAGEM] VENDA abortada. Tendência Macro (H1) é de ALTA.")
+                logging.warning("⛔ [H1 BLINDAGEM] VENDA abortada. Tendência Macro (H1) é de ALTA.")
                 direction = "NEUTRAL"
                 exec_strategy = "PASSIVA"
             elif direction == "BUY" and self.h1_trend == -1:
-                logging.warning(f"⛔ [H1 BLINDAGEM] COMPRA abortada. Tendência Macro (H1) é de BAIXA.")
+                logging.warning("⛔ [H1 BLINDAGEM] COMPRA abortada. Tendência Macro (H1) é de BAIXA.")
                 direction = "NEUTRAL"
                 exec_strategy = "PASSIVA"
 

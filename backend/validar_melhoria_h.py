@@ -197,7 +197,7 @@ async def main():
     }
     with open("backend/validacao_melhoria_h.json", "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
-    print(f"\n  ✅ Exportado: backend/validacao_melhoria_h.json")
+    print("\n  ✅ Exportado: backend/validacao_melhoria_h.json")
 
 
 if __name__ == "__main__":
