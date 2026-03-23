@@ -1960,6 +1960,11 @@ async def autonomous_bot_loop():
 
                                 params["comment"] = "SNIPER AUTOMÁTICO"
 
+                                # 🛡️ [FIX CRÍTICO] PRE-LOCK: Trava o sistema local e globalmente ANTES 
+                                # de ceder o processamento para a rede, bloqueando o SniperBotWIN.
+                                _order_lock_until = time_module.time() + ORDER_LOCK_SEC
+                                _global_order_lock_until = time_module.time() + GLOBAL_ORDER_LOCK_SEC
+
                                 if risk.dry_run:
                                     side_pt = "COMPRA" if side == "buy" else "VENDA"
                                     logging.warning(
@@ -2270,6 +2275,10 @@ async def autonomous_bot_loop():
                                     params["symbol"] = symbol
 
                                     params["comment"] = "AUTO_HFT_LIMIT"
+
+                                    # 🛡️ [FIX CRÍTICO] PRE-LOCK: Trava o sistema local e globalmente ANTES da chamada de rede.
+                                    _order_lock_until = time_module.time() + ORDER_LOCK_SEC
+                                    _global_order_lock_until = time_module.time() + GLOBAL_ORDER_LOCK_SEC
 
                                     if risk.dry_run:
                                         side_pt = "COMPRA" if side == "buy" else "VENDA"

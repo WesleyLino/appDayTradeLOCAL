@@ -461,10 +461,12 @@ class RiskManager:
 
     def check_velocity_limit(self, current_profit_points, elapsed_seconds):
         """
-        [FASE 2] Parede de Exaustão.
-        Se a operação entrou, negativou rapidamente e ficou amarrada no negativo por muito tempo,
-        aborta a operação precocemente antes do STOP CHEIO.
+        [FASE 2] Parede de Exaustão com Grace Period.
         """
+        # 🛡️ [FIX CRÍTICO] Ignora o spread inicial. Só avalia a velocidade após 3s.
+        if elapsed_seconds < 3.0:
+            return False, "GRACE_PERIOD"
+
         if (
             elapsed_seconds > self.velocity_time_limit_sec
             and current_profit_points <= self.velocity_drawdown_limit

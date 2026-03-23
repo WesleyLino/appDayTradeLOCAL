@@ -373,20 +373,16 @@ class SniperBotWIN:
         for pos in positions:
             if pos.sl == 0:
                 continue
-            # [FIX #TIMEZONE-BUG] O timestamp 'pos.time' do MT5 retorna na realidade o "Broker Time" (UTC-3 na B3).
-            # time.time() retorna Unix epoch (UTC). Compará-los gera diferença de 10800s.
-            # O jeito correto e seguro é usar o tick atual daquele mesmo símbolo.
+            
+            # [FIX #TIMEZONE-BUG] 
             current_tick = self.bridge.mt5.symbol_info_tick(pos.symbol)
             current_mt5_time = current_tick.time if current_tick else int(time.time() - 10800)
             elapsed = current_mt5_time - pos.time
 
-            # [FIX #NEW-POS-GUARD] Aguarda 30s antes de gerenciar posição recém-aberta.
-            # Previne fechamentos prematuros de posições abertas pelo main.py que o Sniper
-            # detecta no ciclo seguinte (elapsed ≈ 0-3s).
-            if elapsed < self.MIN_ELAPSED_BEFORE_TRAILING:
-                logger.debug(
-                    f"[NEW-POS-GUARD] Ticket #{pos.ticket} ignorado — posição nova ({elapsed:.1f}s < {self.MIN_ELAPSED_BEFORE_TRAILING:.0f}s mínimo)."
-                )
+            # 🛡️ [FIX CRÍTICO GERAL] Escudo Mestre Anti-Whipsaw (3 segundos)
+            # NENHUMA lógica de saída pode tocar na ordem antes de 3 segundos
+            # para não confundir o spread inicial com stop/exaustão.
+            if elapsed < 3.0:
                 continue
 
             current_profit = (
@@ -395,14 +391,17 @@ class SniperBotWIN:
                 else (pos.price_open - pos.price_current)
             )
 
+            # [FIX #NEW-POS-GUARD] Impede apenas o trailing stop nos primeiros 30s.
+            # O código continua para avaliar saídas parciais ou breakeven se lucrar rápido.
+            is_trailing_allowed = elapsed >= self.MIN_ELAPSED_BEFORE_TRAILING
+
             if self.risk.check_time_stop(
                 elapsed, current_profit, current_atr=current_atr
             ):
                 if not self.risk.dry_run:
                     self.bridge.close_position(pos.ticket)
-                    self._last_close_time = time.time()  # [FIX #TIMEZONE-BUG]
+                    self._last_close_time = time.time()  
                     self._last_closed_ticket = pos.ticket
-                    # [FIX #DUAL-BOT-LOCK] Ativar lock global após fechamento para bloquear main.py
                     self._order_lock_until = time.time() + self.SNIPER_ORDER_LOCK_SEC
                     try:
                         import backend.main as _main_module
@@ -423,11 +422,10 @@ class SniperBotWIN:
             )
             if should_partial and not self.risk.dry_run:
                 self.bridge.close_partial_position(pos.ticket, p_vol)
-                self._last_close_time = time.time()  # [FIX #TIMEZONE-BUG]
+                self._last_close_time = time.time()  
                 logger.info(f"🎯 [SNIPER PARCIAL] Ticket #{pos.ticket} parcialmente fechado ({p_vol} lotes).")
                 continue
 
-            # [SOTA V22 GOLDEN] - Breakeven via RiskManager
             should_be, new_sl = self.risk.check_breakeven(
                 current_profit,
                 pos.price_open,
@@ -443,7 +441,10 @@ class SniperBotWIN:
                     if not self.risk.dry_run:
                         self.bridge.update_sltp(pos.ticket, new_sl, pos.tp)
 
-            # [v24] Trailing Assimétrico (Necessita do parâmetro side)
+            # [FIX NEW-POS-GUARD] Só avança para Trailing Dinâmico se tiver passado 30s
+            if not is_trailing_allowed:
+                continue
+
             pos_side = (
                 "buy" if pos.type == self.bridge.mt5.POSITION_TYPE_BUY else "sell"
             )
