@@ -102,6 +102,12 @@ class BacktestPro:
             "confidence_threshold": kwargs.get(
                 "confidence_threshold", locked_params.get("confidence_threshold", 0.60)
             ),
+            "confidence_buy_threshold": kwargs.get(
+                "confidence_buy_threshold", locked_params.get("confidence_buy_threshold")
+            ),
+            "confidence_sell_threshold": kwargs.get(
+                "confidence_sell_threshold", locked_params.get("confidence_sell_threshold")
+            ),
             "aggressive_mode": kwargs.get("aggressive_mode", True),
             "use_trailing_stop": kwargs.get("use_trailing_stop", True),
             "dynamic_lot": kwargs.get(
@@ -128,6 +134,9 @@ class BacktestPro:
             ),
             "be_trigger": kwargs.get(
                 "be_trigger", locked_params.get("be_trigger", 60.0)
+            ),
+            "be_sell_trigger": kwargs.get(
+                "be_sell_trigger", locked_params.get("be_sell_trigger", 25.0)
             ),
             "be_lock": kwargs.get("be_lock", locked_params.get("be_lock", 5.0)),
             "partial_profit_points": kwargs.get(
@@ -190,6 +199,7 @@ class BacktestPro:
         # Garante que os valores do JSON (golden params) sejam usados em execução
         self.risk.daily_trade_limit = self.opt_params["daily_trade_limit"]
         self.risk.be_trigger = self.opt_params["be_trigger"]
+        self.risk.be_sell_trigger = self.opt_params.get("be_sell_trigger", 25.0)
         self.risk.be_lock = self.opt_params["be_lock"]
         self.risk.partial_profit_points = self.opt_params["partial_profit_points"]
         self.risk.vwap_dist_threshold = self.opt_params.get(
@@ -419,7 +429,7 @@ class BacktestPro:
             )
 
             # 2.1 Lógica de Breakeven [v52.0]
-            be_trigger = self.opt_params.get("be_trigger", self.risk.be_trigger)
+            be_trigger = self.opt_params.get("be_sell_trigger", self.opt_params.get("be_trigger", self.risk.be_trigger))
             be_lock = self.opt_params.get("be_lock", self.risk.be_lock)
             profit_pts_be = entry - row["low"]
 
@@ -1555,16 +1565,23 @@ class BacktestPro:
                     potential_side, current_ema90, current_price
                 )
 
-                effective_conf_threshold = (
-                    self.opt_params["confidence_threshold"] * rigor_mult
+                # [v24.6] Sincronia de Thresholds (Global -> Específico)
+                base_thresh = self.opt_params["confidence_threshold"]
+                spec_thresh = (
+                    self.opt_params.get("confidence_buy_threshold")
+                    if v22_buy
+                    else self.opt_params.get("confidence_sell_threshold")
                 )
+                effective_thresh = spec_thresh if spec_thresh is not None else base_thresh
+
+                effective_conf_threshold = effective_thresh * rigor_mult
                 ai_filter_ok = (
                     ai_stability >= effective_conf_threshold
                 ) or is_momentum_bypass
 
                 if (
                     not ai_filter_ok
-                    and ai_stability >= self.opt_params["confidence_threshold"]
+                    and ai_stability >= effective_thresh
                 ):
                     self._shadow_veto("RIGOR_DIRECIONAL", row.name)
 

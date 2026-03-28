@@ -57,6 +57,7 @@ class SniperBotWIN:
         self.trade_count = 0
         self.last_date = None
         self.running = False
+        self.logger = logger
         self.last_total_trades = 0  # Para detectar fechamento de trades
 
         # Parâmetros Sniper (Carregados dinamicamente de v22_locked_params.json)
@@ -275,6 +276,13 @@ class SniperBotWIN:
         if self.risk.dry_run:
             self.trade_count += 1
             self._save_state()
+            # [REGISTRO] Salva a operação de simulação no histórico do banco de dados
+            try:
+                self.persistence.save_trade(self.symbol, side, limit_price, lots, status="SIMULAÇÃO_SNIPER")
+                self.logger.info(f"🧪 [SIMULAÇÃO] Operação registrada no histórico: {side} {lots}l @ {limit_price}")
+            except Exception as e:
+                self.logger.error(f"Erro ao salvar trade de simulação: {e}")
+            
             self._log_to_dashboard(
                 f"🧪 [SIMULAÇÃO] Sniper {side} @ {limit_price} ({lots} l)", "info"
             )
@@ -302,6 +310,12 @@ class SniperBotWIN:
             if (ai_decision and ai_decision.get("is_momentum_bypass"))
             else "SNIPER_SOTA",
         )
+        buy_dist = self.ai.confidence_buy_threshold - 50.0
+        buy_threshold = min(95.0, 50.0 + (buy_dist * 1.5)) if getattr(self.ai, "h1_trend", 0) < 0 else self.ai.confidence_buy_threshold
+        
+        sell_dist = 50.0 - self.ai.confidence_sell_threshold
+        sell_threshold = max(5.0, 50.0 - (sell_dist * 1.5)) if getattr(self.ai, "h1_trend", 0) > 0 else self.ai.confidence_sell_threshold
+
         result = self.bridge.place_smart_order(
             self.symbol,
             params["type"],
@@ -311,8 +325,8 @@ class SniperBotWIN:
             tp=params["tp"],
             score=ai_decision.get("score", 0.0),
             uncertainty=ai_decision.get("uncertainty", 0.0),
-            buy_threshold=self.ai.confidence_buy_threshold,
-            sell_threshold=self.ai.confidence_sell_threshold,
+            buy_threshold=buy_threshold,
+            sell_threshold=sell_threshold,
             comment=params.get("comment", "SNIPER_SOTA_EXPERT"),
         )
 
@@ -479,9 +493,15 @@ class SniperBotWIN:
         self.risk.load_optimized_params(self.symbol, "backend/v24_locked_params.json")
         self._load_params_from_risk(self.bridge._normalize_symbol(self.symbol))
 
+        self.last_heartbeat = time.time()
         self.running = True
         while self.running:
             try:
+                # [HEARTBEAT] Logar status do Sniper a cada 60 segundos
+                now_ts = time.time()
+                if now_ts - self.last_heartbeat > 60:
+                    self.logger.info(f"🧬 [HEARTBEAT-SNIPER] Operando: {self.symbol} | Trades Hoje: {self.trade_count}")
+                    self.last_heartbeat = now_ts
                 await self.manage_trailing_stop()
                 await self._check_trade_results()
                 self.bridge.cancel_stale_orders(symbol=self.symbol, timeout_seconds=300)

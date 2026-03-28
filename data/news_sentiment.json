@@ -1,60 +1,60 @@
 {
-  "score": -0.65,
+  "score": -0.2,
   "reliability": "high",
   "risk_classification": "HIGH",
-  "fact_check": "Tens\u00e3o geopol\u00edtica no Oriente M\u00e9dio impulsiona pre\u00e7os do petr\u00f3leo e pressiona futuros de a\u00e7\u00f5es globais. Dados macroecon\u00f4micos mostram desacelera\u00e7\u00e3o nas vendas do varejo alimentar da Europa Ocidental. No cen\u00e1rio corporativo, h\u00e1 negocia\u00e7\u00e3o de venda de neg\u00f3cio da Unilever e queda de receita da Randoncorp, com lan\u00e7amentos e movimentos de a\u00e7\u00f5es espec\u00edficos em outros setores.",
+  "fact_check": "Bolsas de NY em queda, com Nasdaq em corre\u00e7\u00e3o por guerra prolongada, indicando avers\u00e3o global ao risco. A\u00e7\u00f5es da Meta caem 8% ap\u00f3s derrotas judiciais nos EUA. No Brasil, JBS e Americanas registram fortes altas por balan\u00e7os s\u00f3lidos e recupera\u00e7\u00e3o judicial, respectivamente. BNDES aprova financiamento para Valid.",
   "news": [
     {
-      "headline": "UBS alerta para riscos energ\u00e9ticos",
-      "relevance": 0.3,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Eris Lifesciences da \u00cdndia lan\u00e7a semaglutida gen\u00e9rica",
-      "relevance": 0.5,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Conflito no Oriente M\u00e9dio impulsiona pre\u00e7os de energia",
-      "relevance": 0.8,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "CEO da SAP: defesa \u00e9 segmento de crescimento mais r\u00e1pido da empresa",
+      "headline": "BNDES aprova R$300 mi para IA da Valid",
       "relevance": 0.4,
       "impact": "BULLISH"
     },
     {
-      "headline": "Petr\u00f3leo vol\u00e1til por ataques \u00e0 infraestrutura energ\u00e9tica do Ir\u00e3",
-      "relevance": 0.9,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Unilever negocia venda de neg\u00f3cio de alimentos para McCormick",
-      "relevance": 0.6,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Vendas do varejo alimentar da Europa Ocidental desaceleram para 5,4%",
-      "relevance": 0.8,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Futuros das a\u00e7\u00f5es dos EUA sob press\u00e3o com petr\u00f3leo em alta por conflito no Ir\u00e3",
-      "relevance": 0.9,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "A\u00e7\u00f5es da Dell sobem, Super Micro despenca",
-      "relevance": 0.5,
+      "headline": "Apple bonifica designers e contrata startups de IA",
+      "relevance": 0.2,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Receita da Randoncorp cai 9,1% em fevereiro",
+      "headline": "Northrop Grumman ganha contrato de US$127 mi da Marinha",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "A\u00e7\u00f5es da Bloom Energy sobem com novo CFO",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "A\u00e7\u00f5es da Meta caem 8% ap\u00f3s derrotas judiciais nos EUA",
       "relevance": 0.7,
       "impact": "BEARISH"
+    },
+    {
+      "headline": "Bolsas de NY caem, Nasdaq em corre\u00e7\u00e3o por guerra prolongada",
+      "relevance": 1.0,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "JBS (JBSS32) salta 5,65% com balan\u00e7o s\u00f3lido",
+      "relevance": 0.8,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Boeing ganha contrato de US$326 mi do Ex\u00e9rcito dos EUA",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "A\u00e7\u00f5es da R\u00fassia caem, MOEX recua 0,66%",
+      "relevance": 0.3,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "AMER3 salta 12% ap\u00f3s pedir fim da RJ e vender ativos",
+      "relevance": 0.7,
+      "impact": "BULLISH"
     }
   ],
-  "timestamp": 1774010850.0398083,
+  "timestamp": 1774570594.656371,
   "cached": true
 }

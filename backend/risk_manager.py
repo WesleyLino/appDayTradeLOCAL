@@ -637,18 +637,20 @@ class RiskManager:
 
     def check_breakeven(self, current_profit_points, entry_price, side="buy"):
         """
-        [v22 GOLDEN + MELHORIA-6] Verifica se a operação atingiu o gatilho de Breakeven.
-        BUY:  Gatilho padrão (be_trigger = 60 pts). Mercado tem viés de alta — deixa respirar.
-        SELL: Gatilho antecipado (40 pts). Operação contra-fluxo no mercado BR — protege capital cedo.
+        [v22 GOLDEN + MELHORIA CIRÚRGICA 1] Verifica se a operação atingiu o gatilho de Breakeven.
+        Gatilho ultrarrápido (15 pts de lucro) para barrar falsos recuos (drawdowns de retorno) ativando imediatamente
+        a ordem em +5 pts para garantir pagamento de custos da B3.
         """
-        # [MELHORIA-6] Breakeven assimétrico: SELL ativa 20 pts antes do BUY
-        effective_trigger = self.be_trigger if side.lower() == "buy" else min(self.be_trigger, 40.0)
+        # [MELHORIA CIRÚRGICA 1] Gatilho agressivo para proteção de capital e lucro inicial
+        effective_trigger = 15.0
 
         if current_profit_points >= effective_trigger:
             if side.lower() == "buy":
-                new_sl = entry_price + self.be_lock
+                # Travar ganhando +5 pontos acima da entrada
+                new_sl = entry_price + 5.0
             else:
-                new_sl = entry_price - self.be_lock
+                # Travar ganhando +5 pontos abaixo da entrada
+                new_sl = entry_price - 5.0
 
             return True, float(new_sl)
         return False, None
@@ -1019,6 +1021,7 @@ class RiskManager:
                         or 0.6,
                         "pyramid_max_volume": params.get("pyramid_max_volume") or 1,
                         "be_trigger": params.get("be_trigger") or 60.0,
+                        "be_sell_trigger": params.get("be_sell_trigger") or 25.0,
                         "be_lock": params.get("be_lock") or 5.0,
                         "adx_min_threshold": params.get("adx_min_threshold", 20.0),
                         "bollinger_squeeze_threshold": params.get(
@@ -1047,8 +1050,26 @@ class RiskManager:
 
                     # [v50.1] Injeção direta nos atributos se for o símbolo principal
                     if "WIN" in symbol:
+                        # [v24] Sincronização de Horários de Operação Dinâmicos
+                        st_str = params.get("start_time")
+                        et_str = params.get("end_time")
+                        if st_str or et_str:
+                            try:
+                                if st_str:
+                                    st_obj = time.fromisoformat(st_str)
+                                    self.forbidden_hours[0] = (self.forbidden_hours[0][0], st_obj)
+                                if et_str:
+                                    et_obj = time.fromisoformat(et_str)
+                                    self.forbidden_hours[2] = (et_obj, self.forbidden_hours[2][1])
+                                logging.info(f"⏰ [RISK-CLOCK] Horários atualizados via JSON: {st_str} -> {et_str}")
+                            except Exception as e_clk:
+                                logging.warning(f"Erro ao processar horários do JSON: {e_clk}")
+
                         self.be_trigger = mapped_params.get(
                             "be_trigger", self.be_trigger
+                        )
+                        self.be_sell_trigger = mapped_params.get(
+                            "be_sell_trigger", getattr(self, "be_sell_trigger", 25.0)
                         )
                         self.be_lock = mapped_params.get("be_lock", self.be_lock)
                         self.adx_min_threshold = mapped_params.get(
@@ -1058,7 +1079,8 @@ class RiskManager:
                             "adx_volatility_threshold", self.adx_volatility_threshold
                         )
                         self.atr_volatility_trigger = params.get(
-                            "atr_volatility_trigger", self.atr_volatility_trigger
+                            "volatility_pause_threshold",  # [v24] Novo nome sincronizado
+                            params.get("atr_volatility_trigger", self.atr_volatility_trigger)
                         )
                         self.bollinger_squeeze_threshold = mapped_params.get(
                             "bollinger_squeeze_threshold",

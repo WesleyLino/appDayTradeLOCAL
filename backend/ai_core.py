@@ -59,9 +59,10 @@ class InferenceEngine:
                 self.ort_session = ort.InferenceSession(onnx_path, providers=providers)
                 self.use_onnx = True
                 logging.info(
-                    f"--- [v24.4.1] ONNX Engine Ativo ({self.ort_session.get_providers()[0]})"
+                    f"--- [v24.4.1] ONNX Engine Ativo ({self.ort_session.get_providers()[0]}). Model: {onnx_path}"
                 )
-                return
+            else:
+                logging.warning(f"--- [v24.4.1] ONNX Model not found at {onnx_path}")
 
             # 2. Fallback para PyTorch (SOTA v22 standard)
             if os.path.exists(self.model_path):
@@ -101,7 +102,11 @@ class InferenceEngine:
 
     async def predict(self, dataframe):
         """Interface pública assíncrona."""
-        if dataframe is None or len(dataframe) < 60:
+        if dataframe is None:
+            logging.warning("AI_CORE: DataFrame is None")
+            return self._neutral_output()
+        if len(dataframe) < 60:
+            logging.warning(f"AI_CORE: DataFrame too short ({len(dataframe)} < 60)")
             return self._neutral_output()
         return await asyncio.to_thread(self._predict_sync, dataframe)
 
@@ -145,6 +150,7 @@ class InferenceEngine:
                     raw_preds = self.model(torch.tensor(input_tensor)).numpy()
                     preds = raw_preds[0] if raw_preds.ndim == 3 else raw_preds
             else:
+                logging.warning("AI_CORE: No ONNX and No PyTorch model loaded")
                 return self._neutral_output()
 
             if preds.ndim == 2:
@@ -454,12 +460,16 @@ class AICore:
             sell_thresh = self.confidence_sell_threshold
 
             atr_limit = 60.0 if not is_wdo else 3.5
-            if 0 < atr < atr_limit:
+            if 0 < atr < atr_limit and obi_abs < 1.2:
                 relax = float(getattr(self, "confidence_relax_factor", 0.75))
                 buy_thresh = 50.0 + (buy_thresh - 50.0) * relax
                 sell_thresh = 50.0 - (50.0 - sell_thresh) * relax
                 logging.info(
-                    f"💎 [RELAX-V24] Ativo (ATR={atr:.1f}): Buy={buy_thresh:.1f}, Sell={sell_thresh:.1f}"
+                    f"💎 [RELAX-V24] Ativo (ATR={atr:.1f}, OBI={obi_abs:.2f}): Buy={buy_thresh:.1f}, Sell={sell_thresh:.1f}"
+                )
+            elif 0 < atr < atr_limit and obi_abs >= 1.2:
+                logging.info(
+                    f"🛡️ [ANTI-SANGRIA] Relaxamento evitado pois Fluxo direcional forte (OBI={obi_abs:.2f} >= 1.2) mesmo com ATR baixo."
                 )
 
             if score_raw >= buy_thresh:
@@ -521,13 +531,21 @@ class AICore:
         # [MELHORIA DA BLINDAGEM INSTITUCIONAL H1]
         if self.use_h1_trend_bias and self.h1_trend != 0 and direction != "NEUTRAL":
             if direction == "SELL" and self.h1_trend == 1:
-                logging.warning("⛔ [H1 BLINDAGEM] VENDA abortada. Tendência Macro (H1) é de ALTA.")
-                direction = "NEUTRAL"
-                exec_strategy = "PASSIVA"
+                target_sell_thresh = max(5.0, 50.0 - ((50.0 - self.confidence_sell_threshold) * 1.5))
+                if float(score_raw) <= target_sell_thresh:
+                    logging.info(f"⚡ [H1 BLINDAGEM OVERRIDE] VENDA contra-tendência permitida por Super Convicção! ({score_raw:.1f} <= {target_sell_thresh:.1f})")
+                else:
+                    logging.warning(f"⛔ [H1 BLINDAGEM] VENDA abortada. Requer Convicção de {target_sell_thresh:.1f} contra Macro de ALTA.")
+                    direction = "NEUTRAL"
+                    exec_strategy = "PASSIVA"
             elif direction == "BUY" and self.h1_trend == -1:
-                logging.warning("⛔ [H1 BLINDAGEM] COMPRA abortada. Tendência Macro (H1) é de BAIXA.")
-                direction = "NEUTRAL"
-                exec_strategy = "PASSIVA"
+                target_buy_thresh = min(95.0, 50.0 + ((self.confidence_buy_threshold - 50.0) * 1.5))
+                if float(score_raw) >= target_buy_thresh:
+                    logging.info(f"⚡ [H1 BLINDAGEM OVERRIDE] COMPRA contra-tendência permitida por Super Convicção! ({score_raw:.1f} >= {target_buy_thresh:.1f})")
+                else:
+                    logging.warning(f"⛔ [H1 BLINDAGEM] COMPRA abortada. Requer Convicção de {target_buy_thresh:.1f} contra Macro de BAIXA.")
+                    direction = "NEUTRAL"
+                    exec_strategy = "PASSIVA"
 
         # 8. RSI Relaxado
         if regime == 1 or is_momentum_bypass:

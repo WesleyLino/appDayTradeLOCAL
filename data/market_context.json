@@ -1,15 +1,15 @@
 {
-  "timestamp": 1774011739.6401522,
+  "timestamp": 1774573983.7322643,
   "bluechips": {
-    "VALE3": -0.65,
-    "PETR4": -0.47,
-    "ITUB4": 0.71,
-    "BBDC4": 0.05,
+    "VALE3": -0.78,
+    "PETR4": 1.09,
+    "ITUB4": -2.11,
+    "BBDC4": -2.39,
     "ELET3": 2.01
   },
-  "synthetic_index": 0.05705882352941174,
+  "synthetic_index": -0.6429411764705882,
   "macro": {
-    "score": -0.4581798580540886,
+    "score": -1.531456953642384,
     "reason": "S&P 500 Change"
   },
   "calendar": {
@@ -21,17 +21,17 @@
     "WIN$": 0.0,
     "WDO$": 0.0
   },
-  "vwap": 180920.0,
+  "vwap": 184579.0118034809,
   "vwaps": {
-    "WIN$": 180920.0,
-    "WDO$": 5262.0
+    "WIN$": 184579.0118034809,
+    "WDO$": 5245.868248764695
   },
   "htf_bias": "BEAR",
   "real_cvd": 0.0,
   "real_cvd_wdo": 0.0,
   "wdo_win_signal": "NEUTRO",
   "low_liquidity": false,
-  "volume_d1": 21712226,
-  "avg_volume_10d": 21339896.0,
+  "volume_d1": 21481246,
+  "avg_volume_10d": 21135784.0,
   "commission_today": 0.0
 }

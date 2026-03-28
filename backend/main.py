@@ -812,7 +812,25 @@ async def autonomous_bot_loop():
                         for col in expected_cols:
                             if col not in multi_data.columns:
                                 multi_data[col] = 0.0
-                        multi_data = multi_data[expected_cols].tail(60)
+                        multi_data = multi_data[expected_cols]
+
+                        # [FIX #COL-MISMATCH] Normaliza colunas para o contrato do ONNX v24 (8 canais)
+                        # ONNX espera: cvd_normal, ofi_normal, trap_index
+                        # multi_data tem: cvd, ofi, volume_ratio
+                        cvd_scale = max(1.0, multi_data["cvd"].abs().max()) if "cvd" in multi_data.columns else 1.0
+                        ofi_scale = max(1.0, multi_data["ofi"].abs().max()) if "ofi" in multi_data.columns else 1.0
+                        multi_data["cvd_normal"] = (multi_data["cvd"] / cvd_scale) if "cvd" in multi_data.columns else 0.0
+                        multi_data["ofi_normal"] = (multi_data["ofi"] / ofi_scale) if "ofi" in multi_data.columns else 0.0
+                        multi_data["trap_index"] = multi_data.get("volume_ratio", pd.Series([1.0] * len(multi_data))) - 1.0
+
+                        curr_len = len(multi_data)
+                        if 0 < curr_len < 60:
+                            needed = 60 - curr_len
+                            padding = pd.concat([multi_data.iloc[[0]]] * needed)
+                            multi_data = pd.concat([padding, multi_data]).reset_index(drop=True)
+                            logging.info(f"💾 [DATA-SYNC] Padding de {needed} candles aplicado → total={len(multi_data)}")
+
+                        multi_data = multi_data.tail(60)
 
                 # 1.2 Atuallização via Cache (Background Worker) - SEMPRE ATUALIZAR (HFT Optimization)
                 ctx = load_market_context()  # [ANTIVIBE-CODING]
@@ -1091,19 +1109,24 @@ async def autonomous_bot_loop():
                 # Inferência SOTA Multi-Ativo (usa multi_data sincronizado)
                 logging.debug("Executando inferência SOTA...")
 
-                # Garantir 60 linhas e 8 canais (Contrato SOTA v5)
+                # [FIX #FAST-CYCLE-PAD] Garantir 60 linhas e colunas corretas em TODOS os ciclos
                 sota_input = multi_data
-                if sota_input is None or len(sota_input) < 60:
+                if sota_input is None or sota_input.empty or len(sota_input) < 60:
                     logging.debug(
-                        "SOTA: multi_data insuficiente no loop rápido. Gerando buffer de segurança."
+                        f"SOTA: multi_data insuficiente ({len(sota_input) if sota_input is not None else 0} linhas). Gerando buffer de segurança."
                     )
                     if data_60 is not None and not data_60.empty:
-                        base_val = data_60["close"].values[-60:]
+                        base_val = data_60["close"].values
                         if len(base_val) < 60:
                             base_val = np.pad(base_val, (60 - len(base_val), 0), "edge")
+                        else:
+                            base_val = base_val[-60:]
                     else:
                         base_val = np.zeros(60)
 
+                    # [FIX #COL-MISMATCH] Buffer de segurança já com nomes corretos do ONNX
+                    cvd_norm = float(cvd_val) / max(1.0, abs(float(cvd_val)))
+                    ofi_norm = float(obi) / max(1.0, abs(float(obi)))
                     sota_input = pd.DataFrame(
                         {
                             "open": base_val,
@@ -1111,15 +1134,12 @@ async def autonomous_bot_loop():
                             "low": base_val,
                             "close": base_val,
                             "tick_volume": np.zeros(60),
-                            "cvd": np.full(
-                                60, float(cvd_val)
-                            ),  # Injeta o CVD real do momento
-                            "ofi": np.full(
-                                60, float(obi)
-                            ),  # Injeta o OBI (proxy de OFI) real
-                            "volume_ratio": np.ones(60),
+                            "cvd_normal": np.full(60, cvd_norm),
+                            "ofi_normal": np.full(60, ofi_norm),
+                            "trap_index": np.zeros(60),
                         }
                     )
+                    logging.debug(f"[FAST-CYCLE-PAD] Buffer de segurança gerado com 60 candles.")
 
                 ai_predict_data = await inference.predict(sota_input)
                 ai_confidence = (
@@ -1133,7 +1153,7 @@ async def autonomous_bot_loop():
                 volatility = (
                     data_60["close"].std()
                     if data_60 is not None and not data_60.empty
-                    else 0
+                    else 0.0
                 )
                 regime = ai.detect_regime(volatility, obi)
                 # macro_change movido para o ciclo lento
@@ -1183,6 +1203,7 @@ async def autonomous_bot_loop():
                     vwap=real_vwap,  # INJETANDO VWAP REAL
                     spread=live_spread,
                     wdo_aggression=wdo_aggression_norm,
+                    loop_count=loop_count,
                 )
                 # [PAUSA PARCIAL] Bloqueio final antes de aplicar qualquer heurística
                 if dia_pausado_vol:
@@ -2013,30 +2034,35 @@ async def autonomous_bot_loop():
 
                                     filled = False
 
-                                    # [FIX #POLL-INSTANT] Verifica IMEDIATAMENTE antes do 1º sleep
-                                    # Ordens IOC/Exchange são preenchidas em ~29ms.
-                                    # O poll anterior só verificava APÓS 500ms → fill já estava no histórico
-                                    # mas datetime.now() (BRT) não o encontrava [BUG #CHECK-UTC].
-                                    status_imediato = await asyncio.to_thread(
-                                        bridge.check_order_status, order_ticket
-                                    )
-                                    if status_imediato == "FILLED":
+                                    # [DRY-RUN FIX] Em simulação, curto-circuita o polling real.
+                                    # Tickets fictícios (888888) jamais existem no MT5 real.
+                                    if risk.dry_run:
                                         filled = True
-                                        logging.info(
-                                            f"[POLL-INSTANT] Sniper {order_ticket} já preenchido antes do 1º sleep!"
+                                        logging.warning(
+                                            f"DRY-RUN: Sniper simulado como FILLED (ticket fictício={order_ticket})"
                                         )
-
-                                    if not filled:
-                                        for _ in range(6):
-                                            await asyncio.sleep(0.5)
-
-                                            status = await asyncio.to_thread(
-                                                bridge.check_order_status, order_ticket
+                                    else:
+                                        # [FIX #POLL-INSTANT] Verifica IMEDIATAMENTE antes do 1º sleep
+                                        status_imediato = await asyncio.to_thread(
+                                            bridge.check_order_status, order_ticket
+                                        )
+                                        if status_imediato == "FILLED":
+                                            filled = True
+                                            logging.info(
+                                                f"[POLL-INSTANT] Sniper {order_ticket} já preenchido antes do 1º sleep!"
                                             )
 
-                                            if status == "FILLED":
-                                                filled = True
-                                                break
+                                        if not filled:
+                                            for _ in range(6):
+                                                await asyncio.sleep(0.5)
+
+                                                status = await asyncio.to_thread(
+                                                    bridge.check_order_status, order_ticket
+                                                )
+
+                                                if status == "FILLED":
+                                                    filled = True
+                                                    break
 
                                     if filled:
                                         persistence.save_trade(
@@ -2331,25 +2357,41 @@ async def autonomous_bot_loop():
 
                                         filled = False
 
-                                        # [FIX #POLL-INSTANT] Verifica IMEDIATAMENTE antes do 1º sleep
-                                        # Exchange Execution preenche ordens em ~29ms.
-                                        status_imediato = await asyncio.to_thread(
-                                            bridge.check_order_status, order_ticket
-                                        )
-                                        if status_imediato == "FILLED":
+                                        # [DRY-RUN FIX] Em simulação, curto-circuita o polling real.
+                                        # Tickets fictícios (999999) jamais existem no MT5 real.
+                                        if risk.dry_run:
                                             filled = True
-                                            logging.info(
-                                                f"[POLL-INSTANT] HFT {order_ticket} já preenchido antes do 1º sleep!"
-                                            )
                                             side_pt = "COMPRA" if side == "buy" else "VENDA"
+                                            logging.warning(
+                                                f"DRY-RUN: HFT LIMIT simulado como FILLED (ticket fictício={order_ticket})"
+                                            )
                                             add_operational_log(
-                                                f"HFT FILL INSTANT: {side_pt} {final_lots} lotes @ {limit_price}",
+                                                f"HFT FILL (SIMULADO): {side_pt} {final_lots} lotes @ {limit_price}",
                                                 "success",
                                             )
                                             persistence.save_trade(
                                                 symbol, side, limit_price,
-                                                final_lots, "AUTO_LIMIT_FILLED",
+                                                final_lots, "SIMULACAO_LIMIT_FILLED",
                                             )
+                                        else:
+                                            # [FIX #POLL-INSTANT] Verifica IMEDIATAMENTE antes do 1º sleep
+                                            status_imediato = await asyncio.to_thread(
+                                                bridge.check_order_status, order_ticket
+                                            )
+                                            if status_imediato == "FILLED":
+                                                filled = True
+                                                logging.info(
+                                                    f"[POLL-INSTANT] HFT {order_ticket} já preenchido antes do 1º sleep!"
+                                                )
+                                                side_pt = "COMPRA" if side == "buy" else "VENDA"
+                                                add_operational_log(
+                                                    f"HFT FILL INSTANT: {side_pt} {final_lots} lotes @ {limit_price}",
+                                                    "success",
+                                                )
+                                                persistence.save_trade(
+                                                    symbol, side, limit_price,
+                                                    final_lots, "AUTO_LIMIT_FILLED",
+                                                )
 
                                         if not filled:
                                             for _ in range(6):
