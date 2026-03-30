@@ -1,28 +1,48 @@
 {
-  "score": -0.567,
+  "score": -0.6,
   "reliability": "high",
-  "risk_classification": "HIGH",
-  "fact_check": "Pre\u00e7os do petr\u00f3leo elevados e preocupa\u00e7\u00f5es com estagfla\u00e7\u00e3o. Grandes fus\u00f5es e aquisi\u00e7\u00f5es corporativas em andamento (Apollo, \u00c2mbar). Corte de pre\u00e7o-alvo para Hapvida. Uso de moedas digitais para evas\u00e3o de san\u00e7\u00f5es por R\u00fassia e Ir\u00e3, elevando risco geopol\u00edtico e regulat\u00f3rio. Ibovespa em alta de 1% no dia.",
+  "risk_classification": "EXTREME",
+  "fact_check": "Mercado brasileiro em alta impulsionado por blue chips, mas com d\u00f3lar em valoriza\u00e7\u00e3o. Setor de varejo nacional em queda devido a discuss\u00f5es sobre taxa\u00e7\u00e3o de importados. Mercados globais mistos, com destaque para a preocupa\u00e7\u00e3o com a escalada de tens\u00f5es geopol\u00edticas envolvendo o Ir\u00e3.",
   "news": [
     {
-      "headline": "Goldman Sachs alerta para vulnerabilidade a choque estagflacion\u00e1rio com alta do petr\u00f3leo.",
-      "relevance": 0.5,
+      "headline": "Ibovespa fecha em alta com Vale e Petrobras; d\u00f3lar sobe.",
+      "relevance": 0.9,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "A\u00e7\u00e3o WEGE3 sobe 3,5%.",
+      "relevance": 0.6,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "A\u00e7\u00f5es da PepGen caem 44% ap\u00f3s resultados de ensaio cl\u00ednico.",
+      "relevance": 0.3,
       "impact": "BEARISH"
     },
     {
-      "headline": "Apollo se aproxima de acordo de US$ 10 bilh\u00f5es pela Atlantic Aviation.",
+      "headline": "\u00cdndice MOEX Russia avan\u00e7a 0,38%.",
+      "relevance": 0.2,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Dow Jones avan\u00e7a 0,11%, fechando inalterado.",
       "relevance": 0.5,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Ibovespa sobe 1% e testa os 184 mil pontos.",
-      "relevance": 0.2,
-      "impact": "BULLISH"
+      "headline": "Renner e C&A caem mais de 4% devido a discuss\u00e3o sobre taxa de importa\u00e7\u00e3o.",
+      "relevance": 0.8,
+      "impact": "BEARISH"
     },
     {
-      "headline": "Morgan Stanley corta pre\u00e7o-alvo para Hapvida, prevendo ano dif\u00edcil.",
-      "relevance": 0.5,
+      "headline": "S&P e Nasdaq caem, Dow sobe levemente; investidores avaliam guerra contra o Ir\u00e3.",
+      "relevance": 1.0,
       "impact": "BEARISH"
+    },
+    {
+      "headline": "Unilever pr\u00f3xima de acordo de US$ 60 bilh\u00f5es com McCormick.",
+      "relevance": 0.4,
+      "impact": "NEUTRAL"
     },
     {
       "headline": "Mercados Financeiros - \u00daltimas Not\u00edcias.",
@@ -30,31 +50,11 @@
       "impact": "NEUTRAL"
     },
     {
-      "headline": "O que Stormer, o Top Trader n\u00b0 1, faz todos os dias para seguir vencedor no mercado.",
-      "relevance": 0.0,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Bank of America aponta principais a\u00e7\u00f5es de computa\u00e7\u00e3o de IA.",
+      "headline": "\u00cdndice COLCAP da Col\u00f4mbia recua 0,80%.",
       "relevance": 0.2,
       "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Ir\u00e3 vende petr\u00f3leo na mesma quantidade e mais caro que um ano atr\u00e1s.",
-      "relevance": 0.5,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Justi\u00e7a homologa acordo para \u00c2mbar assumir controle de distribuidora no Amazonas.",
-      "relevance": 0.5,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Moedas digitais movimentam compras de drones na R\u00fassia e no Ir\u00e3, diz relat\u00f3rio.",
-      "relevance": 0.8,
-      "impact": "BEARISH"
     }
   ],
-  "timestamp": 1774901318.038907,
+  "timestamp": 1774913099.1744745,
   "cached": true
 }

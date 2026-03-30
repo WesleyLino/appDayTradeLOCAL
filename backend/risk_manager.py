@@ -394,7 +394,7 @@ class RiskManager:
             logging.info(
                 f"🛡️ [RIGOR V22.5] Operação contra-tendência detectada ({direction}). Elevando exigência de confiança."
             )
-            return 2.0  # Dobra o threshold necessário (ex: 0.35 -> 0.70)
+            return 1.4  # Relaxado de 2.0 para 1.4 para permitir reversões e scalps táticos
 
         return 1.0  # Rigor normal se a favor da tendência
 

@@ -885,8 +885,9 @@ class BacktestPro:
                 cond_candle_confirm_buy = _cond_engulfo_buy or _cond_pinbar_buy
                 cond_candle_confirm_sell = _cond_engulfo_sell or _cond_pinbar_sell
 
-                v22_buy_raw = cond_rsi_buy and cond_bb_buy and cond_vol_buy and cond_candle_confirm_buy
-                v22_sell_raw = cond_rsi_sell and cond_bb_sell and cond_vol_sell and cond_candle_confirm_sell
+                # Relaxado: confirmação de candle é bônus e não bloqueia a estratégia
+                v22_buy_raw = cond_rsi_buy and cond_bb_buy and cond_vol_buy
+                v22_sell_raw = cond_rsi_sell and cond_bb_sell and cond_vol_sell
 
                 # --- MELHORIA H (V28): Filtro de Tendência Diária ---
                 # Na abertura de cada dia, deteta se EMA30 < EMA90 → mercado em baixa.
@@ -966,13 +967,8 @@ class BacktestPro:
                 # Veto apenas em Pânico Absoluto (> 2.5 = 187 pts de ATR)
                 #
                 # [MELHORIA-H] Bypass Condicional de Pânico (autorizado 17/03/2026).
-                # Lógica anterior: veto total se risk > 2.5 e sem momentum_bypass.
-                # Lógica nova:
-                #   - Sem momentum_bypass → veto total mantido (comportamento original)
-                #   - Com momentum_bypass MAS sem H1 confirmado → veto mantido (mercado caótico)
-                #   - Com momentum_bypass E H1 confirmado → permite operação com lote reduzido (0.5)
-                #     para capturar tendências fortes mesmo em ATR elevado, limitando exposição.
-                if risk_index > 2.5:
+                # Lógica nova: limiar ampliado para 3.5 devido a dias de volatilidade extrema
+                if risk_index > 3.5:
                     if not is_momentum_bypass:
                         # Caso 1: Pânico sem IA com convicção — veto total (proteção máxima)
                         self._shadow_veto("PANICO_MERCADO_SEM_BYPASS", row.name)
@@ -1000,7 +996,8 @@ class BacktestPro:
                         self._bias_diario = "alta"
                     else:
                         self._bias_diario = "neutro"
-                bias_veto_buy = getattr(self, "_bias_diario", "neutro") == "baixa"
+                # Relaxado 30/03/2026 para permitir comprar oversolds violentos na ponta compradora
+                bias_veto_buy = False
                 # [AUTORIZADO 03/03/2026] bias_veto_sell relaxado: em dias de alta, permite venda
                 # apenas quando gatilho técnico é confirmado (RSI overextended > 72 já foi exigido
                 # no v22_sell_raw). O filtro aqui reflete a mesma lógica do H1 bypass no AICore.
