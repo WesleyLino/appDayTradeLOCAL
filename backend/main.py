@@ -768,7 +768,7 @@ async def autonomous_bot_loop():
                 if loop_count % 5 == 1 or "data_60" not in locals():
                     # 1.1 Coleta Essencial (MT5 Rapid)
                     data_60, account_info, daily_realized = await asyncio.gather(
-                        asyncio.to_thread(bridge.get_market_data, symbol, n_candles=60),
+                        asyncio.to_thread(bridge.get_market_data, symbol, n_candles=150),
                         asyncio.to_thread(
                             bridge.get_account_info
                         ),  # Otimizado: USA CACHE
@@ -1139,7 +1139,7 @@ async def autonomous_bot_loop():
                             "trap_index": np.zeros(60),
                         }
                     )
-                    logging.debug(f"[FAST-CYCLE-PAD] Buffer de segurança gerado com 60 candles.")
+                    logging.debug("[FAST-CYCLE-PAD] Buffer de segurança gerado com 60 candles.")
 
                 ai_predict_data = await inference.predict(sota_input)
                 ai_confidence = (

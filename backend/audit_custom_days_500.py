@@ -47,7 +47,7 @@ async def run_audit():
 
     # We will fetch a large chunk once to avoid MT5 throttling or latency,
     # 20 days * 600 min/day = 12000 candles. Let's fetch 15000 candles.
-    print(f"\n⏳ Baixando histórico MT5 de alta densidade...")
+    print("\n⏳ Baixando histórico MT5 de alta densidade...")
     
     global_tester = BacktestPro(
         symbol=symbol,
@@ -72,7 +72,7 @@ async def run_audit():
         day_data = all_data[all_data.index.date == d].copy()
         
         if day_data.empty:
-            print(f"⚠️ Sem dados registrados no MT5 para este dia.")
+            print("⚠️ Sem dados registrados no MT5 para este dia.")
             continue
             
         # Re-instance isolated tester

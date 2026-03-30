@@ -1,4 +1,6 @@
-import sys, os, json
+import sys
+import os
+import json
 from datetime import datetime, time, timedelta
 
 today_str = datetime.today().strftime("%Y-%m-%d")

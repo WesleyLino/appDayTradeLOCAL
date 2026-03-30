@@ -61,13 +61,11 @@ class InferenceEngine:
                 logging.info(
                     f"--- [v24.4.1] ONNX Engine Ativo ({self.ort_session.get_providers()[0]}). Model: {onnx_path}"
                 )
-            else:
-                logging.warning(f"--- [v24.4.1] ONNX Model not found at {onnx_path}")
-
-            # 2. Fallback para PyTorch (SOTA v22 standard)
-            if os.path.exists(self.model_path):
+            elif os.path.exists(self.model_path):
+                logging.warning(f"--- [v24.4.1] ONNX Model not found at {onnx_path}. Using PyTorch fallback.")
+                self.pytorch_c_in = 8
                 self.model = PatchTST(
-                    c_in=5,
+                    c_in=self.pytorch_c_in,
                     context_window=60,
                     target_window=5,
                     d_model=128,
@@ -113,11 +111,13 @@ class InferenceEngine:
     def _predict_sync(self, dataframe):
         try:
             # [v24.4.1] Sincronização de Canais (v22=5, v24=8)
-            if (
-                self.use_onnx
-                and self.ort_session
-                and self.ort_session.get_inputs()[0].shape[2] == 8
-            ):
+            is_8_channels = False
+            if self.use_onnx and self.ort_session and self.ort_session.get_inputs()[0].shape[2] == 8:
+                is_8_channels = True
+            elif self.model and getattr(self, "pytorch_c_in", 5) == 8:
+                is_8_channels = True
+
+            if is_8_channels:
                 cols = [
                     "open",
                     "high",
@@ -137,7 +137,9 @@ class InferenceEngine:
                     # [v24.4] Se faltar métricas de microestrutura, inicializa com neutro
                     dataframe[c] = 0.0
 
-            input_data = dataframe[cols].values[-60:].astype(np.float32)
+            # Previne falhas E_FAIL(17) no DirectML por Inf/NaN
+            input_df = dataframe[cols].replace([np.inf, -np.inf], np.nan)
+            input_data = input_df.bfill().ffill().fillna(0.0).values[-60:].astype(np.float32)
             input_tensor = np.expand_dims(input_data, axis=0)  # [1, 60, N]
 
             if self.use_onnx and self.ort_session:

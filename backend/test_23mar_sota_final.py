@@ -105,7 +105,7 @@ async def run_mt5_analysis_23mar():
     
     component_fails = shadow.get('component_fail', {})
     if component_fails:
-        print(f"⚠️  Falhas Específicas de Filtro (Motivos):")
+        print("⚠️  Falhas Específicas de Filtro (Motivos):")
         for k, v in component_fails.items():
             print(f"   - {k.capitalize()}: {v} vezes")
 

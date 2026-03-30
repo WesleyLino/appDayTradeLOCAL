@@ -177,8 +177,6 @@ class BacktestPro:
             "rsi_sell_level": kwargs.get(
                 "rsi_sell_level", locked_params.get("rsi_sell_level", 68)
             ),
-            "confidence_buy_threshold": kwargs.get("confidence_buy_threshold", None),
-            "confidence_sell_threshold": kwargs.get("confidence_sell_threshold", None),
             "use_confidence_filter": kwargs.get(
                 "use_confidence_filter",
                 locked_params.get("use_confidence_filter", True),

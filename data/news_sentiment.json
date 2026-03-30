@@ -1,60 +1,60 @@
 {
-  "score": -0.2,
+  "score": -0.567,
   "reliability": "high",
   "risk_classification": "HIGH",
-  "fact_check": "Bolsas de NY em queda, com Nasdaq em corre\u00e7\u00e3o por guerra prolongada, indicando avers\u00e3o global ao risco. A\u00e7\u00f5es da Meta caem 8% ap\u00f3s derrotas judiciais nos EUA. No Brasil, JBS e Americanas registram fortes altas por balan\u00e7os s\u00f3lidos e recupera\u00e7\u00e3o judicial, respectivamente. BNDES aprova financiamento para Valid.",
+  "fact_check": "Pre\u00e7os do petr\u00f3leo elevados e preocupa\u00e7\u00f5es com estagfla\u00e7\u00e3o. Grandes fus\u00f5es e aquisi\u00e7\u00f5es corporativas em andamento (Apollo, \u00c2mbar). Corte de pre\u00e7o-alvo para Hapvida. Uso de moedas digitais para evas\u00e3o de san\u00e7\u00f5es por R\u00fassia e Ir\u00e3, elevando risco geopol\u00edtico e regulat\u00f3rio. Ibovespa em alta de 1% no dia.",
   "news": [
     {
-      "headline": "BNDES aprova R$300 mi para IA da Valid",
-      "relevance": 0.4,
+      "headline": "Goldman Sachs alerta para vulnerabilidade a choque estagflacion\u00e1rio com alta do petr\u00f3leo.",
+      "relevance": 0.5,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Apollo se aproxima de acordo de US$ 10 bilh\u00f5es pela Atlantic Aviation.",
+      "relevance": 0.5,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Ibovespa sobe 1% e testa os 184 mil pontos.",
+      "relevance": 0.2,
       "impact": "BULLISH"
     },
     {
-      "headline": "Apple bonifica designers e contrata startups de IA",
+      "headline": "Morgan Stanley corta pre\u00e7o-alvo para Hapvida, prevendo ano dif\u00edcil.",
+      "relevance": 0.5,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Mercados Financeiros - \u00daltimas Not\u00edcias.",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "O que Stormer, o Top Trader n\u00b0 1, faz todos os dias para seguir vencedor no mercado.",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Bank of America aponta principais a\u00e7\u00f5es de computa\u00e7\u00e3o de IA.",
       "relevance": 0.2,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Northrop Grumman ganha contrato de US$127 mi da Marinha",
-      "relevance": 0.1,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "A\u00e7\u00f5es da Bloom Energy sobem com novo CFO",
-      "relevance": 0.1,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "A\u00e7\u00f5es da Meta caem 8% ap\u00f3s derrotas judiciais nos EUA",
-      "relevance": 0.7,
+      "headline": "Ir\u00e3 vende petr\u00f3leo na mesma quantidade e mais caro que um ano atr\u00e1s.",
+      "relevance": 0.5,
       "impact": "BEARISH"
     },
     {
-      "headline": "Bolsas de NY caem, Nasdaq em corre\u00e7\u00e3o por guerra prolongada",
-      "relevance": 1.0,
-      "impact": "BEARISH"
+      "headline": "Justi\u00e7a homologa acordo para \u00c2mbar assumir controle de distribuidora no Amazonas.",
+      "relevance": 0.5,
+      "impact": "NEUTRAL"
     },
     {
-      "headline": "JBS (JBSS32) salta 5,65% com balan\u00e7o s\u00f3lido",
+      "headline": "Moedas digitais movimentam compras de drones na R\u00fassia e no Ir\u00e3, diz relat\u00f3rio.",
       "relevance": 0.8,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Boeing ganha contrato de US$326 mi do Ex\u00e9rcito dos EUA",
-      "relevance": 0.1,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "A\u00e7\u00f5es da R\u00fassia caem, MOEX recua 0,66%",
-      "relevance": 0.3,
       "impact": "BEARISH"
-    },
-    {
-      "headline": "AMER3 salta 12% ap\u00f3s pedir fim da RJ e vender ativos",
-      "relevance": 0.7,
-      "impact": "BULLISH"
     }
   ],
-  "timestamp": 1774570594.656371,
+  "timestamp": 1774901318.038907,
   "cached": true
 }

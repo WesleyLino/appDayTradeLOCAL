@@ -7,6 +7,6 @@ Active Providers: ['DmlExecutionProvider', 'CPUExecutionProvider']
 SUCCESS: AMD GPU (DirectML) is ACTIVE.
 Running 100 iterations (Batch=1, Seq=60, Ch=8)...
 Average Latency: 0.59ms
-Total Time: 0.0587s
+Total Time: 0.0592s
 TERMINATED SUCCESSFULLY
 ==================================================

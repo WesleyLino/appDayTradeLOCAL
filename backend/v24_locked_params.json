@@ -39,7 +39,7 @@
     "use_bluechip_bias": true,
     "bluechip_bias_threshold": 0.25,
     "account_config": {
-        "initial_balance": 3000.0
+        "initial_balance": 500.0
     },
     "version": "v24.5-SNIPER",
     "start_time": "09:30",

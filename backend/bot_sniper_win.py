@@ -543,8 +543,8 @@ class SniperBotWIN:
                         await asyncio.sleep(1)
                         continue
 
-                df = self.bridge.get_market_data(self.symbol, n_candles=50)
-                if df.empty or len(df) < 30:
+                df = self.bridge.get_market_data(self.symbol, n_candles=150)
+                if df.empty or len(df) < 60:
                     await asyncio.sleep(1)
                     continue
 
@@ -553,7 +553,7 @@ class SniperBotWIN:
 
                 try:
                     h1_data = self.bridge.get_market_data(
-                        self.symbol, n_candles=50, timeframe="H1"
+                        self.symbol, n_candles=150, timeframe="H1"
                     )
                     if h1_data is not None:
                         self.ai.update_h1_trend(h1_data)
