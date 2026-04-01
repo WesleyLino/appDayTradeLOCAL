@@ -669,18 +669,18 @@ class SniperBotWIN:
                 side = "NEUTRAL"
 
                 if decision["is_momentum_bypass"]:
-                    # [v23.1] BYPASS INSTITUCIONAL: IA tem autoridade total (Threshold 88%)
+                    # [v23.1] BYPASS INSTITUCIONAL: IA tem autoridade total
                     if decision["direction"] == "BUY" and pressure > 1.1:
                         is_trade_allowed = True
                         side = "buy"
                         logger.info(
-                            f"🚀 [MOMENTUM BYPASS] IA Score {decision['score']:.1f}% > 88% | Fluxo: {pressure:.2f}"
+                            f"🚀 [MOMENTUM BYPASS] IA Score {decision['score']:.1f}% (Bypass Ativado) | Fluxo: {pressure:.2f}"
                         )
                     elif decision["direction"] == "SELL" and pressure < -1.1:
                         is_trade_allowed = True
                         side = "sell"
                         logger.info(
-                            f"🚀 [MOMENTUM BYPASS] IA Score {decision['score']:.1f}% < 12% | Fluxo: {pressure:.2f}"
+                            f"🚀 [MOMENTUM BYPASS] IA Score {decision['score']:.1f}% (Bypass Ativado) | Fluxo: {pressure:.2f}"
                         )
                 else:
                     # SNIPER TRADICIONAL: Depende dos indicadores (RSI/Volume) + IA Neutra/Sniper

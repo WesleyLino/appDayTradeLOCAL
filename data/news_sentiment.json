@@ -1,60 +1,60 @@
 {
-  "score": -0.6,
+  "score": 0.65,
   "reliability": "high",
   "risk_classification": "EXTREME",
-  "fact_check": "Mercado brasileiro em alta impulsionado por blue chips, mas com d\u00f3lar em valoriza\u00e7\u00e3o. Setor de varejo nacional em queda devido a discuss\u00f5es sobre taxa\u00e7\u00e3o de importados. Mercados globais mistos, com destaque para a preocupa\u00e7\u00e3o com a escalada de tens\u00f5es geopol\u00edticas envolvendo o Ir\u00e3.",
+  "fact_check": "Mercados globais e brasileiros reagem positivamente \u00e0 expectativa de desescalada do conflito no Oriente M\u00e9dio, com queda do d\u00f3lar e juros futuros, e alta das bolsas. Contudo, o m\u00eas e o trimestre ainda refletem a avers\u00e3o a risco subjacente.",
   "news": [
     {
-      "headline": "Ibovespa fecha em alta com Vale e Petrobras; d\u00f3lar sobe.",
-      "relevance": 0.9,
+      "headline": "Nike supera expectativas de vendas com foco em esportes.",
+      "relevance": 0.2,
       "impact": "BULLISH"
     },
     {
-      "headline": "A\u00e7\u00e3o WEGE3 sobe 3,5%.",
+      "headline": "Ecorodovias vence leil\u00e3o da Rota das Gerais em MG.",
+      "relevance": 0.5,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Natura (NATU3) sobe 13% com renova\u00e7\u00e3o de Conselho e entrada da Advent.",
       "relevance": 0.6,
       "impact": "BULLISH"
     },
     {
-      "headline": "A\u00e7\u00f5es da PepGen caem 44% ap\u00f3s resultados de ensaio cl\u00ednico.",
-      "relevance": 0.3,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "\u00cdndice MOEX Russia avan\u00e7a 0,38%.",
-      "relevance": 0.2,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Dow Jones avan\u00e7a 0,11%, fechando inalterado.",
-      "relevance": 0.5,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Renner e C&A caem mais de 4% devido a discuss\u00e3o sobre taxa de importa\u00e7\u00e3o.",
+      "headline": "A\u00e7\u00f5es europeias quebram sequ\u00eancia de alta devido a conflito no Oriente M\u00e9dio.",
       "relevance": 0.8,
       "impact": "BEARISH"
     },
     {
-      "headline": "S&P e Nasdaq caem, Dow sobe levemente; investidores avaliam guerra contra o Ir\u00e3.",
+      "headline": "Bolsas de NY sobem com tr\u00e9gua EUA-Ir\u00e3, mas fecham m\u00eas e trimestre em queda.",
+      "relevance": 0.9,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "D\u00f3lar cai 1,3% (R$ 5,17) com al\u00edvio na guerra, mas sobe 0,9% em mar\u00e7o.",
+      "relevance": 0.9,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Taxas dos DIs desabam com esperan\u00e7a de desescalada da guerra no Oriente M\u00e9dio.",
       "relevance": 1.0,
-      "impact": "BEARISH"
+      "impact": "BULLISH"
     },
     {
-      "headline": "Unilever pr\u00f3xima de acordo de US$ 60 bilh\u00f5es com McCormick.",
-      "relevance": 0.4,
-      "impact": "NEUTRAL"
+      "headline": "Juros futuros desabam com esperan\u00e7a de desescalada da guerra no Oriente M\u00e9dio.",
+      "relevance": 1.0,
+      "impact": "BULLISH"
     },
     {
-      "headline": "Mercados Financeiros - \u00daltimas Not\u00edcias.",
-      "relevance": 0.0,
-      "impact": "NEUTRAL"
+      "headline": "Ibovespa dispara mais de 2% com acenos de fim da guerra, mas mar\u00e7o fecha negativo.",
+      "relevance": 1.0,
+      "impact": "BULLISH"
     },
     {
-      "headline": "\u00cdndice COLCAP da Col\u00f4mbia recua 0,80%.",
-      "relevance": 0.2,
+      "headline": "Ibovespa fecha em alta, mas avers\u00e3o a risco quebra s\u00e9rie de ganhos mensais.",
+      "relevance": 0.9,
       "impact": "NEUTRAL"
     }
   ],
-  "timestamp": 1774913099.1744745,
+  "timestamp": 1774996786.0161495,
   "cached": true
 }

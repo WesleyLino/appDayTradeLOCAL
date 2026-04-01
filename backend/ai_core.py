@@ -56,7 +56,9 @@ class InferenceEngine:
             onnx_path = self.model_path.replace(".pth", "_optimized.onnx")
             if os.path.exists(onnx_path):
                 providers = ["DmlExecutionProvider", "CPUExecutionProvider"]
-                self.ort_session = ort.InferenceSession(onnx_path, providers=providers)
+                sess_options = ort.SessionOptions()
+                sess_options.log_severity_level = 4  # Silencia erros C++ puros no terminal do usuário
+                self.ort_session = ort.InferenceSession(onnx_path, sess_options=sess_options, providers=providers)
                 self.use_onnx = True
                 logging.info(
                     f"--- [v24.4.1] ONNX Engine Ativo ({self.ort_session.get_providers()[0]}). Model: {onnx_path}"
@@ -143,10 +145,46 @@ class InferenceEngine:
             input_tensor = np.expand_dims(input_data, axis=0)  # [1, 60, N]
 
             if self.use_onnx and self.ort_session:
-                input_name = self.ort_session.get_inputs()[0].name
-                # [AMD/DirectML] Sempre usar float32 para evitar erro de Cast
-                raw_preds = self.ort_session.run(None, {input_name: input_tensor})[0]
-                preds = raw_preds[0] if raw_preds.ndim == 3 else raw_preds
+                try:
+                    input_name = self.ort_session.get_inputs()[0].name
+                    # [AMD/DirectML] Sempre usar float32 para evitar erro de Cast
+                    raw_preds = self.ort_session.run(None, {input_name: input_tensor})[0]
+                    preds = raw_preds[0] if raw_preds.ndim == 3 else raw_preds
+                except Exception as e_onnx:
+                    # Fallback to PyTorch and safely extract pybind11 C++ error which might be cp1252 encoded
+                    err_msg = ""
+                    if isinstance(e_onnx, UnicodeDecodeError) and hasattr(e_onnx, "object"):
+                        err_msg = e_onnx.object.decode("cp1252", errors="replace")
+                    else:
+                        err_msg = repr(e_onnx)
+                    logging.warning(f"ONNX Run falhou, tentando PT fallback. Erro: {err_msg}")
+                    
+                    if not self.model:
+                        logging.warning("Carregando modelo PyTorch de emergência na CPU devido a queda na GPU...")
+                        try:
+                            self.pytorch_c_in = 8
+                            self.model = PatchTST(
+                                c_in=self.pytorch_c_in,
+                                context_window=60,
+                                target_window=5,
+                                d_model=128,
+                                n_heads=4,
+                                n_layers=3,
+                            )
+                            state_dict = torch.load(self.model_path, map_location="cpu", weights_only=True)
+                            self.model.load_state_dict(state_dict)
+                            self.model.eval()
+                            self.use_onnx = False  # Desativa ONNX permanentemente para evitar spam de erro de GPU
+                        except Exception as eload:
+                            logging.error(f"Falha gravíssima ao carregar Fallback: {eload}")
+
+                    if self.model:
+                        with torch.no_grad():
+                            raw_preds = self.model(torch.tensor(input_tensor)).numpy()
+                            preds = raw_preds[0] if raw_preds.ndim == 3 else raw_preds
+                    else:
+                        logging.warning("AI_CORE: ONNX failed and No PyTorch model loaded for fallback")
+                        return self._neutral_output()
             elif self.model:
                 with torch.no_grad():
                     raw_preds = self.model(torch.tensor(input_tensor)).numpy()
@@ -154,6 +192,7 @@ class InferenceEngine:
             else:
                 logging.warning("AI_CORE: No ONNX and No PyTorch model loaded")
                 return self._neutral_output()
+
 
             if preds.ndim == 2:
                 q50_path = preds[:, 1]

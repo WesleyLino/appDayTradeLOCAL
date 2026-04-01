@@ -48,11 +48,11 @@ log_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
 log_file = "backend/trading_bridge.log"
 
-rotating_handler = RotatingFileHandler(
-    log_file, maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"
+file_handler = logging.FileHandler(
+    log_file, encoding="utf-8"
 )
 
-rotating_handler.setFormatter(log_formatter)
+file_handler.setFormatter(log_formatter)
 
 
 # StreamHandler robusto para UTF-8
@@ -62,7 +62,7 @@ stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setFormatter(log_formatter)
 
 
-logging.basicConfig(level=logging.INFO, handlers=[rotating_handler, stream_handler])
+logging.basicConfig(level=logging.INFO, handlers=[file_handler, stream_handler])
 
 
 # [ANTIVIBE-CODING] - Buffer circular para o Dashboard
