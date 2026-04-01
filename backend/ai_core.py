@@ -430,9 +430,9 @@ class AICore:
         )
 
         if is_golden_window and (
-            obi_abs >= 1.8 or (float(score_raw) >= 60.0 or float(score_raw) <= 40.0)
+            obi_abs >= 1.8 or (float(score_raw) >= 75.0 or float(score_raw) <= 25.0)
         ):
-            is_momentum_bypass = True  # [v24.5] Ajustado para 1.8 OBI conforme plano
+            is_momentum_bypass = True  # [v24.6-ANTILOSS] Threshold elevado 60→75% para eliminar bypasss de baixa convicção
             logging.info(
                 f"[v24.5 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Score: {score_raw:.1f})"
             )

@@ -22,7 +22,7 @@ class RiskManager:
         self.max_deviation = 5
         self.allow_autonomous = True
         self.dry_run = (
-            True  # [TREINAMENTO-ATIVO] - Todas as ordens são simuladas em memória
+            False  # [TREINAMENTO-ATIVO] - Todas as ordens são simuladas em memória
         )
         # [ANTIVIBE-CODING] - Limites de Perda Agressivos
         self.forbidden_hours = [

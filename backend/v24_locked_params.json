@@ -17,7 +17,7 @@
     "use_ai_core": true,
     "active_regimes": [0, 1, 2, 3],
     "max_daily_loss": 300.0,
-    "force_lots": 2,
+    "force_lots": 1,
     "aggressive_mode": true,
     "use_trailing_stop": true,
     "use_flux_filter": true,
