@@ -171,7 +171,7 @@ class InferenceEngine:
                                 n_heads=4,
                                 n_layers=3,
                             )
-                            state_dict = torch.load(self.model_path, map_location="cpu", weights_only=True)
+                            state_dict = torch.load(self.model_path, map_location="cpu", weights_only=False)  # [FIX-FALLBACK] .pt contém tensores GPU (_rebuild_device_tensor_from_numpy), weights_only=True bloqueia corretamente
                             self.model.load_state_dict(state_dict)
                             self.model.eval()
                             self.use_onnx = False  # Desativa ONNX permanentemente para evitar spam de erro de GPU

@@ -1,60 +1,60 @@
 {
-  "score": 0.14,
+  "score": 0.26,
   "reliability": "medium",
-  "risk_classification": "HIGH",
-  "fact_check": "Mercado brasileiro sob press\u00e3o de Petrobras, que estuda aumentar produ\u00e7\u00e3o de diesel. Min\u00e9rio de ferro em alta por est\u00edmulos na China. Petroleiras brasileiras caem com baixa do petr\u00f3leo. Wall Street em alta por expectativa de resolu\u00e7\u00e3o de conflito no Ir\u00e3, mas h\u00e1 alerta de disrup\u00e7\u00e3o global de commodities devido ao Estreito de Ormuz.",
+  "risk_classification": "MEDIUM",
+  "fact_check": "Juros futuros brasileiros caem, indicando menor percep\u00e7\u00e3o de risco. Petroleiras, como Petrobras, recuam mais de 3% com a baixa do petr\u00f3leo. Ibovespa fecha em alta, mas limitada. Ecorodovias dispara 7% ap\u00f3s leil\u00e3o. Mercados globais mistos, com EUA em alta e ASX sob cr\u00edticas.",
   "news": [
     {
-      "headline": "XP mant\u00e9m proje\u00e7\u00e3o de Ibovespa a 196 mil pontos.",
-      "relevance": 0.0,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Mercados Financeiros: \u00daltimas Not\u00edcias.",
-      "relevance": 0.0,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Ibovespa perde for\u00e7a com press\u00e3o da Petrobras ap\u00f3s 189 mil pontos.",
-      "relevance": 0.6,
+      "headline": "ASX criticado por pr\u00e1ticas de risco inadequadas",
+      "relevance": 0.3,
       "impact": "BEARISH"
     },
     {
-      "headline": "Petrobras estuda aumentar produ\u00e7\u00e3o de diesel para autossufici\u00eancia.",
-      "relevance": 0.7,
-      "impact": "BULLISH"
+      "headline": "Col\u00f4mbia: \u00cdndice COLCAP recua 0,24%",
+      "relevance": 0.1,
+      "impact": "BEARISH"
     },
     {
-      "headline": "Setor de semicondutores lidera lucros no S&P 500.",
-      "relevance": 0.5,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Recomenda\u00e7\u00e3o de a\u00e7\u00f5es de im\u00f3veis residenciais.",
-      "relevance": 0.0,
-      "impact": "NEUTRAL"
-    },
-    {
-      "headline": "Min\u00e9rio de ferro sobe com dados otimistas e est\u00edmulos na China.",
+      "headline": "Juros futuros caem com expectativa de fim de conflito EUA-Ir\u00e3",
       "relevance": 0.8,
       "impact": "BULLISH"
     },
     {
-      "headline": "Wall Street abre em alta por expectativa de resolu\u00e7\u00e3o de conflito no Ir\u00e3.",
-      "relevance": 0.9,
+      "headline": "Canad\u00e1: \u00cdndice S&P/TSX avan\u00e7a 0,58%",
+      "relevance": 0.2,
       "impact": "BULLISH"
     },
     {
-      "headline": "Jefferies alerta para disrup\u00e7\u00e3o global de commodities por conflito no Estreito de Ormuz.",
-      "relevance": 0.7,
+      "headline": "Petroleiras (PRIO, Petrobras) caem mais de 3% com baixa do petr\u00f3leo",
+      "relevance": 0.9,
       "impact": "BEARISH"
     },
     {
-      "headline": "Petroleiras brasileiras caem seguindo baixa do petr\u00f3leo.",
-      "relevance": 0.9,
-      "impact": "BEARISH"
+      "headline": "Ibovespa fecha em alta, mas Petrobras limita avan\u00e7o",
+      "relevance": 1.0,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "EUA: Dow Jones avan\u00e7a 0,48%",
+      "relevance": 0.7,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Ecorodovias dispara 7% ap\u00f3s vit\u00f3ria em leil\u00e3o",
+      "relevance": 0.6,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "M\u00e9xico: \u00cdndice S&P/BMV IPC avan\u00e7a 1,59%",
+      "relevance": 0.1,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Mercados Financeiros: \u00daltimas Not\u00edcias",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
     }
   ],
-  "timestamp": 1775056394.0998847,
+  "timestamp": 1775084434.7209308,
   "cached": true
 }
