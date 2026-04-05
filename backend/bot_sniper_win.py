@@ -137,6 +137,14 @@ class SniperBotWIN:
         self.ai.uncertainty_threshold = float(
             strategy.get("uncertainty_threshold") or 0.4
         )
+        # [v24.5] Sincronização Dinâmica de Momentum e Filtro BlueChip
+        self.ai.momentum_bypass_threshold = float(
+            strategy.get("momentum_bypass_threshold") or 82.0
+        )
+        self.ai.bluechip_bias_threshold = float(
+            strategy.get("bluechip_bias_threshold") or 0.25
+        )
+        self.ai.use_bluechip_bias = bool(strategy.get("use_bluechip_bias", True))
 
     def _log_to_dashboard(self, msg, log_type="info"):
         if self.log_callback:

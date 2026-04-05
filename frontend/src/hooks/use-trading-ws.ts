@@ -181,7 +181,7 @@ export function useTradingWebSocket(url: string = API_CONFIG.ws) {
     }
   };
 
-  const setAutonomous = async (enabled: boolean) => {
+  const  setAutonomous = async (enabled: boolean) => {
     try {
       const response = await fetch(
         `${API_CONFIG.http}/config/autonomous?enabled=${enabled}`,

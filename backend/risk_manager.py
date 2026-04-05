@@ -10,9 +10,9 @@ import os
 class RiskManager:
     def __init__(
         self,
-        max_daily_loss=100.00,
+        max_daily_loss=150.00,
         daily_trade_limit=999,
-        max_daily_loss_pct=0.20,
+        max_daily_loss_pct=0.30,
         initial_balance=500.0,
     ):
         self.max_daily_loss = max_daily_loss
@@ -22,7 +22,7 @@ class RiskManager:
         self.max_deviation = 5
         self.allow_autonomous = True
         self.dry_run = (
-            False  # [TREINAMENTO-ATIVO] - Todas as ordens são simuladas em memória
+            False     # [TREINAMENTO-ATIVO] - Todas as ordens são simuladas em memória
         )
         # [ANTIVIBE-CODING] - Limites de Perda Agressivos
         self.forbidden_hours = [
@@ -41,9 +41,9 @@ class RiskManager:
             5.0  # [SOTA V22.5.7] Trailing ultra-curto para capturar lucro bi-direcional
         )
 
-        # [MELHORIA ABSOLUTA] Breakeven Ultra-Rápido - Sincronizado com JSON
-        self.be_trigger = 45.0
-        self.be_lock = 0.0
+        # [v24.5 GOLDEN] Breakeven Ultra-Rápido - Sincronizado
+        self.be_trigger = 30.0
+        self.be_lock = 5.0
 
         # [v22.3] Filtro Anti-Lateralidade (Anti-Sideways)
         self.adx_min_threshold = 18.0
@@ -53,7 +53,7 @@ class RiskManager:
         self.min_atr_threshold = (
             50.0  # [v22.5.1] Inércia Institucional: Ignora mercado "parado" (pts)
         )
-        self.flux_imbalance_threshold = 0.95  # [ANTIVIBE-CODING] SOTA V22.5.1
+        self.flux_imbalance_threshold = 1.30  # [v24.5 SNIPER-GOLDEN]
 
         # [v24.5] Scaling Out (Saída Parcial HFT)
         self.base_volume = 2.0  # [v24.5] 2 contratos para permitir parcial de fábrica

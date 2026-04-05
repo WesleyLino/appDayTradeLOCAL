@@ -243,8 +243,10 @@ class AICore:
         self.lot_multiplier_partial = 0.25
         self.atr_confidence_relax_trigger = 100.0
         self.momentum_bypass_threshold = (
-            82.0  # [v24.5] Thresh de ativação institucional Sniper
+            68.0  # [v24.5] Thresh de ativação institucional Sniper - Perfil 3k
         )
+        self.bluechip_bias_threshold = 0.25
+        self.use_bluechip_bias = True
 
     async def predict_with_patchtst(self, engine, data):
         if engine is None:
@@ -419,20 +421,21 @@ class AICore:
         )
 
         # [v24.5] Convicção Direcional (IA + Fluxo + Aceleração)
-        # Momentum Bypass Pro: Se score >= 82, ignora RSI esticado
+        # Momentum Bypass Pro: Se score >= threshold dinâmico, ignora RSI esticado
         cvd_accel = kwargs.get("cvd_accel", 0.0)
-        is_institutional_sweep = (score_raw >= 82.0 and cvd_accel >= 0.1) or (
-            score_raw <= 18.0 and cvd_accel <= -0.1
+        is_institutional_sweep = (score_raw >= self.momentum_bypass_threshold and cvd_accel >= 0.1) or (
+            score_raw <= (100.0 - self.momentum_bypass_threshold) and cvd_accel <= -0.1
         )
 
         is_high_conviction = score_raw >= dynamic_bypass_thresh or score_raw <= (
             100.0 - dynamic_bypass_thresh
         )
 
+        golden_thresh = self.momentum_bypass_threshold + 7.0
         if is_golden_window and (
-            obi_abs >= 1.8 or (float(score_raw) >= 75.0 or float(score_raw) <= 25.0)
+            obi_abs >= 1.8 or (float(score_raw) >= golden_thresh or float(score_raw) <= (100.0 - golden_thresh))
         ):
-            is_momentum_bypass = True  # [v24.6-ANTILOSS] Threshold elevado 60→75% para eliminar bypasss de baixa convicção
+            is_momentum_bypass = True  # [v24.6-ANTILOSS] Threshold elevado via JSON (ex: 68+7=75%)
             logging.info(
                 f"[v24.5 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Score: {score_raw:.1f})"
             )
@@ -596,8 +599,25 @@ class AICore:
             rsi_buy_trigger = 32.0
             rsi_sell_trigger = 72.0  # [MELHORIA-RSI] Maior rigor para vendas em consolidação
 
+        # 9. Veto BlueChip Bias (Influência Institucional PETR/VALE/ITUB)
+        bluechip_veto = False
+        if getattr(self, "use_bluechip_bias", False) and direction != "NEUTRAL":
+            score_bc = getattr(self, "latest_sentiment_score", 0.0)
+            thresh_bc = getattr(self, "bluechip_bias_threshold", 0.25)
+            
+            if direction == "SELL" and score_bc > thresh_bc:
+                bluechip_veto = True
+                logging.warning(f"⛔ [BLUECHIP-BIAS] VENDA abortada. Sentimento BlueChips é ALTA ({score_bc:.2f} > {thresh_bc:.2f})")
+            elif direction == "BUY" and score_bc < -thresh_bc:
+                bluechip_veto = True
+                logging.warning(f"⛔ [BLUECHIP-BIAS] COMPRA abortada. Sentimento BlueChips é BAIXA ({score_bc:.2f} < -{thresh_bc:.2f})")
+
         # Vetos Finais (Com Bypass de Sanidade v24.5 + MELHORIA-1)
         veto_reason = None
+        if vwap_veto:
+            veto_reason = "DIST_VWAP"
+        elif bluechip_veto:
+            veto_reason = "BLUECHIP_BIAS"
 
         # [MELHORIA-1 v2] Threshold de Incerteza Condicional — Fusão Temporal + OBI
         # Princípio: eff_threshold = max(threshold_por_horario, bonus_obi)
@@ -620,9 +640,9 @@ class AICore:
             # Sem fluxo direcional → usa threshold temporal puro (0.40 normal, 0.85 Janela de Ouro)
             eff_uncertainty_thresh = self.uncertainty_threshold
 
-        if uncertainty > eff_uncertainty_thresh:
+        if uncertainty > eff_uncertainty_thresh and not veto_reason:
             veto_reason = "UNCERTAINTY"
-        elif vwap_veto and not is_momentum_bypass:
+        elif vwap_veto and not is_momentum_bypass and not veto_reason:
             veto_reason = "VWAP_DISTANT"
 
         if veto_reason:

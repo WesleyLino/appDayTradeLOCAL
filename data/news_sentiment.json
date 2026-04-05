@@ -1,60 +1,60 @@
 {
-  "score": 0.26,
-  "reliability": "medium",
-  "risk_classification": "MEDIUM",
-  "fact_check": "Juros futuros brasileiros caem, indicando menor percep\u00e7\u00e3o de risco. Petroleiras, como Petrobras, recuam mais de 3% com a baixa do petr\u00f3leo. Ibovespa fecha em alta, mas limitada. Ecorodovias dispara 7% ap\u00f3s leil\u00e3o. Mercados globais mistos, com EUA em alta e ASX sob cr\u00edticas.",
+  "score": -0.65,
+  "reliability": "high",
+  "risk_classification": "HIGH",
+  "fact_check": "Aumento das tens\u00f5es geopol\u00edticas no Oriente M\u00e9dio com a retirada russa de funcion\u00e1rios de usina nuclear no Ir\u00e3 e declara\u00e7\u00f5es de Erdogan sobre a necessidade de esfor\u00e7os globais para encerrar conflito na regi\u00e3o. Instabilidade pol\u00edtica na China com investiga\u00e7\u00e3o de membro do Politburo. No Brasil, Petrobras reafirma pol\u00edtica de pre\u00e7os de combust\u00edveis, enquanto distribuidoras resistem a medidas de conten\u00e7\u00e3o.",
   "news": [
     {
-      "headline": "ASX criticado por pr\u00e1ticas de risco inadequadas",
-      "relevance": 0.3,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Col\u00f4mbia: \u00cdndice COLCAP recua 0,24%",
-      "relevance": 0.1,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Juros futuros caem com expectativa de fim de conflito EUA-Ir\u00e3",
-      "relevance": 0.8,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Canad\u00e1: \u00cdndice S&P/TSX avan\u00e7a 0,58%",
-      "relevance": 0.2,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Petroleiras (PRIO, Petrobras) caem mais de 3% com baixa do petr\u00f3leo",
+      "headline": "R\u00fassia retira funcion\u00e1rios de usina nuclear de Bushehr, no Ir\u00e3",
       "relevance": 0.9,
       "impact": "BEARISH"
     },
     {
-      "headline": "Ibovespa fecha em alta, mas Petrobras limita avan\u00e7o",
-      "relevance": 1.0,
+      "headline": "Distribuidoras resistem a medidas do governo para conter pre\u00e7os de combust\u00edveis no Brasil",
+      "relevance": 0.6,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "ISS recomenda voto contra elimina\u00e7\u00e3o de relat\u00f3rios clim\u00e1ticos da BP",
+      "relevance": 0.3,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Petrobras reafirma pol\u00edtica de pre\u00e7os de combust\u00edveis",
+      "relevance": 0.7,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "EUA: Dow Jones avan\u00e7a 0,48%",
-      "relevance": 0.7,
-      "impact": "BULLISH"
+      "headline": "Membro do Politburo chin\u00eas \u00e9 investigado por \u00f3rg\u00e3o anticorrup\u00e7\u00e3o",
+      "relevance": 0.8,
+      "impact": "BEARISH"
     },
     {
-      "headline": "Ecorodovias dispara 7% ap\u00f3s vit\u00f3ria em leil\u00e3o",
-      "relevance": 0.6,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "M\u00e9xico: \u00cdndice S&P/BMV IPC avan\u00e7a 1,59%",
-      "relevance": 0.1,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "Mercados Financeiros: \u00daltimas Not\u00edcias",
+      "headline": "Mercados Financeiros - \u00daltimas Not\u00edcias",
       "relevance": 0.0,
       "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Lei da misoginia causa d\u00favidas nas redes",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "A\u00e7\u00f5es na Turquia fecham em queda, \u00cdndice BIST 100 recua 0,88%",
+      "relevance": 0.4,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Tribunal italiano anula cl\u00e1usulas de aumento de pre\u00e7os da Netflix e ordena reembolsos",
+      "relevance": 0.3,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Erdogan diz que impasse em conflito no Ir\u00e3 exige esfor\u00e7os globais",
+      "relevance": 0.9,
+      "impact": "BEARISH"
     }
   ],
-  "timestamp": 1775084434.7209308,
+  "timestamp": 1775352069.5798833,
   "cached": true
 }
