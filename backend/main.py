@@ -1710,7 +1710,9 @@ async def autonomous_bot_loop():
 
                                         continue
 
-                                # --- Lógica Original Trailing Stop ---
+                                # --- Lógica Original Trailing Stop & Break Even ---
+
+                                be_pts = risk.be_trigger if pos.type == bridge.mt5.POSITION_TYPE_BUY else getattr(risk, 'be_sell_trigger', risk.be_trigger)
 
                                 if pos.type == bridge.mt5.POSITION_TYPE_BUY:
                                     if profit_pts >= trigger_pts:
@@ -1731,6 +1733,14 @@ async def autonomous_bot_loop():
                                             logging.info(
                                                 f"TRAILING STOP (BUY): SL movido para {new_sl}"
                                             )
+                                    elif profit_pts >= be_pts and pos.sl < pos.price_open:
+                                        await asyncio.to_thread(
+                                            bridge.update_sltp,
+                                            pos.ticket,
+                                            pos.price_open,
+                                            pos.tp,
+                                        )
+                                        logging.info(f"🛡️ BREAKEVEN ACIONADO ANTES DO TRAILING (BUY): SL em {pos.price_open}")
 
                                 elif pos.type == bridge.mt5.POSITION_TYPE_SELL:
                                     if profit_pts >= trigger_pts:
@@ -1751,6 +1761,14 @@ async def autonomous_bot_loop():
                                             logging.info(
                                                 f"TRAILING STOP (SELL): SL movido para {new_sl}"
                                             )
+                                    elif profit_pts >= be_pts and (pos.sl > pos.price_open or pos.sl == 0):
+                                        await asyncio.to_thread(
+                                            bridge.update_sltp,
+                                            pos.ticket,
+                                            pos.price_open,
+                                            pos.tp,
+                                        )
+                                        logging.info(f"🛡️ BREAKEVEN ACIONADO ANTES DO TRAILING (SELL): SL em {pos.price_open}")
 
                     except Exception as e:
                         logging.error(f"Erro no Trailing/Time Stop: {e}")

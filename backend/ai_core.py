@@ -346,9 +346,9 @@ class AICore:
             # Sem OBI (Dias de Auditoria/Offline), confiamos mais na IA
             score_raw = (patchtst_score_val * 0.7) + (sent_score_norm * 0.3)
         else:
-            # [v24.3] Maior peso ao fluxo (OBI) para capturar ralis institucionais
+            # [v24.6] Maior peso ao PatchTST (45%) e redução de OBI (35%) para mitigar Spoofing Institucional
             score_raw = (
-                (patchtst_score_val * 0.2) + (obi_score * 0.6) + (sent_score_norm * 0.2)
+                (patchtst_score_val * 0.45) + (obi_score * 0.35) + (sent_score_norm * 0.2)
             )
 
         # 3. Inicialização de Variáveis de Controle
@@ -392,9 +392,10 @@ class AICore:
             elif obi_abs < 0.1:
                 score_raw = (patchtst_score_val * 0.7) + (sent_score_norm * 0.3)
             else:
+                # [v24.6] OBI Smart Decay
                 score_raw = (
-                    (patchtst_score_val * 0.2)
-                    + (obi_score * 0.6)
+                    (patchtst_score_val * 0.45)
+                    + (obi_score * 0.35)
                     + (sent_score_norm * 0.2)
                 )
 
@@ -654,8 +655,8 @@ class AICore:
             exec_strategy = "PASSIVA"
 
         # [FIX #37] Breakdown de contribuição para log de execução em main.py
-        total_weight = (0.4 if is_opening_window else (0.3 if (is_golden_window or regime == 1) else (0.7 if obi_abs < 0.1 else 0.2)))
-        obi_weight   = (0.4 if is_opening_window else (0.5 if (is_golden_window or regime == 1) else (0.0 if obi_abs < 0.1 else 0.6)))
+        total_weight = (0.4 if is_opening_window else (0.3 if (is_golden_window or regime == 1) else (0.7 if obi_abs < 0.1 else 0.45)))
+        obi_weight   = (0.4 if is_opening_window else (0.5 if (is_golden_window or regime == 1) else (0.0 if obi_abs < 0.1 else 0.35)))
         sent_weight  = 0.2
 
         return {

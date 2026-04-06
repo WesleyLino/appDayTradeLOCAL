@@ -520,8 +520,8 @@ class RiskManager:
         """
         # Limiar de tempo dinâmico: Se ATR está alto (mercado rápido), o tempo é menor (180s = 3min)
         # Se ATR está baixo (mercado lento), tolera até 300s (5min).
-        max_time = 180 if (current_atr and current_atr > 300) else 300
-
+        # [v24.6] Time-Stop expandido 2x (Evitar aborto prematuro de trades laterais)
+        max_time = 360 if (current_atr and current_atr > 300) else 600
         if elapsed_seconds >= max_time:
             # Se não atingiu pelo menos o alvo de breakeven, sai para liberar margem
             if current_profit_points < self.be_trigger:
@@ -1097,6 +1097,15 @@ class RiskManager:
                         )
                         self.flux_imbalance_threshold = mapped_params.get(
                             "flux_imbalance_threshold", self.flux_imbalance_threshold
+                        )
+                        self.trailing_trigger = mapped_params.get(
+                            "trailing_trigger", self.trailing_trigger
+                        )
+                        self.trailing_lock = mapped_params.get(
+                            "trailing_lock", self.trailing_lock
+                        )
+                        self.trailing_step = mapped_params.get(
+                            "trailing_step", self.trailing_step
                         )
                         self.force_lots = params.get("force_lots")
                         self.sl_dist = mapped_params.get(

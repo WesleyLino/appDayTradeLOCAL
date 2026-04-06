@@ -1,60 +1,60 @@
 {
-  "score": -0.65,
-  "reliability": "high",
+  "score": 0.4,
+  "reliability": "medium",
   "risk_classification": "HIGH",
-  "fact_check": "Aumento das tens\u00f5es geopol\u00edticas no Oriente M\u00e9dio com a retirada russa de funcion\u00e1rios de usina nuclear no Ir\u00e3 e declara\u00e7\u00f5es de Erdogan sobre a necessidade de esfor\u00e7os globais para encerrar conflito na regi\u00e3o. Instabilidade pol\u00edtica na China com investiga\u00e7\u00e3o de membro do Politburo. No Brasil, Petrobras reafirma pol\u00edtica de pre\u00e7os de combust\u00edveis, enquanto distribuidoras resistem a medidas de conten\u00e7\u00e3o.",
+  "fact_check": "Fluxo de R$ 4,5 bilh\u00f5es para fundos de a\u00e7\u00f5es no Brasil indica otimismo. Petr\u00f3leo em alta de 2% devido a tens\u00f5es geopol\u00edticas no Oriente M\u00e9dio. Bradesco (BBDC4) anuncia JCP bilion\u00e1rio. CVM reporta atrito institucional com o Banco Central. Ibovespa com oscila\u00e7\u00e3o mista, com PETR4 e bancos em alta e VALE3 em queda. Custos de combust\u00edvel impactam estimativas de a\u00e9reas dos EUA.",
   "news": [
     {
-      "headline": "R\u00fassia retira funcion\u00e1rios de usina nuclear de Bushehr, no Ir\u00e3",
-      "relevance": 0.9,
+      "headline": "Custos de combust\u00edvel impactam estimativas para a\u00e9reas dos EUA.",
+      "relevance": 0.1,
       "impact": "BEARISH"
     },
     {
-      "headline": "Distribuidoras resistem a medidas do governo para conter pre\u00e7os de combust\u00edveis no Brasil",
-      "relevance": 0.6,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "ISS recomenda voto contra elimina\u00e7\u00e3o de relat\u00f3rios clim\u00e1ticos da BP",
-      "relevance": 0.3,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Petrobras reafirma pol\u00edtica de pre\u00e7os de combust\u00edveis",
-      "relevance": 0.7,
+      "headline": "CFO da OpenAI expressa preocupa\u00e7\u00f5es sobre IPO em 2026.",
+      "relevance": 0.1,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Membro do Politburo chin\u00eas \u00e9 investigado por \u00f3rg\u00e3o anticorrup\u00e7\u00e3o",
-      "relevance": 0.8,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Mercados Financeiros - \u00daltimas Not\u00edcias",
-      "relevance": 0.0,
+      "headline": "Bolsa da Turquia (BIST 100) fecha em alta de 1,36%.",
+      "relevance": 0.1,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Lei da misoginia causa d\u00favidas nas redes",
-      "relevance": 0.0,
+      "headline": "CVM reporta estar 'sob ataque' e critica postura do Banco Central.",
+      "relevance": 0.5,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "Brasil atrai R$ 4,5 bilh\u00f5es em fundos de a\u00e7\u00f5es, contrariando emergentes.",
+      "relevance": 1.0,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "Ibovespa oscila com PETR4 e bancos em alta e VALE3 em queda.",
+      "relevance": 1.0,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "A\u00e7\u00f5es na Turquia fecham em queda, \u00cdndice BIST 100 recua 0,88%",
-      "relevance": 0.4,
-      "impact": "BEARISH"
+      "headline": "Netflix lan\u00e7a aplicativo de jogos 'Playground' para crian\u00e7as.",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
     },
     {
-      "headline": "Tribunal italiano anula cl\u00e1usulas de aumento de pre\u00e7os da Netflix e ordena reembolsos",
-      "relevance": 0.3,
-      "impact": "BEARISH"
+      "headline": "Bradesco (BBDC4) anuncia pagamento bilion\u00e1rio de JCP.",
+      "relevance": 0.5,
+      "impact": "BULLISH"
     },
     {
-      "headline": "Erdogan diz que impasse em conflito no Ir\u00e3 exige esfor\u00e7os globais",
-      "relevance": 0.9,
+      "headline": "Petr\u00f3leo sobe mais de 2% ap\u00f3s falas de Trump sobre Ir\u00e3.",
+      "relevance": 1.0,
+      "impact": "BULLISH"
+    },
+    {
+      "headline": "A\u00e7\u00f5es da WW International caem com mudan\u00e7a de lideran\u00e7a.",
+      "relevance": 0.1,
       "impact": "BEARISH"
     }
   ],
-  "timestamp": 1775352069.5798833,
+  "timestamp": 1775503872.144314,
   "cached": true
 }
