@@ -1020,8 +1020,8 @@ class RiskManager:
                         )
                         or 0.6,
                         "pyramid_max_volume": params.get("pyramid_max_volume") or 1,
-                        "be_trigger": params.get("be_trigger") or 60.0,
-                        "be_sell_trigger": params.get("be_sell_trigger") or 25.0,
+                        "be_trigger": params.get("be_trigger_buy", params.get("be_trigger", 60.0)),
+                        "be_sell_trigger": params.get("be_trigger_sell", params.get("be_sell_trigger", 25.0)),
                         "be_lock": params.get("be_lock") or 5.0,
                         "adx_min_threshold": params.get("adx_min_threshold", 20.0),
                         "bollinger_squeeze_threshold": params.get(
@@ -1035,8 +1035,9 @@ class RiskManager:
                         or 1.5,
                         "start_time": params.get("start_time") or "09:00",
                         "end_time": params.get("end_time") or "17:15",
-                        "confidence_threshold": params.get("confidence_threshold")
-                        or 0.52,
+                        "confidence_threshold": params.get("confidence_threshold") or 0.52,
+                        "confidence_buy_threshold": params.get("confidence_buy_threshold", 56.5),
+                        "confidence_sell_threshold": params.get("confidence_sell_threshold", 43.5),
                         "trailing_step_atr": params.get("trailing_step_atr", 0.3),
                         "sell_trailing_step_atr": params.get(
                             "sell_trailing_step_atr", 0.3

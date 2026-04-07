@@ -74,6 +74,11 @@ class SniperBotWIN:
         self.SNIPER_ORDER_LOCK_SEC = 12.0  # Igual ao GLOBAL_ORDER_LOCK_SEC do main.py
         self.MIN_ELAPSED_BEFORE_TRAILING = 30.0  # [FIX #NEW-POS-GUARD] Aguarda 30s antes de gerenciar posição nova
 
+        self.consecutive_buy_losses = 0
+        self.consecutive_sell_losses = 0
+        self.buy_cooldown_until = 0.0
+        self.sell_cooldown_until = 0.0
+
         # [PAUSA PARCIAL] Controle de Volatilidade de Abertura
         self.dia_pausado_vol = False
         self.hl_abertura_cache = None
@@ -128,12 +133,11 @@ class SniperBotWIN:
             strategy.get("atr_confidence_relax_trigger", 100.0)
         )
 
-        self.ai.confidence_buy_threshold = (
-            float(strategy.get("confidence_buy_threshold") or 0.65) * 100.0
-        )
-        self.ai.confidence_sell_threshold = (
-            float(strategy.get("confidence_sell_threshold") or 0.35) * 100.0
-        )
+        c_buy = float(strategy.get("confidence_buy_threshold") or 56.5)
+        self.ai.confidence_buy_threshold = c_buy * 100.0 if c_buy <= 1.0 else c_buy
+        
+        c_sell = float(strategy.get("confidence_sell_threshold") or 43.5)
+        self.ai.confidence_sell_threshold = c_sell * 100.0 if c_sell <= 1.0 else c_sell
         self.ai.uncertainty_threshold = float(
             strategy.get("uncertainty_threshold") or 0.4
         )
@@ -369,15 +373,34 @@ class SniperBotWIN:
                     ]
                 ]
                 if out_deals:
+                    last_deal = out_deals[-1]
                     profit = (
-                        out_deals[-1].profit
-                        + out_deals[-1].swap
-                        + out_deals[-1].commission
+                        last_deal.profit
+                        + last_deal.swap
+                        + last_deal.commission
                     )
+                    # DEAL_TYPE_SELL na saída significa que a posição original era BUY
+                    is_buy_exit = (last_deal.type == self.bridge.mt5.DEAL_TYPE_SELL)
+                    is_sell_exit = (last_deal.type == self.bridge.mt5.DEAL_TYPE_BUY)
+
                     if profit > 0:
                         self.consecutive_wins += 1
+                        if is_buy_exit:
+                            self.consecutive_buy_losses = 0
+                        elif is_sell_exit:
+                            self.consecutive_sell_losses = 0
                     else:
                         self.consecutive_wins = 0
+                        if is_buy_exit:
+                            self.consecutive_buy_losses += 1
+                            if self.consecutive_buy_losses >= 2:
+                                self.buy_cooldown_until = time.time() + 600
+                                logger.warning("🚫 [TRAVA DE INSISTÊNCIA] 2 Loss seguidos na COMPRA. Compras suspensas por 10 min.")
+                        elif is_sell_exit:
+                            self.consecutive_sell_losses += 1
+                            if self.consecutive_sell_losses >= 2:
+                                self.sell_cooldown_until = time.time() + 600
+                                logger.warning("🚫 [TRAVA DE INSISTÊNCIA] 2 Loss seguidos na VENDA. Vendas suspensas por 10 min.")
                     self._save_state()
             self.last_total_trades = stats["total_trades"]
 
@@ -720,6 +743,13 @@ class SniperBotWIN:
                     "BUY" if side == "buy" else "SELL", bc_score
                 ):
                     is_trade_allowed = False
+
+                # Veto da Trava de Insistência
+                if is_trade_allowed:
+                    if side == "buy" and time.time() < self.buy_cooldown_until:
+                        is_trade_allowed = False
+                    elif side == "sell" and time.time() < self.sell_cooldown_until:
+                        is_trade_allowed = False
 
                 if is_trade_allowed:
                     positions = self.bridge.mt5.positions_get(symbol=self.symbol)

@@ -403,6 +403,16 @@ async def startup_event():
         except Exception as e:
             logging.error(f"Erro ao carregar High Gain Params: {e}")
 
+        # [FIX] Apply locked config parameters to the AICore engine
+        if locked_config:
+            c_buy = float(locked_config.get("confidence_buy_threshold", 0.58))
+            ai.confidence_buy_threshold = c_buy * 100.0 if c_buy <= 1.0 else c_buy
+            
+            c_sell = float(locked_config.get("confidence_sell_threshold", 0.42))
+            ai.confidence_sell_threshold = c_sell * 100.0 if c_sell <= 1.0 else c_sell
+            
+            logging.info(f"⚙️ Configurados Limiares de Confiança da IA: Compra={ai.confidence_buy_threshold:.1f}%, Venda={ai.confidence_sell_threshold:.1f}%")
+
         # Iniciar a background task que sustenta o robô principal (Modo Autônomo)
         asyncio.create_task(autonomous_bot_loop())
         logging.info(
@@ -494,7 +504,7 @@ _panic_in_progress: bool = False
 # Ambos verificam e atualizam esta variável para garantir que apenas UM sistema
 # coloque ordens por vez, eliminando a race condition de ordens simultâneas.
 _global_order_lock_until: float = 0.0
-GLOBAL_ORDER_LOCK_SEC: float = 12.0  # 2s de margem extra sobre ORDER_LOCK_SEC=10s
+GLOBAL_ORDER_LOCK_SEC: float = locked_config.get("order_lock_sec", 10.0) + 2.0  # 2s de margem extra sobre ORDER_LOCK_SEC
 
 # [FIX #CONSEC-LOSS-BREAKER] Circuit Breaker de Perdas Consecutivas.
 # Cada SL externo detectado (FLIP-5) incrementa o contador.
@@ -531,14 +541,14 @@ async def autonomous_bot_loop():
 
         # [FIX #FLIP-2] Cooldown pós-fechamento: evita flip-flop imediato de sinal
         last_close_time = 0  # timestamp do último fechamento de posição
-        POST_CLOSE_COOLDOWN_SEC = 60.0  # [MELHORIA ABSOLUTA] 60s entre fechamento e próxima entrada para esfriar book
+        POST_CLOSE_COOLDOWN_SEC = locked_config.get("post_close_cooldown_sec", 60.0)  # [MELHORIA ABSOLUTA] tempo para esfriar book
 
         # [FIX #FLIP-4] Lock de Ordem Ativa: bloqueia novas ordens por ORDER_LOCK_SEC
         # após qualquer place_limit_order ser enviada, INDEPENDENTE do positions_get.
         # Resolve a race condition de 72ms: limit é enviada mas positions_get ainda
         # retorna vazio até o MT5 confirmar internamente o fill (B3 netting).
         _order_lock_until = 0.0  # timestamp até o qual novas ordens estão bloqueadas
-        ORDER_LOCK_SEC = 10.0    # 10s de lock após qualquer ordem enviada
+        ORDER_LOCK_SEC = locked_config.get("order_lock_sec", 10.0)    # lock após qualquer ordem enviada
 
         last_heartbeat = time_module.time()
 
@@ -566,8 +576,8 @@ async def autonomous_bot_loop():
         # [FIX #TREND-ALIGN] Histórico de preços para detectar tendência recente
         # Bloqueia BUY em tendência de queda e SELL em tendência de alta (momentum)
         _price_history: list = []  # lista circular de preços recentes (max 10 ticks)
-        _TREND_LOOKBACK = 8        # ticks analisados para verificar direção
-        _TREND_MIN_MOVE = 40.0     # movímento mínimo em pontos para vetar direção
+        _TREND_LOOKBACK = locked_config.get("trend_lookback", 8)        # ticks analisados para verificar direção
+        _TREND_MIN_MOVE = locked_config.get("trend_min_move", 40.0)     # movímento mínimo em pontos para vetar direção
 
         # [FIX #ORDER-RETRY] Lock após falha de envio (evita spam a cada 400ms)
         ORDER_FAIL_LOCK_SEC = 5.0  # 5s de lock após qualquer falha de order_send

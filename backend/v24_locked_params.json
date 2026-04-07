@@ -23,9 +23,11 @@
     "use_flux_filter": true,
     "volatility_pause_threshold": 160.0,
     "use_h1_trend_bias": true,
-    "be_trigger": 75.0,
-    "be_sell_trigger": 75.0,
+    "be_trigger": 120.0,
+    "be_sell_trigger": 120.0,
     "be_lock": 15.0,
+    "confidence_buy_threshold": 0.785,
+    "confidence_sell_threshold": 0.425,
     "partial_profit_points": 100.0,
     "vol_spike_mult": 1.0,
     "trailing_step_atr": 0.3,
@@ -49,5 +51,9 @@
     "volume_bonus_pts": 5.0,
     "golden_window_start": "10:00",
     "golden_window_end": "11:45",
-    "golden_window_tp_mult": 2.0
+    "golden_window_tp_mult": 2.0,
+    "post_close_cooldown_sec": 60.0,
+    "order_lock_sec": 10.0,
+    "trend_lookback": 8,
+    "trend_min_move": 40.0
 }

@@ -85,11 +85,10 @@ class MT5Bridge:
         # Validação de AlgoTrading
         terminal_info = self.mt5.terminal_info()
         if not terminal_info.trade_allowed:
-            logging.error(
-                "[ERRO CRITICO] AlgoTrading DESATIVADO. Ative o botao 'AlgoTrading' no MT5 para operar."
+            logging.warning(
+                "[AVISO] AlgoTrading DESATIVADO. Conectando em modo Apenas Leitura/Backtest."
             )
-            self.disconnect()
-            return False
+            # Não desconecta, permitindo leitura de histórico
         else:
             logging.info("[OK] AlgoTrading: ATIVADO (Negociacao Permitida)")
 
