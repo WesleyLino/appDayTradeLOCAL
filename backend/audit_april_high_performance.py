@@ -21,9 +21,9 @@ async def run_audit():
     timeframe = "M1"
 
     target_dates_str = [
-        "02/04/2026",
-        "03/04/2026",
-        "06/04/2026"
+        "06/04/2026",
+        "07/04/2026",
+        "08/04/2026"
     ]
     dates_to_test = [datetime.strptime(d, "%d/%m/%Y").date() for d in target_dates_str]
 

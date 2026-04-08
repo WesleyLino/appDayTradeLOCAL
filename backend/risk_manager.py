@@ -1188,11 +1188,22 @@ class RiskManager:
             sl_points = regime_sl
             norm_sym = self._normalize_symbol(symbol)
             d_params = self.dynamic_params.get(norm_sym, {})
-            # Fallback para dynamic_params se disponível
             if d_params.get("sl"):
                 sl_points = float(d_params["sl"])
             if d_params.get("tp"):
                 tp_points = float(d_params["tp"])
+
+        # Adaptação para ruído extremo ou viés fraco
+        adx_val = kwargs.get('adx_val', 50.0)
+        h1_trend = kwargs.get('h1_trend', 1.0)
+        
+        is_ruidoso = adx_val < 20.0
+        is_h1_fraco = 'h1_trend' in kwargs and abs(h1_trend) < 0.2
+
+        if is_ruidoso or is_h1_fraco:
+            tp_points = tp_points * 0.70
+            logging.info(f"⚡ [TP ADAPTATIVO] Encurtando alvo para {tp_points:.0f} pts (Vol Ruidosa/ADX={adx_val:.1f} / H1={h1_trend:.2f})")
+
 
 
         # [v24.6-GOLDEN-FULL] Janela de Ouro — Pregão Inteiro (10:00 – 17:15)

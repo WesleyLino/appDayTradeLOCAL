@@ -258,6 +258,10 @@ class MT5Bridge:
             if tp > 0:
                 tp = round(tp / tick_size) * tick_size
 
+        vol_step = symbol_info.volume_step
+        if vol_step > 0:
+            volume = round(volume / vol_step) * vol_step
+
         request = {
             "action": mt5.TRADE_ACTION_PENDING,
             "symbol": symbol,
@@ -329,6 +333,10 @@ class MT5Bridge:
                 sl = round(sl / tick_size) * tick_size
             if tp > 0:
                 tp = round(tp / tick_size) * tick_size
+
+        vol_step = symbol_info.volume_step
+        if vol_step > 0:
+            volume = round(volume / vol_step) * vol_step
 
         request = {
             "action": mt5.TRADE_ACTION_DEAL,

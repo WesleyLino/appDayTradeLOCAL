@@ -241,6 +241,8 @@ class SniperBotWIN:
         current_atr=None,
         regime=None,
         is_scaling_in=False,
+        h1_trend=0.0,
+        adx_val=50.0,
     ):
         # [FIX #DUAL-BOT-LOCK] Verificar lock global do main.py antes de qualquer execução
         try:
@@ -340,6 +342,8 @@ class SniperBotWIN:
             comment="MOMENTUM_BYPASS"
             if (ai_decision and ai_decision.get("is_momentum_bypass"))
             else "SNIPER_SOTA",
+            h1_trend=h1_trend,
+            adx_val=adx_val,
         )
         buy_dist = self.ai.confidence_buy_threshold - 50.0
         buy_threshold = min(95.0, 50.0 + (buy_dist * 1.5)) if getattr(self.ai, "h1_trend", 0) < 0 else self.ai.confidence_buy_threshold
@@ -742,6 +746,9 @@ class SniperBotWIN:
                 is_trade_allowed = False
                 side = "NEUTRAL"
 
+                flux_buy_threshold = self.flux_threshold
+                flux_sell_threshold = self.flux_threshold * 1.25
+
                 if decision["is_momentum_bypass"]:
                     # [v23.1] BYPASS INSTITUCIONAL: IA tem autoridade total
                     if decision["direction"] == "BUY" and pressure > 1.1:
@@ -750,7 +757,7 @@ class SniperBotWIN:
                         logger.info(
                             f"🚀 [MOMENTUM BYPASS] IA Score {decision['score']:.1f}% (Bypass Ativado) | Fluxo: {pressure:.2f}"
                         )
-                    elif decision["direction"] == "SELL" and pressure < -1.1:
+                    elif decision["direction"] == "SELL" and pressure < -1.375:
                         is_trade_allowed = True
                         side = "sell"
                         logger.info(
@@ -761,14 +768,14 @@ class SniperBotWIN:
                     if (
                         c_buy_sniper
                         and decision["direction"] == "BUY"
-                        and pressure > self.flux_threshold
+                        and pressure > flux_buy_threshold
                     ):
                         is_trade_allowed = True
                         side = "buy"
                     elif (
                         c_sell_sniper
                         and decision["direction"] == "SELL"
-                        and pressure < -self.flux_threshold
+                        and pressure < -flux_sell_threshold
                     ):
                         is_trade_allowed = True
                         side = "sell"
@@ -838,6 +845,8 @@ class SniperBotWIN:
                             current_atr=atr,
                             regime=regime,
                             is_scaling_in=len(positions) > 0,
+                            h1_trend=self.ai.h1_trend,
+                            adx_val=adx_val,
                         ):
                             self.persistence.save_state(
                                 "last_quantile_confidence",
