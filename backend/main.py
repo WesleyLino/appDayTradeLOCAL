@@ -1263,8 +1263,9 @@ async def autonomous_bot_loop():
                     ai_total_score = 50.0
                     ai_direction = "NEUTRAL"
 
-                # 5.2 NY Open Boost
-                if "10:30" <= current_hhmm <= "11:30" and not auction_block:
+                # 5.2 [v24.6-GOLDEN-FULL] Boost de Pregão Inteiro (ex-NY Open Boost)
+                # Expandido de 10:30–11:30 → 10:00–17:15, sincronizado com ai_core.py v24.6
+                if "10:00" <= current_hhmm <= "17:15" and not auction_block:
                     ai_total_score = min(100.0, ai_total_score + 5.0)
 
                 # 5.3 Defesa de Ajuste (Settlement Trap) - Otimizado: USA CACHE
@@ -2709,6 +2710,10 @@ async def autonomous_bot_loop():
                                 if isinstance(ai_predict_data, dict)
                                 else last_price
                             ),
+                        },
+                        "thresholds": {
+                            "momentum_bypass": float(sniper_bot.ai.momentum_bypass_threshold if hasattr(sniper_bot, "ai") else 72.0),
+                            "obi_absorption": float(sniper_bot.ai.obi_absorption_threshold if hasattr(sniper_bot, "ai") else 1.8)
                         },
                         "account": account,
                         "daily_realized": float(daily_realized),

@@ -12,6 +12,7 @@ interface ConfluenceGaugeProps {
   syntheticIndex: number;
   veto?: string | null;
   className?: string;
+  threshold?: number;
 }
 
 export function ConfluenceGauge({
@@ -22,6 +23,7 @@ export function ConfluenceGauge({
   syntheticIndex = 0,
   veto = null,
   className,
+  threshold = 72.0,
 }: ConfluenceGaugeProps) {
   // Configuração do arco do velocímetro
   const radius = 80;
@@ -33,18 +35,18 @@ export function ConfluenceGauge({
   // Cores dinâmicas baseadas na confluência
   const confluenceColor = useMemo(() => {
     if (veto) return "text-orange-400";
-    if (score >= 85) return "text-emerald-400";
-    if (score <= 15) return "text-red-400";
-    if (score >= 50) return "text-blue-400";
+    if (score >= threshold) return "text-emerald-400";
+    if (score <= -threshold) return "text-red-400";
+    if (score >= threshold * 0.6) return "text-blue-400";
     return "text-gray-400";
-  }, [score, veto]);
+  }, [score, veto, threshold]);
 
   const glowColor = useMemo(() => {
     if (veto) return "rgba(251, 146, 60, 0.5)"; // Orange glow
-    if (score >= 85) return "rgba(52, 211, 153, 0.5)";
-    if (score <= 15) return "rgba(248, 113, 113, 0.5)";
+    if (score >= threshold) return "rgba(52, 211, 153, 0.5)";
+    if (score <= -threshold) return "rgba(248, 113, 113, 0.5)";
     return "rgba(59, 130, 246, 0.5)";
-  }, [score, veto]);
+  }, [score, veto, threshold]);
 
   return (
     <div
@@ -72,7 +74,7 @@ export function ConfluenceGauge({
         >
           {veto
             ? "VETO ATIVO"
-            : score >= 85 || score <= 15
+            : score >= threshold || score <= -threshold
               ? "PRECISÃO EXTREMA"
               : "SCORE NORMAL"}
         </span>
@@ -140,13 +142,13 @@ export function ConfluenceGauge({
             Fluxo (OFI)
           </span>
           <div className="flex items-center gap-1">
-            {obi >= 0.2 ? (
+            {obi >= 0 ? (
               <TrendingUp className="w-3 h-3 text-emerald-400" />
             ) : (
               <TrendingDown className="w-3 h-3 text-red-400" />
             )}
             <span className="text-xs font-mono font-bold">
-              {(obi * 100).toFixed(0)}
+              {obi.toFixed(2)}
             </span>
           </div>
         </div>
@@ -188,7 +190,7 @@ export function ConfluenceGauge({
         <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
         <p className="text-[10px] leading-relaxed text-muted-foreground">
           O modo autônomo requer{" "}
-          <span className="text-white font-bold ">SCORE &gt; 85</span> e
+          <span className="text-white font-bold ">SCORE &gt; {threshold}</span> e
           confluência positiva entre fluxo de ordens e predição de IA.
         </p>
       </div>

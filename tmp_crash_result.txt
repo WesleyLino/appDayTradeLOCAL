@@ -1,0 +1,6 @@
+﻿
+=== backend/bot_sniper.log (674 linhas) ===
+Erros encontrados nas ultimas 100 linhas: 0
+[NAO ENCONTRADO] backend/app.log
+[NAO ENCONTRADO] backend/main.log
+[NAO ENCONTRADO] backend/error.log

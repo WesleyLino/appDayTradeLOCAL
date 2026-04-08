@@ -73,8 +73,8 @@ export function TradingDashboard() {
   // [FIX #TD-4] veto_reason não existe em TradeData — usa apenas ai_prediction.veto
   const aiVeto = data?.ai_prediction?.veto ?? null;
 
-  const isObiOk = Math.abs(data?.obi ?? 0) > 0.2; // Exemplo de threshold
-  const isConfidenceOk = (data?.ai_confidence ?? 0) > 0.6;
+  const isObiOk = Math.abs(data?.obi ?? 0) > (data?.thresholds?.obi_absorption ?? 1.8);
+  const isConfidenceOk = aiScore >= (data?.thresholds?.momentum_bypass ?? 72.0);
   const sentimentValue =
     typeof data?.sentiment === "object"
       ? data.sentiment.score
@@ -417,6 +417,7 @@ export function TradingDashboard() {
                   : (data?.sentiment ?? 0)
               }
               syntheticIndex={data?.risk_status?.synthetic_index ?? 0}
+              threshold={data?.thresholds?.momentum_bypass ?? 72.0}
             />
 
             <div className="p-5 glass-heavy rounded-2xl shadow-2xl flex flex-col gap-5">
@@ -475,7 +476,7 @@ export function TradingDashboard() {
                         MODO AUTÔNOMO
                       </Label>
                       <span className="text-[10px] text-muted-foreground leading-none">
-                        Score ≥ 85
+                        Score ≥ {data?.thresholds?.momentum_bypass ?? 72}
                       </span>
                     </div>
                   </div>
@@ -925,7 +926,7 @@ export function TradingDashboard() {
                     <span>
                       {logFilter !== "TODOS"
                         ? `Nenhum log do tipo ${logFilter} encontrado...`
-                        : "Aguardando sinais de alta confiança (>85%)..."}
+                        : `Aguardando sinais de alta confiança (>${data?.thresholds?.momentum_bypass ?? 72.0}%)...`}
                     </span>
                   </div>
                 )}

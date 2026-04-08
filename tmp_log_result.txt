@@ -1,0 +1,43 @@
+Total linhas no log: 668
+Ocorrencias criticas (ultimas 300 linhas): 79
+---
+2026-04-08 11:17:52,991 - INFO - ? [MOMENTUM BYPASS] IA Score 61.8% (Bypass Ativado) | Fluxo: 2.18
+2026-04-08 11:17:53,307 - INFO - ? [MOMENTUM BYPASS] IA Score 62.0% (Bypass Ativado) | Fluxo: 2.23
+2026-04-08 11:17:53,956 - INFO - ? [MOMENTUM BYPASS] IA Score 61.4% (Bypass Ativado) | Fluxo: 2.09
+2026-04-08 11:17:54,934 - INFO - ? [MOMENTUM BYPASS] IA Score 63.2% (Bypass Ativado) | Fluxo: 2.47
+2026-04-08 11:18:00,483 - INFO - ? [MOMENTUM BYPASS] IA Score 61.8% (Bypass Ativado) | Fluxo: 2.22
+2026-04-08 11:18:00,797 - INFO - ? [MOMENTUM BYPASS] IA Score 60.8% (Bypass Ativado) | Fluxo: 2.02
+2026-04-08 11:18:01,130 - INFO - ? [MOMENTUM BYPASS] IA Score 64.7% (Bypass Ativado) | Fluxo: 2.82
+2026-04-08 11:18:01,440 - INFO - ? [MOMENTUM BYPASS] IA Score 60.3% (Bypass Ativado) | Fluxo: 1.94
+2026-04-08 11:18:29,094 - INFO - ? [MOMENTUM BYPASS] IA Score 60.0% (Bypass Ativado) | Fluxo: 1.87
+2026-04-08 11:18:29,413 - INFO - ? [MOMENTUM BYPASS] IA Score 60.5% (Bypass Ativado) | Fluxo: 1.96
+2026-04-08 11:18:30,497 - INFO - ? [MOMENTUM BYPASS] IA Score 62.0% (Bypass Ativado) | Fluxo: 2.26
+2026-04-08 11:18:31,495 - INFO - ? [MOMENTUM BYPASS] IA Score 62.3% (Bypass Ativado) | Fluxo: 2.34
+2026-04-08 11:18:32,517 - INFO - ? [MOMENTUM BYPASS] IA Score 63.5% (Bypass Ativado) | Fluxo: 2.56
+2026-04-08 11:18:32,837 - INFO - ? [MOMENTUM BYPASS] IA Score 60.0% (Bypass Ativado) | Fluxo: 1.86
+2026-04-08 11:18:33,491 - INFO - ? [MOMENTUM BYPASS] IA Score 67.9% (Bypass Ativado) | Fluxo: 3.44
+2026-04-08 11:18:50,452 - INFO - ? [MOMENTUM BYPASS] IA Score 61.8% (Bypass Ativado) | Fluxo: 2.23
+2026-04-08 11:18:51,437 - INFO - ? [MOMENTUM BYPASS] IA Score 63.6% (Bypass Ativado) | Fluxo: 2.58
+2026-04-08 11:18:52,100 - INFO - ? [MOMENTUM BYPASS] IA Score 62.8% (Bypass Ativado) | Fluxo: 2.43
+2026-04-08 11:19:02,204 - INFO - ? [MOMENTUM BYPASS] IA Score 61.0% (Bypass Ativado) | Fluxo: 2.09
+2026-04-08 11:19:02,533 - INFO - ? [MOMENTUM BYPASS] IA Score 61.4% (Bypass Ativado) | Fluxo: 2.15
+2026-04-08 11:19:02,864 - INFO - ? [MOMENTUM BYPASS] IA Score 62.6% (Bypass Ativado) | Fluxo: 2.41
+2026-04-08 11:19:03,179 - INFO - ? [MOMENTUM BYPASS] IA Score 62.2% (Bypass Ativado) | Fluxo: 2.31
+2026-04-08 11:19:03,507 - INFO - ? [MOMENTUM BYPASS] IA Score 68.6% (Bypass Ativado) | Fluxo: 3.59
+2026-04-08 11:19:03,839 - INFO - ? [MOMENTUM BYPASS] IA Score 63.2% (Bypass Ativado) | Fluxo: 2.51
+2026-04-08 11:19:05,767 - INFO - ? [MOMENTUM BYPASS] IA Score 62.3% (Bypass Ativado) | Fluxo: 2.34
+2026-04-08 11:19:06,096 - INFO - ? [MOMENTUM BYPASS] IA Score 61.8% (Bypass Ativado) | Fluxo: 2.24
+2026-04-08 11:19:06,428 - INFO - ? [MOMENTUM BYPASS] IA Score 59.8% (Bypass Ativado) | Fluxo: 1.84
+2026-04-08 11:19:07,409 - INFO - ? [MOMENTUM BYPASS] IA Score 64.3% (Bypass Ativado) | Fluxo: 2.75
+2026-04-08 11:19:13,545 - INFO - ? [MOMENTUM BYPASS] IA Score 61.1% (Bypass Ativado) | Fluxo: 2.10
+2026-04-08 11:19:14,216 - INFO - ? [MOMENTUM BYPASS] IA Score 63.0% (Bypass Ativado) | Fluxo: 2.49
+2026-04-08 11:19:15,530 - INFO - ? [MOMENTUM BYPASS] IA Score 69.4% (Bypass Ativado) | Fluxo: 3.77
+2026-04-08 11:19:15,873 - INFO - ? [MOMENTUM BYPASS] IA Score 61.0% (Bypass Ativado) | Fluxo: 2.08
+2026-04-08 11:19:16,221 - INFO - ? [MOMENTUM BYPASS] IA Score 61.0% (Bypass Ativado) | Fluxo: 2.07
+2026-04-08 11:19:19,237 - INFO - ? [MOMENTUM BYPASS] IA Score 61.0% (Bypass Ativado) | Fluxo: 2.08
+2026-04-08 11:20:03,471 - INFO - ? [MOMENTUM BYPASS] IA Score 61.2% (Bypass Ativado) | Fluxo: 2.11
+2026-04-08 14:04:50,731 - INFO - ?? [SOTA v24.0] Sniper v24 Ativado: OBI=1.0, RSI=9, Vol=1.0, Janela=09:15:00-17:15:00
+2026-04-08 14:21:36,487 - INFO - ?? [SOTA v24.0] Sniper v24 Ativado: OBI=1.0, RSI=9, Vol=1.0, Janela=09:15:00-17:15:00
+2026-04-08 14:24:46,752 - INFO - ?? [SOTA v24.0] Sniper v24 Ativado: OBI=1.0, RSI=9, Vol=1.0, Janela=09:15:00-17:15:00
+2026-04-08 14:34:57,559 - INFO - ?? [SOTA v24.0] Sniper v24 Ativado: OBI=1.0, RSI=9, Vol=1.0, Janela=09:15:00-17:15:00
+2026-04-08 14:48:57,849 - INFO - ? [MOMENTUM BYPASS] IA Score 40.5% (Bypass Ativado) | Fluxo: -1.82

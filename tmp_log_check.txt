@@ -1,0 +1,35 @@
+﻿python : Traceback (most 
+recent call last):
+No linha:1 caractere:1
++ python -c "
++ ~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: (Tra  
+  ceback (most recent ca   
+ ll last)::String) [],     
+RemoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+  File "<string>", line 
+12, in <module>
+  File "C:\Users\Wesley Lin
+o\AppData\Local\Programs\Py
+thon\Python312\Lib\encoding
+s\cp1252.py", line 19, in 
+encode
+    return codecs.charmap_e
+ncode(input,self.errors,enc
+oding_table)[0]
+           ^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
+UnicodeEncodeError: 
+'charmap' codec can't 
+encode character 
+'\U0001f680' in position 
+34: character maps to 
+<undefined>
+Total linhas: 667
+Ocorrencias criticas (ultimas 300 linhas): 80
+---

@@ -142,13 +142,32 @@ class SniperBotWIN:
             strategy.get("uncertainty_threshold") or 0.4
         )
         # [v24.5] Sincronização Dinâmica de Momentum e Filtro BlueChip
+        # [v24.6-FIX] Fallback alinhado ao JSON (72.0). Usa .get(key, default) para não
+        # substituir indevidamente caso o valor seja 0.0 (improvável mas seguro).
         self.ai.momentum_bypass_threshold = float(
-            strategy.get("momentum_bypass_threshold") or 82.0
+            strategy.get("momentum_bypass_threshold", 72.0) or 72.0
         )
         self.ai.bluechip_bias_threshold = float(
             strategy.get("bluechip_bias_threshold") or 0.25
         )
-        self.ai.use_bluechip_bias = bool(strategy.get("use_bluechip_bias", True))
+        # [v24.6-DYNAMIC] Vinculado ao v24_locked_params.json — recarregado a cada ciclo via load_optimized_params
+        _use_bc = strategy.get("use_bluechip_bias", False)
+        self.ai.use_bluechip_bias = bool(_use_bc)
+        logging.debug(
+            f"[CFG-SYNC] use_bluechip_bias={self.ai.use_bluechip_bias} "
+            f"(fonte: v24_locked_params.json → dynamic_params)"
+        )
+        # [v24.6-FIX] Sincroniza obi_absorption_threshold do JSON para o ai_core (Fix #4)
+        # Antes: hardcoded 1.8 no ai_core → JSON ignorado. Agora: lido e aplicado a cada ciclo.
+        self.ai.obi_absorption_threshold = float(
+            strategy.get("obi_absorption_threshold") or 1.8
+        )
+        logging.info(
+            f"[CFG-SYNC] momentum_bypass={self.ai.momentum_bypass_threshold:.1f} | "
+            f"obi_absorption={self.ai.obi_absorption_threshold:.1f} | "
+            f"use_bluechip={self.ai.use_bluechip_bias} "
+            f"(fonte: v24_locked_params.json)"
+        )
 
     def _log_to_dashboard(self, msg, log_type="info"):
         if self.log_callback:
@@ -523,11 +542,28 @@ class SniperBotWIN:
         self.symbol = self.bridge.get_current_symbol("WIN")
         self.risk.load_optimized_params(self.symbol, "backend/v24_locked_params.json")
         self._load_params_from_risk(self.bridge._normalize_symbol(self.symbol))
+        # [v24.6-HOTRELOAD] Contador para recarga periódica de parâmetros dentro do loop
+        self._param_reload_counter = 0
 
         self.last_heartbeat = time.time()
         self.running = True
         while self.running:
             try:
+                # [v24.6-HOTRELOAD] Recarrega parâmetros do JSON a cada 30 ciclos (~30s)
+                # Garante que momentum_bypass_threshold e obi_absorption_threshold
+                # do v24_locked_params.json sejam aplicados ao ai_core em tempo real.
+                self._param_reload_counter += 1
+                if self._param_reload_counter >= 30:
+                    self._param_reload_counter = 0
+                    self.risk.load_optimized_params(self.symbol, "backend/v24_locked_params.json")
+                    self._load_params_from_risk(self.bridge._normalize_symbol(self.symbol))
+                    logger.info(
+                        f"[v24.6-HOTRELOAD] Parâmetros sincronizados do JSON: "
+                        f"momentum_bypass={self.ai.momentum_bypass_threshold:.1f} | "
+                        f"obi_absorption={self.ai.obi_absorption_threshold:.1f} | "
+                        f"use_bluechip={self.ai.use_bluechip_bias}"
+                    )
+
                 # [HEARTBEAT] Logar status do Sniper a cada 60 segundos
                 now_ts = time.time()
                 if now_ts - self.last_heartbeat > 60:
@@ -570,7 +606,14 @@ class SniperBotWIN:
                         == "VERY_HIGH"
                         else 600
                     )
-                    if (now - self.last_trade_time).total_seconds() < limit:
+                    remaining = limit - (now - self.last_trade_time).total_seconds()
+                    if remaining > 0:
+                        # [DIAGNÓSTICO] Loga uma vez por minuto para visibilidade no monitor
+                        if int(remaining) % 60 < 1:
+                            logger.info(
+                                f"⏳ [COOLDOWN-GLOBAL] Aguardando próxima janela de entrada: "
+                                f"{remaining:.0f}s restantes | Último trade: {self.last_trade_time.strftime('%H:%M:%S')}"
+                            )
                         await asyncio.sleep(1)
                         continue
 
@@ -742,14 +785,27 @@ class SniperBotWIN:
                 if is_trade_allowed and not self.risk.is_macro_allowed(
                     "BUY" if side == "buy" else "SELL", bc_score
                 ):
+                    logger.warning(
+                        f"🛑 [VETO-MACRO] Bypass autorizado mas VETADO pelo filtro macro. "
+                        f"Direção={side.upper()} | bc_score={bc_score:.2f} | Score={decision.get('score', 0):.1f}%"
+                    )
                     is_trade_allowed = False
 
                 # Veto da Trava de Insistência
                 if is_trade_allowed:
                     if side == "buy" and time.time() < self.buy_cooldown_until:
+                        rem = self.buy_cooldown_until - time.time()
+                        logger.warning(
+                            f"🔒 [VETO-COOLDOWN] Compra bloqueada pela trava de insistência. "
+                            f"Aguardar {rem:.0f}s | Score={decision.get('score', 0):.1f}%"
+                        )
                         is_trade_allowed = False
                     elif side == "sell" and time.time() < self.sell_cooldown_until:
-                        is_trade_allowed = False
+                        rem = self.sell_cooldown_until - time.time()
+                        logger.warning(
+                            f"🔒 [VETO-COOLDOWN] Venda bloqueada pela trava de insistência. "
+                            f"Aguardar {rem:.0f}s | Score={decision.get('score', 0):.1f}%"
+                        )
 
                 if is_trade_allowed:
                     positions = self.bridge.mt5.positions_get(symbol=self.symbol)
@@ -767,6 +823,10 @@ class SniperBotWIN:
                             sum(pos.volume for pos in positions),
                             symbol=self.symbol,
                         ):
+                            logger.warning(
+                                f"⚠️ [VETO-PYRAMIDING] Ordem bloqueada: posição aberta não permite pirâmide. "
+                                f"Lucro flutuante={prof:.0f}pts | Fluxo={pressure:.2f} | Score={decision.get('score', 0):.1f}%"
+                            )
                             can_trade = False
 
                     if can_trade:

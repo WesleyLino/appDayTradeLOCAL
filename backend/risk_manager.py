@@ -1042,6 +1042,21 @@ class RiskManager:
                         "sell_trailing_step_atr": params.get(
                             "sell_trailing_step_atr", 0.3
                         ),
+                        # [v24.6-FIX] Parâmetros de IA ausentes — causavam fallback True no bot_sniper
+                        "use_bluechip_bias": params.get("use_bluechip_bias", False),
+                        "bluechip_bias_threshold": params.get("bluechip_bias_threshold", 0.25),
+                        # [v24.6-FIX] Fallback alinhado ao JSON (72.0). Antes: 68.0 (divergente v24.5)
+                        "momentum_bypass_threshold": params.get("momentum_bypass_threshold", 72.0),
+                        "uncertainty_threshold": params.get("uncertainty_threshold", 0.3),
+                        "use_h1_trend_bias": params.get("use_h1_trend_bias", True),
+                        "h1_ma_period": params.get("h1_ma_period", 20),
+                        "confidence_relax_factor": params.get("confidence_relax_factor", 0.85),
+                        "atr_confidence_relax_trigger": params.get("atr_confidence_relax_trigger", 100.0),
+                        "rsi_dynamic_buy": params.get("rsi_dynamic_buy", 30.0),
+                        "rsi_dynamic_sell": params.get("rsi_dynamic_sell", 70.0),
+                        "rsi_dynamic_activation_atr": params.get("rsi_dynamic_activation_atr", 100.0),
+                        # [v24.6-FIX] Canal JSON → risk_manager → sniper → ai_core para obi_absorption_threshold
+                        "obi_absorption_threshold": params.get("obi_absorption_threshold", 1.8),
                     }
                     norm_symbol = self._normalize_symbol(symbol)
                     self.dynamic_params[norm_symbol] = mapped_params
@@ -1180,13 +1195,13 @@ class RiskManager:
                 tp_points = float(d_params["tp"])
 
 
-        # [v24] Janela de Ouro (10:00 - 11:30)
+        # [v24.6-GOLDEN-FULL] Janela de Ouro — Pregão Inteiro (10:00 – 17:15)
+        # Expandido de 10:00–11:30 para todo o pregão, sincronizado com ai_core.py v24.6
         if current_time:
-            # Sincronizado com v24_locked_params
-            if time(10, 0) <= current_time <= time(11, 30):
+            if time(10, 0) <= current_time <= time(17, 15):
                 tp_points *= 1.5
                 logging.info(
-                    f"🚀 [v24 GOLDEN-WINDOW] TP expandido (+50%): {tp_points:.0f} pts"
+                    f"🚀 [v24.6 GOLDEN-WINDOW] TP expandido (+50%) — Pregão Inteiro: {tp_points:.0f} pts"
                 )
 
         # [MELHORIA-3] Fallback sem ATR já tratado acima via regime_settings.

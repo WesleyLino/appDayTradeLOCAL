@@ -5,10 +5,13 @@ import { cn } from "@/lib/utils";
 
 export function FlowMeter() {
   const { data } = useTradingStore();
-  const obi = data?.obi ?? 0.5;
+  const obi = data?.obi ?? 0.0;
+  const targetThreshold = data?.thresholds?.obi_absorption ?? 1.8;
 
-  // Converter OBI (-1 a 1) para percentual (0 a 100)
-  const percentage = ((obi + 1) / 2) * 100;
+  // Normalizer OBI inside bounds [-targetThreshold, +targetThreshold] -> percentage (0 a 100)
+  const bound = targetThreshold;
+  const normalizedObi = Math.max(-bound, Math.min(bound, obi));
+  const percentage = ((normalizedObi + bound) / (2 * bound)) * 100;
 
   return (
     <div className="flex flex-col items-center p-4 bg-zinc-900/60 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg min-h-[120px] justify-center">
@@ -19,7 +22,7 @@ export function FlowMeter() {
         <div
           className={cn(
             "absolute top-0 left-0 h-full transition-all duration-500 ease-out",
-            obi > 0.6 ? "bg-profit" : obi < -0.6 ? "bg-loss" : "bg-neutral",
+            obi > targetThreshold * 0.8 ? "bg-profit" : obi < -targetThreshold * 0.8 ? "bg-loss" : "bg-neutral",
           )}
           style={{ width: `${percentage}%` }}
         />

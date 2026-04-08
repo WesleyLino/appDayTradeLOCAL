@@ -57,6 +57,10 @@ interface TradeData {
     reason: string;
   };
   daily_realized?: number;
+  thresholds?: {
+    momentum_bypass: number;
+    obi_absorption: number;
+  };
   risk_status: {
     time_ok: boolean;
     loss_ok: boolean;

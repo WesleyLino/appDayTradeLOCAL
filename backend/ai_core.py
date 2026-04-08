@@ -242,11 +242,13 @@ class AICore:
         self.uncertainty_threshold_base = 0.25
         self.lot_multiplier_partial = 0.25
         self.atr_confidence_relax_trigger = 100.0
-        self.momentum_bypass_threshold = (
-            68.0  # [v24.5] Thresh de ativação institucional Sniper - Perfil 3k
-        )
+        # [v24.6-FIX] Default alinhado ao JSON (72.0). Sobrescrito no 1º sync (<1s após boot).
+        # Se o sync falhar, usa 72.0 (conservador) em vez de 68.0 (permissivo).
+        self.momentum_bypass_threshold = 72.0  # [v24.5] Thresh Sniper - Perfil 3k
         self.bluechip_bias_threshold = 0.25
         self.use_bluechip_bias = True
+        # [v24.6-FIX] Limiar de OBI para ativação do Bypass-de-Ouro — sincronizado via JSON
+        self.obi_absorption_threshold = 1.8
 
     async def predict_with_patchtst(self, engine, data):
         if engine is None:
@@ -358,14 +360,16 @@ class AICore:
         exec_strategy = "PASSIVA"
 
         # 4. Detecção de Janela de Ouro (Abertura B3 - Alpha de Tempo)
-        # [v24.5] Expansão para 10:00 - 11:30 para capturar o rali pós-abertura consolidado
-        if (hour == 10) or (hour == 11 and minute <= 30):
+        # [v24.6-PREGÃO-INTEIRO] Autorizado pelo usuário em 08/04/2026.
+        # Janela de Ouro estendida para cobrir todo o pregão (10:00–17:15).
+        # Janela de Abertura (09:xx) mantém seus parâmetros próprios.
+        if hour >= 10:
             is_golden_window = True
             logging.info(
-                f"[v24.5 JANELA-DE-OURO] Ativa via Tempo ({hour:02d}:{minute:02d})."
+                f"[v24.6 JANELA-DE-OURO-TOTAL] Ativa em todo o pregão ({hour:02d}:{minute:02d})."
             )
-            # Relaxamento de incerteza na Janela de Ouro (Alta Confiança Institucional)
-            self.uncertainty_threshold = 0.85  # [v24.5] Aumentado de 0.8
+            # Relaxamento de incerteza para todo o pregão (Alta Permissividade de Entrada)
+            self.uncertainty_threshold = 0.85  # [v24.6] Estendido para o pregão inteiro
         elif hour == 9:
             is_opening_window = True
             logging.info(
@@ -400,7 +404,9 @@ class AICore:
                 )
 
         # [v24.4.1] Barreira de Entrada Dinâmica
-        opening_discount = 5.0 if (is_opening_window or is_golden_window) else 0.0
+        # [v24.6-FIX] Desconto de threshold aplicado APENAS na janela de abertura (09h).
+        # A Janela de Ouro NÃO recebe desconto — evita rebaixar dynamic_bypass_thresh para 64%.
+        opening_discount = 5.0 if is_opening_window else 0.0
 
         # [v24.4] Calibragem Fina de Risco - Sensibilidade Multi-Ativo
         is_wdo = current_price < 15000
@@ -433,12 +439,16 @@ class AICore:
         )
 
         golden_thresh = self.momentum_bypass_threshold + 7.0
-        if is_golden_window and (
-            obi_abs >= 1.8 or (float(score_raw) >= golden_thresh or float(score_raw) <= (100.0 - golden_thresh))
-        ):
-            is_momentum_bypass = True  # [v24.6-ANTILOSS] Threshold elevado via JSON (ex: 68+7=75%)
+        # [v24.6-FIX] obi_absorption_threshold lido do atributo (sincronizado do JSON via bot_sniper).
+        # OBI alto SÓ ativa bypass se o score também estiver acima do golden_thresh.
+        # Antes: obi_abs >= 1.8 OR score >= golden_thresh → bypass com score de 63%!
+        # Agora:  (obi_abs >= self.obi_absorption_threshold AND score >= golden_thresh) OR score >= golden_thresh
+        obi_qualifies = obi_abs >= self.obi_absorption_threshold
+        score_qualifies = float(score_raw) >= golden_thresh or float(score_raw) <= (100.0 - golden_thresh)
+        if is_golden_window and (score_qualifies or (obi_qualifies and score_qualifies)):
+            is_momentum_bypass = True  # [v24.6-ANTILOSS] Exige score >= golden_thresh SEMPRE
             logging.info(
-                f"[v24.5 BYPASS-DE-OURO] Ativado via Janela de Ouro! (Score: {score_raw:.1f})"
+                f"[v24.6 BYPASS-DE-OURO] Ativado! Score={score_raw:.1f} >= {golden_thresh:.1f} | OBI={obi_abs:.2f}"
             )
         elif is_institutional_sweep:
             is_momentum_bypass = True
@@ -446,11 +456,14 @@ class AICore:
                 f"🚀 [v24.5 MOMENTUM-PRO] Sweep Institucional Detectado (Score: {score_raw:.1f} | Accel: {cvd_accel:.2f})"
             )
         elif is_high_conviction and (
-            obi_abs >= 1.5 or is_golden_window or is_opening_window or regime == 1
+            obi_abs >= self.obi_absorption_threshold or is_opening_window or regime == 1
         ):
+            # [v24.6-FIX] Removido is_golden_window como gatilho standalone.
+            # Na Janela de Ouro, o bypass só ativa se OBI >= limiar OU regime == 1.
+            # Evita bypass com score baixo (64%) usando apenas o horário como justificativa.
             is_momentum_bypass = True
             logging.info(
-                f"[v24.4 MOMENTUM-BYPASS] Ativado via Fluxo/Regime/Abertura! (Thresh: {dynamic_bypass_thresh:.1f})"
+                f"[v24.6 MOMENTUM-BYPASS] Ativado via OBI/Regime/Abertura! (Score={score_raw:.1f} | Thresh={dynamic_bypass_thresh:.1f} | OBI={obi_abs:.2f})"
             )
 
         # [MELHORIA C - DIAS MORTOS] Curva adaptativa no crivo da IA Core para Scalping Lateral
@@ -627,7 +640,7 @@ class AICore:
         #   is_momentum_bypass → 0.65 ou o temporal se maior (Janela de Ouro sobrepõe)
         #   OBI >= 0.3 no horário normal → 0.55 (melhoria sobre 0.40 padrão)
         #   OBI < 0.3 no horário normal → 0.40 padrão (conservador)
-        #   Janela de Ouro (10-11:30) → self.uncertainty_threshold = 0.85 (já muito permissivo)
+        #   [v24.6] Janela de Ouro (10:00–17:15, pregão inteiro) → self.uncertainty_threshold = 0.85
         if is_momentum_bypass:
             # Momentum bypass: usa o maior entre 0.65 e o threshold temporal atual
             eff_uncertainty_thresh = max(0.65, self.uncertainty_threshold)

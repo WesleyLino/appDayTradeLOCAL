@@ -199,16 +199,18 @@ export function SotaMetrics({
 
         {/* Regime */}
         <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[14px]">
-          <span className="text-muted-foreground uppercase tracking-tighter">Regime de Mercado</span>
+          <span className="text-muted-foreground uppercase tracking-tighter">
+            Regime de Mercado
+          </span>
           <span
             key={regime} // Força re-render para disparar animações CSS se houver
             className={cn(
               "px-3 py-1 rounded-lg font-black transition-all duration-700 animate-in fade-in zoom-in slide-in-from-right-1",
-              regime === 2 
-                ? "bg-red-500/20 text-red-400 border border-red-500/40 shadow-[0_0_20px_rgba(239,68,68,0.3)] animate-pulse" 
+              regime === 2
+                ? "bg-red-500/20 text-red-400 border border-red-500/40 shadow-[0_0_20px_rgba(239,68,68,0.3)] animate-pulse"
                 : regime === 1
-                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-                : "bg-blue-500/20 text-blue-400 border border-blue-500/40 shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                  : "bg-blue-500/20 text-blue-400 border border-blue-500/40 shadow-[0_0_20px_rgba(59,130,246,0.3)]",
             )}
           >
             {getRegimeLabel(regime)}
