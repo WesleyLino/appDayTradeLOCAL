@@ -2713,7 +2713,8 @@ async def autonomous_bot_loop():
                         },
                         "thresholds": {
                             "momentum_bypass": float(sniper_bot.ai.momentum_bypass_threshold if hasattr(sniper_bot, "ai") else 72.0),
-                            "obi_absorption": float(sniper_bot.ai.obi_absorption_threshold if hasattr(sniper_bot, "ai") else 1.8)
+                            "obi_absorption": float(sniper_bot.ai.obi_absorption_threshold if hasattr(sniper_bot, "ai") else 1.8),
+                            "flux_imbalance": float(sniper_bot.flux_threshold if hasattr(sniper_bot, "flux_threshold") else 1.1)
                         },
                         "account": account,
                         "daily_realized": float(daily_realized),

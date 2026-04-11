@@ -101,7 +101,7 @@ class SniperBotWIN:
         if not strategy:
             return
 
-        self.flux_threshold = float(strategy.get("flux_imbalance_threshold") or 0.95)
+        self.flux_threshold = float(strategy.get("flux_imbalance_threshold") or 1.1)
         self.rsi_period = int(strategy.get("rsi_period") or 14)
         self.vol_spike_mult = float(strategy.get("vol_spike_mult") or 1.0)
 
@@ -604,11 +604,12 @@ class SniperBotWIN:
                     continue
 
                 if self.last_trade_time:
+                    # [MELHORIA SOTA] Aproveitamento Máximo de Pyramiding e Golden Window.
+                    # Se houver convicção alta (MOMENTUM), reativamos o Sniper em apenas 2 min (120s).
                     limit = (
-                        300
-                        if self.persistence.get_state("last_quantile_confidence")
-                        == "VERY_HIGH"
-                        else 600
+                        120
+                        if self.persistence.get_state("last_quantile_confidence") in ["HIGH", "VERY_HIGH"]
+                        else 240
                     )
                     remaining = limit - (now - self.last_trade_time).total_seconds()
                     if remaining > 0:
@@ -751,13 +752,13 @@ class SniperBotWIN:
 
                 if decision["is_momentum_bypass"]:
                     # [v23.1] BYPASS INSTITUCIONAL: IA tem autoridade total
-                    if decision["direction"] == "BUY" and pressure > 1.1:
+                    if decision["direction"] == "BUY" and pressure > flux_buy_threshold:
                         is_trade_allowed = True
                         side = "buy"
                         logger.info(
                             f"🚀 [MOMENTUM BYPASS] IA Score {decision['score']:.1f}% (Bypass Ativado) | Fluxo: {pressure:.2f}"
                         )
-                    elif decision["direction"] == "SELL" and pressure < -1.375:
+                    elif decision["direction"] == "SELL" and pressure < -flux_sell_threshold:
                         is_trade_allowed = True
                         side = "sell"
                         logger.info(

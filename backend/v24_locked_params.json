@@ -5,7 +5,7 @@
     "ema_fast": 9,
     "ema_slow": 21,
     "vol_sma_period": 20,
-    "flux_imbalance_threshold": 1.0,
+    "flux_imbalance_threshold": 1.1,
     "sl_dist": 150.0,
     "tp_dist": 250.0,
     "trailing_trigger": 100.0,

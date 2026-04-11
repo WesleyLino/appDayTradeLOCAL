@@ -73,15 +73,33 @@ export function TradingDashboard() {
   // [FIX #TD-4] veto_reason não existe em TradeData — usa apenas ai_prediction.veto
   const aiVeto = data?.ai_prediction?.veto ?? null;
 
-  const isObiOk = Math.abs(data?.obi ?? 0) > (data?.thresholds?.obi_absorption ?? 1.8);
-  const isConfidenceOk = aiScore >= (data?.thresholds?.momentum_bypass ?? 72.0);
+  const bypassThreshold = data?.thresholds?.momentum_bypass ?? 72.0;
+  const sellBypassThreshold = 28.0; // Symmetrical Logic Override
+  const obiAbsorption = data?.thresholds?.obi_absorption ?? 1.8;
+  const fluxImbalance = data?.thresholds?.flux_imbalance ?? 1.1;
+  const currentObi = data?.obi ?? 0;
+  
+  // Tactical Decision Engine
+  const isC_BuyMode = aiScore >= bypassThreshold;
+  const isC_SellMode = aiScore <= sellBypassThreshold && aiScore > 0;
+  
+  // Conditions for Manual Flash
+  const isFlashBuy = riskOk && isC_BuyMode && currentObi >= fluxImbalance;
+  const isFlashSell = riskOk && isC_SellMode && currentObi <= -(fluxImbalance * 1.25);
+
+  const isObiOk = Math.abs(currentObi) > obiAbsorption;
+  const isConfidenceOk = isC_BuyMode || isC_SellMode;
+  
   const sentimentValue =
     typeof data?.sentiment === "object"
       ? data.sentiment.score
       : (data?.sentiment ?? 0);
-  // [NOTA] isSentimentOk removida — não usada no JSX. sentimentValue exibido em L643.
-  // Integrar em isAuthorized é decisão de negócio que requer autorização explícita.
+  
   const isAuthorized = riskOk && isObiOk && isConfidenceOk;
+  
+  // Fallback autorização direcional apenas para liberar os botões independentemente do outro lado (Manual Control)
+  const isBuyAuthorized = riskOk && isC_BuyMode && currentObi >= fluxImbalance;
+  const isSellAuthorized = riskOk && isC_SellMode && currentObi <= -(fluxImbalance * 1.25);
 
   // [ANTIVIBE-CODING] - Sincronização de Estado Autônomo via WebSocket
   const [autonomousMode, setAutonomousMode] = useState(false);
@@ -420,31 +438,74 @@ export function TradingDashboard() {
               threshold={data?.thresholds?.momentum_bypass ?? 72.0}
             />
 
-            <div className="p-5 glass-heavy rounded-2xl shadow-2xl flex flex-col gap-5">
-              <div className="grid grid-cols-1 gap-3">
+            <div className="p-5 glass-heavy rounded-2xl shadow-2xl flex flex-col gap-5 relative overflow-hidden">
+              {/* === MÓDULO DE GATILHO VISUAL SNIPER === */}
+              <div
+                className={cn(
+                  "w-full h-28 rounded-xl flex flex-col items-center justify-center border-2 transition-all duration-300 relative z-10",
+                  isFlashBuy
+                    ? "bg-emerald-500/20 border-emerald-500 animate-pulse shadow-[0_0_50px_rgba(16,185,129,0.4)]"
+                    : isFlashSell
+                    ? "bg-red-500/20 border-red-500 animate-pulse shadow-[0_0_50px_rgba(239,68,68,0.4)]"
+                    : "bg-black/40 border-white/5 opacity-80"
+                )}
+              >
+                {isFlashBuy ? (
+                  <>
+                    <span className="text-3xl md:text-4xl font-black text-emerald-400 tracking-widest drop-shadow-[0_0_15px_rgba(16,185,129,0.8)]">
+                      COMPRAR GATILHO
+                    </span>
+                    <span className="text-[11px] font-bold text-white uppercase mt-2 bg-emerald-500/40 border border-emerald-400/50 px-3 py-1 rounded-full flex gap-3">
+                      <span>IA: {aiScore.toFixed(1)}%</span>
+                      <span>OBI: +{currentObi.toFixed(2)}</span>
+                    </span>
+                  </>
+                ) : isFlashSell ? (
+                  <>
+                    <span className="text-3xl md:text-4xl font-black text-red-400 tracking-widest drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]">
+                      VENDER GATILHO
+                    </span>
+                    <span className="text-[11px] font-bold text-white uppercase mt-2 bg-red-500/40 border border-red-400/50 px-3 py-1 rounded-full flex gap-3">
+                      <span>IA: {aiScore.toFixed(1)}%</span>
+                      <span>OBI: {currentObi.toFixed(2)}</span>
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xl font-bold text-muted-foreground tracking-[0.2em]">
+                      AGUARDANDO SINAL
+                    </span>
+                    <span className="text-[10px] text-zinc-500 uppercase mt-1">
+                      IA e Fluxo Desalinhados
+                    </span>
+                  </>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mt-2">
                 <button
                   onClick={() => sendOrder("BUY")}
-                  disabled={!isAuthorized}
+                  disabled={!isBuyAuthorized}
                   className={cn(
-                    "py-4 rounded-xl font-bold text-white transition-all transform active:scale-95 shadow-lg border border-white/10",
-                    isAuthorized
-                      ? "bg-gradient-to-r from-emerald-600 to-emerald-500 hover:brightness-110 cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-                      : "bg-muted text-muted-foreground cursor-not-allowed grayscale bg-opacity-50",
+                    "py-5 rounded-xl font-black text-white transition-all transform active:scale-95 shadow-lg border-2",
+                    isBuyAuthorized
+                      ? "bg-gradient-to-r from-emerald-600 to-emerald-500 border-emerald-400 hover:brightness-110 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                      : "bg-muted border-transparent text-muted-foreground cursor-not-allowed grayscale bg-opacity-50"
                   )}
                 >
-                  {isAuthorized ? "COMPRA AUTORIZADA" : "AGUARDANDO SINAL"}
+                  COMPRAR M.
                 </button>
                 <button
                   onClick={() => sendOrder("SELL")}
-                  disabled={!isAuthorized}
+                  disabled={!isSellAuthorized}
                   className={cn(
-                    "py-3 rounded-xl font-bold border-2 transition-all active:scale-95 backdrop-blur-sm",
-                    isAuthorized
-                      ? "border-red-500/50 text-red-500 hover:bg-red-500/10 hover:border-red-500"
-                      : "border-muted/50 text-muted-foreground cursor-not-allowed bg-muted/10",
+                    "py-5 rounded-xl font-black text-white transition-all transform active:scale-95 shadow-lg border-2",
+                    isSellAuthorized
+                      ? "bg-gradient-to-r from-red-600 to-red-500 border-red-400 hover:brightness-110 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+                      : "bg-muted border-transparent text-muted-foreground cursor-not-allowed grayscale bg-opacity-50"
                   )}
                 >
-                  VENDA (CONTRA-FLUXO)
+                  VENDER M.
                 </button>
               </div>
 

@@ -1,60 +1,60 @@
 {
-  "score": -0.42,
+  "score": -0.7,
   "reliability": "high",
-  "risk_classification": "HIGH",
-  "fact_check": "Impacto da guerra na produ\u00e7\u00e3o de petr\u00f3leo e g\u00e1s, com estoques de petr\u00f3leo nos EUA acima do esperado. Ata do Fed indica abertura para alta de juros. Bolsas europeias reagem positivamente \u00e0 tr\u00e9gua do Ir\u00e3. Empresas de energia veem maior risco para projetos no Brasil. Empresas brasileiras (Oncocl\u00ednicas, Ra\u00edzen) enfrentam desafios financeiros e negocia\u00e7\u00f5es de d\u00edvidas. Meta Platforms sobe com lan\u00e7amento de IA.",
+  "risk_classification": "EXTREME",
+  "fact_check": "Tens\u00f5es geopol\u00edticas no Oriente M\u00e9dio, incluindo a guerra no Ir\u00e3, impactam mercados globais (FTSE 100 em queda) e geram infla\u00e7\u00e3o no Brasil (passagens a\u00e9reas +31%). H\u00e1 not\u00edcias corporativas pontuais positivas (Porto, PetroRec\u00f4ncavo), mas o risco sist\u00eamico prevalece.",
   "news": [
     {
-      "headline": "Exxon e Shell apontam impacto na produ\u00e7\u00e3o de petr\u00f3leo e g\u00e1s no 1\u00ba tri devido \u00e0 guerra",
-      "relevance": 0.8,
-      "impact": "BEARISH"
+      "headline": "Analista projeta ganhos de quase 300% para a\u00e7\u00e3o com alta valoriza\u00e7\u00e3o.",
+      "relevance": 0.1,
+      "impact": "NEUTRAL"
     },
     {
-      "headline": "A\u00e7\u00f5es da U Power disparam 142% ap\u00f3s acordo de venda de a\u00e7\u00f5es",
+      "headline": "Ibovespa atinge novas m\u00e1ximas; Morgan Stanley e JPMorgan otimistas com Brasil.",
       "relevance": 0.2,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Datadog sobe ap\u00f3s Guggenheim elevar recomenda\u00e7\u00e3o para compra, impulsionada por IA.",
+      "relevance": 0.3,
       "impact": "BULLISH"
     },
     {
-      "headline": "Meta Platforms sobe 7% com lan\u00e7amento de modelo de IA",
-      "relevance": 0.7,
-      "impact": "BULLISH"
-    },
-    {
-      "headline": "XP reitera compra para RD Sa\u00fade e projeta salto de 43% nas a\u00e7\u00f5es com mercado de GLP-1",
+      "headline": "InfoMoney: \u00daltimas Not\u00edcias dos Mercados Financeiros.",
       "relevance": 0.0,
       "impact": "NEUTRAL"
     },
     {
-      "headline": "Estoques de petr\u00f3leo nos EUA sobem 3,081 milh\u00f5es de barris, acima do esperado",
+      "headline": "FTSE 100 recua levemente devido a cautela sobre tens\u00f5es no Oriente M\u00e9dio.",
+      "relevance": 0.8,
+      "impact": "BEARISH"
+    },
+    {
+      "headline": "S&P 500 registra raro gap de alta; an\u00e1lise hist\u00f3rica sobre implica\u00e7\u00f5es futuras.",
+      "relevance": 0.4,
+      "impact": "NEUTRAL"
+    },
+    {
+      "headline": "Passagens a\u00e9reas no Brasil encarecem 31% em meio \u00e0 guerra no Ir\u00e3.",
       "relevance": 0.9,
       "impact": "BEARISH"
     },
     {
-      "headline": "Bolsas da Europa t\u00eam melhor dia em um ano com tr\u00e9gua do Ir\u00e3",
-      "relevance": 0.9,
+      "headline": "Porto (PSSA3) anuncia pagamento de proventos para sexta-feira.",
+      "relevance": 0.6,
       "impact": "BULLISH"
     },
     {
-      "headline": "Ata do Fed sobre reuni\u00e3o de mar\u00e7o mostra abertura crescente a alta de juros",
-      "relevance": 1.0,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Equinor e Shell veem maior risco para projetos no Brasil ap\u00f3s taxa na exporta\u00e7\u00e3o",
+      "headline": "PetroRec\u00f4ncavo (RECV3) registra alta de 1,2% na produ\u00e7\u00e3o de mar\u00e7o.",
       "relevance": 0.6,
-      "impact": "BEARISH"
+      "impact": "BULLISH"
     },
     {
-      "headline": "Oncocl\u00ednicas diz avaliar pedido de cautelar na Justi\u00e7a contra credores",
-      "relevance": 0.5,
-      "impact": "BEARISH"
-    },
-    {
-      "headline": "Ra\u00edzen inicia negocia\u00e7\u00f5es sobre d\u00edvidas, dizem fontes",
-      "relevance": 0.6,
-      "impact": "BEARISH"
+      "headline": "Balan\u00e7o de IA em abril reporta ganhos 49,7% acima das perdas.",
+      "relevance": 0.0,
+      "impact": "NEUTRAL"
     }
   ],
-  "timestamp": 1775678865.421313,
+  "timestamp": 1775739817.2721517,
   "cached": true
 }
