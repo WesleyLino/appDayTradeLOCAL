@@ -1345,10 +1345,25 @@ class RiskManager:
         )
         return round(price / tick_size) * tick_size if tick_size > 0 else price
 
+    def apply_time_decay_to_tp(self, original_tp_dist: float, elapsed_sec: float) -> float:
+        """[TIME-DECAY TP] Reduz a distância do TP proporcionalmente ao tempo decorrido.
+
+        Começar o decay somente após 60s (grace period).
+        Nunca reduz abaixo de 30% do TP original para preservar R/R mínimo.
+        Taxa de decay configurável via self.tp_decay_per_min (padrão: 5%/min).
+        """
+        if elapsed_sec < 60.0:
+            return original_tp_dist
+
+        elapsed_min = elapsed_sec / 60.0
+        decay_factor = max(0.30, 1.0 - (self.tp_decay_per_min * elapsed_min))
+        return round(original_tp_dist * decay_factor, 1)
+
     def _apply_anti_violinada(self, symbol, price, side):
         if price <= 0:
             return price
         try:
+
             is_wdo = "WDO" in symbol or "DOL" in symbol
             round_interval = 10.0 if is_wdo else 100.0
             offset = 0.5 if is_wdo else 15.0

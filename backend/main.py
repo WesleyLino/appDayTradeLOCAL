@@ -573,6 +573,7 @@ async def autonomous_bot_loop():
         except Exception:
             _tracked_position_tickets: set = set()
 
+        _original_tp_dists: dict = {}
         # [FIX #TREND-ALIGN] Histórico de preços para detectar tendência recente
         # Bloqueia BUY em tendência de queda e SELL em tendência de alta (momentum)
         _price_history: list = []  # lista circular de preços recentes (max 10 ticks)
@@ -1525,6 +1526,7 @@ async def autonomous_bot_loop():
                                 f"Lock=**{_sl_cooldown:.0f}s** (backoff exponencial). "
                                 f"Próximo SL locks: {_CONSEC_SL_COOLDOWNS}"
                             )
+                            _original_tp_dists.pop(_tk, None)  # [TIME-DECAY TP] Limpa cache
                     elif _externally_closed and _panic_in_progress:
                         logging.debug(
                             f"[FLIP-5] Tickets {_externally_closed} fechados pelo PÂNICO. Lock suprimido."
@@ -1586,6 +1588,7 @@ async def autonomous_bot_loop():
                                     # Evita que FLIP-5 (próxima iteração) detecte o desaparecimento
                                     # como fechamento *externo* e dispare lock duplo redundante.
                                     _tracked_position_tickets.discard(pos.ticket)
+                                    _original_tp_dists.pop(pos.ticket, None)  # [TIME-DECAY TP] Limpa cache
 
                                     await asyncio.to_thread(
                                         bridge.close_position, pos.ticket
@@ -1609,6 +1612,37 @@ async def autonomous_bot_loop():
                                     logging.info(f"🔒 [ALPHA-X] Lock local+global ({ORDER_LOCK_SEC:.0f}s/{GLOBAL_ORDER_LOCK_SEC:.0f}s) ativado após fechamento por tempo.")
 
                                     continue
+
+                                # --- FASE 1b: TIME-DECAYING TP (TP DECRESCENTE) ---
+                                # Interação com a B3 apenas se o TP recuar mais que 15 pts para evitar overload e respeitar tick size
+                                # [GUARD] pos.tp == 0 significa que a posição não tem TP configurado — skip
+                                tp_is_valid = (
+                                    (pos.type == bridge.mt5.POSITION_TYPE_BUY and pos.tp > pos.price_open) or
+                                    (pos.type == bridge.mt5.POSITION_TYPE_SELL and pos.tp > 0 and pos.tp < pos.price_open)
+                                )
+                                if pos.ticket not in _original_tp_dists and tp_is_valid:
+                                    _original_tp_dists[pos.ticket] = abs(pos.tp - pos.price_open)
+
+                                orig_tp_dist = _original_tp_dists.get(pos.ticket, 0.0)
+                                if orig_tp_dist > 0:
+                                    new_tp_dist = risk.apply_time_decay_to_tp(orig_tp_dist, elapsed_sec)
+                                    
+                                    if pos.type == bridge.mt5.POSITION_TYPE_BUY:
+                                        decayed_tp = pos.price_open + new_tp_dist
+                                    else:
+                                        decayed_tp = pos.price_open - new_tp_dist
+
+                                    decayed_tp = risk._quantize_price(symbol, decayed_tp)
+                                    
+                                    # Verifica se mudou os 15 pts a partir do TP atualmente fixado no broker
+                                    if abs(pos.tp - decayed_tp) >= 15.0:
+                                        if (pos.type == bridge.mt5.POSITION_TYPE_BUY and decayed_tp < pos.tp) or \
+                                           (pos.type == bridge.mt5.POSITION_TYPE_SELL and decayed_tp > pos.tp):
+                                            
+                                            await asyncio.to_thread(
+                                                bridge.update_sltp, pos.ticket, pos.sl, decayed_tp
+                                            )
+                                            logging.info(f"⏳ [TIME-DECAY TP] TP da posição {pos.ticket} reduzido de {pos.tp} para {decayed_tp} (Tempo: {elapsed_sec/60:.1f}min)")
 
                                 is_wdo = "WDO" in symbol or "DOL" in symbol
 
@@ -1646,6 +1680,7 @@ async def autonomous_bot_loop():
                                     # [FIX #FLIP-5-SYNC] Mesma correção do ALPHA-X: remove ticket
                                     # antes de fechar para não gerar lock duplo via FLIP-5.
                                     _tracked_position_tickets.discard(pos.ticket)
+                                    _original_tp_dists.pop(pos.ticket, None)  # [TIME-DECAY TP] Limpa cache
 
                                     await asyncio.to_thread(
                                         bridge.close_position, pos.ticket
