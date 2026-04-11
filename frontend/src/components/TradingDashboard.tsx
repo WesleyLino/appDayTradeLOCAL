@@ -68,38 +68,39 @@ export function TradingDashboard() {
   const aiScore =
     data?.ai_prediction?.score ??
     (data?.ai_confidence ? data.ai_confidence * 100 : 0);
-  const aiDirection =
-    data?.ai_prediction?.direction ?? "NEUTRO";
+  const aiDirection = data?.ai_prediction?.direction ?? "NEUTRO";
   // [FIX #TD-4] veto_reason não existe em TradeData — usa apenas ai_prediction.veto
   const aiVeto = data?.ai_prediction?.veto ?? null;
 
   const bypassThreshold = data?.thresholds?.momentum_bypass ?? 72.0;
-  const sellBypassThreshold = 28.0; // Symmetrical Logic Override
+  const sellBypassThreshold = 100.0 - bypassThreshold; // Symmetrical Logic Override FIX
   const obiAbsorption = data?.thresholds?.obi_absorption ?? 1.8;
   const fluxImbalance = data?.thresholds?.flux_imbalance ?? 1.1;
   const currentObi = data?.obi ?? 0;
-  
+
   // Tactical Decision Engine
   const isC_BuyMode = aiScore >= bypassThreshold;
   const isC_SellMode = aiScore <= sellBypassThreshold && aiScore > 0;
-  
+
   // Conditions for Manual Flash
   const isFlashBuy = riskOk && isC_BuyMode && currentObi >= fluxImbalance;
-  const isFlashSell = riskOk && isC_SellMode && currentObi <= -(fluxImbalance * 1.25);
+  const isFlashSell =
+    riskOk && isC_SellMode && currentObi <= -(fluxImbalance * 1.25);
 
-  const isObiOk = Math.abs(currentObi) > obiAbsorption;
+  const isObiOk = Math.abs(currentObi) >= obiAbsorption;
   const isConfidenceOk = isC_BuyMode || isC_SellMode;
-  
+
   const sentimentValue =
     typeof data?.sentiment === "object"
       ? data.sentiment.score
       : (data?.sentiment ?? 0);
-  
+
   const isAuthorized = riskOk && isObiOk && isConfidenceOk;
-  
+
   // Fallback autorização direcional apenas para liberar os botões independentemente do outro lado (Manual Control)
   const isBuyAuthorized = riskOk && isC_BuyMode && currentObi >= fluxImbalance;
-  const isSellAuthorized = riskOk && isC_SellMode && currentObi <= -(fluxImbalance * 1.25);
+  const isSellAuthorized =
+    riskOk && isC_SellMode && currentObi <= -(fluxImbalance * 1.25);
 
   // [ANTIVIBE-CODING] - Sincronização de Estado Autônomo via WebSocket
   const [autonomousMode, setAutonomousMode] = useState(false);
@@ -446,8 +447,8 @@ export function TradingDashboard() {
                   isFlashBuy
                     ? "bg-emerald-500/20 border-emerald-500 animate-pulse shadow-[0_0_50px_rgba(16,185,129,0.4)]"
                     : isFlashSell
-                    ? "bg-red-500/20 border-red-500 animate-pulse shadow-[0_0_50px_rgba(239,68,68,0.4)]"
-                    : "bg-black/40 border-white/5 opacity-80"
+                      ? "bg-red-500/20 border-red-500 animate-pulse shadow-[0_0_50px_rgba(239,68,68,0.4)]"
+                      : "bg-black/40 border-white/5 opacity-80",
                 )}
               >
                 {isFlashBuy ? (
@@ -490,7 +491,7 @@ export function TradingDashboard() {
                     "py-5 rounded-xl font-black text-white transition-all transform active:scale-95 shadow-lg border-2",
                     isBuyAuthorized
                       ? "bg-gradient-to-r from-emerald-600 to-emerald-500 border-emerald-400 hover:brightness-110 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-                      : "bg-muted border-transparent text-muted-foreground cursor-not-allowed grayscale bg-opacity-50"
+                      : "bg-muted border-transparent text-muted-foreground cursor-not-allowed grayscale bg-opacity-50",
                   )}
                 >
                   COMPRAR M.
@@ -502,7 +503,7 @@ export function TradingDashboard() {
                     "py-5 rounded-xl font-black text-white transition-all transform active:scale-95 shadow-lg border-2",
                     isSellAuthorized
                       ? "bg-gradient-to-r from-red-600 to-red-500 border-red-400 hover:brightness-110 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
-                      : "bg-muted border-transparent text-muted-foreground cursor-not-allowed grayscale bg-opacity-50"
+                      : "bg-muted border-transparent text-muted-foreground cursor-not-allowed grayscale bg-opacity-50",
                   )}
                 >
                   VENDER M.

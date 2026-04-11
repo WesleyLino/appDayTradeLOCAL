@@ -47,7 +47,7 @@ async def run_full_history_audit():
     report_file = "c:/Users/Wesley Lino/Documents/ProjetosApp/appDayTradeLOCAL/backend/full_history_audit_results.md"
     
     report_md = "# 📊 Auditoria Histórica de Alta Performance (Potencial SOTA)\n\n"
-    report_md += f"**Período:** 19/02/2026 a 30/03/2026\n"
+    report_md += "**Período:** 19/02/2026 a 30/03/2026\n"
     report_md += f"**Capital Inicial:** R$ {capital_inicial:.2f}\n"
     report_md += f"**Ativo:** {symbol} | **Timeframe:** {timeframe}\n\n"
     

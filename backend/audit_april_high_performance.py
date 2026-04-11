@@ -139,7 +139,7 @@ async def run_audit():
         
         missed_ops += (bv_ai + sv_ai + flux_v)
 
-        detailed_results += f"- **Perdas de Oportunidades (Gatilhos bloqueados pela IA ou Fluxo):**\n"
+        detailed_results += "- **Perdas de Oportunidades (Gatilhos bloqueados pela IA ou Fluxo):**\n"
         detailed_results += f"  - Vetos de Compra (Sensibilidade IA): {bv_ai}\n"
         detailed_results += f"  - Vetos de Venda (Sensibilidade IA): {sv_ai}\n"
         detailed_results += f"  - Vetos por Falta de Fluxo Imbalanceado: {flux_v}\n"

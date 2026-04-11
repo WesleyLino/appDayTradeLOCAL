@@ -60,6 +60,7 @@ interface TradeData {
   thresholds?: {
     momentum_bypass: number;
     obi_absorption: number;
+    flux_imbalance: number;
   };
   risk_status: {
     time_ok: boolean;

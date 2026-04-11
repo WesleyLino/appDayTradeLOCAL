@@ -1,0 +1,80 @@
+﻿
+> frontend@0.1.0 lint
+> eslint
+
+
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\frontend\src\components\ConfluenceGauge.tsx
+  23:3  warning  'syntheticIndex' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\frontend\src\components\OrderBookHeatmap.tsx
+  33:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\frontend\src\components\OrderBookHeatmap.tsx:33:7
+  31 |       (data.book.bids.length > 0 || data.book.asks.length > 0)
+  32 |     ) {
+> 33 |       setIsSimulated(false);
+     |       ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  34 |       return;
+  35 |     }
+  36 |                                                                                                                                                                          react-hooks/set-state-in-effect
+  55:42  error  Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `data`, but the source dependencies were [isSimulated, data?.book, simulatedBook]. Inferred less specific property than source.
+
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\frontend\src\components\OrderBookHeatmap.tsx:55:42
+  53 |
+  54 |   // Derived Data (Heatmap)
+> 55 |   const { book, maxVol } = React.useMemo(() => {
+     |                                          ^^^^^^^
+> 56 |     const currentBook =
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+> 57 |       !isSimulated && data?.book
+     ÔÇª
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+> 70 |     return { book: currentBook, maxVol: maxV };
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+> 71 |   }, [isSimulated, data?.book, simulatedBook]);
+     | ^^^^ Could not preserve existing manual memoization
+  72 |
+  73 |   const getIntensity = (vol: number) => {
+  74 |     const opacity = 0.2 + (vol / maxVol) * 0.8;  react-hooks/preserve-manual-memoization
+
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\frontend\src\components\PerformanceWidget.tsx
+  8:3  warning  'DollarSign' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\frontend\src\components\SotaMetrics.tsx
+  25:3  warning  'unweightedOfi' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\frontend\src\components\TradingDashboard.tsx
+   98:9   warning  'isAuthorized' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+  187:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Wesley Lino\Documents\ProjetosApp\appDayTradeLOCAL\frontend\src\components\TradingDashboard.tsx:187:7
+  185 |       !isUpdatingAuto
+  186 |     ) {
+> 187 |       setAutonomousMode(data.risk_status.allow_autonomous);
+      |       ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  188 |     }
+  189 |   }, [data?.risk_status?.allow_autonomous, isUpdatingAuto]);
+  190 |  react-hooks/set-state-in-effect
+  189:6   warning  React Hook useEffect has a missing dependency: 'data.risk_status'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                react-hooks/exhaustive-deps
+  230:30  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  722:55  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  860:49  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  924:58  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  964:42  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+
+Ô£û 13 problems (8 errors, 5 warnings)
+
